@@ -1,0 +1,199 @@
+[
+  {
+    "record_id": "R8-0001",
+    "canonical_name": "UPR-Mayagüez Department of Marine Sciences",
+    "acronym": "UPRM-DMS",
+    "parent_org": "University of Puerto Rico at Mayagüez",
+    "facility_type": "university-marine-lab",
+    "country": "PR",
+    "region": "Caribbean",
+    "hq": { "address": "Call Box 9000, Mayagüez, PR 00681, USA", "lat": 18.2108, "lng": -67.1395 },
+    "locations": [
+      { "label": "UPRM Department of Marine Sciences", "address": "Call Box 9000, Mayagüez, PR 00681, USA", "lat": 18.2108, "lng": -67.1395, "role": "headquarters" },
+      { "label": "Magueyes Island Laboratories", "address": "Magueyes Island, La Parguera, Lajas, PR 00667, USA", "lat": 17.9703, "lng": -67.0458, "role": "field-station" }
+    ],
+    "research_areas": ["coral-reefs", "marine-ecosystems", "biological-oceanography", "coastal-processes"],
+    "networks": ["CARICOOS", "IOCARIBE"],
+    "funders": [
+      { "name": "University of Puerto Rico", "relation": "parent-agency" },
+      { "name": "NSF", "relation": "grant" }
+    ],
+    "url": "https://marine.uprm.edu/",
+    "established": 1962,
+    "provenance": { "source_url": "https://marine.uprm.edu/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R8" }
+  },
+  {
+    "record_id": "R8-0002",
+    "canonical_name": "University of the Virgin Islands — Center for Marine and Environmental Studies",
+    "acronym": "UVI-CMES",
+    "parent_org": "University of the Virgin Islands",
+    "facility_type": "university-marine-lab",
+    "country": "VI",
+    "region": "Caribbean",
+    "hq": { "address": "2 John Brewers Bay, St. Thomas, VI 00802, USA", "lat": 18.3397, "lng": -64.9819 },
+    "locations": [
+      { "label": "UVI CMES St. Thomas", "address": "2 John Brewers Bay, St. Thomas, VI 00802, USA", "lat": 18.3397, "lng": -64.9819, "role": "headquarters" }
+    ],
+    "research_areas": ["coral-reefs", "marine-ecosystems", "biological-oceanography"],
+    "networks": ["CARICOOS", "IOCARIBE"],
+    "funders": [
+      { "name": "University of the Virgin Islands", "relation": "parent-agency" },
+      { "name": "NSF", "relation": "grant" }
+    ],
+    "url": "https://www.uvi.edu/research/cmes/",
+    "established": 1997,
+    "provenance": { "source_url": "https://www.uvi.edu/research/cmes/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R8" }
+  },
+  {
+    "record_id": "R8-0003",
+    "canonical_name": "Perry Institute for Marine Science",
+    "acronym": "PIMS",
+    "parent_org": "Independent 501(c)(3)",
+    "facility_type": "international-nonprofit",
+    "country": "BS",
+    "region": "Northern Caribbean / Bahamas",
+    "hq": { "address": "Waterloo Road, Nassau, Bahamas", "lat": 25.0708, "lng": -77.3244 },
+    "locations": [
+      { "label": "PIMS HQ Nassau", "address": "Waterloo Road, Nassau, Bahamas", "lat": 25.0708, "lng": -77.3244, "role": "headquarters" }
+    ],
+    "research_areas": ["coral-reefs", "marine-ecosystems", "biological-oceanography"],
+    "networks": ["IOCARIBE"],
+    "funders": [{ "name": "Private donors", "relation": "private-donor" }],
+    "url": "https://www.perryinstitute.org/",
+    "established": 1969,
+    "provenance": { "source_url": "https://www.perryinstitute.org/about-us/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R8" }
+  },
+  {
+    "record_id": "R8-0004",
+    "canonical_name": "Gerace Research Centre",
+    "acronym": "GRC",
+    "parent_org": "Independent educational field station",
+    "facility_type": "international-nonprofit",
+    "country": "BS",
+    "region": "Northern Caribbean / Bahamas",
+    "hq": { "address": "San Salvador Island, Bahamas", "lat": 24.1167, "lng": -74.4667 },
+    "locations": [
+      { "label": "Gerace Research Centre", "address": "San Salvador Island, Bahamas", "lat": 24.1167, "lng": -74.4667, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-ecosystems", "coral-reefs", "marine-geology"],
+    "networks": [],
+    "funders": [{ "name": "Private donors", "relation": "private-donor" }],
+    "url": "https://geraceresearchcentre.com/",
+    "established": 1971,
+    "provenance": { "source_url": "https://geraceresearchcentre.com/", "retrieved_at": "2026-04-18", "confidence": "medium", "agent": "R8" }
+  },
+  {
+    "record_id": "R8-0005",
+    "canonical_name": "Centro de Investigaciones Marinas — Universidad de La Habana",
+    "acronym": "CIM-UH",
+    "parent_org": "Universidad de La Habana",
+    "facility_type": "international-university",
+    "country": "CU",
+    "region": "Northern Caribbean / Cuba",
+    "hq": { "address": "Calle 16, No. 114, Miramar, Playa, 11300 La Habana, Cuba", "lat": 23.1219, "lng": -82.4258 },
+    "locations": [
+      { "label": "CIM-UH Havana", "address": "Calle 16, No. 114, Miramar, Playa, La Habana, Cuba", "lat": 23.1219, "lng": -82.4258, "role": "headquarters" }
+    ],
+    "research_areas": ["coral-reefs", "marine-ecosystems", "biological-oceanography"],
+    "networks": ["IOCARIBE"],
+    "funders": [{ "name": "Universidad de La Habana", "relation": "parent-agency" }],
+    "url": "https://www.cim.uh.cu/",
+    "established": 1965,
+    "provenance": { "source_url": "https://www.cim.uh.cu/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R8" }
+  },
+  {
+    "record_id": "R8-0006",
+    "canonical_name": "UWI Discovery Bay Marine Laboratory",
+    "acronym": "DBML",
+    "parent_org": "University of the West Indies — Mona",
+    "facility_type": "international-university",
+    "country": "JM",
+    "region": "Northern Caribbean / Jamaica",
+    "hq": { "address": "Discovery Bay, St. Ann, Jamaica", "lat": 18.4722, "lng": -77.4039 },
+    "locations": [
+      { "label": "Discovery Bay Marine Laboratory", "address": "Discovery Bay, St. Ann, Jamaica", "lat": 18.4722, "lng": -77.4039, "role": "headquarters" }
+    ],
+    "research_areas": ["coral-reefs", "marine-ecosystems", "biological-oceanography"],
+    "networks": ["IOCARIBE"],
+    "funders": [{ "name": "University of the West Indies", "relation": "parent-agency" }],
+    "url": "https://www.mona.uwi.edu/dbml/",
+    "established": 1965,
+    "provenance": { "source_url": "https://www.mona.uwi.edu/dbml/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R8" }
+  },
+  {
+    "record_id": "R8-0007",
+    "canonical_name": "UWI Port Royal Marine Laboratory",
+    "acronym": "PRML",
+    "parent_org": "University of the West Indies — Mona",
+    "facility_type": "international-university",
+    "country": "JM",
+    "region": "Northern Caribbean / Jamaica",
+    "hq": { "address": "Port Royal, Kingston, Jamaica", "lat": 17.9372, "lng": -76.8403 },
+    "locations": [
+      { "label": "Port Royal Marine Lab", "address": "Port Royal, Kingston, Jamaica", "lat": 17.9372, "lng": -76.8403, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-ecosystems", "fisheries-and-aquaculture", "mangroves"],
+    "networks": ["IOCARIBE"],
+    "funders": [{ "name": "University of the West Indies", "relation": "parent-agency" }],
+    "url": "https://www.mona.uwi.edu/lifesciences/port-royal-marine-laboratory",
+    "established": 1965,
+    "provenance": { "source_url": "https://www.mona.uwi.edu/lifesciences/port-royal-marine-laboratory", "retrieved_at": "2026-04-18", "confidence": "medium", "agent": "R8" }
+  },
+  {
+    "record_id": "R8-0008",
+    "canonical_name": "Centro de Investigaciones de Biología Marina",
+    "acronym": "CIBIMA",
+    "parent_org": "Universidad Autónoma de Santo Domingo",
+    "facility_type": "international-university",
+    "country": "DO",
+    "region": "Northern Caribbean / Hispaniola",
+    "hq": { "address": "UASD Campus, Santo Domingo, Dominican Republic", "lat": 18.4636, "lng": -69.9394 },
+    "locations": [
+      { "label": "CIBIMA HQ", "address": "UASD Campus, Santo Domingo, Dominican Republic", "lat": 18.4636, "lng": -69.9394, "role": "headquarters" }
+    ],
+    "research_areas": ["coral-reefs", "marine-ecosystems", "mangroves"],
+    "networks": ["IOCARIBE"],
+    "funders": [{ "name": "Universidad Autónoma de Santo Domingo", "relation": "parent-agency" }],
+    "url": "https://cibima.uasd.edu.do/",
+    "established": 1962,
+    "provenance": { "source_url": "https://cibima.uasd.edu.do/", "retrieved_at": "2026-04-18", "confidence": "medium", "agent": "R8" }
+  },
+  {
+    "record_id": "R8-0009",
+    "canonical_name": "Fondation pour la Protection de la Biodiversité Marine",
+    "acronym": "FoProBiM",
+    "parent_org": "Independent non-profit",
+    "facility_type": "international-nonprofit",
+    "country": "HT",
+    "region": "Northern Caribbean / Haiti",
+    "hq": { "address": "Port-au-Prince, Haiti", "lat": 18.5944, "lng": -72.3074 },
+    "locations": [
+      { "label": "FoProBiM HQ Port-au-Prince", "address": "Port-au-Prince, Haiti", "lat": 18.5944, "lng": -72.3074, "role": "headquarters" }
+    ],
+    "research_areas": ["mangroves", "coral-reefs", "marine-ecosystems", "marine-policy-and-socio-economics"],
+    "networks": ["IOCARIBE"],
+    "funders": [{ "name": "Private donors", "relation": "private-donor" }],
+    "url": "https://www.foprobim.org/",
+    "established": 1992,
+    "provenance": { "source_url": "https://www.foprobim.org/", "retrieved_at": "2026-04-18", "confidence": "medium", "agent": "R8" }
+  },
+  {
+    "record_id": "R8-0010",
+    "canonical_name": "UWI Centre for Resource Management and Environmental Studies",
+    "acronym": "UWI-CERMES",
+    "parent_org": "University of the West Indies — Cave Hill",
+    "facility_type": "international-university",
+    "country": "BB",
+    "region": "Eastern Caribbean",
+    "hq": { "address": "Cave Hill Campus, University of the West Indies, Cave Hill, BB11000, Barbados", "lat": 13.1861, "lng": -59.6250 },
+    "locations": [
+      { "label": "UWI-CERMES Cave Hill", "address": "Cave Hill Campus, University of the West Indies, Cave Hill, Barbados", "lat": 13.1861, "lng": -59.6250, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-policy-and-socio-economics", "coral-reefs", "fisheries-and-aquaculture", "coastal-processes"],
+    "networks": ["IOCARIBE"],
+    "funders": [{ "name": "University of the West Indies", "relation": "parent-agency" }],
+    "url": "https://cermes.cavehill.uwi.edu/",
+    "established": 1985,
+    "provenance": { "source_url": "https://cermes.cavehill.uwi.edu/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R8" }
+  }
+]

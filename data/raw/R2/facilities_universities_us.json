@@ -1,0 +1,336 @@
+[
+  {
+    "record_id": "R2-0001",
+    "canonical_name": "Scripps Institution of Oceanography",
+    "acronym": "SIO",
+    "parent_org": "University of California San Diego",
+    "facility_type": "university-marine-lab",
+    "country": "US",
+    "region": "Pacific / Southern California",
+    "hq": { "address": "8622 Kennel Way, La Jolla, CA 92037, USA", "lat": 32.8661, "lng": -117.2533 },
+    "locations": [
+      { "label": "Scripps Main Campus La Jolla", "address": "8622 Kennel Way, La Jolla, CA 92037, USA", "lat": 32.8661, "lng": -117.2533, "role": "headquarters" }
+    ],
+    "research_areas": ["physical-oceanography", "chemical-oceanography", "biological-oceanography", "climate-and-sea-level", "marine-geology"],
+    "networks": ["SCCOOS", "GOOS"],
+    "funders": [
+      { "name": "University of California", "relation": "parent-agency" },
+      { "name": "NSF", "relation": "grant" },
+      { "name": "NOAA", "relation": "grant" }
+    ],
+    "url": "https://scripps.ucsd.edu/",
+    "established": 1903,
+    "provenance": { "source_url": "https://scripps.ucsd.edu/about", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R2" }
+  },
+  {
+    "record_id": "R2-0002",
+    "canonical_name": "Woods Hole Oceanographic Institution",
+    "acronym": "WHOI",
+    "parent_org": "Independent 501(c)(3)",
+    "facility_type": "university-marine-lab",
+    "country": "US",
+    "region": "Northeast Atlantic",
+    "hq": { "address": "266 Woods Hole Rd, Woods Hole, MA 02543, USA", "lat": 41.5244, "lng": -70.6731 },
+    "locations": [
+      { "label": "WHOI Main Campus", "address": "266 Woods Hole Rd, Woods Hole, MA 02543, USA", "lat": 41.5244, "lng": -70.6731, "role": "headquarters" }
+    ],
+    "research_areas": ["physical-oceanography", "chemical-oceanography", "biological-oceanography", "marine-geology", "deep-sea"],
+    "networks": ["OOI", "GOOS"],
+    "funders": [
+      { "name": "NSF", "relation": "grant" },
+      { "name": "NOAA", "relation": "grant" },
+      { "name": "US Navy", "relation": "grant" }
+    ],
+    "url": "https://www.whoi.edu/",
+    "established": 1930,
+    "provenance": { "source_url": "https://www.whoi.edu/about-whoi/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R2" }
+  },
+  {
+    "record_id": "R2-0003",
+    "canonical_name": "Monterey Bay Aquarium Research Institute",
+    "acronym": "MBARI",
+    "parent_org": "David and Lucile Packard Foundation",
+    "facility_type": "university-marine-lab",
+    "country": "US",
+    "region": "Pacific / Central California",
+    "hq": { "address": "7700 Sandholdt Rd, Moss Landing, CA 95039, USA", "lat": 36.8025, "lng": -121.7889 },
+    "locations": [
+      { "label": "MBARI Moss Landing HQ", "address": "7700 Sandholdt Rd, Moss Landing, CA 95039, USA", "lat": 36.8025, "lng": -121.7889, "role": "headquarters" }
+    ],
+    "research_areas": ["deep-sea", "ocean-observing-systems", "biological-oceanography", "marine-biogeochemistry"],
+    "networks": ["CeNCOOS"],
+    "funders": [
+      { "name": "David and Lucile Packard Foundation", "relation": "endowment" },
+      { "name": "NSF", "relation": "grant" }
+    ],
+    "url": "https://www.mbari.org/",
+    "established": 1987,
+    "provenance": { "source_url": "https://www.mbari.org/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R2" }
+  },
+  {
+    "record_id": "R2-0004",
+    "canonical_name": "Marine Biological Laboratory",
+    "acronym": "MBL",
+    "parent_org": "University of Chicago",
+    "facility_type": "university-marine-lab",
+    "country": "US",
+    "region": "Northeast Atlantic",
+    "hq": { "address": "7 MBL St, Woods Hole, MA 02543, USA", "lat": 41.5253, "lng": -70.6722 },
+    "locations": [
+      { "label": "MBL Woods Hole", "address": "7 MBL St, Woods Hole, MA 02543, USA", "lat": 41.5253, "lng": -70.6722, "role": "headquarters" }
+    ],
+    "research_areas": ["biological-oceanography", "marine-ecosystems", "estuaries-and-wetlands"],
+    "networks": ["LTER"],
+    "funders": [
+      { "name": "University of Chicago", "relation": "parent-agency" },
+      { "name": "NSF", "relation": "grant" },
+      { "name": "NIH", "relation": "grant" }
+    ],
+    "url": "https://www.mbl.edu/",
+    "established": 1888,
+    "provenance": { "source_url": "https://www.mbl.edu/about", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R2" }
+  },
+  {
+    "record_id": "R2-0005",
+    "canonical_name": "Hawaiʻi Institute of Marine Biology",
+    "acronym": "HIMB",
+    "parent_org": "University of Hawaiʻi at Mānoa",
+    "facility_type": "university-marine-lab",
+    "country": "US",
+    "region": "Pacific Islands",
+    "hq": { "address": "46-007 Lilipuna Rd, Kāneʻohe, HI 96744, USA", "lat": 21.4339, "lng": -157.7872 },
+    "locations": [
+      { "label": "HIMB Coconut Island", "address": "46-007 Lilipuna Rd, Kāneʻohe, HI 96744, USA", "lat": 21.4339, "lng": -157.7872, "role": "headquarters" }
+    ],
+    "research_areas": ["coral-reefs", "marine-ecosystems", "biological-oceanography"],
+    "networks": ["PacIOOS"],
+    "funders": [
+      { "name": "University of Hawaii", "relation": "parent-agency" },
+      { "name": "NSF", "relation": "grant" }
+    ],
+    "url": "https://www.himb.hawaii.edu/",
+    "established": 1947,
+    "provenance": { "source_url": "https://www.himb.hawaii.edu/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R2" }
+  },
+  {
+    "record_id": "R2-0006",
+    "canonical_name": "Friday Harbor Laboratories",
+    "acronym": "FHL",
+    "parent_org": "University of Washington",
+    "facility_type": "university-marine-lab",
+    "country": "US",
+    "region": "Pacific Northwest",
+    "hq": { "address": "620 University Rd, Friday Harbor, WA 98250, USA", "lat": 48.5456, "lng": -123.0119 },
+    "locations": [
+      { "label": "Friday Harbor Labs", "address": "620 University Rd, Friday Harbor, WA 98250, USA", "lat": 48.5456, "lng": -123.0119, "role": "headquarters" }
+    ],
+    "research_areas": ["biological-oceanography", "marine-ecosystems", "ocean-acidification"],
+    "networks": ["NANOOS"],
+    "funders": [
+      { "name": "University of Washington", "relation": "parent-agency" },
+      { "name": "NSF", "relation": "grant" }
+    ],
+    "url": "https://fhl.uw.edu/",
+    "established": 1904,
+    "provenance": { "source_url": "https://fhl.uw.edu/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R2" }
+  },
+  {
+    "record_id": "R2-0007",
+    "canonical_name": "Bodega Marine Laboratory",
+    "acronym": "BML",
+    "parent_org": "University of California Davis",
+    "facility_type": "university-marine-lab",
+    "country": "US",
+    "region": "Pacific / Northern California",
+    "hq": { "address": "2099 Westshore Rd, Bodega Bay, CA 94923, USA", "lat": 38.3181, "lng": -123.0725 },
+    "locations": [
+      { "label": "Bodega Marine Lab", "address": "2099 Westshore Rd, Bodega Bay, CA 94923, USA", "lat": 38.3181, "lng": -123.0725, "role": "headquarters" }
+    ],
+    "research_areas": ["biological-oceanography", "marine-ecosystems", "ocean-acidification"],
+    "networks": ["CeNCOOS"],
+    "funders": [
+      { "name": "University of California", "relation": "parent-agency" },
+      { "name": "NSF", "relation": "grant" }
+    ],
+    "url": "https://marinescience.ucdavis.edu/bml",
+    "established": 1965,
+    "provenance": { "source_url": "https://marinescience.ucdavis.edu/bml", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R2" }
+  },
+  {
+    "record_id": "R2-0008",
+    "canonical_name": "Hopkins Marine Station",
+    "acronym": "HMS",
+    "parent_org": "Stanford University",
+    "facility_type": "university-marine-lab",
+    "country": "US",
+    "region": "Pacific / Central California",
+    "hq": { "address": "120 Ocean View Blvd, Pacific Grove, CA 93950, USA", "lat": 36.6217, "lng": -121.9047 },
+    "locations": [
+      { "label": "Hopkins Marine Station", "address": "120 Ocean View Blvd, Pacific Grove, CA 93950, USA", "lat": 36.6217, "lng": -121.9047, "role": "headquarters" }
+    ],
+    "research_areas": ["biological-oceanography", "marine-ecosystems", "kelp-forests"],
+    "networks": ["CeNCOOS"],
+    "funders": [
+      { "name": "Stanford University", "relation": "parent-agency" },
+      { "name": "NSF", "relation": "grant" }
+    ],
+    "url": "https://hopkinsmarinestation.stanford.edu/",
+    "established": 1892,
+    "provenance": { "source_url": "https://hopkinsmarinestation.stanford.edu/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R2" }
+  },
+  {
+    "record_id": "R2-0009",
+    "canonical_name": "Hatfield Marine Science Center",
+    "acronym": "HMSC",
+    "parent_org": "Oregon State University",
+    "facility_type": "university-marine-lab",
+    "country": "US",
+    "region": "Pacific Northwest",
+    "hq": { "address": "2030 SE Marine Science Dr, Newport, OR 97365, USA", "lat": 44.6219, "lng": -124.0447 },
+    "locations": [
+      { "label": "Hatfield Marine Science Center", "address": "2030 SE Marine Science Dr, Newport, OR 97365, USA", "lat": 44.6219, "lng": -124.0447, "role": "headquarters" }
+    ],
+    "research_areas": ["oceanography", "marine-ecosystems", "fisheries-and-aquaculture", "coastal-processes"],
+    "networks": ["NANOOS"],
+    "funders": [
+      { "name": "Oregon State University", "relation": "parent-agency" },
+      { "name": "NSF", "relation": "grant" }
+    ],
+    "url": "https://hmsc.oregonstate.edu/",
+    "established": 1965,
+    "provenance": { "source_url": "https://hmsc.oregonstate.edu/about", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R2" }
+  },
+  {
+    "record_id": "R2-0010",
+    "canonical_name": "Skidaway Institute of Oceanography",
+    "acronym": "SkIO",
+    "parent_org": "University of Georgia",
+    "facility_type": "university-marine-lab",
+    "country": "US",
+    "region": "Southeast Atlantic",
+    "hq": { "address": "10 Ocean Science Cir, Savannah, GA 31411, USA", "lat": 31.9892, "lng": -81.0192 },
+    "locations": [
+      { "label": "Skidaway Institute", "address": "10 Ocean Science Cir, Savannah, GA 31411, USA", "lat": 31.9892, "lng": -81.0192, "role": "headquarters" }
+    ],
+    "research_areas": ["chemical-oceanography", "coastal-processes", "estuaries-and-wetlands", "marine-biogeochemistry"],
+    "networks": ["SECOORA"],
+    "funders": [
+      { "name": "University of Georgia", "relation": "parent-agency" },
+      { "name": "NSF", "relation": "grant" }
+    ],
+    "url": "https://www.skio.uga.edu/",
+    "established": 1967,
+    "provenance": { "source_url": "https://www.skio.uga.edu/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R2" }
+  },
+  {
+    "record_id": "R2-0011",
+    "canonical_name": "Dauphin Island Sea Lab",
+    "acronym": "DISL",
+    "parent_org": "Alabama Marine Environmental Sciences Consortium",
+    "facility_type": "university-marine-lab",
+    "country": "US",
+    "region": "Gulf of Mexico",
+    "hq": { "address": "101 Bienville Blvd, Dauphin Island, AL 36528, USA", "lat": 30.2506, "lng": -88.0808 },
+    "locations": [
+      { "label": "Dauphin Island Sea Lab", "address": "101 Bienville Blvd, Dauphin Island, AL 36528, USA", "lat": 30.2506, "lng": -88.0808, "role": "headquarters" }
+    ],
+    "research_areas": ["estuaries-and-wetlands", "fisheries-and-aquaculture", "coastal-processes", "marine-ecosystems"],
+    "networks": ["GCOOS"],
+    "funders": [
+      { "name": "Alabama Marine Environmental Sciences Consortium", "relation": "parent-agency" },
+      { "name": "NSF", "relation": "grant" }
+    ],
+    "url": "https://www.disl.edu/",
+    "established": 1971,
+    "provenance": { "source_url": "https://www.disl.edu/about", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R2" }
+  },
+  {
+    "record_id": "R2-0012",
+    "canonical_name": "Virginia Institute of Marine Science",
+    "acronym": "VIMS",
+    "parent_org": "College of William & Mary",
+    "facility_type": "university-marine-lab",
+    "country": "US",
+    "region": "Mid-Atlantic / Chesapeake Bay",
+    "hq": { "address": "1375 Greate Rd, Gloucester Point, VA 23062, USA", "lat": 37.2472, "lng": -76.5003 },
+    "locations": [
+      { "label": "VIMS Main Campus", "address": "1375 Greate Rd, Gloucester Point, VA 23062, USA", "lat": 37.2472, "lng": -76.5003, "role": "headquarters" },
+      { "label": "VIMS Eastern Shore Lab", "address": "40 Atlantic Ave, Wachapreague, VA 23480, USA", "lat": 37.6058, "lng": -75.6867, "role": "field-station" }
+    ],
+    "research_areas": ["estuaries-and-wetlands", "fisheries-and-aquaculture", "coastal-processes", "marine-policy-and-socio-economics"],
+    "networks": ["MARACOOS"],
+    "funders": [
+      { "name": "Commonwealth of Virginia", "relation": "parent-agency" },
+      { "name": "NSF", "relation": "grant" }
+    ],
+    "url": "https://www.vims.edu/",
+    "established": 1940,
+    "provenance": { "source_url": "https://www.vims.edu/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R2" }
+  },
+  {
+    "record_id": "R2-0013",
+    "canonical_name": "Rosenstiel School of Marine, Atmospheric, and Earth Science",
+    "acronym": "RSMAES",
+    "parent_org": "University of Miami",
+    "facility_type": "university-marine-lab",
+    "country": "US",
+    "region": "Southeast Atlantic / Gulf",
+    "hq": { "address": "4600 Rickenbacker Causeway, Miami, FL 33149, USA", "lat": 25.7328, "lng": -80.1625 },
+    "locations": [
+      { "label": "Rosenstiel Campus", "address": "4600 Rickenbacker Causeway, Miami, FL 33149, USA", "lat": 25.7328, "lng": -80.1625, "role": "headquarters" }
+    ],
+    "research_areas": ["physical-oceanography", "climate-and-sea-level", "marine-ecosystems", "coral-reefs"],
+    "networks": ["SECOORA", "GCOOS"],
+    "funders": [
+      { "name": "University of Miami", "relation": "parent-agency" },
+      { "name": "NOAA", "relation": "cooperative-agreement" }
+    ],
+    "url": "https://www.earth.miami.edu/",
+    "established": 1943,
+    "provenance": { "source_url": "https://www.earth.miami.edu/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R2" }
+  },
+  {
+    "record_id": "R2-0014",
+    "canonical_name": "Graduate School of Oceanography",
+    "acronym": "URI-GSO",
+    "parent_org": "University of Rhode Island",
+    "facility_type": "university-marine-lab",
+    "country": "US",
+    "region": "Northeast Atlantic",
+    "hq": { "address": "215 S Ferry Rd, Narragansett, RI 02882, USA", "lat": 41.4922, "lng": -71.4197 },
+    "locations": [
+      { "label": "URI Narragansett Bay Campus", "address": "215 S Ferry Rd, Narragansett, RI 02882, USA", "lat": 41.4922, "lng": -71.4197, "role": "headquarters" }
+    ],
+    "research_areas": ["physical-oceanography", "chemical-oceanography", "marine-geology", "ocean-observing-systems"],
+    "networks": ["NERACOOS", "OOI"],
+    "funders": [
+      { "name": "University of Rhode Island", "relation": "parent-agency" },
+      { "name": "NSF", "relation": "grant" }
+    ],
+    "url": "https://web.uri.edu/gso/",
+    "established": 1961,
+    "provenance": { "source_url": "https://web.uri.edu/gso/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R2" }
+  },
+  {
+    "record_id": "R2-0015",
+    "canonical_name": "Bigelow Laboratory for Ocean Sciences",
+    "acronym": "Bigelow",
+    "parent_org": "Independent 501(c)(3)",
+    "facility_type": "university-marine-lab",
+    "country": "US",
+    "region": "Northeast Atlantic",
+    "hq": { "address": "60 Bigelow Dr, East Boothbay, ME 04544, USA", "lat": 43.8614, "lng": -69.5794 },
+    "locations": [
+      { "label": "Bigelow HQ", "address": "60 Bigelow Dr, East Boothbay, ME 04544, USA", "lat": 43.8614, "lng": -69.5794, "role": "headquarters" }
+    ],
+    "research_areas": ["biological-oceanography", "marine-biogeochemistry", "ocean-acidification"],
+    "networks": ["NERACOOS"],
+    "funders": [
+      { "name": "NSF", "relation": "grant" },
+      { "name": "NASA", "relation": "grant" }
+    ],
+    "url": "https://www.bigelow.org/",
+    "established": 1974,
+    "provenance": { "source_url": "https://www.bigelow.org/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R2" }
+  }
+]

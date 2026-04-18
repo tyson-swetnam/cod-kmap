@@ -1,0 +1,287 @@
+[
+  {
+    "record_id": "R3-0001",
+    "canonical_name": "U.S. Integrated Ocean Observing System Program Office",
+    "acronym": "IOOS",
+    "parent_org": "NOAA National Ocean Service",
+    "facility_type": "network",
+    "country": "US",
+    "region": "National",
+    "hq": { "address": "1315 East-West Highway, Silver Spring, MD 20910, USA", "lat": 38.9907, "lng": -77.0262 },
+    "locations": [
+      { "label": "IOOS Program Office", "address": "1315 East-West Highway, Silver Spring, MD 20910, USA", "lat": 38.9907, "lng": -77.0262, "role": "headquarters" }
+    ],
+    "research_areas": ["ocean-observing-systems", "physical-oceanography", "coastal-processes"],
+    "networks": ["GOOS"],
+    "funders": [{ "name": "NOAA", "relation": "parent-agency" }],
+    "url": "https://ioos.us/",
+    "established": 2007,
+    "provenance": { "source_url": "https://ioos.us/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R3" }
+  },
+  {
+    "record_id": "R3-0002",
+    "canonical_name": "Northeastern Regional Association of Coastal Ocean Observing Systems",
+    "acronym": "NERACOOS",
+    "parent_org": "IOOS Regional Association",
+    "facility_type": "network",
+    "country": "US",
+    "region": "Northeast Atlantic",
+    "hq": { "address": "17 Godfrey Dr, Orono, ME 04473, USA", "lat": 44.8869, "lng": -68.6775 },
+    "locations": [
+      { "label": "NERACOOS HQ", "address": "17 Godfrey Dr, Orono, ME 04473, USA", "lat": 44.8869, "lng": -68.6775, "role": "headquarters" }
+    ],
+    "research_areas": ["ocean-observing-systems", "physical-oceanography", "coastal-processes"],
+    "networks": ["IOOS"],
+    "funders": [{ "name": "NOAA IOOS", "relation": "cooperative-agreement" }],
+    "url": "https://neracoos.org/",
+    "established": 2001,
+    "provenance": { "source_url": "https://neracoos.org/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R3" }
+  },
+  {
+    "record_id": "R3-0003",
+    "canonical_name": "Mid-Atlantic Regional Association Coastal Ocean Observing System",
+    "acronym": "MARACOOS",
+    "parent_org": "IOOS Regional Association",
+    "facility_type": "network",
+    "country": "US",
+    "region": "Mid-Atlantic",
+    "hq": { "address": "700 Pilottown Rd, Lewes, DE 19958, USA", "lat": 38.7822, "lng": -75.1592 },
+    "locations": [
+      { "label": "MARACOOS HQ", "address": "700 Pilottown Rd, Lewes, DE 19958, USA", "lat": 38.7822, "lng": -75.1592, "role": "headquarters" }
+    ],
+    "research_areas": ["ocean-observing-systems", "coastal-processes", "physical-oceanography"],
+    "networks": ["IOOS"],
+    "funders": [{ "name": "NOAA IOOS", "relation": "cooperative-agreement" }],
+    "url": "https://maracoos.org/",
+    "established": 2005,
+    "provenance": { "source_url": "https://maracoos.org/about", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R3" }
+  },
+  {
+    "record_id": "R3-0004",
+    "canonical_name": "Southeast Coastal Ocean Observing Regional Association",
+    "acronym": "SECOORA",
+    "parent_org": "IOOS Regional Association",
+    "facility_type": "network",
+    "country": "US",
+    "region": "Southeast Atlantic",
+    "hq": { "address": "2929 7th Ave North, Suite 215, Birmingham, AL 35233, USA", "lat": 33.5142, "lng": -86.7944 },
+    "locations": [
+      { "label": "SECOORA HQ", "address": "2929 7th Ave North, Suite 215, Birmingham, AL 35233, USA", "lat": 33.5142, "lng": -86.7944, "role": "headquarters" }
+    ],
+    "research_areas": ["ocean-observing-systems", "coastal-processes", "coral-reefs"],
+    "networks": ["IOOS"],
+    "funders": [{ "name": "NOAA IOOS", "relation": "cooperative-agreement" }],
+    "url": "https://secoora.org/",
+    "established": 2007,
+    "provenance": { "source_url": "https://secoora.org/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R3" }
+  },
+  {
+    "record_id": "R3-0005",
+    "canonical_name": "Gulf of Mexico Coastal Ocean Observing System",
+    "acronym": "GCOOS",
+    "parent_org": "IOOS Regional Association",
+    "facility_type": "network",
+    "country": "US",
+    "region": "Gulf of Mexico",
+    "hq": { "address": "1716 Briarcrest Dr, Bryan, TX 77802, USA", "lat": 30.6747, "lng": -96.3436 },
+    "locations": [
+      { "label": "GCOOS HQ", "address": "1716 Briarcrest Dr, Bryan, TX 77802, USA", "lat": 30.6747, "lng": -96.3436, "role": "headquarters" }
+    ],
+    "research_areas": ["ocean-observing-systems", "coastal-processes", "harmful-algal-blooms"],
+    "networks": ["IOOS"],
+    "funders": [{ "name": "NOAA IOOS", "relation": "cooperative-agreement" }],
+    "url": "https://gcoos.org/",
+    "established": 2005,
+    "provenance": { "source_url": "https://gcoos.org/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R3" }
+  },
+  {
+    "record_id": "R3-0006",
+    "canonical_name": "Caribbean Coastal Ocean Observing System",
+    "acronym": "CARICOOS",
+    "parent_org": "IOOS Regional Association",
+    "facility_type": "network",
+    "country": "PR",
+    "region": "Caribbean",
+    "hq": { "address": "University of Puerto Rico at Mayagüez, Mayagüez, PR 00681, USA", "lat": 18.2108, "lng": -67.1395 },
+    "locations": [
+      { "label": "CARICOOS HQ (UPR-Mayagüez)", "address": "University of Puerto Rico at Mayagüez, Mayagüez, PR 00681, USA", "lat": 18.2108, "lng": -67.1395, "role": "headquarters" }
+    ],
+    "research_areas": ["ocean-observing-systems", "coral-reefs", "tsunamis-and-coastal-hazards"],
+    "networks": ["IOOS", "IOCARIBE"],
+    "funders": [{ "name": "NOAA IOOS", "relation": "cooperative-agreement" }],
+    "url": "https://caricoos.org/",
+    "established": 2007,
+    "provenance": { "source_url": "https://caricoos.org/about", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R3" }
+  },
+  {
+    "record_id": "R3-0007",
+    "canonical_name": "Southern California Coastal Ocean Observing System",
+    "acronym": "SCCOOS",
+    "parent_org": "IOOS Regional Association",
+    "facility_type": "network",
+    "country": "US",
+    "region": "Pacific / Southern California",
+    "hq": { "address": "8622 Kennel Way, La Jolla, CA 92037, USA", "lat": 32.8661, "lng": -117.2533 },
+    "locations": [
+      { "label": "SCCOOS HQ (Scripps)", "address": "8622 Kennel Way, La Jolla, CA 92037, USA", "lat": 32.8661, "lng": -117.2533, "role": "headquarters" }
+    ],
+    "research_areas": ["ocean-observing-systems", "harmful-algal-blooms", "ocean-acidification"],
+    "networks": ["IOOS"],
+    "funders": [{ "name": "NOAA IOOS", "relation": "cooperative-agreement" }],
+    "url": "https://sccoos.org/",
+    "established": 2003,
+    "provenance": { "source_url": "https://sccoos.org/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R3" }
+  },
+  {
+    "record_id": "R3-0008",
+    "canonical_name": "Central and Northern California Ocean Observing System",
+    "acronym": "CeNCOOS",
+    "parent_org": "IOOS Regional Association",
+    "facility_type": "network",
+    "country": "US",
+    "region": "Pacific / Central California",
+    "hq": { "address": "7700 Sandholdt Rd, Moss Landing, CA 95039, USA", "lat": 36.8025, "lng": -121.7889 },
+    "locations": [
+      { "label": "CeNCOOS HQ", "address": "7700 Sandholdt Rd, Moss Landing, CA 95039, USA", "lat": 36.8025, "lng": -121.7889, "role": "headquarters" }
+    ],
+    "research_areas": ["ocean-observing-systems", "ocean-acidification", "harmful-algal-blooms"],
+    "networks": ["IOOS"],
+    "funders": [{ "name": "NOAA IOOS", "relation": "cooperative-agreement" }],
+    "url": "https://cencoos.org/",
+    "established": 2003,
+    "provenance": { "source_url": "https://cencoos.org/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R3" }
+  },
+  {
+    "record_id": "R3-0009",
+    "canonical_name": "Northwest Association of Networked Ocean Observing Systems",
+    "acronym": "NANOOS",
+    "parent_org": "IOOS Regional Association",
+    "facility_type": "network",
+    "country": "US",
+    "region": "Pacific Northwest",
+    "hq": { "address": "1492 NE Boat St, Seattle, WA 98105, USA", "lat": 47.6514, "lng": -122.3122 },
+    "locations": [
+      { "label": "NANOOS HQ (UW)", "address": "1492 NE Boat St, Seattle, WA 98105, USA", "lat": 47.6514, "lng": -122.3122, "role": "headquarters" }
+    ],
+    "research_areas": ["ocean-observing-systems", "ocean-acidification", "tsunamis-and-coastal-hazards"],
+    "networks": ["IOOS"],
+    "funders": [{ "name": "NOAA IOOS", "relation": "cooperative-agreement" }],
+    "url": "https://nanoos.org/",
+    "established": 2003,
+    "provenance": { "source_url": "https://nanoos.org/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R3" }
+  },
+  {
+    "record_id": "R3-0010",
+    "canonical_name": "Alaska Ocean Observing System",
+    "acronym": "AOOS",
+    "parent_org": "IOOS Regional Association",
+    "facility_type": "network",
+    "country": "US",
+    "region": "Alaska",
+    "hq": { "address": "1007 W 3rd Ave, Suite 100, Anchorage, AK 99501, USA", "lat": 61.2181, "lng": -149.9003 },
+    "locations": [
+      { "label": "AOOS HQ", "address": "1007 W 3rd Ave, Suite 100, Anchorage, AK 99501, USA", "lat": 61.2181, "lng": -149.9003, "role": "headquarters" }
+    ],
+    "research_areas": ["ocean-observing-systems", "polar-and-cryosphere", "marine-ecosystems"],
+    "networks": ["IOOS"],
+    "funders": [{ "name": "NOAA IOOS", "relation": "cooperative-agreement" }],
+    "url": "https://aoos.org/",
+    "established": 2003,
+    "provenance": { "source_url": "https://aoos.org/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R3" }
+  },
+  {
+    "record_id": "R3-0011",
+    "canonical_name": "Pacific Islands Ocean Observing System",
+    "acronym": "PacIOOS",
+    "parent_org": "IOOS Regional Association",
+    "facility_type": "network",
+    "country": "US",
+    "region": "Pacific Islands",
+    "hq": { "address": "1680 East-West Rd, Honolulu, HI 96822, USA", "lat": 21.2972, "lng": -157.8161 },
+    "locations": [
+      { "label": "PacIOOS HQ (UH Manoa)", "address": "1680 East-West Rd, Honolulu, HI 96822, USA", "lat": 21.2972, "lng": -157.8161, "role": "headquarters" }
+    ],
+    "research_areas": ["ocean-observing-systems", "coral-reefs", "tsunamis-and-coastal-hazards"],
+    "networks": ["IOOS"],
+    "funders": [{ "name": "NOAA IOOS", "relation": "cooperative-agreement" }],
+    "url": "https://pacioos.org/",
+    "established": 2007,
+    "provenance": { "source_url": "https://pacioos.org/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R3" }
+  },
+  {
+    "record_id": "R3-0012",
+    "canonical_name": "Ocean Observatories Initiative",
+    "acronym": "OOI",
+    "parent_org": "NSF / Woods Hole Oceanographic Institution",
+    "facility_type": "network",
+    "country": "US",
+    "region": "National",
+    "hq": { "address": "266 Woods Hole Rd, Woods Hole, MA 02543, USA", "lat": 41.5244, "lng": -70.6731 },
+    "locations": [
+      { "label": "OOI Program Office (WHOI)", "address": "266 Woods Hole Rd, Woods Hole, MA 02543, USA", "lat": 41.5244, "lng": -70.6731, "role": "headquarters" }
+    ],
+    "research_areas": ["ocean-observing-systems", "physical-oceanography", "marine-biogeochemistry", "deep-sea"],
+    "networks": [],
+    "funders": [{ "name": "NSF", "relation": "parent-agency" }],
+    "url": "https://oceanobservatories.org/",
+    "established": 2009,
+    "provenance": { "source_url": "https://oceanobservatories.org/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R3" }
+  },
+  {
+    "record_id": "R3-0013",
+    "canonical_name": "Long-Term Ecological Research Network",
+    "acronym": "LTER",
+    "parent_org": "NSF Biological Sciences Directorate",
+    "facility_type": "network",
+    "country": "US",
+    "region": "National",
+    "hq": { "address": "UC Santa Barbara, Santa Barbara, CA 93106, USA", "lat": 34.4140, "lng": -119.8489 },
+    "locations": [
+      { "label": "LTER Network Office (UCSB)", "address": "UC Santa Barbara, Santa Barbara, CA 93106, USA", "lat": 34.4140, "lng": -119.8489, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-ecosystems", "estuaries-and-wetlands", "biological-oceanography", "climate-and-sea-level"],
+    "networks": [],
+    "funders": [{ "name": "NSF", "relation": "parent-agency" }],
+    "url": "https://lternet.edu/",
+    "established": 1980,
+    "provenance": { "source_url": "https://lternet.edu/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R3" }
+  },
+  {
+    "record_id": "R3-0014",
+    "canonical_name": "National Estuarine Research Reserve System",
+    "acronym": "NERRS",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "network",
+    "country": "US",
+    "region": "National",
+    "hq": { "address": "1305 East-West Highway, Silver Spring, MD 20910, USA", "lat": 38.9907, "lng": -77.0262 },
+    "locations": [
+      { "label": "NERRS Program Office", "address": "1305 East-West Highway, Silver Spring, MD 20910, USA", "lat": 38.9907, "lng": -77.0262, "role": "headquarters" }
+    ],
+    "research_areas": ["estuaries-and-wetlands", "coastal-processes", "marine-ecosystems", "marine-policy-and-socio-economics"],
+    "networks": [],
+    "funders": [{ "name": "NOAA", "relation": "parent-agency" }],
+    "url": "https://coast.noaa.gov/nerrs/",
+    "established": 1972,
+    "provenance": { "source_url": "https://coast.noaa.gov/nerrs/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R3" }
+  },
+  {
+    "record_id": "R3-0015",
+    "canonical_name": "National Sea Grant College Program",
+    "acronym": "Sea Grant",
+    "parent_org": "NOAA Office of Oceanic and Atmospheric Research",
+    "facility_type": "network",
+    "country": "US",
+    "region": "National",
+    "hq": { "address": "1315 East-West Highway, Silver Spring, MD 20910, USA", "lat": 38.9907, "lng": -77.0262 },
+    "locations": [
+      { "label": "National Sea Grant Office", "address": "1315 East-West Highway, Silver Spring, MD 20910, USA", "lat": 38.9907, "lng": -77.0262, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-policy-and-socio-economics", "fisheries-and-aquaculture", "coastal-processes", "estuaries-and-wetlands"],
+    "networks": [],
+    "funders": [{ "name": "NOAA", "relation": "parent-agency" }],
+    "url": "https://seagrant.noaa.gov/",
+    "established": 1966,
+    "provenance": { "source_url": "https://seagrant.noaa.gov/About", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R3" }
+  }
+]

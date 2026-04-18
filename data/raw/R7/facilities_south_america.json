@@ -1,0 +1,199 @@
+[
+  {
+    "record_id": "R7-0001",
+    "canonical_name": "Instituto de Investigaciones Marinas y Costeras",
+    "acronym": "INVEMAR",
+    "parent_org": "Ministerio de Ambiente y Desarrollo Sostenible (Colombia)",
+    "facility_type": "international-federal",
+    "country": "CO",
+    "region": "Caribbean South America",
+    "hq": { "address": "Calle 25 No. 2-55, Playa Salguero, Santa Marta, Colombia", "lat": 11.2064, "lng": -74.2217 },
+    "locations": [
+      { "label": "INVEMAR HQ Santa Marta", "address": "Calle 25 No. 2-55, Playa Salguero, Santa Marta, Colombia", "lat": 11.2064, "lng": -74.2217, "role": "headquarters" }
+    ],
+    "research_areas": ["coral-reefs", "marine-ecosystems", "coastal-processes", "marine-biogeochemistry"],
+    "networks": ["IOCARIBE"],
+    "funders": [{ "name": "Government of Colombia", "relation": "parent-agency" }],
+    "url": "https://www.invemar.org.co/",
+    "established": 1963,
+    "provenance": { "source_url": "https://www.invemar.org.co/inicio", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R7" }
+  },
+  {
+    "record_id": "R7-0002",
+    "canonical_name": "Instituto del Mar del Perú",
+    "acronym": "IMARPE",
+    "parent_org": "Ministerio de la Producción (Peru)",
+    "facility_type": "international-federal",
+    "country": "PE",
+    "region": "Pacific South America",
+    "hq": { "address": "Esquina Gamarra y General Valle s/n, Chucuito, Callao, Peru", "lat": -12.0631, "lng": -77.1547 },
+    "locations": [
+      { "label": "IMARPE HQ Callao", "address": "Esquina Gamarra y General Valle s/n, Chucuito, Callao, Peru", "lat": -12.0631, "lng": -77.1547, "role": "headquarters" }
+    ],
+    "research_areas": ["fisheries-and-aquaculture", "physical-oceanography", "marine-ecosystems", "climate-and-sea-level"],
+    "networks": ["GOOS"],
+    "funders": [{ "name": "Government of Peru", "relation": "parent-agency" }],
+    "url": "https://www.gob.pe/imarpe",
+    "established": 1964,
+    "provenance": { "source_url": "https://www.gob.pe/imarpe", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R7" }
+  },
+  {
+    "record_id": "R7-0003",
+    "canonical_name": "Instituto Nacional de Investigación y Desarrollo Pesquero",
+    "acronym": "INIDEP",
+    "parent_org": "Ministerio de Agricultura, Ganadería y Pesca (Argentina)",
+    "facility_type": "international-federal",
+    "country": "AR",
+    "region": "Southwest Atlantic",
+    "hq": { "address": "Paseo Victoria Ocampo No. 1, 7600 Mar del Plata, Argentina", "lat": -38.0558, "lng": -57.5381 },
+    "locations": [
+      { "label": "INIDEP HQ Mar del Plata", "address": "Paseo Victoria Ocampo No. 1, Mar del Plata, Argentina", "lat": -38.0558, "lng": -57.5381, "role": "headquarters" }
+    ],
+    "research_areas": ["fisheries-and-aquaculture", "marine-ecosystems"],
+    "networks": [],
+    "funders": [{ "name": "Government of Argentina", "relation": "parent-agency" }],
+    "url": "https://www.argentina.gob.ar/inidep",
+    "established": 1977,
+    "provenance": { "source_url": "https://www.argentina.gob.ar/inidep", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R7" }
+  },
+  {
+    "record_id": "R7-0004",
+    "canonical_name": "Centro para el Estudio de Sistemas Marinos — CONICET",
+    "acronym": "CESIMAR",
+    "parent_org": "CONICET",
+    "facility_type": "international-federal",
+    "country": "AR",
+    "region": "Patagonia / Southwest Atlantic",
+    "hq": { "address": "Bvd. Brown 2915, U9120 Puerto Madryn, Chubut, Argentina", "lat": -42.7789, "lng": -65.0333 },
+    "locations": [
+      { "label": "CESIMAR (CENPAT) Puerto Madryn", "address": "Bvd. Brown 2915, Puerto Madryn, Chubut, Argentina", "lat": -42.7789, "lng": -65.0333, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-ecosystems", "marine-mammals", "seabirds", "biological-oceanography"],
+    "networks": [],
+    "funders": [{ "name": "CONICET", "relation": "parent-agency" }],
+    "url": "https://www.cenpat-conicet.gob.ar/",
+    "established": 1970,
+    "provenance": { "source_url": "https://www.cenpat-conicet.gob.ar/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R7" }
+  },
+  {
+    "record_id": "R7-0005",
+    "canonical_name": "Instituto de Fomento Pesquero",
+    "acronym": "IFOP",
+    "parent_org": "Ministerio de Economía, Fomento y Turismo (Chile)",
+    "facility_type": "international-federal",
+    "country": "CL",
+    "region": "Pacific South America",
+    "hq": { "address": "Almirante Manuel Blanco Encalada 839, Valparaíso, Chile", "lat": -33.0328, "lng": -71.6147 },
+    "locations": [
+      { "label": "IFOP HQ Valparaíso", "address": "Almirante Manuel Blanco Encalada 839, Valparaíso, Chile", "lat": -33.0328, "lng": -71.6147, "role": "headquarters" }
+    ],
+    "research_areas": ["fisheries-and-aquaculture", "marine-ecosystems"],
+    "networks": [],
+    "funders": [{ "name": "Government of Chile", "relation": "parent-agency" }],
+    "url": "https://www.ifop.cl/",
+    "established": 1964,
+    "provenance": { "source_url": "https://www.ifop.cl/quienes-somos/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R7" }
+  },
+  {
+    "record_id": "R7-0006",
+    "canonical_name": "Servicio Hidrográfico y Oceanográfico de la Armada",
+    "acronym": "SHOA",
+    "parent_org": "Chilean Navy",
+    "facility_type": "international-federal",
+    "country": "CL",
+    "region": "Pacific South America",
+    "hq": { "address": "Errázuriz 254, Playa Ancha, Valparaíso, Chile", "lat": -33.0197, "lng": -71.6264 },
+    "locations": [
+      { "label": "SHOA HQ Valparaíso", "address": "Errázuriz 254, Playa Ancha, Valparaíso, Chile", "lat": -33.0197, "lng": -71.6264, "role": "headquarters" }
+    ],
+    "research_areas": ["physical-oceanography", "tsunamis-and-coastal-hazards", "ocean-observing-systems"],
+    "networks": ["GOOS"],
+    "funders": [{ "name": "Government of Chile", "relation": "parent-agency" }],
+    "url": "https://www.shoa.cl/",
+    "established": 1874,
+    "provenance": { "source_url": "https://www.shoa.cl/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R7" }
+  },
+  {
+    "record_id": "R7-0007",
+    "canonical_name": "Instituto de Oceanografia da Universidade Federal do Rio Grande",
+    "acronym": "IO-FURG",
+    "parent_org": "Universidade Federal do Rio Grande",
+    "facility_type": "international-university",
+    "country": "BR",
+    "region": "Southwest Atlantic / Southern Brazil",
+    "hq": { "address": "Av. Itália km 8, 96203-900 Rio Grande, RS, Brazil", "lat": -32.0692, "lng": -52.1678 },
+    "locations": [
+      { "label": "IO-FURG Rio Grande", "address": "Av. Itália km 8, 96203-900 Rio Grande, RS, Brazil", "lat": -32.0692, "lng": -52.1678, "role": "headquarters" }
+    ],
+    "research_areas": ["physical-oceanography", "biological-oceanography", "estuaries-and-wetlands", "fisheries-and-aquaculture"],
+    "networks": [],
+    "funders": [
+      { "name": "CAPES", "relation": "grant" },
+      { "name": "CNPq", "relation": "grant" }
+    ],
+    "url": "https://www.io.furg.br/",
+    "established": 1953,
+    "provenance": { "source_url": "https://www.io.furg.br/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R7" }
+  },
+  {
+    "record_id": "R7-0008",
+    "canonical_name": "Instituto Oceanográfico da Universidade de São Paulo",
+    "acronym": "IO-USP",
+    "parent_org": "Universidade de São Paulo",
+    "facility_type": "international-university",
+    "country": "BR",
+    "region": "Southwest Atlantic / Southeast Brazil",
+    "hq": { "address": "Praça do Oceanográfico 191, 05508-120 São Paulo, SP, Brazil", "lat": -23.5617, "lng": -46.7294 },
+    "locations": [
+      { "label": "IO-USP São Paulo", "address": "Praça do Oceanográfico 191, São Paulo, SP, Brazil", "lat": -23.5617, "lng": -46.7294, "role": "headquarters" },
+      { "label": "CEBIMar — Centro de Biologia Marinha", "address": "Rod. Manoel Hipólito do Rego km 131.5, São Sebastião, SP, Brazil", "lat": -23.8231, "lng": -45.4128, "role": "field-station" }
+    ],
+    "research_areas": ["physical-oceanography", "biological-oceanography", "marine-ecosystems"],
+    "networks": [],
+    "funders": [
+      { "name": "Universidade de São Paulo", "relation": "parent-agency" },
+      { "name": "FAPESP", "relation": "grant" }
+    ],
+    "url": "https://www.io.usp.br/",
+    "established": 1946,
+    "provenance": { "source_url": "https://www.io.usp.br/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R7" }
+  },
+  {
+    "record_id": "R7-0009",
+    "canonical_name": "Instituto Nacional de Oceanografía y del Clima",
+    "acronym": "INOCAR",
+    "parent_org": "Ecuadorian Navy",
+    "facility_type": "international-federal",
+    "country": "EC",
+    "region": "Pacific South America",
+    "hq": { "address": "Av. 25 de Julio, Base Naval Sur, Guayaquil, Ecuador", "lat": -2.2836, "lng": -79.8867 },
+    "locations": [
+      { "label": "INOCAR Guayaquil", "address": "Av. 25 de Julio, Base Naval Sur, Guayaquil, Ecuador", "lat": -2.2836, "lng": -79.8867, "role": "headquarters" }
+    ],
+    "research_areas": ["physical-oceanography", "climate-and-sea-level", "tsunamis-and-coastal-hazards"],
+    "networks": ["GOOS"],
+    "funders": [{ "name": "Government of Ecuador", "relation": "parent-agency" }],
+    "url": "https://www.inocar.mil.ec/",
+    "established": 1972,
+    "provenance": { "source_url": "https://www.inocar.mil.ec/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R7" }
+  },
+  {
+    "record_id": "R7-0010",
+    "canonical_name": "Charles Darwin Foundation",
+    "acronym": "CDF",
+    "parent_org": "Independent non-profit",
+    "facility_type": "international-nonprofit",
+    "country": "EC",
+    "region": "Galápagos / Eastern Pacific",
+    "hq": { "address": "Av. Charles Darwin s/n, Puerto Ayora, Galápagos, Ecuador", "lat": -0.7431, "lng": -90.3017 },
+    "locations": [
+      { "label": "CDF Puerto Ayora Research Station", "address": "Av. Charles Darwin s/n, Puerto Ayora, Galápagos, Ecuador", "lat": -0.7431, "lng": -90.3017, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-ecosystems", "coral-reefs", "biological-oceanography", "seabirds"],
+    "networks": [],
+    "funders": [{ "name": "Private donors", "relation": "private-donor" }],
+    "url": "https://www.darwinfoundation.org/",
+    "established": 1959,
+    "provenance": { "source_url": "https://www.darwinfoundation.org/en/about", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R7" }
+  }
+]

@@ -39,7 +39,7 @@ def main() -> int:
     OUT_WEB.mkdir(parents=True, exist_ok=True)
 
     with duckdb.connect(str(DB_PATH), read_only=True) as conn:
-        conn.execute("SET search_path = cod_kmap;")
+        conn.execute("SET search_path = main;")
         for t in TABLES:
             db_path = OUT_DB / f"{t}.parquet"
             conn.execute(f"COPY (SELECT * FROM {t}) TO '{db_path}' (FORMAT PARQUET)")

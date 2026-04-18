@@ -1,0 +1,249 @@
+[
+  {
+    "record_id": "R4-0001",
+    "canonical_name": "California Ocean Protection Council",
+    "acronym": "OPC",
+    "parent_org": "California Natural Resources Agency",
+    "facility_type": "state",
+    "country": "US",
+    "region": "Pacific / California",
+    "hq": { "address": "715 P St, Sacramento, CA 95814, USA", "lat": 38.5769, "lng": -121.4922 },
+    "locations": [
+      { "label": "OPC HQ", "address": "715 P St, Sacramento, CA 95814, USA", "lat": 38.5769, "lng": -121.4922, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-policy-and-socio-economics", "ocean-acidification", "coastal-processes"],
+    "networks": [],
+    "funders": [{ "name": "State of California", "relation": "state-appropriation" }],
+    "url": "https://opc.ca.gov/",
+    "established": 2004,
+    "provenance": { "source_url": "https://opc.ca.gov/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R4" }
+  },
+  {
+    "record_id": "R4-0002",
+    "canonical_name": "Florida Fish and Wildlife Conservation Commission",
+    "acronym": "FWC",
+    "parent_org": "State of Florida",
+    "facility_type": "state",
+    "country": "US",
+    "region": "Southeast Atlantic / Gulf",
+    "hq": { "address": "620 S Meridian St, Tallahassee, FL 32399, USA", "lat": 30.4422, "lng": -84.2772 },
+    "locations": [
+      { "label": "FWC HQ", "address": "620 S Meridian St, Tallahassee, FL 32399, USA", "lat": 30.4422, "lng": -84.2772, "role": "headquarters" },
+      { "label": "Fish and Wildlife Research Institute", "address": "100 8th Ave SE, St. Petersburg, FL 33701, USA", "lat": 27.7631, "lng": -82.6283, "role": "lab" }
+    ],
+    "research_areas": ["fisheries-and-aquaculture", "marine-ecosystems", "harmful-algal-blooms"],
+    "networks": [],
+    "funders": [{ "name": "State of Florida", "relation": "state-appropriation" }],
+    "url": "https://myfwc.com/",
+    "established": 1999,
+    "provenance": { "source_url": "https://myfwc.com/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R4" }
+  },
+  {
+    "record_id": "R4-0003",
+    "canonical_name": "North Carolina Division of Coastal Management",
+    "acronym": "NC-DCM",
+    "parent_org": "NC Department of Environmental Quality",
+    "facility_type": "state",
+    "country": "US",
+    "region": "Southeast Atlantic",
+    "hq": { "address": "400 Commerce Ave, Morehead City, NC 28557, USA", "lat": 34.7229, "lng": -76.7258 },
+    "locations": [
+      { "label": "NC-DCM HQ", "address": "400 Commerce Ave, Morehead City, NC 28557, USA", "lat": 34.7229, "lng": -76.7258, "role": "headquarters" }
+    ],
+    "research_areas": ["coastal-processes", "shoreline-change", "marine-policy-and-socio-economics"],
+    "networks": [],
+    "funders": [
+      { "name": "State of North Carolina", "relation": "state-appropriation" },
+      { "name": "NOAA", "relation": "cooperative-agreement" }
+    ],
+    "url": "https://www.deq.nc.gov/about/divisions/coastal-management",
+    "established": 1974,
+    "provenance": { "source_url": "https://www.deq.nc.gov/about/divisions/coastal-management", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R4" }
+  },
+  {
+    "record_id": "R4-0004",
+    "canonical_name": "Texas General Land Office — Coastal Management Program",
+    "acronym": "TX-GLO-CMP",
+    "parent_org": "Texas General Land Office",
+    "facility_type": "state",
+    "country": "US",
+    "region": "Gulf of Mexico",
+    "hq": { "address": "1700 N Congress Ave, Austin, TX 78701, USA", "lat": 30.2772, "lng": -97.7394 },
+    "locations": [
+      { "label": "TX GLO HQ", "address": "1700 N Congress Ave, Austin, TX 78701, USA", "lat": 30.2772, "lng": -97.7394, "role": "headquarters" }
+    ],
+    "research_areas": ["coastal-processes", "shoreline-change", "marine-policy-and-socio-economics"],
+    "networks": [],
+    "funders": [
+      { "name": "State of Texas", "relation": "state-appropriation" },
+      { "name": "NOAA", "relation": "cooperative-agreement" }
+    ],
+    "url": "https://www.glo.texas.gov/coast/",
+    "established": 1991,
+    "provenance": { "source_url": "https://www.glo.texas.gov/coast/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R4" }
+  },
+  {
+    "record_id": "R4-0005",
+    "canonical_name": "Massachusetts Office of Coastal Zone Management",
+    "acronym": "CZM",
+    "parent_org": "MA Executive Office of Energy and Environmental Affairs",
+    "facility_type": "state",
+    "country": "US",
+    "region": "Northeast Atlantic",
+    "hq": { "address": "100 Cambridge St, Boston, MA 02114, USA", "lat": 42.3614, "lng": -71.0636 },
+    "locations": [
+      { "label": "MA CZM HQ", "address": "100 Cambridge St, Boston, MA 02114, USA", "lat": 42.3614, "lng": -71.0636, "role": "headquarters" }
+    ],
+    "research_areas": ["coastal-processes", "shoreline-change", "marine-policy-and-socio-economics"],
+    "networks": [],
+    "funders": [
+      { "name": "Commonwealth of Massachusetts", "relation": "state-appropriation" },
+      { "name": "NOAA", "relation": "cooperative-agreement" }
+    ],
+    "url": "https://www.mass.gov/orgs/massachusetts-office-of-coastal-zone-management",
+    "established": 1978,
+    "provenance": { "source_url": "https://www.mass.gov/orgs/massachusetts-office-of-coastal-zone-management", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R4" }
+  },
+  {
+    "record_id": "R4-0006",
+    "canonical_name": "Mote Marine Laboratory and Aquarium",
+    "acronym": "Mote",
+    "parent_org": "Independent 501(c)(3)",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "Gulf of Mexico",
+    "hq": { "address": "1600 Ken Thompson Pkwy, Sarasota, FL 34236, USA", "lat": 27.3294, "lng": -82.5764 },
+    "locations": [
+      { "label": "Mote Sarasota HQ", "address": "1600 Ken Thompson Pkwy, Sarasota, FL 34236, USA", "lat": 27.3294, "lng": -82.5764, "role": "headquarters" },
+      { "label": "Mote Elizabeth Moore International Center for Coral Reef Research", "address": "24244 Overseas Hwy, Summerland Key, FL 33042, USA", "lat": 24.6572, "lng": -81.4431, "role": "field-station" }
+    ],
+    "research_areas": ["coral-reefs", "marine-ecosystems", "harmful-algal-blooms", "marine-mammals"],
+    "networks": [],
+    "funders": [
+      { "name": "Private donors", "relation": "private-donor" },
+      { "name": "NSF", "relation": "grant" },
+      { "name": "NOAA", "relation": "grant" }
+    ],
+    "url": "https://mote.org/",
+    "established": 1955,
+    "provenance": { "source_url": "https://mote.org/about-us/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R4" }
+  },
+  {
+    "record_id": "R4-0007",
+    "canonical_name": "Monterey Bay Aquarium",
+    "acronym": "MBA",
+    "parent_org": "Monterey Bay Aquarium Foundation",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "Pacific / Central California",
+    "hq": { "address": "886 Cannery Row, Monterey, CA 93940, USA", "lat": 36.6181, "lng": -121.9017 },
+    "locations": [
+      { "label": "Monterey Bay Aquarium", "address": "886 Cannery Row, Monterey, CA 93940, USA", "lat": 36.6181, "lng": -121.9017, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-ecosystems", "marine-policy-and-socio-economics", "fisheries-and-aquaculture"],
+    "networks": [],
+    "funders": [
+      { "name": "Monterey Bay Aquarium Foundation", "relation": "endowment" },
+      { "name": "David and Lucile Packard Foundation", "relation": "grant" }
+    ],
+    "url": "https://www.montereybayaquarium.org/",
+    "established": 1984,
+    "provenance": { "source_url": "https://www.montereybayaquarium.org/about-us", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R4" }
+  },
+  {
+    "record_id": "R4-0008",
+    "canonical_name": "The Nature Conservancy — Oceans Program",
+    "acronym": "TNC Oceans",
+    "parent_org": "The Nature Conservancy",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "National / Global",
+    "hq": { "address": "4245 North Fairfax Dr, Suite 100, Arlington, VA 22203, USA", "lat": 38.8828, "lng": -77.1028 },
+    "locations": [
+      { "label": "TNC HQ", "address": "4245 North Fairfax Dr, Arlington, VA 22203, USA", "lat": 38.8828, "lng": -77.1028, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-ecosystems", "marine-policy-and-socio-economics", "coral-reefs", "mangroves"],
+    "networks": [],
+    "funders": [{ "name": "Private donors", "relation": "private-donor" }],
+    "url": "https://www.nature.org/en-us/what-we-do/our-priorities/provide-food-and-water-sustainably/food-and-water-stories/oceans/",
+    "established": 1951,
+    "provenance": { "source_url": "https://www.nature.org/en-us/about-us/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R4" }
+  },
+  {
+    "record_id": "R4-0009",
+    "canonical_name": "New England Aquarium",
+    "acronym": "NEAq",
+    "parent_org": "Independent 501(c)(3)",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "Northeast Atlantic",
+    "hq": { "address": "1 Central Wharf, Boston, MA 02110, USA", "lat": 42.3592, "lng": -71.0497 },
+    "locations": [
+      { "label": "New England Aquarium", "address": "1 Central Wharf, Boston, MA 02110, USA", "lat": 42.3592, "lng": -71.0497, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-mammals", "marine-ecosystems", "fisheries-and-aquaculture"],
+    "networks": [],
+    "funders": [{ "name": "Private donors", "relation": "private-donor" }],
+    "url": "https://www.neaq.org/",
+    "established": 1969,
+    "provenance": { "source_url": "https://www.neaq.org/about-us/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R4" }
+  },
+  {
+    "record_id": "R4-0010",
+    "canonical_name": "David and Lucile Packard Foundation",
+    "acronym": "Packard",
+    "parent_org": "Independent private foundation",
+    "facility_type": "foundation",
+    "country": "US",
+    "region": "Pacific / California HQ",
+    "hq": { "address": "343 Second St, Los Altos, CA 94022, USA", "lat": 37.3808, "lng": -122.1153 },
+    "locations": [
+      { "label": "Packard Foundation HQ", "address": "343 Second St, Los Altos, CA 94022, USA", "lat": 37.3808, "lng": -122.1153, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-ecosystems", "marine-policy-and-socio-economics", "climate-and-sea-level"],
+    "networks": [],
+    "funders": [{ "name": "Packard family endowment", "relation": "endowment" }],
+    "url": "https://www.packard.org/",
+    "established": 1964,
+    "provenance": { "source_url": "https://www.packard.org/about-the-foundation/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R4" }
+  },
+  {
+    "record_id": "R4-0011",
+    "canonical_name": "Gordon and Betty Moore Foundation",
+    "acronym": "Moore",
+    "parent_org": "Independent private foundation",
+    "facility_type": "foundation",
+    "country": "US",
+    "region": "Pacific / California HQ",
+    "hq": { "address": "1661 Page Mill Rd, Palo Alto, CA 94304, USA", "lat": 37.4050, "lng": -122.1361 },
+    "locations": [
+      { "label": "Moore Foundation HQ", "address": "1661 Page Mill Rd, Palo Alto, CA 94304, USA", "lat": 37.4050, "lng": -122.1361, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-ecosystems", "biological-oceanography", "ocean-observing-systems"],
+    "networks": [],
+    "funders": [{ "name": "Moore family endowment", "relation": "endowment" }],
+    "url": "https://www.moore.org/",
+    "established": 2000,
+    "provenance": { "source_url": "https://www.moore.org/about", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R4" }
+  },
+  {
+    "record_id": "R4-0012",
+    "canonical_name": "Schmidt Ocean Institute",
+    "acronym": "SOI",
+    "parent_org": "Independent 501(c)(3)",
+    "facility_type": "foundation",
+    "country": "US",
+    "region": "Pacific / California HQ / Global ops",
+    "hq": { "address": "555 Bryant St, Palo Alto, CA 94301, USA", "lat": 37.4446, "lng": -122.1619 },
+    "locations": [
+      { "label": "Schmidt Ocean Institute HQ", "address": "555 Bryant St, Palo Alto, CA 94301, USA", "lat": 37.4446, "lng": -122.1619, "role": "headquarters" },
+      { "label": "R/V Falkor (too)", "address": "Mobile research vessel", "lat": null, "lng": null, "role": "vessel" }
+    ],
+    "research_areas": ["deep-sea", "marine-ecosystems", "ocean-observing-systems", "marine-geology"],
+    "networks": [],
+    "funders": [{ "name": "Eric and Wendy Schmidt", "relation": "endowment" }],
+    "url": "https://schmidtocean.org/",
+    "established": 2009,
+    "provenance": { "source_url": "https://schmidtocean.org/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R4" }
+  }
+]

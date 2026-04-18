@@ -1,1 +1,2057 @@
-{"type":"FeatureCollection","features":[]}
+{
+"type": "FeatureCollection",
+"features": [
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-122.2583,
+47.6833
+]
+},
+"properties": {
+"id": "4e6f5356a20f5b36",
+"name": "Pacific Marine Environmental Laboratory",
+"acronym": "PMEL",
+"type": "federal",
+"country": "US",
+"url": "https://www.pmel.noaa.gov/",
+"parent_org": "NOAA Oceanic and Atmospheric Research"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-80.162,
+25.734
+]
+},
+"properties": {
+"id": "68a6153f87c004c8",
+"name": "Atlantic Oceanographic and Meteorological Laboratory",
+"acronym": "AOML",
+"type": "federal",
+"country": "US",
+"url": "https://www.aoml.noaa.gov/",
+"parent_org": "NOAA Oceanic and Atmospheric Research"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-83.7475,
+42.2306
+]
+},
+"properties": {
+"id": "a288bd4be2da660c",
+"name": "Great Lakes Environmental Research Laboratory",
+"acronym": "GLERL",
+"type": "federal",
+"country": "US",
+"url": "https://www.glerl.noaa.gov/",
+"parent_org": "NOAA Oceanic and Atmospheric Research"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-77.0262,
+38.9907
+]
+},
+"properties": {
+"id": "581719b5d39091b8",
+"name": "National Centers for Coastal Ocean Science",
+"acronym": "NCCOS",
+"type": "federal",
+"country": "US",
+"url": "https://coastalscience.noaa.gov/",
+"parent_org": "NOAA National Ocean Service"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-122.3075,
+47.6597
+]
+},
+"properties": {
+"id": "1c669e4c303eec6c",
+"name": "Northwest Fisheries Science Center",
+"acronym": "NWFSC",
+"type": "federal",
+"country": "US",
+"url": "https://www.fisheries.noaa.gov/about/northwest-fisheries-science-center",
+"parent_org": "NOAA National Marine Fisheries Service"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-80.1617,
+25.734
+]
+},
+"properties": {
+"id": "e133deaf60dd7db1",
+"name": "Southeast Fisheries Science Center",
+"acronym": "SEFSC",
+"type": "federal",
+"country": "US",
+"url": "https://www.fisheries.noaa.gov/about/southeast-fisheries-science-center",
+"parent_org": "NOAA National Marine Fisheries Service"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-122.2583,
+47.6833
+]
+},
+"properties": {
+"id": "133669bb0f48f72a",
+"name": "Alaska Fisheries Science Center",
+"acronym": "AFSC",
+"type": "federal",
+"country": "US",
+"url": "https://www.fisheries.noaa.gov/about/alaska-fisheries-science-center",
+"parent_org": "NOAA National Marine Fisheries Service"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-70.6731,
+41.5253
+]
+},
+"properties": {
+"id": "3469ffb3580cb811",
+"name": "Northeast Fisheries Science Center",
+"acronym": "NEFSC",
+"type": "federal",
+"country": "US",
+"url": "https://www.fisheries.noaa.gov/about/northeast-fisheries-science-center",
+"parent_org": "NOAA National Marine Fisheries Service"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-89.6086,
+30.3625
+]
+},
+"properties": {
+"id": "3f6a9d8c60eeed6d",
+"name": "National Data Buoy Center",
+"acronym": "NDBC",
+"type": "federal",
+"country": "US",
+"url": "https://www.ndbc.noaa.gov/",
+"parent_org": "NOAA National Weather Service"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-79.9236,
+32.7876
+]
+},
+"properties": {
+"id": "71923b1b17ed7d00",
+"name": "NOAA Office for Coastal Management",
+"acronym": "OCM",
+"type": "federal",
+"country": "US",
+"url": "https://coast.noaa.gov/",
+"parent_org": "NOAA National Ocean Service"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-70.6719,
+41.5267
+]
+},
+"properties": {
+"id": "afb21dfd91a94e19",
+"name": "Woods Hole Coastal and Marine Science Center",
+"acronym": "WHCMSC",
+"type": "federal",
+"country": "US",
+"url": "https://www.usgs.gov/centers/whcmsc",
+"parent_org": "USGS Coastal/Marine Hazards and Resources Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-82.6397,
+27.7622
+]
+},
+"properties": {
+"id": "c9c6536a9b20e89c",
+"name": "St. Petersburg Coastal and Marine Science Center",
+"acronym": "SPCMSC",
+"type": "federal",
+"country": "US",
+"url": "https://www.usgs.gov/centers/spcmsc",
+"parent_org": "USGS Coastal/Marine Hazards and Resources Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-122.0586,
+36.9547
+]
+},
+"properties": {
+"id": "d1f3bc5d2ac35942",
+"name": "Pacific Coastal and Marine Science Center",
+"acronym": "PCMSC",
+"type": "federal",
+"country": "US",
+"url": "https://www.usgs.gov/centers/pcmsc",
+"parent_org": "USGS Coastal/Marine Hazards and Resources Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-83.6944,
+42.3158
+]
+},
+"properties": {
+"id": "fab411b2258d63a5",
+"name": "USGS Great Lakes Science Center",
+"acronym": "GLSC",
+"type": "federal",
+"country": "US",
+"url": "https://www.usgs.gov/centers/great-lakes-science-center",
+"parent_org": "USGS Ecosystems Mission Area"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-71.4197,
+41.4922
+]
+},
+"properties": {
+"id": "2cc453376bcf3bb2",
+"name": "EPA Atlantic Coastal Environmental Sciences Division",
+"acronym": "ACESD",
+"type": "federal",
+"country": "US",
+"url": "https://www.epa.gov/aboutepa/about-center-environmental-measurement-and-modeling-cemm",
+"parent_org": "EPA Office of Research and Development"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-75.7472,
+36.1839
+]
+},
+"properties": {
+"id": "5d3194ffda147bcd",
+"name": "USACE Field Research Facility",
+"acronym": "FRF",
+"type": "federal",
+"country": "US",
+"url": "https://www.erdc.usace.army.mil/Locations/FRF/",
+"parent_org": "USACE Engineer Research and Development Center, Coastal and Hydraulics Laboratory"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-90.8725,
+32.3008
+]
+},
+"properties": {
+"id": "a0e7e3bd6cc7d170",
+"name": "USACE ERDC Coastal and Hydraulics Laboratory",
+"acronym": "ERDC-CHL",
+"type": "federal",
+"country": "US",
+"url": "https://www.erdc.usace.army.mil/Locations/CHL/",
+"parent_org": "USACE Engineer Research and Development Center"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-89.6089,
+30.3667
+]
+},
+"properties": {
+"id": "18254d33b94ff086",
+"name": "US Naval Research Laboratory, Stennis Space Center",
+"acronym": "NRL-SSC",
+"type": "federal",
+"country": "US",
+"url": "https://www.nrl.navy.mil/Our-Work/Areas-of-Research/Ocean-Atmospheric-Science-and-Technology/",
+"parent_org": "US Department of the Navy"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-75.4664,
+37.9403
+]
+},
+"properties": {
+"id": "631d1b1f92e90f44",
+"name": "NASA Wallops Flight Facility",
+"acronym": "WFF",
+"type": "federal",
+"country": "US",
+"url": "https://www.nasa.gov/wallops",
+"parent_org": "NASA Goddard Space Flight Center"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-76.8481,
+38.9967
+]
+},
+"properties": {
+"id": "7fd58ccc7effab1d",
+"name": "NASA Goddard Space Flight Center \u2014 Ocean Biology Processing Group",
+"acronym": "GSFC-OBPG",
+"type": "federal",
+"country": "US",
+"url": "https://oceancolor.gsfc.nasa.gov/",
+"parent_org": "NASA Goddard Space Flight Center"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-76.5469,
+38.8856
+]
+},
+"properties": {
+"id": "10694a61dc2bff96",
+"name": "Smithsonian Environmental Research Center",
+"acronym": "SERC",
+"type": "federal",
+"country": "US",
+"url": "https://serc.si.edu/",
+"parent_org": "Smithsonian Institution"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-80.3133,
+27.4717
+]
+},
+"properties": {
+"id": "fe678f45b43083ff",
+"name": "Smithsonian Marine Station at Fort Pierce",
+"acronym": "SMSFP",
+"type": "federal",
+"country": "US",
+"url": "https://www.sms.si.edu/",
+"parent_org": "Smithsonian National Museum of Natural History"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-69.9719,
+41.9256
+]
+},
+"properties": {
+"id": "5da8e0cad0447427",
+"name": "Cape Cod National Seashore",
+"acronym": "CACO",
+"type": "federal",
+"country": "US",
+"url": "https://www.nps.gov/caco/",
+"parent_org": "US National Park Service"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-122.7997,
+38.0404
+]
+},
+"properties": {
+"id": "8a9f792df16585ec",
+"name": "Point Reyes National Seashore",
+"acronym": "PORE",
+"type": "federal",
+"country": "US",
+"url": "https://www.nps.gov/pore/",
+"parent_org": "US National Park Service"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-117.2533,
+32.8661
+]
+},
+"properties": {
+"id": "b606cca5ffa380be",
+"name": "Scripps Institution of Oceanography",
+"acronym": "SIO",
+"type": "university-marine-lab",
+"country": "US",
+"url": "https://scripps.ucsd.edu/",
+"parent_org": "University of California San Diego"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-70.6731,
+41.5244
+]
+},
+"properties": {
+"id": "4851cdabf00d14dc",
+"name": "Woods Hole Oceanographic Institution",
+"acronym": "WHOI",
+"type": "university-marine-lab",
+"country": "US",
+"url": "https://www.whoi.edu/",
+"parent_org": "Independent 501(c)(3)"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-121.7889,
+36.8025
+]
+},
+"properties": {
+"id": "8ba608dc2d9da6fe",
+"name": "Monterey Bay Aquarium Research Institute",
+"acronym": "MBARI",
+"type": "university-marine-lab",
+"country": "US",
+"url": "https://www.mbari.org/",
+"parent_org": "David and Lucile Packard Foundation"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-70.6722,
+41.5253
+]
+},
+"properties": {
+"id": "6ad02ae32697c15e",
+"name": "Marine Biological Laboratory",
+"acronym": "MBL",
+"type": "university-marine-lab",
+"country": "US",
+"url": "https://www.mbl.edu/",
+"parent_org": "University of Chicago"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-157.7872,
+21.4339
+]
+},
+"properties": {
+"id": "48921a4314f79831",
+"name": "Hawai\u02bbi Institute of Marine Biology",
+"acronym": "HIMB",
+"type": "university-marine-lab",
+"country": "US",
+"url": "https://www.himb.hawaii.edu/",
+"parent_org": "University of Hawai\u02bbi at M\u0101noa"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-123.0119,
+48.5456
+]
+},
+"properties": {
+"id": "21cd1a451847e669",
+"name": "Friday Harbor Laboratories",
+"acronym": "FHL",
+"type": "university-marine-lab",
+"country": "US",
+"url": "https://fhl.uw.edu/",
+"parent_org": "University of Washington"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-123.0725,
+38.3181
+]
+},
+"properties": {
+"id": "659db848c8224d61",
+"name": "Bodega Marine Laboratory",
+"acronym": "BML",
+"type": "university-marine-lab",
+"country": "US",
+"url": "https://marinescience.ucdavis.edu/bml",
+"parent_org": "University of California Davis"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-121.9047,
+36.6217
+]
+},
+"properties": {
+"id": "8b91f78cdc556120",
+"name": "Hopkins Marine Station",
+"acronym": "HMS",
+"type": "university-marine-lab",
+"country": "US",
+"url": "https://hopkinsmarinestation.stanford.edu/",
+"parent_org": "Stanford University"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-124.0447,
+44.6219
+]
+},
+"properties": {
+"id": "5b42961d12b531c3",
+"name": "Hatfield Marine Science Center",
+"acronym": "HMSC",
+"type": "university-marine-lab",
+"country": "US",
+"url": "https://hmsc.oregonstate.edu/",
+"parent_org": "Oregon State University"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-81.0192,
+31.9892
+]
+},
+"properties": {
+"id": "cf175bec84439fdb",
+"name": "Skidaway Institute of Oceanography",
+"acronym": "SkIO",
+"type": "university-marine-lab",
+"country": "US",
+"url": "https://www.skio.uga.edu/",
+"parent_org": "University of Georgia"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-88.0808,
+30.2506
+]
+},
+"properties": {
+"id": "c987433cec4502fa",
+"name": "Dauphin Island Sea Lab",
+"acronym": "DISL",
+"type": "university-marine-lab",
+"country": "US",
+"url": "https://www.disl.edu/",
+"parent_org": "Alabama Marine Environmental Sciences Consortium"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-76.5003,
+37.2472
+]
+},
+"properties": {
+"id": "6d7e943efab25fe1",
+"name": "Virginia Institute of Marine Science",
+"acronym": "VIMS",
+"type": "university-marine-lab",
+"country": "US",
+"url": "https://www.vims.edu/",
+"parent_org": "College of William & Mary"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-80.1625,
+25.7328
+]
+},
+"properties": {
+"id": "7ccb227e00b48eb6",
+"name": "Rosenstiel School of Marine, Atmospheric, and Earth Science",
+"acronym": "RSMAES",
+"type": "university-marine-lab",
+"country": "US",
+"url": "https://www.earth.miami.edu/",
+"parent_org": "University of Miami"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-71.4197,
+41.4922
+]
+},
+"properties": {
+"id": "099f35eb7143a89d",
+"name": "Graduate School of Oceanography",
+"acronym": "URI-GSO",
+"type": "university-marine-lab",
+"country": "US",
+"url": "https://web.uri.edu/gso/",
+"parent_org": "University of Rhode Island"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-69.5794,
+43.8614
+]
+},
+"properties": {
+"id": "84d0739f9114da35",
+"name": "Bigelow Laboratory for Ocean Sciences",
+"acronym": "Bigelow",
+"type": "university-marine-lab",
+"country": "US",
+"url": "https://www.bigelow.org/",
+"parent_org": "Independent 501(c)(3)"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-77.0262,
+38.9907
+]
+},
+"properties": {
+"id": "7df25b0304d189e5",
+"name": "U.S. Integrated Ocean Observing System Program Office",
+"acronym": "IOOS",
+"type": "network",
+"country": "US",
+"url": "https://ioos.us/",
+"parent_org": "NOAA National Ocean Service"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-68.6775,
+44.8869
+]
+},
+"properties": {
+"id": "b186ccd53158c323",
+"name": "Northeastern Regional Association of Coastal Ocean Observing Systems",
+"acronym": "NERACOOS",
+"type": "network",
+"country": "US",
+"url": "https://neracoos.org/",
+"parent_org": "IOOS Regional Association"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-75.1592,
+38.7822
+]
+},
+"properties": {
+"id": "423b19ae442d5ee2",
+"name": "Mid-Atlantic Regional Association Coastal Ocean Observing System",
+"acronym": "MARACOOS",
+"type": "network",
+"country": "US",
+"url": "https://maracoos.org/",
+"parent_org": "IOOS Regional Association"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-86.7944,
+33.5142
+]
+},
+"properties": {
+"id": "451bf9392571f9f4",
+"name": "Southeast Coastal Ocean Observing Regional Association",
+"acronym": "SECOORA",
+"type": "network",
+"country": "US",
+"url": "https://secoora.org/",
+"parent_org": "IOOS Regional Association"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-96.3436,
+30.6747
+]
+},
+"properties": {
+"id": "a20ddd52546a3e50",
+"name": "Gulf of Mexico Coastal Ocean Observing System",
+"acronym": "GCOOS",
+"type": "network",
+"country": "US",
+"url": "https://gcoos.org/",
+"parent_org": "IOOS Regional Association"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-67.1395,
+18.2108
+]
+},
+"properties": {
+"id": "c9e8bbd26f35616d",
+"name": "Caribbean Coastal Ocean Observing System",
+"acronym": "CARICOOS",
+"type": "network",
+"country": "PR",
+"url": "https://caricoos.org/",
+"parent_org": "IOOS Regional Association"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-117.2533,
+32.8661
+]
+},
+"properties": {
+"id": "a544d4c9afd35a9e",
+"name": "Southern California Coastal Ocean Observing System",
+"acronym": "SCCOOS",
+"type": "network",
+"country": "US",
+"url": "https://sccoos.org/",
+"parent_org": "IOOS Regional Association"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-121.7889,
+36.8025
+]
+},
+"properties": {
+"id": "68f6abc93d4b435e",
+"name": "Central and Northern California Ocean Observing System",
+"acronym": "CeNCOOS",
+"type": "network",
+"country": "US",
+"url": "https://cencoos.org/",
+"parent_org": "IOOS Regional Association"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-122.3122,
+47.6514
+]
+},
+"properties": {
+"id": "1918f09bdc225b02",
+"name": "Northwest Association of Networked Ocean Observing Systems",
+"acronym": "NANOOS",
+"type": "network",
+"country": "US",
+"url": "https://nanoos.org/",
+"parent_org": "IOOS Regional Association"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-149.9003,
+61.2181
+]
+},
+"properties": {
+"id": "debbe06b574422c2",
+"name": "Alaska Ocean Observing System",
+"acronym": "AOOS",
+"type": "network",
+"country": "US",
+"url": "https://aoos.org/",
+"parent_org": "IOOS Regional Association"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-157.8161,
+21.2972
+]
+},
+"properties": {
+"id": "f7b9e6a10daa22bb",
+"name": "Pacific Islands Ocean Observing System",
+"acronym": "PacIOOS",
+"type": "network",
+"country": "US",
+"url": "https://pacioos.org/",
+"parent_org": "IOOS Regional Association"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-70.6731,
+41.5244
+]
+},
+"properties": {
+"id": "6c1c08ecf5c58f40",
+"name": "Ocean Observatories Initiative",
+"acronym": "OOI",
+"type": "network",
+"country": "US",
+"url": "https://oceanobservatories.org/",
+"parent_org": "NSF / Woods Hole Oceanographic Institution"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-119.8489,
+34.414
+]
+},
+"properties": {
+"id": "f3b529d1eda8e073",
+"name": "Long-Term Ecological Research Network",
+"acronym": "LTER",
+"type": "network",
+"country": "US",
+"url": "https://lternet.edu/",
+"parent_org": "NSF Biological Sciences Directorate"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-77.0262,
+38.9907
+]
+},
+"properties": {
+"id": "48a4a144e3ad245f",
+"name": "National Estuarine Research Reserve System",
+"acronym": "NERRS",
+"type": "network",
+"country": "US",
+"url": "https://coast.noaa.gov/nerrs/",
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-77.0262,
+38.9907
+]
+},
+"properties": {
+"id": "5168181cc7acfbfe",
+"name": "National Sea Grant College Program",
+"acronym": "Sea Grant",
+"type": "network",
+"country": "US",
+"url": "https://seagrant.noaa.gov/",
+"parent_org": "NOAA Office of Oceanic and Atmospheric Research"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-121.4922,
+38.5769
+]
+},
+"properties": {
+"id": "fbb4cc6a846a59fc",
+"name": "California Ocean Protection Council",
+"acronym": "OPC",
+"type": "state",
+"country": "US",
+"url": "https://opc.ca.gov/",
+"parent_org": "California Natural Resources Agency"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-84.2772,
+30.4422
+]
+},
+"properties": {
+"id": "90d4c39b21cfce94",
+"name": "Florida Fish and Wildlife Conservation Commission",
+"acronym": "FWC",
+"type": "state",
+"country": "US",
+"url": "https://myfwc.com/",
+"parent_org": "State of Florida"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-76.7258,
+34.7229
+]
+},
+"properties": {
+"id": "c4f51733272b5589",
+"name": "North Carolina Division of Coastal Management",
+"acronym": "NC-DCM",
+"type": "state",
+"country": "US",
+"url": "https://www.deq.nc.gov/about/divisions/coastal-management",
+"parent_org": "NC Department of Environmental Quality"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-97.7394,
+30.2772
+]
+},
+"properties": {
+"id": "f2d3fb18be6fc619",
+"name": "Texas General Land Office \u2014 Coastal Management Program",
+"acronym": "TX-GLO-CMP",
+"type": "state",
+"country": "US",
+"url": "https://www.glo.texas.gov/coast/",
+"parent_org": "Texas General Land Office"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-71.0636,
+42.3614
+]
+},
+"properties": {
+"id": "e7a39a83c8bdd2a5",
+"name": "Massachusetts Office of Coastal Zone Management",
+"acronym": "CZM",
+"type": "state",
+"country": "US",
+"url": "https://www.mass.gov/orgs/massachusetts-office-of-coastal-zone-management",
+"parent_org": "MA Executive Office of Energy and Environmental Affairs"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-82.5764,
+27.3294
+]
+},
+"properties": {
+"id": "f70c698fb5ee353a",
+"name": "Mote Marine Laboratory and Aquarium",
+"acronym": "Mote",
+"type": "nonprofit",
+"country": "US",
+"url": "https://mote.org/",
+"parent_org": "Independent 501(c)(3)"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-121.9017,
+36.6181
+]
+},
+"properties": {
+"id": "ca8eddbef5f313a1",
+"name": "Monterey Bay Aquarium",
+"acronym": "MBA",
+"type": "nonprofit",
+"country": "US",
+"url": "https://www.montereybayaquarium.org/",
+"parent_org": "Monterey Bay Aquarium Foundation"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-77.1028,
+38.8828
+]
+},
+"properties": {
+"id": "2ee0905d8a3648cf",
+"name": "The Nature Conservancy \u2014 Oceans Program",
+"acronym": "TNC Oceans",
+"type": "nonprofit",
+"country": "US",
+"url": "https://www.nature.org/en-us/what-we-do/our-priorities/provide-food-and-water-sustainably/food-and-water-stories/oceans/",
+"parent_org": "The Nature Conservancy"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-71.0497,
+42.3592
+]
+},
+"properties": {
+"id": "7ffaad0b0c5a6cdc",
+"name": "New England Aquarium",
+"acronym": "NEAq",
+"type": "nonprofit",
+"country": "US",
+"url": "https://www.neaq.org/",
+"parent_org": "Independent 501(c)(3)"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-122.1153,
+37.3808
+]
+},
+"properties": {
+"id": "2b8c333e9c9d9a70",
+"name": "David and Lucile Packard Foundation",
+"acronym": "Packard",
+"type": "foundation",
+"country": "US",
+"url": "https://www.packard.org/",
+"parent_org": "Independent private foundation"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-122.1361,
+37.405
+]
+},
+"properties": {
+"id": "a24ed42e56a9687b",
+"name": "Gordon and Betty Moore Foundation",
+"acronym": "Moore",
+"type": "foundation",
+"country": "US",
+"url": "https://www.moore.org/",
+"parent_org": "Independent private foundation"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-122.1619,
+37.4446
+]
+},
+"properties": {
+"id": "57445202e95adced",
+"name": "Schmidt Ocean Institute",
+"acronym": "SOI",
+"type": "foundation",
+"country": "US",
+"url": "https://schmidtocean.org/",
+"parent_org": "Independent 501(c)(3)"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-63.6119,
+44.6816
+]
+},
+"properties": {
+"id": "9ef20e77fee35656",
+"name": "Bedford Institute of Oceanography",
+"acronym": "BIO",
+"type": "international-federal",
+"country": "CA",
+"url": "https://www.bio.gc.ca/",
+"parent_org": "Fisheries and Oceans Canada"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-123.4925,
+48.6517
+]
+},
+"properties": {
+"id": "bb6dd560f85bea63",
+"name": "Institute of Ocean Sciences",
+"acronym": "IOS",
+"type": "international-federal",
+"country": "CA",
+"url": "https://www.pac.dfo-mpo.gc.ca/science/facilities-installations/index-eng.html",
+"parent_org": "Fisheries and Oceans Canada"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-123.9522,
+49.2078
+]
+},
+"properties": {
+"id": "f30201ec47817d0c",
+"name": "Pacific Biological Station",
+"acronym": "PBS",
+"type": "international-federal",
+"country": "CA",
+"url": "https://www.pac.dfo-mpo.gc.ca/science/facilities-installations/pbs-sbp/index-eng.html",
+"parent_org": "Fisheries and Oceans Canada"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-67.0794,
+45.0803
+]
+},
+"properties": {
+"id": "78005ab19b533e20",
+"name": "St. Andrews Biological Station",
+"acronym": "SABS",
+"type": "international-federal",
+"country": "CA",
+"url": "https://www.dfo-mpo.gc.ca/science/facilities-installations/sabs-sbsa/index-eng.html",
+"parent_org": "Fisheries and Oceans Canada"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-52.6836,
+47.6197
+]
+},
+"properties": {
+"id": "af3bb00254c972aa",
+"name": "Northwest Atlantic Fisheries Centre",
+"acronym": "NAFC",
+"type": "international-federal",
+"country": "CA",
+"url": "https://www.nfl.dfo-mpo.gc.ca/NL/Science/NAFC",
+"parent_org": "Fisheries and Oceans Canada"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-68.1583,
+48.6361
+]
+},
+"properties": {
+"id": "e1d90bc7ae247b52",
+"name": "Maurice Lamontagne Institute",
+"acronym": "IML",
+"type": "international-federal",
+"country": "CA",
+"url": "https://www.qc.dfo-mpo.gc.ca/sciences/iml",
+"parent_org": "Fisheries and Oceans Canada"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-123.3131,
+48.4642
+]
+},
+"properties": {
+"id": "f2740cfda05ba96d",
+"name": "Ocean Networks Canada",
+"acronym": "ONC",
+"type": "observatory",
+"country": "CA",
+"url": "https://www.oceannetworks.ca/",
+"parent_org": "University of Victoria"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-125.1383,
+48.8339
+]
+},
+"properties": {
+"id": "cef7b266f9a94e69",
+"name": "Bamfield Marine Sciences Centre",
+"acronym": "BMSC",
+"type": "international-university",
+"country": "CA",
+"url": "https://bamfieldmsc.com/",
+"parent_org": "Western Canadian Universities Marine Sciences Society"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-67.0794,
+45.0803
+]
+},
+"properties": {
+"id": "73e278cd3c1aa946",
+"name": "Huntsman Marine Science Centre",
+"acronym": "Huntsman",
+"type": "international-nonprofit",
+"country": "CA",
+"url": "https://www.huntsmanmarine.ca/",
+"parent_org": "Independent non-profit"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-128.1214,
+51.6544
+]
+},
+"properties": {
+"id": "66842a7d4e237822",
+"name": "Hakai Institute",
+"acronym": "Hakai",
+"type": "international-nonprofit",
+"country": "CA",
+"url": "https://hakai.org/",
+"parent_org": "Tula Foundation"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-63.5914,
+44.6377
+]
+},
+"properties": {
+"id": "3a876da050a4b48e",
+"name": "Dalhousie Ocean Frontier Institute",
+"acronym": "OFI",
+"type": "international-university",
+"country": "CA",
+"url": "https://www.ofi.ca/",
+"parent_org": "Dalhousie University"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-52.7306,
+47.5697
+]
+},
+"properties": {
+"id": "3fa5ade5fba5bc5d",
+"name": "Marine Institute of Memorial University of Newfoundland",
+"acronym": "MI",
+"type": "international-university",
+"country": "CA",
+"url": "https://www.mi.mun.ca/",
+"parent_org": "Memorial University of Newfoundland"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-116.665,
+31.8667
+]
+},
+"properties": {
+"id": "986f25b13775f4bd",
+"name": "Centro de Investigaci\u00f3n Cient\u00edfica y de Educaci\u00f3n Superior de Ensenada",
+"acronym": "CICESE",
+"type": "international-federal",
+"country": "MX",
+"url": "https://www.cicese.edu.mx/",
+"parent_org": "CONACyT (Mexico)"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-99.1761,
+19.3197
+]
+},
+"properties": {
+"id": "aca6068a4a665744",
+"name": "Instituto de Ciencias del Mar y Limnolog\u00eda \u2014 UNAM",
+"acronym": "ICML-UNAM",
+"type": "international-university",
+"country": "MX",
+"url": "https://www.icmyl.unam.mx/",
+"parent_org": "Universidad Nacional Aut\u00f3noma de M\u00e9xico"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-99.1617,
+19.375
+]
+},
+"properties": {
+"id": "277c3e3d3e644ac8",
+"name": "Instituto Nacional de Pesca y Acuacultura",
+"acronym": "INAPESCA",
+"type": "international-federal",
+"country": "MX",
+"url": "https://www.gob.mx/inapesca",
+"parent_org": "SADER (Mexico)"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-88.2719,
+18.5322
+]
+},
+"properties": {
+"id": "bce6bbc358cc68e2",
+"name": "El Colegio de la Frontera Sur",
+"acronym": "ECOSUR",
+"type": "international-federal",
+"country": "MX",
+"url": "https://www.ecosur.mx/",
+"parent_org": "CONACyT (Mexico)"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-79.5478,
+8.9664
+]
+},
+"properties": {
+"id": "58fdb3ec76d02a84",
+"name": "Smithsonian Tropical Research Institute",
+"acronym": "STRI",
+"type": "international-federal",
+"country": "PA",
+"url": "https://stri.si.edu/",
+"parent_org": "Smithsonian Institution"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-84.0506,
+9.9356
+]
+},
+"properties": {
+"id": "6f2ee10f7ad85112",
+"name": "Centro de Investigaci\u00f3n en Ciencias del Mar y Limnolog\u00eda \u2014 UCR",
+"acronym": "CIMAR",
+"type": "international-university",
+"country": "CR",
+"url": "https://www.cimar.ucr.ac.cr/",
+"parent_org": "Universidad de Costa Rica"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-88.76,
+17.2514
+]
+},
+"properties": {
+"id": "46f4a2ed3bfcd191",
+"name": "University of Belize Environmental Research Institute",
+"acronym": "UB-ERI",
+"type": "international-university",
+"country": "BZ",
+"url": "https://www.ub.edu.bz/academics/research-institutes/eri/",
+"parent_org": "University of Belize"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-79.52,
+8.981
+]
+},
+"properties": {
+"id": "d5b5e15fb487ebbf",
+"name": "MarViva Foundation",
+"acronym": "MarViva",
+"type": "international-nonprofit",
+"country": "PA",
+"url": "https://www.marviva.net/",
+"parent_org": "Independent non-profit"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-86.8515,
+21.1619
+]
+},
+"properties": {
+"id": "f2305f9313f76e04",
+"name": "Centro de Investigaci\u00f3n Cient\u00edfica de Yucat\u00e1n \u2014 Unidad Ciencias del Agua",
+"acronym": "CICY-UCIA",
+"type": "international-federal",
+"country": "MX",
+"url": "https://www.cicy.mx/",
+"parent_org": "CONACyT (Mexico)"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-79.533,
+8.969
+]
+},
+"properties": {
+"id": "72f3bc827d967bde",
+"name": "Autoridad de los Recursos Acu\u00e1ticos de Panam\u00e1",
+"acronym": "ARAP",
+"type": "international-federal",
+"country": "PA",
+"url": "https://arap.gob.pa/",
+"parent_org": "Government of Panama"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-74.2217,
+11.2064
+]
+},
+"properties": {
+"id": "c0dace9d084af814",
+"name": "Instituto de Investigaciones Marinas y Costeras",
+"acronym": "INVEMAR",
+"type": "international-federal",
+"country": "CO",
+"url": "https://www.invemar.org.co/",
+"parent_org": "Ministerio de Ambiente y Desarrollo Sostenible (Colombia)"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-77.1547,
+-12.0631
+]
+},
+"properties": {
+"id": "92b08ded60b5ffdc",
+"name": "Instituto del Mar del Per\u00fa",
+"acronym": "IMARPE",
+"type": "international-federal",
+"country": "PE",
+"url": "https://www.gob.pe/imarpe",
+"parent_org": "Ministerio de la Producci\u00f3n (Peru)"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-57.5381,
+-38.0558
+]
+},
+"properties": {
+"id": "c36982e68e59a199",
+"name": "Instituto Nacional de Investigaci\u00f3n y Desarrollo Pesquero",
+"acronym": "INIDEP",
+"type": "international-federal",
+"country": "AR",
+"url": "https://www.argentina.gob.ar/inidep",
+"parent_org": "Ministerio de Agricultura, Ganader\u00eda y Pesca (Argentina)"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-65.0333,
+-42.7789
+]
+},
+"properties": {
+"id": "c4c28b594e7a187e",
+"name": "Centro para el Estudio de Sistemas Marinos \u2014 CONICET",
+"acronym": "CESIMAR",
+"type": "international-federal",
+"country": "AR",
+"url": "https://www.cenpat-conicet.gob.ar/",
+"parent_org": "CONICET"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-71.6147,
+-33.0328
+]
+},
+"properties": {
+"id": "b874b379a2ab8d0e",
+"name": "Instituto de Fomento Pesquero",
+"acronym": "IFOP",
+"type": "international-federal",
+"country": "CL",
+"url": "https://www.ifop.cl/",
+"parent_org": "Ministerio de Econom\u00eda, Fomento y Turismo (Chile)"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-71.6264,
+-33.0197
+]
+},
+"properties": {
+"id": "6dcd1846c872ec23",
+"name": "Servicio Hidrogr\u00e1fico y Oceanogr\u00e1fico de la Armada",
+"acronym": "SHOA",
+"type": "international-federal",
+"country": "CL",
+"url": "https://www.shoa.cl/",
+"parent_org": "Chilean Navy"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-52.1678,
+-32.0692
+]
+},
+"properties": {
+"id": "ef9274191b3336a5",
+"name": "Instituto de Oceanografia da Universidade Federal do Rio Grande",
+"acronym": "IO-FURG",
+"type": "international-university",
+"country": "BR",
+"url": "https://www.io.furg.br/",
+"parent_org": "Universidade Federal do Rio Grande"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-46.7294,
+-23.5617
+]
+},
+"properties": {
+"id": "3645a75945a26b7f",
+"name": "Instituto Oceanogr\u00e1fico da Universidade de S\u00e3o Paulo",
+"acronym": "IO-USP",
+"type": "international-university",
+"country": "BR",
+"url": "https://www.io.usp.br/",
+"parent_org": "Universidade de S\u00e3o Paulo"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-79.8867,
+-2.2836
+]
+},
+"properties": {
+"id": "a96f84521fb6e77a",
+"name": "Instituto Nacional de Oceanograf\u00eda y del Clima",
+"acronym": "INOCAR",
+"type": "international-federal",
+"country": "EC",
+"url": "https://www.inocar.mil.ec/",
+"parent_org": "Ecuadorian Navy"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-90.3017,
+-0.7431
+]
+},
+"properties": {
+"id": "5f0be1e7e3ab216a",
+"name": "Charles Darwin Foundation",
+"acronym": "CDF",
+"type": "international-nonprofit",
+"country": "EC",
+"url": "https://www.darwinfoundation.org/",
+"parent_org": "Independent non-profit"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-67.1395,
+18.2108
+]
+},
+"properties": {
+"id": "b4769ffb0e4ad961",
+"name": "UPR-Mayag\u00fcez Department of Marine Sciences",
+"acronym": "UPRM-DMS",
+"type": "university-marine-lab",
+"country": "PR",
+"url": "https://marine.uprm.edu/",
+"parent_org": "University of Puerto Rico at Mayag\u00fcez"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-64.9819,
+18.3397
+]
+},
+"properties": {
+"id": "84f4cf9530192cd8",
+"name": "University of the Virgin Islands \u2014 Center for Marine and Environmental Studies",
+"acronym": "UVI-CMES",
+"type": "university-marine-lab",
+"country": "VI",
+"url": "https://www.uvi.edu/research/cmes/",
+"parent_org": "University of the Virgin Islands"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-77.3244,
+25.0708
+]
+},
+"properties": {
+"id": "0553e5e87fe9b46f",
+"name": "Perry Institute for Marine Science",
+"acronym": "PIMS",
+"type": "international-nonprofit",
+"country": "BS",
+"url": "https://www.perryinstitute.org/",
+"parent_org": "Independent 501(c)(3)"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-74.4667,
+24.1167
+]
+},
+"properties": {
+"id": "f1c0d2ed6d83eaae",
+"name": "Gerace Research Centre",
+"acronym": "GRC",
+"type": "international-nonprofit",
+"country": "BS",
+"url": "https://geraceresearchcentre.com/",
+"parent_org": "Independent educational field station"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-82.4258,
+23.1219
+]
+},
+"properties": {
+"id": "e8745f0fbf24d064",
+"name": "Centro de Investigaciones Marinas \u2014 Universidad de La Habana",
+"acronym": "CIM-UH",
+"type": "international-university",
+"country": "CU",
+"url": "https://www.cim.uh.cu/",
+"parent_org": "Universidad de La Habana"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-77.4039,
+18.4722
+]
+},
+"properties": {
+"id": "8ab1a979b4929526",
+"name": "UWI Discovery Bay Marine Laboratory",
+"acronym": "DBML",
+"type": "international-university",
+"country": "JM",
+"url": "https://www.mona.uwi.edu/dbml/",
+"parent_org": "University of the West Indies \u2014 Mona"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-76.8403,
+17.9372
+]
+},
+"properties": {
+"id": "db8a1128ce17073d",
+"name": "UWI Port Royal Marine Laboratory",
+"acronym": "PRML",
+"type": "international-university",
+"country": "JM",
+"url": "https://www.mona.uwi.edu/lifesciences/port-royal-marine-laboratory",
+"parent_org": "University of the West Indies \u2014 Mona"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-69.9394,
+18.4636
+]
+},
+"properties": {
+"id": "4a9623ab82dd8642",
+"name": "Centro de Investigaciones de Biolog\u00eda Marina",
+"acronym": "CIBIMA",
+"type": "international-university",
+"country": "DO",
+"url": "https://cibima.uasd.edu.do/",
+"parent_org": "Universidad Aut\u00f3noma de Santo Domingo"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-72.3074,
+18.5944
+]
+},
+"properties": {
+"id": "a9c0b9f25cbf1b1a",
+"name": "Fondation pour la Protection de la Biodiversit\u00e9 Marine",
+"acronym": "FoProBiM",
+"type": "international-nonprofit",
+"country": "HT",
+"url": "https://www.foprobim.org/",
+"parent_org": "Independent non-profit"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-59.625,
+13.1861
+]
+},
+"properties": {
+"id": "c90ab45e80368eb7",
+"name": "UWI Centre for Resource Management and Environmental Studies",
+"acronym": "UWI-CERMES",
+"type": "international-university",
+"country": "BB",
+"url": "https://cermes.cavehill.uwi.edu/",
+"parent_org": "University of the West Indies \u2014 Cave Hill"
+}
+}
+]
+}

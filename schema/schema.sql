@@ -3,8 +3,10 @@
 -- Load the spatial extension externally (INSTALL spatial; LOAD spatial;)
 -- before calling ST_Point on the locations table.
 
-CREATE SCHEMA IF NOT EXISTS cod_kmap;
-SET search_path = cod_kmap;
+-- All tables live in the default `main` schema. DuckDB does not allow
+-- a custom schema with the same name as the database file, and the
+-- browser-side Wasm client expects tables to be discoverable without a
+-- schema prefix.
 
 -------------------------------------------------------------------------------
 -- Vocabularies (seeded from schema/vocab/*.csv by ingest.py)
@@ -20,7 +22,7 @@ CREATE OR REPLACE TABLE research_areas (
     area_id      VARCHAR PRIMARY KEY,   -- slug
     label        VARCHAR NOT NULL,
     gcmd_uri     VARCHAR,
-    parent_id    VARCHAR REFERENCES research_areas(area_id)
+    parent_id    VARCHAR                -- soft reference to research_areas.area_id; no FK to allow unordered bulk load
 );
 
 CREATE OR REPLACE TABLE networks (

@@ -29,7 +29,7 @@ BBOX_BY_COUNTRY = {
     "AR": (-55.2, -21.8, -73.6, -53.6),
     "CL": (-56.0, -17.5, -75.7, -66.4),
     "PE": (-18.4, -0.1, -81.4, -68.6),
-    "EC": (-5.1, 1.5, -81.3, -75.2),
+    "EC": (-5.1, 1.7, -92.1, -75.2),
     "UY": (-35.0, -30.0, -58.5, -53.0),
     "VE": (0.6, 12.3, -73.4, -59.8),
     "PA": (7.2, 9.7, -83.0, -77.2),
@@ -54,7 +54,7 @@ def assert_true(cond: bool, msg: str, failures: list[str]) -> None:
 def main() -> int:
     failures: list[str] = []
     with duckdb.connect(str(DB_PATH)) as conn:
-        conn.execute("SET search_path = cod_kmap;")
+        conn.execute("SET search_path = main;")
 
         null_type = conn.execute(
             "SELECT COUNT(*) FROM facilities WHERE facility_type IS NULL OR country IS NULL"

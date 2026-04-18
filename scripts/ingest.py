@@ -187,26 +187,32 @@ def geocode_missing(records: list[Record], skip: bool) -> None:
 
 
 def ensure_schema(conn: duckdb.DuckDBPyConnection) -> None:
-    conn.execute("INSTALL spatial; LOAD spatial;")
+    try:
+        conn.execute("INSTALL spatial; LOAD spatial;")
+    except duckdb.Error as e:
+        print(f"[warn] spatial extension unavailable ({e}); continuing without geom support")
     conn.execute(SCHEMA_SQL.read_text())
 
 
 def load_vocab(conn: duckdb.DuckDBPyConnection) -> None:
+    conn.execute("DELETE FROM main.facility_types")
     conn.execute(
-        "INSERT OR REPLACE INTO cod_kmap.facility_types SELECT * FROM read_csv_auto(?, header=True)",
+        "INSERT INTO main.facility_types SELECT * FROM read_csv_auto(?, header=True)",
         [str(VOCAB_DIR / "facility_types.csv")],
     )
+    conn.execute("DELETE FROM main.research_areas")
     conn.execute(
         """
-        INSERT OR REPLACE INTO cod_kmap.research_areas
+        INSERT INTO main.research_areas
         SELECT slug AS area_id, label, gcmd_uri, parent_slug AS parent_id
         FROM read_csv_auto(?, header=True)
         """,
         [str(VOCAB_DIR / "research_areas.csv")],
     )
+    conn.execute("DELETE FROM main.networks")
     conn.execute(
         """
-        INSERT OR REPLACE INTO cod_kmap.networks
+        INSERT INTO main.networks
         SELECT slug AS network_id, label, level, url
         FROM read_csv_auto(?, header=True)
         """,
@@ -220,7 +226,7 @@ def insert_records(conn: duckdb.DuckDBPyConnection, records: list[Record]) -> No
     for r in records:
         d = r.raw
         conn.execute(
-            """INSERT OR REPLACE INTO cod_kmap.facilities VALUES
+            """INSERT OR REPLACE INTO main.facilities VALUES
                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
             [
                 r.fid,
@@ -250,7 +256,7 @@ def insert_records(conn: duckdb.DuckDBPyConnection, records: list[Record]) -> No
             }]
         for loc in locations:
             conn.execute(
-                "INSERT OR REPLACE INTO cod_kmap.locations VALUES (?,?,?,?,?,?,?)",
+                "INSERT OR REPLACE INTO main.locations VALUES (?,?,?,?,?,?,?)",
                 [
                     location_id(r.fid, loc.get("label")),
                     r.fid,
@@ -264,14 +270,14 @@ def insert_records(conn: duckdb.DuckDBPyConnection, records: list[Record]) -> No
 
         for area in d.get("research_areas") or []:
             conn.execute(
-                "INSERT OR IGNORE INTO cod_kmap.area_links VALUES (?, ?)",
+                "INSERT OR IGNORE INTO main.area_links VALUES (?, ?)",
                 [r.fid, area],
             )
 
         for net in d.get("networks") or []:
             net_slug = net.lower() if isinstance(net, str) else str(net).lower()
             conn.execute(
-                "INSERT OR IGNORE INTO cod_kmap.network_membership VALUES (?, ?, ?)",
+                "INSERT OR IGNORE INTO main.network_membership VALUES (?, ?, ?)",
                 [r.fid, net_slug, None],
             )
 
@@ -281,11 +287,11 @@ def insert_records(conn: duckdb.DuckDBPyConnection, records: list[Record]) -> No
                 continue
             fuid = funder_id(fname)
             conn.execute(
-                "INSERT OR IGNORE INTO cod_kmap.funders VALUES (?, ?, NULL, NULL, NULL, NULL)",
+                "INSERT OR IGNORE INTO main.funders VALUES (?, ?, NULL, NULL, NULL, NULL)",
                 [fuid, fname],
             )
             conn.execute(
-                "INSERT INTO cod_kmap.funding_links VALUES (?, ?, NULL, NULL, NULL, ?, ?)",
+                "INSERT INTO main.funding_links VALUES (?, ?, NULL, NULL, NULL, ?, ?)",
                 [
                     fuid,
                     r.fid,
@@ -296,7 +302,7 @@ def insert_records(conn: duckdb.DuckDBPyConnection, records: list[Record]) -> No
 
         prov = d.get("provenance") or {}
         conn.execute(
-            "INSERT INTO cod_kmap.provenance VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO main.provenance VALUES (?, ?, ?, ?, ?, ?)",
             [
                 "facility",
                 r.fid,
@@ -311,7 +317,7 @@ def insert_records(conn: duckdb.DuckDBPyConnection, records: list[Record]) -> No
 def log_run(conn: duckdb.DuckDBPyConnection, started: datetime, count: int, status: str) -> None:
     run_id = started.strftime("%Y%m%d-%H%M%S")
     conn.execute(
-        "INSERT INTO cod_kmap.ingest_runs VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?, ?)",
+        "INSERT INTO main.ingest_runs VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?, ?)",
         [run_id, started, os.environ.get("GITHUB_SHA"), count, status],
     )
 

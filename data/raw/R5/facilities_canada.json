@@ -1,0 +1,243 @@
+[
+  {
+    "record_id": "R5-0001",
+    "canonical_name": "Bedford Institute of Oceanography",
+    "acronym": "BIO",
+    "parent_org": "Fisheries and Oceans Canada",
+    "facility_type": "international-federal",
+    "country": "CA",
+    "region": "Atlantic Canada",
+    "hq": { "address": "1 Challenger Dr, Dartmouth, NS B2Y 4A2, Canada", "lat": 44.6816, "lng": -63.6119 },
+    "locations": [
+      { "label": "Bedford Institute of Oceanography", "address": "1 Challenger Dr, Dartmouth, NS B2Y 4A2, Canada", "lat": 44.6816, "lng": -63.6119, "role": "headquarters" }
+    ],
+    "research_areas": ["physical-oceanography", "chemical-oceanography", "marine-ecosystems", "polar-and-cryosphere"],
+    "networks": ["GOOS"],
+    "funders": [{ "name": "Fisheries and Oceans Canada", "relation": "parent-agency" }],
+    "url": "https://www.bio.gc.ca/",
+    "established": 1962,
+    "provenance": { "source_url": "https://www.bio.gc.ca/about-sujet/index-en.php", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R5" }
+  },
+  {
+    "record_id": "R5-0002",
+    "canonical_name": "Institute of Ocean Sciences",
+    "acronym": "IOS",
+    "parent_org": "Fisheries and Oceans Canada",
+    "facility_type": "international-federal",
+    "country": "CA",
+    "region": "Pacific Canada",
+    "hq": { "address": "9860 W Saanich Rd, Sidney, BC V8L 4B2, Canada", "lat": 48.6517, "lng": -123.4925 },
+    "locations": [
+      { "label": "Institute of Ocean Sciences", "address": "9860 W Saanich Rd, Sidney, BC V8L 4B2, Canada", "lat": 48.6517, "lng": -123.4925, "role": "headquarters" }
+    ],
+    "research_areas": ["physical-oceanography", "chemical-oceanography", "polar-and-cryosphere"],
+    "networks": [],
+    "funders": [{ "name": "Fisheries and Oceans Canada", "relation": "parent-agency" }],
+    "url": "https://www.pac.dfo-mpo.gc.ca/science/facilities-installations/index-eng.html",
+    "established": 1978,
+    "provenance": { "source_url": "https://www.pac.dfo-mpo.gc.ca/science/facilities-installations/index-eng.html", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R5" }
+  },
+  {
+    "record_id": "R5-0003",
+    "canonical_name": "Pacific Biological Station",
+    "acronym": "PBS",
+    "parent_org": "Fisheries and Oceans Canada",
+    "facility_type": "international-federal",
+    "country": "CA",
+    "region": "Pacific Canada",
+    "hq": { "address": "3190 Hammond Bay Rd, Nanaimo, BC V9T 6N7, Canada", "lat": 49.2078, "lng": -123.9522 },
+    "locations": [
+      { "label": "Pacific Biological Station", "address": "3190 Hammond Bay Rd, Nanaimo, BC V9T 6N7, Canada", "lat": 49.2078, "lng": -123.9522, "role": "headquarters" }
+    ],
+    "research_areas": ["fisheries-and-aquaculture", "biological-oceanography", "marine-ecosystems"],
+    "networks": [],
+    "funders": [{ "name": "Fisheries and Oceans Canada", "relation": "parent-agency" }],
+    "url": "https://www.pac.dfo-mpo.gc.ca/science/facilities-installations/pbs-sbp/index-eng.html",
+    "established": 1908,
+    "provenance": { "source_url": "https://www.pac.dfo-mpo.gc.ca/science/facilities-installations/pbs-sbp/index-eng.html", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R5" }
+  },
+  {
+    "record_id": "R5-0004",
+    "canonical_name": "St. Andrews Biological Station",
+    "acronym": "SABS",
+    "parent_org": "Fisheries and Oceans Canada",
+    "facility_type": "international-federal",
+    "country": "CA",
+    "region": "Atlantic Canada",
+    "hq": { "address": "125 Marine Science Dr, St. Andrews, NB E5B 0E4, Canada", "lat": 45.0803, "lng": -67.0794 },
+    "locations": [
+      { "label": "St. Andrews Biological Station", "address": "125 Marine Science Dr, St. Andrews, NB E5B 0E4, Canada", "lat": 45.0803, "lng": -67.0794, "role": "headquarters" }
+    ],
+    "research_areas": ["fisheries-and-aquaculture", "biological-oceanography", "marine-ecosystems"],
+    "networks": [],
+    "funders": [{ "name": "Fisheries and Oceans Canada", "relation": "parent-agency" }],
+    "url": "https://www.dfo-mpo.gc.ca/science/facilities-installations/sabs-sbsa/index-eng.html",
+    "established": 1908,
+    "provenance": { "source_url": "https://www.dfo-mpo.gc.ca/science/facilities-installations/sabs-sbsa/index-eng.html", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R5" }
+  },
+  {
+    "record_id": "R5-0005",
+    "canonical_name": "Northwest Atlantic Fisheries Centre",
+    "acronym": "NAFC",
+    "parent_org": "Fisheries and Oceans Canada",
+    "facility_type": "international-federal",
+    "country": "CA",
+    "region": "Atlantic Canada / Newfoundland",
+    "hq": { "address": "80 E White Hills Rd, St. John's, NL A1C 5X1, Canada", "lat": 47.6197, "lng": -52.6836 },
+    "locations": [
+      { "label": "NAFC St. John's", "address": "80 E White Hills Rd, St. John's, NL A1C 5X1, Canada", "lat": 47.6197, "lng": -52.6836, "role": "headquarters" }
+    ],
+    "research_areas": ["fisheries-and-aquaculture", "marine-ecosystems", "polar-and-cryosphere"],
+    "networks": [],
+    "funders": [{ "name": "Fisheries and Oceans Canada", "relation": "parent-agency" }],
+    "url": "https://www.nfl.dfo-mpo.gc.ca/NL/Science/NAFC",
+    "established": 1978,
+    "provenance": { "source_url": "https://www.nfl.dfo-mpo.gc.ca/NL/Science/NAFC", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R5" }
+  },
+  {
+    "record_id": "R5-0006",
+    "canonical_name": "Maurice Lamontagne Institute",
+    "acronym": "IML",
+    "parent_org": "Fisheries and Oceans Canada",
+    "facility_type": "international-federal",
+    "country": "CA",
+    "region": "Gulf of St. Lawrence / Quebec",
+    "hq": { "address": "850 Route de la Mer, Mont-Joli, QC G5H 3Z4, Canada", "lat": 48.6361, "lng": -68.1583 },
+    "locations": [
+      { "label": "Maurice Lamontagne Institute", "address": "850 Route de la Mer, Mont-Joli, QC G5H 3Z4, Canada", "lat": 48.6361, "lng": -68.1583, "role": "headquarters" }
+    ],
+    "research_areas": ["physical-oceanography", "fisheries-and-aquaculture", "marine-ecosystems"],
+    "networks": [],
+    "funders": [{ "name": "Fisheries and Oceans Canada", "relation": "parent-agency" }],
+    "url": "https://www.qc.dfo-mpo.gc.ca/sciences/iml",
+    "established": 1987,
+    "provenance": { "source_url": "https://www.qc.dfo-mpo.gc.ca/sciences/iml", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R5" }
+  },
+  {
+    "record_id": "R5-0007",
+    "canonical_name": "Ocean Networks Canada",
+    "acronym": "ONC",
+    "parent_org": "University of Victoria",
+    "facility_type": "observatory",
+    "country": "CA",
+    "region": "Pacific / Arctic / Atlantic",
+    "hq": { "address": "2474 Arbutus Rd, Victoria, BC V8N 1V8, Canada", "lat": 48.4642, "lng": -123.3131 },
+    "locations": [
+      { "label": "ONC HQ (UVic)", "address": "2474 Arbutus Rd, Victoria, BC V8N 1V8, Canada", "lat": 48.4642, "lng": -123.3131, "role": "headquarters" },
+      { "label": "NEPTUNE Observatory — Endeavour Node", "address": "Juan de Fuca Ridge, offshore BC", "lat": 47.9500, "lng": -129.1000, "role": "observatory" },
+      { "label": "VENUS Observatory — Saanich Inlet", "address": "Saanich Inlet, BC, Canada", "lat": 48.6494, "lng": -123.4997, "role": "observatory" },
+      { "label": "Cambridge Bay Arctic Observatory", "address": "Cambridge Bay, NU X0B 0C0, Canada", "lat": 69.1169, "lng": -105.0597, "role": "observatory" }
+    ],
+    "research_areas": ["ocean-observing-systems", "deep-sea", "polar-and-cryosphere", "marine-geology"],
+    "networks": ["ONC", "GOOS"],
+    "funders": [
+      { "name": "Canada Foundation for Innovation", "relation": "grant" },
+      { "name": "NSERC", "relation": "grant" }
+    ],
+    "url": "https://www.oceannetworks.ca/",
+    "established": 2007,
+    "provenance": { "source_url": "https://www.oceannetworks.ca/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R5" }
+  },
+  {
+    "record_id": "R5-0008",
+    "canonical_name": "Bamfield Marine Sciences Centre",
+    "acronym": "BMSC",
+    "parent_org": "Western Canadian Universities Marine Sciences Society",
+    "facility_type": "international-university",
+    "country": "CA",
+    "region": "Pacific Canada",
+    "hq": { "address": "100 Pachena Rd, Bamfield, BC V0R 1B0, Canada", "lat": 48.8339, "lng": -125.1383 },
+    "locations": [
+      { "label": "Bamfield Marine Sciences Centre", "address": "100 Pachena Rd, Bamfield, BC V0R 1B0, Canada", "lat": 48.8339, "lng": -125.1383, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-ecosystems", "biological-oceanography", "kelp-forests"],
+    "networks": [],
+    "funders": [{ "name": "WCUMSS member universities", "relation": "membership-fee" }],
+    "url": "https://bamfieldmsc.com/",
+    "established": 1972,
+    "provenance": { "source_url": "https://bamfieldmsc.com/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R5" }
+  },
+  {
+    "record_id": "R5-0009",
+    "canonical_name": "Huntsman Marine Science Centre",
+    "acronym": "Huntsman",
+    "parent_org": "Independent non-profit",
+    "facility_type": "international-nonprofit",
+    "country": "CA",
+    "region": "Atlantic Canada",
+    "hq": { "address": "1 Lower Campus Rd, St. Andrews, NB E5B 2L7, Canada", "lat": 45.0803, "lng": -67.0794 },
+    "locations": [
+      { "label": "Huntsman Marine Science Centre", "address": "1 Lower Campus Rd, St. Andrews, NB E5B 2L7, Canada", "lat": 45.0803, "lng": -67.0794, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-ecosystems", "biological-oceanography", "fisheries-and-aquaculture"],
+    "networks": [],
+    "funders": [
+      { "name": "Province of New Brunswick", "relation": "state-appropriation" },
+      { "name": "Private donors", "relation": "private-donor" }
+    ],
+    "url": "https://www.huntsmanmarine.ca/",
+    "established": 1969,
+    "provenance": { "source_url": "https://www.huntsmanmarine.ca/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R5" }
+  },
+  {
+    "record_id": "R5-0010",
+    "canonical_name": "Hakai Institute",
+    "acronym": "Hakai",
+    "parent_org": "Tula Foundation",
+    "facility_type": "international-nonprofit",
+    "country": "CA",
+    "region": "Pacific Canada",
+    "hq": { "address": "Calvert Island Ecological Observatory, Central Coast, BC, Canada", "lat": 51.6544, "lng": -128.1214 },
+    "locations": [
+      { "label": "Calvert Island Ecological Observatory", "address": "Calvert Island, BC, Canada", "lat": 51.6544, "lng": -128.1214, "role": "observatory" },
+      { "label": "Quadra Island Ecological Observatory", "address": "Quadra Island, BC, Canada", "lat": 50.1181, "lng": -125.2297, "role": "observatory" }
+    ],
+    "research_areas": ["coastal-processes", "marine-ecosystems", "kelp-forests", "biological-oceanography"],
+    "networks": [],
+    "funders": [{ "name": "Tula Foundation", "relation": "endowment" }],
+    "url": "https://hakai.org/",
+    "established": 2009,
+    "provenance": { "source_url": "https://hakai.org/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R5" }
+  },
+  {
+    "record_id": "R5-0011",
+    "canonical_name": "Dalhousie Ocean Frontier Institute",
+    "acronym": "OFI",
+    "parent_org": "Dalhousie University",
+    "facility_type": "international-university",
+    "country": "CA",
+    "region": "Atlantic Canada",
+    "hq": { "address": "1355 Oxford St, Halifax, NS B3H 4R2, Canada", "lat": 44.6377, "lng": -63.5914 },
+    "locations": [
+      { "label": "Ocean Frontier Institute HQ", "address": "1355 Oxford St, Halifax, NS B3H 4R2, Canada", "lat": 44.6377, "lng": -63.5914, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-ecosystems", "climate-and-sea-level", "fisheries-and-aquaculture", "ocean-observing-systems"],
+    "networks": [],
+    "funders": [
+      { "name": "Canada First Research Excellence Fund", "relation": "grant" },
+      { "name": "Dalhousie University", "relation": "parent-agency" }
+    ],
+    "url": "https://www.ofi.ca/",
+    "established": 2016,
+    "provenance": { "source_url": "https://www.ofi.ca/about", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R5" }
+  },
+  {
+    "record_id": "R5-0012",
+    "canonical_name": "Marine Institute of Memorial University of Newfoundland",
+    "acronym": "MI",
+    "parent_org": "Memorial University of Newfoundland",
+    "facility_type": "international-university",
+    "country": "CA",
+    "region": "Atlantic Canada / Newfoundland",
+    "hq": { "address": "155 Ridge Rd, St. John's, NL A1C 5R3, Canada", "lat": 47.5697, "lng": -52.7306 },
+    "locations": [
+      { "label": "Marine Institute", "address": "155 Ridge Rd, St. John's, NL A1C 5R3, Canada", "lat": 47.5697, "lng": -52.7306, "role": "headquarters" }
+    ],
+    "research_areas": ["fisheries-and-aquaculture", "ocean-observing-systems", "marine-policy-and-socio-economics"],
+    "networks": [],
+    "funders": [{ "name": "Memorial University of Newfoundland", "relation": "parent-agency" }],
+    "url": "https://www.mi.mun.ca/",
+    "established": 1964,
+    "provenance": { "source_url": "https://www.mi.mun.ca/aboutmi/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R5" }
+  }
+]
