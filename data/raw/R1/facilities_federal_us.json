@@ -1,0 +1,621 @@
+[
+  {
+    "record_id": "R1-0001",
+    "canonical_name": "Pacific Marine Environmental Laboratory",
+    "acronym": "PMEL",
+    "parent_org": "NOAA Oceanic and Atmospheric Research",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Pacific Northwest",
+    "hq": {
+      "address": "7600 Sand Point Way NE, Seattle, WA 98115, USA",
+      "lat": 47.6833,
+      "lng": -122.2583
+    },
+    "locations": [
+      { "label": "PMEL Seattle HQ", "address": "7600 Sand Point Way NE, Seattle, WA 98115, USA", "lat": 47.6833, "lng": -122.2583, "role": "headquarters" },
+      { "label": "PMEL Newport Field Station", "address": "2115 SE OSU Drive, Newport, OR 97365, USA", "lat": 44.6236, "lng": -124.0436, "role": "field-station" }
+    ],
+    "research_areas": ["physical-oceanography", "ocean-acidification", "tsunamis-and-coastal-hazards", "marine-biogeochemistry"],
+    "networks": ["IOOS", "GOOS"],
+    "funders": [{ "name": "NOAA", "relation": "parent-agency" }],
+    "url": "https://www.pmel.noaa.gov/",
+    "contact": null,
+    "established": 1973,
+    "provenance": { "source_url": "https://www.pmel.noaa.gov/about", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0002",
+    "canonical_name": "Atlantic Oceanographic and Meteorological Laboratory",
+    "acronym": "AOML",
+    "parent_org": "NOAA Oceanic and Atmospheric Research",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Southeast Atlantic",
+    "hq": {
+      "address": "4301 Rickenbacker Causeway, Miami, FL 33149, USA",
+      "lat": 25.7340,
+      "lng": -80.1620
+    },
+    "locations": [
+      { "label": "AOML Miami HQ", "address": "4301 Rickenbacker Causeway, Miami, FL 33149, USA", "lat": 25.7340, "lng": -80.1620, "role": "headquarters" }
+    ],
+    "research_areas": ["physical-oceanography", "climate-and-sea-level", "marine-biogeochemistry", "oceanography"],
+    "networks": ["IOOS"],
+    "funders": [{ "name": "NOAA", "relation": "parent-agency" }],
+    "url": "https://www.aoml.noaa.gov/",
+    "contact": null,
+    "established": 1967,
+    "provenance": { "source_url": "https://www.aoml.noaa.gov/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0003",
+    "canonical_name": "Great Lakes Environmental Research Laboratory",
+    "acronym": "GLERL",
+    "parent_org": "NOAA Oceanic and Atmospheric Research",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Great Lakes",
+    "hq": {
+      "address": "4840 S State Rd, Ann Arbor, MI 48108, USA",
+      "lat": 42.2306,
+      "lng": -83.7475
+    },
+    "locations": [
+      { "label": "GLERL Ann Arbor HQ", "address": "4840 S State Rd, Ann Arbor, MI 48108, USA", "lat": 42.2306, "lng": -83.7475, "role": "headquarters" },
+      { "label": "GLERL Lake Michigan Field Station", "address": "1431 Beach St, Muskegon, MI 49441, USA", "lat": 43.2275, "lng": -86.3386, "role": "field-station" }
+    ],
+    "research_areas": ["great-lakes", "harmful-algal-blooms", "climate-and-sea-level", "marine-biogeochemistry"],
+    "networks": [],
+    "funders": [{ "name": "NOAA", "relation": "parent-agency" }],
+    "url": "https://www.glerl.noaa.gov/",
+    "contact": null,
+    "established": 1974,
+    "provenance": { "source_url": "https://www.glerl.noaa.gov/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0004",
+    "canonical_name": "National Centers for Coastal Ocean Science",
+    "acronym": "NCCOS",
+    "parent_org": "NOAA National Ocean Service",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "National / Mid-Atlantic HQ",
+    "hq": {
+      "address": "1305 East-West Highway, Silver Spring, MD 20910, USA",
+      "lat": 38.9907,
+      "lng": -77.0262
+    },
+    "locations": [
+      { "label": "NCCOS HQ Silver Spring", "address": "1305 East-West Highway, Silver Spring, MD 20910, USA", "lat": 38.9907, "lng": -77.0262, "role": "headquarters" },
+      { "label": "NCCOS Beaufort Laboratory", "address": "101 Pivers Island Rd, Beaufort, NC 28516, USA", "lat": 34.7186, "lng": -76.6706, "role": "lab" },
+      { "label": "NCCOS Charleston Laboratory", "address": "219 Fort Johnson Rd, Charleston, SC 29412, USA", "lat": 32.7517, "lng": -79.8997, "role": "lab" },
+      { "label": "NCCOS Kasitsna Bay Laboratory", "address": "Kasitsna Bay, Seldovia, AK 99663, USA", "lat": 59.4697, "lng": -151.5522, "role": "lab" }
+    ],
+    "research_areas": ["coastal-processes", "harmful-algal-blooms", "marine-ecosystems", "estuaries-and-wetlands", "marine-policy-and-socio-economics"],
+    "networks": [],
+    "funders": [{ "name": "NOAA", "relation": "parent-agency" }],
+    "url": "https://coastalscience.noaa.gov/",
+    "contact": null,
+    "established": 1999,
+    "provenance": { "source_url": "https://coastalscience.noaa.gov/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0005",
+    "canonical_name": "Northwest Fisheries Science Center",
+    "acronym": "NWFSC",
+    "parent_org": "NOAA National Marine Fisheries Service",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Pacific Northwest",
+    "hq": {
+      "address": "2725 Montlake Blvd E, Seattle, WA 98112, USA",
+      "lat": 47.6597,
+      "lng": -122.3075
+    },
+    "locations": [
+      { "label": "NWFSC Seattle HQ", "address": "2725 Montlake Blvd E, Seattle, WA 98112, USA", "lat": 47.6597, "lng": -122.3075, "role": "headquarters" },
+      { "label": "NWFSC Newport Research Station", "address": "2032 SE OSU Drive, Newport, OR 97365, USA", "lat": 44.6236, "lng": -124.0436, "role": "field-station" },
+      { "label": "NWFSC Mukilteo Research Station", "address": "10 Park Ave, Mukilteo, WA 98275, USA", "lat": 47.9449, "lng": -122.3069, "role": "field-station" }
+    ],
+    "research_areas": ["fisheries-and-aquaculture", "biological-oceanography", "marine-ecosystems"],
+    "networks": [],
+    "funders": [{ "name": "NOAA", "relation": "parent-agency" }],
+    "url": "https://www.fisheries.noaa.gov/about/northwest-fisheries-science-center",
+    "contact": null,
+    "established": 1931,
+    "provenance": { "source_url": "https://www.fisheries.noaa.gov/about/northwest-fisheries-science-center", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0006",
+    "canonical_name": "Southeast Fisheries Science Center",
+    "acronym": "SEFSC",
+    "parent_org": "NOAA National Marine Fisheries Service",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Southeast / Gulf of Mexico",
+    "hq": {
+      "address": "75 Virginia Beach Dr, Miami, FL 33149, USA",
+      "lat": 25.7340,
+      "lng": -80.1617
+    },
+    "locations": [
+      { "label": "SEFSC Miami HQ", "address": "75 Virginia Beach Dr, Miami, FL 33149, USA", "lat": 25.7340, "lng": -80.1617, "role": "headquarters" },
+      { "label": "SEFSC Beaufort Lab", "address": "101 Pivers Island Rd, Beaufort, NC 28516, USA", "lat": 34.7186, "lng": -76.6706, "role": "lab" },
+      { "label": "SEFSC Galveston Lab", "address": "4700 Avenue U, Galveston, TX 77551, USA", "lat": 29.2797, "lng": -94.8133, "role": "lab" },
+      { "label": "SEFSC Mississippi Lab (Pascagoula)", "address": "3209 Frederic St, Pascagoula, MS 39567, USA", "lat": 30.3651, "lng": -88.5561, "role": "lab" },
+      { "label": "SEFSC Panama City Lab", "address": "3500 Delwood Beach Rd, Panama City, FL 32408, USA", "lat": 30.1486, "lng": -85.7589, "role": "lab" }
+    ],
+    "research_areas": ["fisheries-and-aquaculture", "marine-ecosystems", "biological-oceanography"],
+    "networks": [],
+    "funders": [{ "name": "NOAA", "relation": "parent-agency" }],
+    "url": "https://www.fisheries.noaa.gov/about/southeast-fisheries-science-center",
+    "contact": null,
+    "established": 1901,
+    "provenance": { "source_url": "https://www.fisheries.noaa.gov/about/southeast-fisheries-science-center", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0007",
+    "canonical_name": "Alaska Fisheries Science Center",
+    "acronym": "AFSC",
+    "parent_org": "NOAA National Marine Fisheries Service",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Alaska",
+    "hq": {
+      "address": "7600 Sand Point Way NE, Seattle, WA 98115, USA",
+      "lat": 47.6833,
+      "lng": -122.2583
+    },
+    "locations": [
+      { "label": "AFSC Seattle HQ", "address": "7600 Sand Point Way NE, Seattle, WA 98115, USA", "lat": 47.6833, "lng": -122.2583, "role": "headquarters" },
+      { "label": "AFSC Kodiak Lab", "address": "301 Research Ct, Kodiak, AK 99615, USA", "lat": 57.7357, "lng": -152.5142, "role": "lab" },
+      { "label": "AFSC Auke Bay Lab (Ted Stevens Marine Research Institute)", "address": "17109 Point Lena Loop Rd, Juneau, AK 99801, USA", "lat": 58.3819, "lng": -134.7372, "role": "lab" },
+      { "label": "AFSC Little Port Walter Station", "address": "Baranof Island, AK, USA", "lat": 56.3792, "lng": -134.6497, "role": "field-station" }
+    ],
+    "research_areas": ["fisheries-and-aquaculture", "marine-ecosystems", "polar-and-cryosphere", "marine-mammals"],
+    "networks": [],
+    "funders": [{ "name": "NOAA", "relation": "parent-agency" }],
+    "url": "https://www.fisheries.noaa.gov/about/alaska-fisheries-science-center",
+    "contact": null,
+    "established": 1962,
+    "provenance": { "source_url": "https://www.fisheries.noaa.gov/about/alaska-fisheries-science-center", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0008",
+    "canonical_name": "Northeast Fisheries Science Center",
+    "acronym": "NEFSC",
+    "parent_org": "NOAA National Marine Fisheries Service",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Northeast Atlantic",
+    "hq": {
+      "address": "166 Water St, Woods Hole, MA 02543, USA",
+      "lat": 41.5253,
+      "lng": -70.6731
+    },
+    "locations": [
+      { "label": "NEFSC Woods Hole HQ", "address": "166 Water St, Woods Hole, MA 02543, USA", "lat": 41.5253, "lng": -70.6731, "role": "headquarters" },
+      { "label": "NEFSC Narragansett Lab", "address": "28 Tarzwell Dr, Narragansett, RI 02882, USA", "lat": 41.4922, "lng": -71.4197, "role": "lab" },
+      { "label": "NEFSC Milford Lab", "address": "212 Rogers Ave, Milford, CT 06460, USA", "lat": 41.2128, "lng": -73.0537, "role": "lab" },
+      { "label": "NEFSC Sandy Hook Lab (James J. Howard Marine Sciences Lab)", "address": "74 Magruder Rd, Highlands, NJ 07732, USA", "lat": 40.4128, "lng": -74.0086, "role": "lab" }
+    ],
+    "research_areas": ["fisheries-and-aquaculture", "marine-ecosystems", "biological-oceanography", "marine-mammals"],
+    "networks": [],
+    "funders": [{ "name": "NOAA", "relation": "parent-agency" }],
+    "url": "https://www.fisheries.noaa.gov/about/northeast-fisheries-science-center",
+    "contact": null,
+    "established": 1871,
+    "provenance": { "source_url": "https://www.fisheries.noaa.gov/about/northeast-fisheries-science-center", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0009",
+    "canonical_name": "National Data Buoy Center",
+    "acronym": "NDBC",
+    "parent_org": "NOAA National Weather Service",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Gulf of Mexico / National",
+    "hq": {
+      "address": "Building 3205, Stennis Space Center, MS 39529, USA",
+      "lat": 30.3625,
+      "lng": -89.6086
+    },
+    "locations": [
+      { "label": "NDBC HQ Stennis", "address": "Building 3205, Stennis Space Center, MS 39529, USA", "lat": 30.3625, "lng": -89.6086, "role": "headquarters" }
+    ],
+    "research_areas": ["ocean-observing-systems", "physical-oceanography", "remote-sensing"],
+    "networks": ["IOOS"],
+    "funders": [{ "name": "NOAA", "relation": "parent-agency" }],
+    "url": "https://www.ndbc.noaa.gov/",
+    "contact": null,
+    "established": 1970,
+    "provenance": { "source_url": "https://www.ndbc.noaa.gov/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0010",
+    "canonical_name": "NOAA Office for Coastal Management",
+    "acronym": "OCM",
+    "parent_org": "NOAA National Ocean Service",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Southeast Atlantic",
+    "hq": {
+      "address": "2234 South Hobson Ave, Charleston, SC 29405, USA",
+      "lat": 32.7876,
+      "lng": -79.9236
+    },
+    "locations": [
+      { "label": "OCM Charleston HQ", "address": "2234 South Hobson Ave, Charleston, SC 29405, USA", "lat": 32.7876, "lng": -79.9236, "role": "headquarters" }
+    ],
+    "research_areas": ["coastal-processes", "marine-policy-and-socio-economics", "shoreline-change", "remote-sensing"],
+    "networks": ["NERRS"],
+    "funders": [{ "name": "NOAA", "relation": "parent-agency" }],
+    "url": "https://coast.noaa.gov/",
+    "contact": null,
+    "established": 2014,
+    "provenance": { "source_url": "https://coast.noaa.gov/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0011",
+    "canonical_name": "Woods Hole Coastal and Marine Science Center",
+    "acronym": "WHCMSC",
+    "parent_org": "USGS Coastal/Marine Hazards and Resources Program",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Northeast Atlantic",
+    "hq": {
+      "address": "384 Woods Hole Rd, Woods Hole, MA 02543, USA",
+      "lat": 41.5267,
+      "lng": -70.6719
+    },
+    "locations": [
+      { "label": "WHCMSC HQ", "address": "384 Woods Hole Rd, Woods Hole, MA 02543, USA", "lat": 41.5267, "lng": -70.6719, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-geology", "coastal-erosion", "shoreline-change", "sediment-transport"],
+    "networks": [],
+    "funders": [{ "name": "USGS", "relation": "parent-agency" }],
+    "url": "https://www.usgs.gov/centers/whcmsc",
+    "contact": null,
+    "established": 1962,
+    "provenance": { "source_url": "https://www.usgs.gov/centers/whcmsc", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0012",
+    "canonical_name": "St. Petersburg Coastal and Marine Science Center",
+    "acronym": "SPCMSC",
+    "parent_org": "USGS Coastal/Marine Hazards and Resources Program",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Gulf of Mexico",
+    "hq": {
+      "address": "600 4th St S, St. Petersburg, FL 33701, USA",
+      "lat": 27.7622,
+      "lng": -82.6397
+    },
+    "locations": [
+      { "label": "SPCMSC HQ", "address": "600 4th St S, St. Petersburg, FL 33701, USA", "lat": 27.7622, "lng": -82.6397, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-geology", "coastal-erosion", "shoreline-change", "sediment-transport", "coral-reefs"],
+    "networks": [],
+    "funders": [{ "name": "USGS", "relation": "parent-agency" }],
+    "url": "https://www.usgs.gov/centers/spcmsc",
+    "contact": null,
+    "established": 1989,
+    "provenance": { "source_url": "https://www.usgs.gov/centers/spcmsc", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0013",
+    "canonical_name": "Pacific Coastal and Marine Science Center",
+    "acronym": "PCMSC",
+    "parent_org": "USGS Coastal/Marine Hazards and Resources Program",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Pacific",
+    "hq": {
+      "address": "2885 Mission St, Santa Cruz, CA 95060, USA",
+      "lat": 36.9547,
+      "lng": -122.0586
+    },
+    "locations": [
+      { "label": "PCMSC HQ", "address": "2885 Mission St, Santa Cruz, CA 95060, USA", "lat": 36.9547, "lng": -122.0586, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-geology", "coastal-erosion", "shoreline-change", "tsunamis-and-coastal-hazards", "sediment-transport"],
+    "networks": [],
+    "funders": [{ "name": "USGS", "relation": "parent-agency" }],
+    "url": "https://www.usgs.gov/centers/pcmsc",
+    "contact": null,
+    "established": 1989,
+    "provenance": { "source_url": "https://www.usgs.gov/centers/pcmsc", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0014",
+    "canonical_name": "USGS Great Lakes Science Center",
+    "acronym": "GLSC",
+    "parent_org": "USGS Ecosystems Mission Area",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Great Lakes",
+    "hq": {
+      "address": "1451 Green Rd, Ann Arbor, MI 48105, USA",
+      "lat": 42.3158,
+      "lng": -83.6944
+    },
+    "locations": [
+      { "label": "GLSC HQ", "address": "1451 Green Rd, Ann Arbor, MI 48105, USA", "lat": 42.3158, "lng": -83.6944, "role": "headquarters" },
+      { "label": "GLSC Lake Erie Biological Station", "address": "6100 Columbus Ave, Sandusky, OH 44870, USA", "lat": 41.4531, "lng": -82.6881, "role": "field-station" },
+      { "label": "GLSC Lake Ontario Biological Station", "address": "17 Lake St, Oswego, NY 13126, USA", "lat": 43.4611, "lng": -76.5094, "role": "field-station" }
+    ],
+    "research_areas": ["great-lakes", "fisheries-and-aquaculture", "marine-ecosystems"],
+    "networks": [],
+    "funders": [{ "name": "USGS", "relation": "parent-agency" }],
+    "url": "https://www.usgs.gov/centers/great-lakes-science-center",
+    "contact": null,
+    "established": 1927,
+    "provenance": { "source_url": "https://www.usgs.gov/centers/great-lakes-science-center", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0015",
+    "canonical_name": "EPA Atlantic Coastal Environmental Sciences Division",
+    "acronym": "ACESD",
+    "parent_org": "EPA Office of Research and Development",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Northeast Atlantic",
+    "hq": {
+      "address": "27 Tarzwell Dr, Narragansett, RI 02882, USA",
+      "lat": 41.4922,
+      "lng": -71.4197
+    },
+    "locations": [
+      { "label": "ACESD Narragansett HQ", "address": "27 Tarzwell Dr, Narragansett, RI 02882, USA", "lat": 41.4922, "lng": -71.4197, "role": "headquarters" }
+    ],
+    "research_areas": ["estuaries-and-wetlands", "marine-ecosystems", "marine-biogeochemistry", "harmful-algal-blooms"],
+    "networks": [],
+    "funders": [{ "name": "EPA", "relation": "parent-agency" }],
+    "url": "https://www.epa.gov/aboutepa/about-center-environmental-measurement-and-modeling-cemm",
+    "contact": null,
+    "established": 1966,
+    "provenance": { "source_url": "https://www.epa.gov/aboutepa/about-center-environmental-measurement-and-modeling-cemm", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0016",
+    "canonical_name": "EPA Gulf Ecosystem Measurement and Modeling Division",
+    "acronym": "GEMMD",
+    "parent_org": "EPA Office of Research and Development",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Gulf of Mexico",
+    "hq": {
+      "address": "1 Sabine Island Dr, Gulf Breeze, FL 32561, USA",
+      "lat": 30.3575,
+      "lng": -87.1800
+    },
+    "locations": [
+      { "label": "GEMMD Gulf Breeze HQ", "address": "1 Sabine Island Dr, Gulf Breeze, FL 32561, USA", "lat": 30.3575, "lng": -87.1800, "role": "headquarters" }
+    ],
+    "research_areas": ["estuaries-and-wetlands", "marine-ecosystems", "marine-biogeochemistry"],
+    "networks": [],
+    "funders": [{ "name": "EPA", "relation": "parent-agency" }],
+    "url": "https://www.epa.gov/aboutepa/about-center-environmental-measurement-and-modeling-cemm",
+    "contact": null,
+    "established": 1967,
+    "provenance": { "source_url": "https://www.epa.gov/aboutepa/about-center-environmental-measurement-and-modeling-cemm", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0017",
+    "canonical_name": "USACE Field Research Facility",
+    "acronym": "FRF",
+    "parent_org": "USACE Engineer Research and Development Center, Coastal and Hydraulics Laboratory",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Mid-Atlantic",
+    "hq": {
+      "address": "1261 Duck Rd, Duck, NC 27949, USA",
+      "lat": 36.1839,
+      "lng": -75.7472
+    },
+    "locations": [
+      { "label": "FRF Duck HQ", "address": "1261 Duck Rd, Duck, NC 27949, USA", "lat": 36.1839, "lng": -75.7472, "role": "headquarters" }
+    ],
+    "research_areas": ["coastal-processes", "coastal-erosion", "sediment-transport", "shoreline-change", "physical-oceanography"],
+    "networks": [],
+    "funders": [{ "name": "USACE", "relation": "parent-agency" }],
+    "url": "https://www.erdc.usace.army.mil/Locations/FRF/",
+    "contact": null,
+    "established": 1977,
+    "provenance": { "source_url": "https://www.erdc.usace.army.mil/Locations/FRF/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0018",
+    "canonical_name": "USACE ERDC Coastal and Hydraulics Laboratory",
+    "acronym": "ERDC-CHL",
+    "parent_org": "USACE Engineer Research and Development Center",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Lower Mississippi",
+    "hq": {
+      "address": "3909 Halls Ferry Rd, Vicksburg, MS 39180, USA",
+      "lat": 32.3008,
+      "lng": -90.8725
+    },
+    "locations": [
+      { "label": "ERDC-CHL HQ Vicksburg", "address": "3909 Halls Ferry Rd, Vicksburg, MS 39180, USA", "lat": 32.3008, "lng": -90.8725, "role": "headquarters" }
+    ],
+    "research_areas": ["coastal-processes", "sediment-transport", "tsunamis-and-coastal-hazards", "physical-oceanography"],
+    "networks": [],
+    "funders": [{ "name": "USACE", "relation": "parent-agency" }],
+    "url": "https://www.erdc.usace.army.mil/Locations/CHL/",
+    "contact": null,
+    "established": 1929,
+    "provenance": { "source_url": "https://www.erdc.usace.army.mil/Locations/CHL/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0019",
+    "canonical_name": "US Naval Research Laboratory, Stennis Space Center",
+    "acronym": "NRL-SSC",
+    "parent_org": "US Department of the Navy",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Gulf of Mexico",
+    "hq": {
+      "address": "1009 Balch Blvd, Stennis Space Center, MS 39529, USA",
+      "lat": 30.3667,
+      "lng": -89.6089
+    },
+    "locations": [
+      { "label": "NRL Stennis HQ", "address": "1009 Balch Blvd, Stennis Space Center, MS 39529, USA", "lat": 30.3667, "lng": -89.6089, "role": "headquarters" }
+    ],
+    "research_areas": ["physical-oceanography", "ocean-observing-systems", "marine-geology", "remote-sensing"],
+    "networks": [],
+    "funders": [{ "name": "US Navy", "relation": "parent-agency" }],
+    "url": "https://www.nrl.navy.mil/Our-Work/Areas-of-Research/Ocean-Atmospheric-Science-and-Technology/",
+    "contact": null,
+    "established": 1977,
+    "provenance": { "source_url": "https://www.nrl.navy.mil/Our-Work/Areas-of-Research/Ocean-Atmospheric-Science-and-Technology/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0020",
+    "canonical_name": "NASA Wallops Flight Facility",
+    "acronym": "WFF",
+    "parent_org": "NASA Goddard Space Flight Center",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Mid-Atlantic",
+    "hq": {
+      "address": "34200 Fulton St, Wallops Island, VA 23337, USA",
+      "lat": 37.9403,
+      "lng": -75.4664
+    },
+    "locations": [
+      { "label": "Wallops Flight Facility", "address": "34200 Fulton St, Wallops Island, VA 23337, USA", "lat": 37.9403, "lng": -75.4664, "role": "headquarters" }
+    ],
+    "research_areas": ["remote-sensing", "coastal-processes", "climate-and-sea-level", "oceanography"],
+    "networks": [],
+    "funders": [{ "name": "NASA", "relation": "parent-agency" }],
+    "url": "https://www.nasa.gov/wallops",
+    "contact": null,
+    "established": 1945,
+    "provenance": { "source_url": "https://www.nasa.gov/wallops", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0021",
+    "canonical_name": "NASA Goddard Space Flight Center — Ocean Biology Processing Group",
+    "acronym": "GSFC-OBPG",
+    "parent_org": "NASA Goddard Space Flight Center",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Mid-Atlantic",
+    "hq": {
+      "address": "8800 Greenbelt Rd, Greenbelt, MD 20771, USA",
+      "lat": 38.9967,
+      "lng": -76.8481
+    },
+    "locations": [
+      { "label": "Goddard Space Flight Center", "address": "8800 Greenbelt Rd, Greenbelt, MD 20771, USA", "lat": 38.9967, "lng": -76.8481, "role": "headquarters" }
+    ],
+    "research_areas": ["remote-sensing", "biological-oceanography", "marine-biogeochemistry", "climate-and-sea-level"],
+    "networks": [],
+    "funders": [{ "name": "NASA", "relation": "parent-agency" }],
+    "url": "https://oceancolor.gsfc.nasa.gov/",
+    "contact": null,
+    "established": 1996,
+    "provenance": { "source_url": "https://oceancolor.gsfc.nasa.gov/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0022",
+    "canonical_name": "Smithsonian Environmental Research Center",
+    "acronym": "SERC",
+    "parent_org": "Smithsonian Institution",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Chesapeake Bay",
+    "hq": {
+      "address": "647 Contees Wharf Rd, Edgewater, MD 21037, USA",
+      "lat": 38.8856,
+      "lng": -76.5469
+    },
+    "locations": [
+      { "label": "SERC HQ Edgewater", "address": "647 Contees Wharf Rd, Edgewater, MD 21037, USA", "lat": 38.8856, "lng": -76.5469, "role": "headquarters" }
+    ],
+    "research_areas": ["estuaries-and-wetlands", "marine-ecosystems", "coastal-processes", "biological-oceanography"],
+    "networks": [],
+    "funders": [{ "name": "Smithsonian Institution", "relation": "parent-agency" }],
+    "url": "https://serc.si.edu/",
+    "contact": null,
+    "established": 1965,
+    "provenance": { "source_url": "https://serc.si.edu/about", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0023",
+    "canonical_name": "Smithsonian Marine Station at Fort Pierce",
+    "acronym": "SMSFP",
+    "parent_org": "Smithsonian National Museum of Natural History",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Southeast Atlantic",
+    "hq": {
+      "address": "701 Seaway Dr, Fort Pierce, FL 34949, USA",
+      "lat": 27.4717,
+      "lng": -80.3133
+    },
+    "locations": [
+      { "label": "Smithsonian Marine Station Fort Pierce", "address": "701 Seaway Dr, Fort Pierce, FL 34949, USA", "lat": 27.4717, "lng": -80.3133, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-ecosystems", "biological-oceanography", "estuaries-and-wetlands"],
+    "networks": [],
+    "funders": [{ "name": "Smithsonian Institution", "relation": "parent-agency" }],
+    "url": "https://www.sms.si.edu/",
+    "contact": null,
+    "established": 1969,
+    "provenance": { "source_url": "https://www.sms.si.edu/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0024",
+    "canonical_name": "Cape Cod National Seashore",
+    "acronym": "CACO",
+    "parent_org": "US National Park Service",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Northeast Atlantic",
+    "hq": {
+      "address": "99 Marconi Site Rd, Wellfleet, MA 02667, USA",
+      "lat": 41.9256,
+      "lng": -69.9719
+    },
+    "locations": [
+      { "label": "Cape Cod National Seashore HQ", "address": "99 Marconi Site Rd, Wellfleet, MA 02667, USA", "lat": 41.9256, "lng": -69.9719, "role": "headquarters" }
+    ],
+    "research_areas": ["coastal-processes", "shoreline-change", "marine-ecosystems", "estuaries-and-wetlands"],
+    "networks": [],
+    "funders": [{ "name": "US National Park Service", "relation": "parent-agency" }],
+    "url": "https://www.nps.gov/caco/",
+    "contact": null,
+    "established": 1961,
+    "provenance": { "source_url": "https://www.nps.gov/caco/learn/management/index.htm", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0025",
+    "canonical_name": "Point Reyes National Seashore",
+    "acronym": "PORE",
+    "parent_org": "US National Park Service",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Pacific",
+    "hq": {
+      "address": "1 Bear Valley Rd, Point Reyes Station, CA 94956, USA",
+      "lat": 38.0404,
+      "lng": -122.7997
+    },
+    "locations": [
+      { "label": "Point Reyes National Seashore HQ", "address": "1 Bear Valley Rd, Point Reyes Station, CA 94956, USA", "lat": 38.0404, "lng": -122.7997, "role": "headquarters" }
+    ],
+    "research_areas": ["coastal-processes", "shoreline-change", "marine-ecosystems", "marine-mammals"],
+    "networks": [],
+    "funders": [{ "name": "US National Park Service", "relation": "parent-agency" }],
+    "url": "https://www.nps.gov/pore/",
+    "contact": null,
+    "established": 1962,
+    "provenance": { "source_url": "https://www.nps.gov/pore/learn/management/index.htm", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  }
+]
