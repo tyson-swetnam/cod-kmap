@@ -1,0 +1,21 @@
+slug,label,aliases,level,url
+ioos,IOOS,U.S. Integrated Ocean Observing System|Integrated Ocean Observing System,us-national,https://ioos.us
+neracoos,NERACOOS,Northeastern Regional Association of Coastal Ocean Observing Systems,us-regional,https://neracoos.org
+maracoos,MARACOOS,Mid-Atlantic Regional Association Coastal Ocean Observing System,us-regional,https://maracoos.org
+secoora,SECOORA,Southeast Coastal Ocean Observing Regional Association,us-regional,https://secoora.org
+gcoos,GCOOS,Gulf of Mexico Coastal Ocean Observing System,us-regional,https://gcoos.org
+caricoos,CARICOOS,Caribbean Coastal Ocean Observing System,us-regional,https://caricoos.org
+sccoos,SCCOOS,Southern California Coastal Ocean Observing System,us-regional,https://sccoos.org
+cencoos,CeNCOOS,Central and Northern California Ocean Observing System,us-regional,https://cencoos.org
+nanoos,NANOOS,Northwest Association of Networked Ocean Observing Systems,us-regional,https://nanoos.org
+aoos,AOOS,Alaska Ocean Observing System,us-regional,https://aoos.org
+pacioos,PacIOOS,Pacific Islands Ocean Observing System,us-regional,https://pacioos.org
+ooi,OOI,Ocean Observatories Initiative,us-national,https://oceanobservatories.org
+lter,LTER,Long-Term Ecological Research Network,us-national,https://lternet.edu
+nerrs,NERRS,National Estuarine Research Reserve System,us-national,https://coast.noaa.gov/nerrs
+seagrant,Sea Grant,National Sea Grant College Program,us-national,https://seagrant.noaa.gov
+neon,NEON,National Ecological Observatory Network,us-national,https://www.neonscience.org
+onc,ONC,Ocean Networks Canada,canada-national,https://www.oceannetworks.ca
+goos,GOOS,Global Ocean Observing System,international,https://goosocean.org
+naml,NAML,National Association of Marine Laboratories,us-national,https://www.naml.org
+iocaribe,IOCARIBE,IOC Sub-Commission for the Caribbean and Adjacent Regions,international,https://iocaribe.ioc-unesco.org

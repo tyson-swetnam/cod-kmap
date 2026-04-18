@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cod-kmap — Coastal Observatory Design Knowledge Map</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"
+    />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <aside id="sidebar">
+        <header>
+          <h1>cod-kmap</h1>
+          <p class="tagline">Coastal Observatory Design Knowledge Map</p>
+        </header>
+        <section id="search">
+          <input id="q" type="search" placeholder="Search facilities…" />
+        </section>
+        <section id="filters"></section>
+        <section id="status" aria-live="polite">Loading data…</section>
+        <footer>
+          <a href="https://github.com/tyson-swetnam/cod-kmap" target="_blank" rel="noopener">Source on GitHub</a>
+        </footer>
+      </aside>
+      <main id="map"></main>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

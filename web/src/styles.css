@@ -1,0 +1,78 @@
+* { box-sizing: border-box; }
+
+html, body, #app {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+#app {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: 100vh;
+}
+
+#sidebar {
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#sidebar h1 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+#sidebar .tagline {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+#search input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+#filters h2 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: #475569;
+  letter-spacing: 0.05em;
+  margin: 12px 0 6px;
+}
+
+#filters label {
+  display: block;
+  font-size: 0.9rem;
+  padding: 2px 0;
+}
+
+#status {
+  font-size: 0.85rem;
+  color: #475569;
+  min-height: 1.2em;
+}
+
+#map {
+  height: 100%;
+  width: 100%;
+}
+
+footer a {
+  color: #475569;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 720px) {
+  #app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  #sidebar { max-height: 40vh; }
+}
