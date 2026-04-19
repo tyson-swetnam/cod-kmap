@@ -21,12 +21,20 @@
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
+    <header id="topbar">
+      <div class="brand">
+        cod-kmap
+        <span class="brand-sub">· Coastal Observatory Design Knowledge Map</span>
+      </div>
+      <nav class="tabs">
+        <a href="#/"      data-view="/"      >Map</a>
+        <a href="#/browse" data-view="/browse">Browse</a>
+        <a href="#/stats"  data-view="/stats" >Stats</a>
+        <a href="#/docs"   data-view="/docs"  >Docs</a>
+      </nav>
+    </header>
     <div id="app">
       <aside id="sidebar">
-        <header>
-          <h1>cod-kmap</h1>
-          <p class="tagline">Coastal Observatory Design Knowledge Map</p>
-        </header>
         <section id="search">
           <div class="search-wrap">
             <input id="q" type="search" placeholder="Search facilities…" autocomplete="off" />
@@ -39,7 +47,12 @@
           <a href="https://github.com/tyson-swetnam/cod-kmap" target="_blank" rel="noopener">Source on GitHub</a>
         </footer>
       </aside>
-      <main id="map"></main>
+      <main id="viewport">
+        <section id="view-map"    class="view active"><div id="map"></div></section>
+        <section id="view-browse" class="view"><div id="browse"></div></section>
+        <section id="view-stats"  class="view"><div id="stats"></div></section>
+        <section id="view-docs"   class="view"><div id="docs"></div></section>
+      </main>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>
