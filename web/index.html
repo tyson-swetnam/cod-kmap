@@ -17,6 +17,10 @@
   </head>
   <body>
     <header id="topbar">
+      <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle filters"
+        aria-controls="sidebar" aria-expanded="false">
+        <span class="hamburger-icon" aria-hidden="true"></span>
+      </button>
       <div class="brand">
         cod-kmap
         <span class="brand-sub">· Coastal Observatory Design Knowledge Map</span>
@@ -48,6 +52,7 @@
         <section id="view-stats"  class="view"><div id="stats"></div></section>
         <section id="view-docs"   class="view"><div id="docs"></div></section>
       </main>
+      <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
     </div>
     <script type="module" src="./src/main.js"></script>
   </body>

@@ -17,6 +17,16 @@ const state = {
 
 const statusEl = document.getElementById('status');
 
+// ── Hamburger / drawer wiring ────────────────────────────────────────
+const toggle = document.getElementById('sidebar-toggle');
+const backdrop = document.getElementById('sidebar-backdrop');
+function setDrawer(open) {
+  document.body.classList.toggle('sidebar-open', open);
+  toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+toggle.addEventListener('click', () => setDrawer(!document.body.classList.contains('sidebar-open')));
+backdrop.addEventListener('click', () => setDrawer(false));
+
 // ── Init map into its container ──────────────────────────────────────
 const map = initMap(document.getElementById('map'), state);
 
@@ -83,18 +93,26 @@ const views = {
 initRouter({
   '/': () => {
     showView('/');
+    document.body.classList.remove('no-sidebar');
+    setDrawer(false);
     renderFacilities(state.lastFeatures);
   },
   '/browse': () => {
     showView('/browse');
+    document.body.classList.remove('no-sidebar');
+    setDrawer(false);
     renderList(state.lastFeatures);
   },
   '/stats': () => {
     showView('/stats');
+    document.body.classList.add('no-sidebar');
+    setDrawer(false);
     renderStats(state.lastFeatures);
   },
   '/docs': () => {
     showView('/docs');
+    document.body.classList.add('no-sidebar');
+    setDrawer(false);
     initDocsView(document.getElementById('docs'));
   },
 });
@@ -125,3 +143,11 @@ function showView(path) {
     console.warn('DuckDB-Wasm unavailable, staying on GeoJSON fallback.', e);
   }
 })();
+
+// ── Legend: collapse by default on mobile ───────────────────────────
+if (window.matchMedia('(max-width: 900px)').matches) {
+  const intv = setInterval(() => {
+    const el = document.querySelector('.legend-control');
+    if (el) { el.classList.add('collapsed'); clearInterval(intv); }
+  }, 200);
+}
