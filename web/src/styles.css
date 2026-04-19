@@ -223,8 +223,11 @@ footer a:hover { color: var(--c-primary); }
 #map { height: 100%; width: 100%; }
 
 /* ── Popups ─────────────────────────────────────────────────────── */
-.leaflet-popup-content-wrapper { border-radius: var(--radius) !important; }
-.leaflet-popup-content { margin: 12px 14px !important; }
+.maplibregl-popup-content {
+  border-radius: var(--radius) !important;
+  padding: 12px 14px !important;
+  box-shadow: var(--shadow-sm) !important;
+}
 
 .popup { max-width: 300px; font-size: 13px; line-height: 1.5; }
 .popup-name { font-weight: 700; font-size: 14px; color: var(--c-text); }
@@ -313,6 +316,23 @@ footer a:hover { color: var(--c-primary); }
   white-space: nowrap;
 }
 .fit-control a:hover { background: var(--c-chip-bg); color: var(--c-primary); }
+
+/* ── Hull-toggle control ────────────────────────────────────────── */
+.hull-toggle-control {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 5px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--c-primary-d);
+  white-space: nowrap;
+  user-select: none;
+}
+.hull-toggle-control:hover { background: var(--c-chip-bg); }
+.hull-toggle-control.hull-off { color: var(--c-muted); }
 
 /* ── Browse view ────────────────────────────────────────────────── */
 #view-browse { overflow: hidden; display: flex; flex-direction: column; }
