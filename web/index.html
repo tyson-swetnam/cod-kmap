@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cod-kmap — Coastal Observatory Design Knowledge Map</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"
+    />
+    <link rel="stylesheet" href="./src/styles.css" />
+    <script type="importmap">
+    {
+      "imports": {
+        "leaflet": "https://esm.sh/leaflet@1.9.4",
+        "leaflet.markercluster": "https://esm.sh/leaflet.markercluster@1.5.3?deps=leaflet@1.9.4",
+        "@duckdb/duckdb-wasm": "https://esm.sh/@duckdb/duckdb-wasm@1.29.0"
+      }
+    }
+    </script>
+  </head>
+  <body>
+    <header id="topbar">
+      <div class="brand">
+        cod-kmap
+        <span class="brand-sub">· Coastal Observatory Design Knowledge Map</span>
+      </div>
+      <nav class="tabs">
+        <a href="#/"      data-view="/"      >Map</a>
+        <a href="#/browse" data-view="/browse">Browse</a>
+        <a href="#/stats"  data-view="/stats" >Stats</a>
+        <a href="#/docs"   data-view="/docs"  >Docs</a>
+      </nav>
+    </header>
+    <div id="app">
+      <aside id="sidebar">
+        <section id="search">
+          <div class="search-wrap">
+            <input id="q" type="search" placeholder="Search facilities…" autocomplete="off" />
+            <button id="q-clear" aria-label="Clear search" title="Clear">&#x2715;</button>
+          </div>
+        </section>
+        <section id="filters"></section>
+        <section id="status" aria-live="polite">Loading data…</section>
+        <footer>
+          <a href="https://github.com/tyson-swetnam/cod-kmap" target="_blank" rel="noopener">Source on GitHub</a>
+        </footer>
+      </aside>
+      <main id="viewport">
+        <section id="view-map"    class="view active"><div id="map"></div></section>
+        <section id="view-browse" class="view"><div id="browse"></div></section>
+        <section id="view-stats"  class="view"><div id="stats"></div></section>
+        <section id="view-docs"   class="view"><div id="docs"></div></section>
+      </main>
+    </div>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

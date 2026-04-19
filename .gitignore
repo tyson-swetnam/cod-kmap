@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Node
+node_modules/
+web/dist/
+.vite/
+
+# Data artifacts (regenerable — do not commit large binaries)
+data/raw/**/*.json
+data/raw/**/*.csv
+data/processed/*.parquet
+data/processed/*.csv
+db/*.duckdb
+db/parquet/*.parquet
+web/public/parquet/*.parquet
+
+# Geocoder cache
+.geocode_cache.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp

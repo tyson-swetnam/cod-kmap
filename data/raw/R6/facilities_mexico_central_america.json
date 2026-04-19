@@ -1,0 +1,204 @@
+[
+  {
+    "record_id": "R6-0001",
+    "canonical_name": "Centro de Investigación Científica y de Educación Superior de Ensenada",
+    "acronym": "CICESE",
+    "parent_org": "CONACyT (Mexico)",
+    "facility_type": "international-federal",
+    "country": "MX",
+    "region": "Pacific Mexico",
+    "hq": { "address": "Carretera Ensenada-Tijuana 3918, Zona Playitas, 22860 Ensenada, B.C., Mexico", "lat": 31.8667, "lng": -116.6650 },
+    "locations": [
+      { "label": "CICESE Ensenada HQ", "address": "Carretera Ensenada-Tijuana 3918, Ensenada, B.C., Mexico", "lat": 31.8667, "lng": -116.6650, "role": "headquarters" },
+      { "label": "CICESE Unidad La Paz", "address": "Miraflores 334, La Paz, B.C.S., Mexico", "lat": 24.1425, "lng": -110.3119, "role": "field-station" }
+    ],
+    "research_areas": ["physical-oceanography", "biological-oceanography", "marine-ecosystems", "climate-and-sea-level"],
+    "networks": [],
+    "funders": [{ "name": "CONACyT", "relation": "parent-agency" }],
+    "url": "https://www.cicese.edu.mx/",
+    "established": 1973,
+    "provenance": { "source_url": "https://www.cicese.edu.mx/acercade", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R6" }
+  },
+  {
+    "record_id": "R6-0002",
+    "canonical_name": "Instituto de Ciencias del Mar y Limnología — UNAM",
+    "acronym": "ICML-UNAM",
+    "parent_org": "Universidad Nacional Autónoma de México",
+    "facility_type": "international-university",
+    "country": "MX",
+    "region": "Mexico HQ / coastal stations",
+    "hq": { "address": "Circuito Exterior s/n, Ciudad Universitaria, 04510 Ciudad de México, Mexico", "lat": 19.3197, "lng": -99.1761 },
+    "locations": [
+      { "label": "ICML Mexico City HQ", "address": "Circuito Exterior s/n, Ciudad Universitaria, 04510 Ciudad de México, Mexico", "lat": 19.3197, "lng": -99.1761, "role": "headquarters" },
+      { "label": "Unidad Académica Mazatlán", "address": "Av. Joel Montes Camarena s/n, 82040 Mazatlán, Sin., Mexico", "lat": 23.1917, "lng": -106.4231, "role": "field-station" },
+      { "label": "Unidad Académica Puerto Morelos", "address": "Prolongación Niños Héroes s/n, 77580 Puerto Morelos, Q.R., Mexico", "lat": 20.8656, "lng": -86.8750, "role": "field-station" },
+      { "label": "Unidad Académica Sisal", "address": "Puerto de Abrigo s/n, 97356 Sisal, Yuc., Mexico", "lat": 21.1650, "lng": -90.0506, "role": "field-station" }
+    ],
+    "research_areas": ["oceanography", "marine-ecosystems", "coral-reefs", "estuaries-and-wetlands"],
+    "networks": [],
+    "funders": [{ "name": "Universidad Nacional Autónoma de México", "relation": "parent-agency" }],
+    "url": "https://www.icmyl.unam.mx/",
+    "established": 1973,
+    "provenance": { "source_url": "https://www.icmyl.unam.mx/acerca-de/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R6" }
+  },
+  {
+    "record_id": "R6-0003",
+    "canonical_name": "Instituto Nacional de Pesca y Acuacultura",
+    "acronym": "INAPESCA",
+    "parent_org": "SADER (Mexico)",
+    "facility_type": "international-federal",
+    "country": "MX",
+    "region": "National Mexico",
+    "hq": { "address": "Pitágoras 1320, Santa Cruz Atoyac, 03310 Ciudad de México, Mexico", "lat": 19.3750, "lng": -99.1617 },
+    "locations": [
+      { "label": "INAPESCA HQ", "address": "Pitágoras 1320, Ciudad de México, Mexico", "lat": 19.3750, "lng": -99.1617, "role": "headquarters" },
+      { "label": "CRIAP Ensenada", "address": "El Sauzal, Ensenada, B.C., Mexico", "lat": 31.9014, "lng": -116.7131, "role": "field-station" },
+      { "label": "CRIAP Guaymas", "address": "Calle Calle 20 S/N, Guaymas, Son., Mexico", "lat": 27.9181, "lng": -110.9000, "role": "field-station" },
+      { "label": "CRIAP Manzanillo", "address": "Playa Ventanas s/n, Manzanillo, Col., Mexico", "lat": 19.0522, "lng": -104.3164, "role": "field-station" }
+    ],
+    "research_areas": ["fisheries-and-aquaculture", "marine-ecosystems", "biological-oceanography", "coastal-processes"],
+    "networks": [],
+    "funders": [{ "name": "Government of Mexico", "relation": "parent-agency" }],
+    "url": "https://www.gob.mx/inapesca",
+    "established": 1962,
+    "provenance": { "source_url": "https://www.gob.mx/inapesca/que-hacemos", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R6" }
+  },
+  {
+    "record_id": "R6-0004",
+    "canonical_name": "El Colegio de la Frontera Sur",
+    "acronym": "ECOSUR",
+    "parent_org": "CONACyT (Mexico)",
+    "facility_type": "international-federal",
+    "country": "MX",
+    "region": "Southeast Mexico / Caribbean",
+    "hq": { "address": "Av. Centenario km 5.5, 77014 Chetumal, Q.R., Mexico", "lat": 18.5322, "lng": -88.2719 },
+    "locations": [
+      { "label": "ECOSUR Chetumal", "address": "Av. Centenario km 5.5, 77014 Chetumal, Q.R., Mexico", "lat": 18.5322, "lng": -88.2719, "role": "headquarters" }
+    ],
+    "research_areas": ["coral-reefs", "mangroves", "marine-ecosystems", "estuaries-and-wetlands"],
+    "networks": ["IOCARIBE"],
+    "funders": [{ "name": "CONACyT", "relation": "parent-agency" }],
+    "url": "https://www.ecosur.mx/",
+    "established": 1994,
+    "provenance": { "source_url": "https://www.ecosur.mx/quienes-somos/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R6" }
+  },
+  {
+    "record_id": "R6-0005",
+    "canonical_name": "Smithsonian Tropical Research Institute",
+    "acronym": "STRI",
+    "parent_org": "Smithsonian Institution",
+    "facility_type": "international-federal",
+    "country": "PA",
+    "region": "Central America",
+    "hq": { "address": "Luis Clement Ave, Edificio 401 Tupper, 0843-03092 Panama, Panama", "lat": 8.9664, "lng": -79.5478 },
+    "locations": [
+      { "label": "STRI HQ Panama City", "address": "Luis Clement Ave, Edificio 401 Tupper, Panama", "lat": 8.9664, "lng": -79.5478, "role": "headquarters" },
+      { "label": "STRI Bocas del Toro Research Station", "address": "Isla Colón, Bocas del Toro, Panama", "lat": 9.3500, "lng": -82.2575, "role": "field-station" },
+      { "label": "STRI Galeta Point Marine Lab", "address": "Galeta Island, Colón, Panama", "lat": 9.4025, "lng": -79.8628, "role": "field-station" },
+      { "label": "STRI Naos Island Laboratories", "address": "Isla Naos, Amador, Panama", "lat": 8.9139, "lng": -79.5311, "role": "field-station" }
+    ],
+    "research_areas": ["coral-reefs", "mangroves", "marine-ecosystems", "biological-oceanography"],
+    "networks": ["IOCARIBE"],
+    "funders": [{ "name": "Smithsonian Institution", "relation": "parent-agency" }],
+    "url": "https://stri.si.edu/",
+    "established": 1910,
+    "provenance": { "source_url": "https://stri.si.edu/about", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R6" }
+  },
+  {
+    "record_id": "R6-0006",
+    "canonical_name": "Centro de Investigación en Ciencias del Mar y Limnología — UCR",
+    "acronym": "CIMAR",
+    "parent_org": "Universidad de Costa Rica",
+    "facility_type": "international-university",
+    "country": "CR",
+    "region": "Central America / Pacific",
+    "hq": { "address": "Ciudad Universitaria Rodrigo Facio, San Pedro, San José, Costa Rica", "lat": 9.9356, "lng": -84.0506 },
+    "locations": [
+      { "label": "CIMAR HQ UCR", "address": "Ciudad Universitaria Rodrigo Facio, San José, Costa Rica", "lat": 9.9356, "lng": -84.0506, "role": "headquarters" },
+      { "label": "CIMAR Estación Punta Morales", "address": "Punta Morales, Puntarenas, Costa Rica", "lat": 9.9972, "lng": -84.9556, "role": "field-station" }
+    ],
+    "research_areas": ["marine-ecosystems", "coral-reefs", "mangroves", "fisheries-and-aquaculture"],
+    "networks": [],
+    "funders": [{ "name": "Universidad de Costa Rica", "relation": "parent-agency" }],
+    "url": "https://www.cimar.ucr.ac.cr/",
+    "established": 1979,
+    "provenance": { "source_url": "https://www.cimar.ucr.ac.cr/acerca-de-cimar", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R6" }
+  },
+  {
+    "record_id": "R6-0007",
+    "canonical_name": "University of Belize Environmental Research Institute",
+    "acronym": "UB-ERI",
+    "parent_org": "University of Belize",
+    "facility_type": "international-university",
+    "country": "BZ",
+    "region": "Central America / Caribbean",
+    "hq": { "address": "Price Centre Rd, Belmopan, Belize", "lat": 17.2514, "lng": -88.7600 },
+    "locations": [
+      { "label": "UB-ERI HQ Belmopan", "address": "Price Centre Rd, Belmopan, Belize", "lat": 17.2514, "lng": -88.7600, "role": "headquarters" },
+      { "label": "Calabash Caye Field Station", "address": "Turneffe Atoll, Belize", "lat": 17.2833, "lng": -87.8167, "role": "field-station" }
+    ],
+    "research_areas": ["coral-reefs", "mangroves", "marine-ecosystems"],
+    "networks": ["IOCARIBE"],
+    "funders": [{ "name": "Government of Belize", "relation": "parent-agency" }],
+    "url": "https://www.ub.edu.bz/academics/research-institutes/eri/",
+    "established": 2010,
+    "provenance": { "source_url": "https://www.ub.edu.bz/academics/research-institutes/eri/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R6" }
+  },
+  {
+    "record_id": "R6-0008",
+    "canonical_name": "MarViva Foundation",
+    "acronym": "MarViva",
+    "parent_org": "Independent non-profit",
+    "facility_type": "international-nonprofit",
+    "country": "PA",
+    "region": "Central America / Eastern Tropical Pacific",
+    "hq": { "address": "Calle Santa Rita, Edificio MarViva, Panama City, Panama", "lat": 8.9810, "lng": -79.5200 },
+    "locations": [
+      { "label": "MarViva HQ Panama", "address": "Calle Santa Rita, Panama City, Panama", "lat": 8.9810, "lng": -79.5200, "role": "headquarters" }
+    ],
+    "research_areas": ["marine-policy-and-socio-economics", "fisheries-and-aquaculture", "marine-ecosystems"],
+    "networks": [],
+    "funders": [{ "name": "Private donors", "relation": "private-donor" }],
+    "url": "https://www.marviva.net/",
+    "established": 2003,
+    "provenance": { "source_url": "https://www.marviva.net/quienes-somos/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R6" }
+  },
+  {
+    "record_id": "R6-0009",
+    "canonical_name": "Centro de Investigación Científica de Yucatán — Unidad Ciencias del Agua",
+    "acronym": "CICY-UCIA",
+    "parent_org": "CONACyT (Mexico)",
+    "facility_type": "international-federal",
+    "country": "MX",
+    "region": "Gulf of Mexico / Yucatán",
+    "hq": { "address": "Calle 8, No. 39, Mz. 29, SM. 64, 77524 Cancún, Q.R., Mexico", "lat": 21.1619, "lng": -86.8515 },
+    "locations": [
+      { "label": "CICY Unidad Ciencias del Agua", "address": "Cancún, Q.R., Mexico", "lat": 21.1619, "lng": -86.8515, "role": "headquarters" }
+    ],
+    "research_areas": ["coastal-processes", "marine-biogeochemistry", "estuaries-and-wetlands", "physical-oceanography"],
+    "networks": [],
+    "funders": [{ "name": "CONACyT", "relation": "parent-agency" }],
+    "url": "https://www.cicy.mx/",
+    "established": 1979,
+    "provenance": { "source_url": "https://www.cicy.mx/Unidades/ucia", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R6" }
+  },
+  {
+    "record_id": "R6-0010",
+    "canonical_name": "Autoridad de los Recursos Acuáticos de Panamá",
+    "acronym": "ARAP",
+    "parent_org": "Government of Panama",
+    "facility_type": "international-federal",
+    "country": "PA",
+    "region": "Central America",
+    "hq": { "address": "Edificio Riande Continental, Panama City, Panama", "lat": 8.9690, "lng": -79.5330 },
+    "locations": [
+      { "label": "ARAP HQ Panama", "address": "Edificio Riande Continental, Panama City, Panama", "lat": 8.9690, "lng": -79.5330, "role": "headquarters" }
+    ],
+    "research_areas": ["fisheries-and-aquaculture", "marine-policy-and-socio-economics", "marine-ecosystems", "coastal-processes"],
+    "networks": [],
+    "funders": [{ "name": "Government of Panama", "relation": "parent-agency" }],
+    "url": "https://arap.gob.pa/",
+    "established": 2006,
+    "provenance": { "source_url": "https://arap.gob.pa/nosotros/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R6" }
+  }
+]
