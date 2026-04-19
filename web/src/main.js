@@ -14,8 +14,24 @@ const statusEl = document.getElementById('status');
 const map = initMap(document.getElementById('map'), state);
 initFilters(document.getElementById('filters'), state);
 
-document.getElementById('q').addEventListener('input', (ev) => {
-  state.setFilters({ q: ev.target.value });
+// Debounced search + clear button
+const qEl = document.getElementById('q');
+const qClear = document.getElementById('q-clear');
+
+function debounce(fn, ms) {
+  let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+}
+
+qEl.addEventListener('input', debounce((ev) => {
+  const val = ev.target.value;
+  qClear.classList.toggle('visible', val.length > 0);
+  state.setFilters({ q: val });
+}, 200));
+
+qClear.addEventListener('click', () => {
+  qEl.value = '';
+  qClear.classList.remove('visible');
+  state.setFilters({ q: '' });
 });
 
 async function refresh() {

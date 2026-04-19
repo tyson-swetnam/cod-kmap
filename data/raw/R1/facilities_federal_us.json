@@ -617,5 +617,110 @@
     "contact": null,
     "established": 1962,
     "provenance": { "source_url": "https://www.nps.gov/pore/learn/management/index.htm", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0026",
+    "canonical_name": "Pacific Islands Fisheries Science Center",
+    "acronym": "PIFSC",
+    "parent_org": "NOAA National Marine Fisheries Service",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Pacific Islands",
+    "hq": { "address": "1845 Wasp Blvd, Building 176, Honolulu, HI 96818, USA", "lat": 21.3461, "lng": -157.9392 },
+    "locations": [
+      { "label": "PIFSC Honolulu HQ", "address": "1845 Wasp Blvd, Building 176, Honolulu, HI 96818, USA", "lat": 21.3461, "lng": -157.9392, "role": "headquarters" },
+      { "label": "PIFSC Kona Field Station", "address": "73-4460 Queen Kaahumanu Hwy, Kailua-Kona, HI 96740, USA", "lat": 19.6400, "lng": -155.9969, "role": "field-station" }
+    ],
+    "research_areas": ["fisheries-and-aquaculture", "coral-reefs", "marine-ecosystems", "marine-mammals"],
+    "networks": ["PacIOOS"],
+    "funders": [{ "name": "NOAA", "relation": "parent-agency" }],
+    "url": "https://www.fisheries.noaa.gov/about/pacific-islands-fisheries-science-center",
+    "contact": null,
+    "established": 1970,
+    "provenance": { "source_url": "https://www.fisheries.noaa.gov/about/pacific-islands-fisheries-science-center", "retrieved_at": "2026-04-19", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0027",
+    "canonical_name": "Southwest Fisheries Science Center",
+    "acronym": "SWFSC",
+    "parent_org": "NOAA National Marine Fisheries Service",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Pacific / Southern California",
+    "hq": { "address": "8901 La Jolla Shores Dr, La Jolla, CA 92037, USA", "lat": 32.8669, "lng": -117.2536 },
+    "locations": [
+      { "label": "SWFSC La Jolla HQ", "address": "8901 La Jolla Shores Dr, La Jolla, CA 92037, USA", "lat": 32.8669, "lng": -117.2536, "role": "headquarters" },
+      { "label": "SWFSC Santa Cruz Lab", "address": "110 Shaffer Rd, Santa Cruz, CA 95060, USA", "lat": 36.9486, "lng": -122.0644, "role": "lab" },
+      { "label": "SWFSC Tiburon Lab", "address": "3150 Paradise Dr, Tiburon, CA 94920, USA", "lat": 37.8769, "lng": -122.4514, "role": "lab" }
+    ],
+    "research_areas": ["fisheries-and-aquaculture", "marine-mammals", "biological-oceanography", "climate-and-sea-level"],
+    "networks": ["SCCOOS"],
+    "funders": [{ "name": "NOAA", "relation": "parent-agency" }],
+    "url": "https://www.fisheries.noaa.gov/about/southwest-fisheries-science-center",
+    "contact": null,
+    "established": 1960,
+    "provenance": { "source_url": "https://www.fisheries.noaa.gov/about/southwest-fisheries-science-center", "retrieved_at": "2026-04-19", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0028",
+    "canonical_name": "NOAA National Centers for Environmental Information",
+    "acronym": "NCEI",
+    "parent_org": "NOAA Office of Oceanic and Atmospheric Research",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Southeast / National",
+    "hq": { "address": "151 Patton Ave, Asheville, NC 28801, USA", "lat": 35.5951, "lng": -82.5515 },
+    "locations": [
+      { "label": "NCEI Asheville HQ", "address": "151 Patton Ave, Asheville, NC 28801, USA", "lat": 35.5951, "lng": -82.5515, "role": "headquarters" },
+      { "label": "NCEI Silver Spring", "address": "1315 East-West Highway, Silver Spring, MD 20910, USA", "lat": 38.9907, "lng": -77.0262, "role": "office" },
+      { "label": "NCEI Stennis Space Center", "address": "Stennis Space Center, MS 39529, USA", "lat": 30.3625, "lng": -89.6086, "role": "office" }
+    ],
+    "research_areas": ["ocean-observing-systems", "climate-and-sea-level", "remote-sensing", "physical-oceanography"],
+    "networks": ["IOOS", "GOOS"],
+    "funders": [{ "name": "NOAA", "relation": "parent-agency" }],
+    "url": "https://www.ncei.noaa.gov/",
+    "contact": null,
+    "established": 2015,
+    "provenance": { "source_url": "https://www.ncei.noaa.gov/about", "retrieved_at": "2026-04-19", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0029",
+    "canonical_name": "NOAA Center for Operational Oceanographic Products and Services",
+    "acronym": "CO-OPS",
+    "parent_org": "NOAA National Ocean Service",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Mid-Atlantic / National",
+    "hq": { "address": "1305 East-West Highway, Silver Spring, MD 20910, USA", "lat": 38.9907, "lng": -77.0262 },
+    "locations": [
+      { "label": "CO-OPS Silver Spring HQ", "address": "1305 East-West Highway, Silver Spring, MD 20910, USA", "lat": 38.9907, "lng": -77.0262, "role": "headquarters" }
+    ],
+    "research_areas": ["ocean-observing-systems", "physical-oceanography", "climate-and-sea-level", "tsunamis-and-coastal-hazards"],
+    "networks": ["IOOS"],
+    "funders": [{ "name": "NOAA", "relation": "parent-agency" }],
+    "url": "https://tidesandcurrents.noaa.gov/",
+    "contact": null,
+    "established": 1900,
+    "provenance": { "source_url": "https://tidesandcurrents.noaa.gov/about.html", "retrieved_at": "2026-04-19", "confidence": "high", "agent": "R1" }
+  },
+  {
+    "record_id": "R1-0030",
+    "canonical_name": "Cape Hatteras National Seashore",
+    "acronym": "CAHA",
+    "parent_org": "US National Park Service",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Mid-Atlantic",
+    "hq": { "address": "1401 National Park Dr, Manteo, NC 27954, USA", "lat": 35.9083, "lng": -75.6658 },
+    "locations": [
+      { "label": "Cape Hatteras National Seashore HQ", "address": "1401 National Park Dr, Manteo, NC 27954, USA", "lat": 35.9083, "lng": -75.6658, "role": "headquarters" }
+    ],
+    "research_areas": ["coastal-erosion", "shoreline-change", "coastal-processes", "marine-ecosystems"],
+    "networks": [],
+    "funders": [{ "name": "US National Park Service", "relation": "parent-agency" }],
+    "url": "https://www.nps.gov/caha/",
+    "contact": null,
+    "established": 1953,
+    "provenance": { "source_url": "https://www.nps.gov/caha/learn/management/index.htm", "retrieved_at": "2026-04-19", "confidence": "high", "agent": "R1" }
   }
 ]

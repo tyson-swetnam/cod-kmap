@@ -56,7 +56,7 @@
       { "label": "CRIAP Guaymas", "address": "Calle Calle 20 S/N, Guaymas, Son., Mexico", "lat": 27.9181, "lng": -110.9000, "role": "field-station" },
       { "label": "CRIAP Manzanillo", "address": "Playa Ventanas s/n, Manzanillo, Col., Mexico", "lat": 19.0522, "lng": -104.3164, "role": "field-station" }
     ],
-    "research_areas": ["fisheries-and-aquaculture", "marine-ecosystems"],
+    "research_areas": ["fisheries-and-aquaculture", "marine-ecosystems", "biological-oceanography", "coastal-processes"],
     "networks": [],
     "funders": [{ "name": "Government of Mexico", "relation": "parent-agency" }],
     "url": "https://www.gob.mx/inapesca",
@@ -175,12 +175,12 @@
     "locations": [
       { "label": "CICY Unidad Ciencias del Agua", "address": "Cancún, Q.R., Mexico", "lat": 21.1619, "lng": -86.8515, "role": "headquarters" }
     ],
-    "research_areas": ["coastal-processes", "marine-biogeochemistry", "estuaries-and-wetlands"],
+    "research_areas": ["coastal-processes", "marine-biogeochemistry", "estuaries-and-wetlands", "physical-oceanography"],
     "networks": [],
     "funders": [{ "name": "CONACyT", "relation": "parent-agency" }],
     "url": "https://www.cicy.mx/",
     "established": 1979,
-    "provenance": { "source_url": "https://www.cicy.mx/", "retrieved_at": "2026-04-18", "confidence": "medium", "agent": "R6" }
+    "provenance": { "source_url": "https://www.cicy.mx/Unidades/ucia", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R6" }
   },
   {
     "record_id": "R6-0010",
@@ -194,11 +194,11 @@
     "locations": [
       { "label": "ARAP HQ Panama", "address": "Edificio Riande Continental, Panama City, Panama", "lat": 8.9690, "lng": -79.5330, "role": "headquarters" }
     ],
-    "research_areas": ["fisheries-and-aquaculture", "marine-policy-and-socio-economics"],
+    "research_areas": ["fisheries-and-aquaculture", "marine-policy-and-socio-economics", "marine-ecosystems", "coastal-processes"],
     "networks": [],
     "funders": [{ "name": "Government of Panama", "relation": "parent-agency" }],
     "url": "https://arap.gob.pa/",
     "established": 2006,
-    "provenance": { "source_url": "https://arap.gob.pa/nosotros/", "retrieved_at": "2026-04-18", "confidence": "medium", "agent": "R6" }
+    "provenance": { "source_url": "https://arap.gob.pa/nosotros/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R6" }
   }
 ]

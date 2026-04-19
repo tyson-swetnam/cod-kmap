@@ -78,14 +78,15 @@ export async function query(filterState) {
 
 function filterFallback(filterState) {
   if (!fallbackFeatures) return [];
-  const types = filterState.types && filterState.types.size ? filterState.types : null;
-  const countries = filterState.countries && filterState.countries.size ? filterState.countries : null;
+  const types = filterState.types?.size ? filterState.types : null;
+  const countries = filterState.countries?.size ? filterState.countries : null;
+  // areas/networks not available in GeoJSON; skip those filters in fallback mode
   const q = (filterState.q || '').toLowerCase();
   return fallbackFeatures.filter((feat) => {
     const p = feat.properties;
     if (types && !types.has(p.type)) return false;
     if (countries && !countries.has(p.country)) return false;
-    if (q && !(`${p.name} ${p.acronym ?? ''}`.toLowerCase().includes(q))) return false;
+    if (q && !(`${p.name ?? ''} ${p.acronym ?? ''}`.toLowerCase().includes(q))) return false;
     return true;
   });
 }

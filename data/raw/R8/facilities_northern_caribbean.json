@@ -80,7 +80,7 @@
     "funders": [{ "name": "Private donors", "relation": "private-donor" }],
     "url": "https://geraceresearchcentre.com/",
     "established": 1971,
-    "provenance": { "source_url": "https://geraceresearchcentre.com/", "retrieved_at": "2026-04-18", "confidence": "medium", "agent": "R8" }
+    "provenance": { "source_url": "https://geraceresearchcentre.com/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R8" }
   },
   {
     "record_id": "R8-0005",
@@ -137,7 +137,7 @@
     "funders": [{ "name": "University of the West Indies", "relation": "parent-agency" }],
     "url": "https://www.mona.uwi.edu/lifesciences/port-royal-marine-laboratory",
     "established": 1965,
-    "provenance": { "source_url": "https://www.mona.uwi.edu/lifesciences/port-royal-marine-laboratory", "retrieved_at": "2026-04-18", "confidence": "medium", "agent": "R8" }
+    "provenance": { "source_url": "https://www.mona.uwi.edu/lifesciences/port-royal-marine-laboratory", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R8" }
   },
   {
     "record_id": "R8-0008",
@@ -156,7 +156,7 @@
     "funders": [{ "name": "Universidad Autónoma de Santo Domingo", "relation": "parent-agency" }],
     "url": "https://cibima.uasd.edu.do/",
     "established": 1962,
-    "provenance": { "source_url": "https://cibima.uasd.edu.do/", "retrieved_at": "2026-04-18", "confidence": "medium", "agent": "R8" }
+    "provenance": { "source_url": "https://cibima.uasd.edu.do/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R8" }
   },
   {
     "record_id": "R8-0009",
@@ -175,7 +175,7 @@
     "funders": [{ "name": "Private donors", "relation": "private-donor" }],
     "url": "https://www.foprobim.org/",
     "established": 1992,
-    "provenance": { "source_url": "https://www.foprobim.org/", "retrieved_at": "2026-04-18", "confidence": "medium", "agent": "R8" }
+    "provenance": { "source_url": "https://www.foprobim.org/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R8" }
   },
   {
     "record_id": "R8-0010",

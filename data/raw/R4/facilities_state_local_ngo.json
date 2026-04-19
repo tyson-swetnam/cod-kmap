@@ -245,5 +245,120 @@
     "url": "https://schmidtocean.org/",
     "established": 2009,
     "provenance": { "source_url": "https://schmidtocean.org/about/", "retrieved_at": "2026-04-18", "confidence": "high", "agent": "R4" }
+  },
+  {
+    "record_id": "R4-0013",
+    "canonical_name": "Louisiana Coastal Protection and Restoration Authority",
+    "acronym": "CPRA",
+    "parent_org": "State of Louisiana",
+    "facility_type": "state",
+    "country": "US",
+    "region": "Gulf of Mexico",
+    "hq": { "address": "150 Terrace Ave, Baton Rouge, LA 70802, USA", "lat": 30.4500, "lng": -91.1875 },
+    "locations": [
+      { "label": "CPRA HQ Baton Rouge", "address": "150 Terrace Ave, Baton Rouge, LA 70802, USA", "lat": 30.4500, "lng": -91.1875, "role": "headquarters" }
+    ],
+    "research_areas": ["coastal-processes", "sediment-transport", "estuaries-and-wetlands", "marine-policy-and-socio-economics"],
+    "networks": [],
+    "funders": [
+      { "name": "State of Louisiana", "relation": "state-appropriation" },
+      { "name": "NOAA", "relation": "cooperative-agreement" }
+    ],
+    "url": "https://coastal.la.gov/",
+    "contact": null,
+    "established": 2005,
+    "provenance": { "source_url": "https://coastal.la.gov/about-us/", "retrieved_at": "2026-04-19", "confidence": "high", "agent": "R4" }
+  },
+  {
+    "record_id": "R4-0014",
+    "canonical_name": "Maryland Department of Natural Resources — Coastal and Ocean Program",
+    "acronym": "MD-DNR",
+    "parent_org": "Maryland Department of Natural Resources",
+    "facility_type": "state",
+    "country": "US",
+    "region": "Chesapeake Bay / Mid-Atlantic",
+    "hq": { "address": "580 Taylor Ave, Annapolis, MD 21401, USA", "lat": 38.9786, "lng": -76.4928 },
+    "locations": [
+      { "label": "MD DNR HQ Annapolis", "address": "580 Taylor Ave, Annapolis, MD 21401, USA", "lat": 38.9786, "lng": -76.4928, "role": "headquarters" }
+    ],
+    "research_areas": ["estuaries-and-wetlands", "fisheries-and-aquaculture", "coastal-processes", "marine-policy-and-socio-economics"],
+    "networks": [],
+    "funders": [
+      { "name": "State of Maryland", "relation": "state-appropriation" },
+      { "name": "NOAA", "relation": "cooperative-agreement" }
+    ],
+    "url": "https://dnr.maryland.gov/",
+    "contact": null,
+    "established": 1941,
+    "provenance": { "source_url": "https://dnr.maryland.gov/Pages/default.aspx", "retrieved_at": "2026-04-19", "confidence": "high", "agent": "R4" }
+  },
+  {
+    "record_id": "R4-0015",
+    "canonical_name": "Florida Department of Environmental Protection — Coastal and Aquatic Managed Areas",
+    "acronym": "FDEP-CAMA",
+    "parent_org": "Florida Department of Environmental Protection",
+    "facility_type": "state",
+    "country": "US",
+    "region": "Southeast Atlantic / Gulf",
+    "hq": { "address": "3900 Commonwealth Blvd, Tallahassee, FL 32399, USA", "lat": 30.4519, "lng": -84.2947 },
+    "locations": [
+      { "label": "FDEP HQ Tallahassee", "address": "3900 Commonwealth Blvd, Tallahassee, FL 32399, USA", "lat": 30.4519, "lng": -84.2947, "role": "headquarters" }
+    ],
+    "research_areas": ["coastal-processes", "marine-ecosystems", "estuaries-and-wetlands", "marine-policy-and-socio-economics"],
+    "networks": [],
+    "funders": [
+      { "name": "State of Florida", "relation": "state-appropriation" },
+      { "name": "NOAA", "relation": "cooperative-agreement" }
+    ],
+    "url": "https://floridadep.gov/rcp/cama",
+    "contact": null,
+    "established": 1969,
+    "provenance": { "source_url": "https://floridadep.gov/rcp/cama", "retrieved_at": "2026-04-19", "confidence": "high", "agent": "R4" }
+  },
+  {
+    "record_id": "R4-0016",
+    "canonical_name": "Surfrider Foundation",
+    "acronym": "Surfrider",
+    "parent_org": "Independent 501(c)(3)",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "Pacific / Southern California HQ / National ops",
+    "hq": { "address": "942 Calle Negocio, Suite 350, San Clemente, CA 92673, USA", "lat": 33.4269, "lng": -117.6189 },
+    "locations": [
+      { "label": "Surfrider Foundation HQ", "address": "942 Calle Negocio, Suite 350, San Clemente, CA 92673, USA", "lat": 33.4269, "lng": -117.6189, "role": "headquarters" }
+    ],
+    "research_areas": ["coastal-processes", "marine-debris-and-plastics", "marine-policy-and-socio-economics", "shoreline-change"],
+    "networks": [],
+    "funders": [
+      { "name": "Private donors", "relation": "private-donor" },
+      { "name": "Membership fees", "relation": "membership-fee" }
+    ],
+    "url": "https://www.surfrider.org/",
+    "contact": null,
+    "established": 1984,
+    "provenance": { "source_url": "https://www.surfrider.org/about", "retrieved_at": "2026-04-19", "confidence": "high", "agent": "R4" }
+  },
+  {
+    "record_id": "R4-0017",
+    "canonical_name": "Environmental Defense Fund — Oceans Program",
+    "acronym": "EDF Oceans",
+    "parent_org": "Environmental Defense Fund",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "National / New York HQ",
+    "hq": { "address": "257 Park Ave South, New York, NY 10010, USA", "lat": 40.7405, "lng": -73.9882 },
+    "locations": [
+      { "label": "EDF HQ New York", "address": "257 Park Ave South, New York, NY 10010, USA", "lat": 40.7405, "lng": -73.9882, "role": "headquarters" }
+    ],
+    "research_areas": ["fisheries-and-aquaculture", "marine-policy-and-socio-economics", "climate-and-sea-level", "marine-ecosystems"],
+    "networks": [],
+    "funders": [
+      { "name": "Private donors", "relation": "private-donor" },
+      { "name": "Foundations", "relation": "grant" }
+    ],
+    "url": "https://www.edf.org/oceans",
+    "contact": null,
+    "established": 1967,
+    "provenance": { "source_url": "https://www.edf.org/oceans", "retrieved_at": "2026-04-19", "confidence": "high", "agent": "R4" }
   }
 ]

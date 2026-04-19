@@ -28,7 +28,10 @@
           <p class="tagline">Coastal Observatory Design Knowledge Map</p>
         </header>
         <section id="search">
-          <input id="q" type="search" placeholder="Search facilities…" />
+          <div class="search-wrap">
+            <input id="q" type="search" placeholder="Search facilities…" autocomplete="off" />
+            <button id="q-clear" aria-label="Clear search" title="Clear">&#x2715;</button>
+          </div>
         </section>
         <section id="filters"></section>
         <section id="status" aria-live="polite">Loading data…</section>

@@ -49,7 +49,7 @@
     "locations": [
       { "label": "INIDEP HQ Mar del Plata", "address": "Paseo Victoria Ocampo No. 1, Mar del Plata, Argentina", "lat": -38.0558, "lng": -57.5381, "role": "headquarters" }
     ],
-    "research_areas": ["fisheries-and-aquaculture", "marine-ecosystems"],
+    "research_areas": ["fisheries-and-aquaculture", "marine-ecosystems", "biological-oceanography", "physical-oceanography"],
     "networks": [],
     "funders": [{ "name": "Government of Argentina", "relation": "parent-agency" }],
     "url": "https://www.argentina.gob.ar/inidep",
@@ -87,7 +87,7 @@
     "locations": [
       { "label": "IFOP HQ Valparaíso", "address": "Almirante Manuel Blanco Encalada 839, Valparaíso, Chile", "lat": -33.0328, "lng": -71.6147, "role": "headquarters" }
     ],
-    "research_areas": ["fisheries-and-aquaculture", "marine-ecosystems"],
+    "research_areas": ["fisheries-and-aquaculture", "marine-ecosystems", "biological-oceanography", "physical-oceanography"],
     "networks": [],
     "funders": [{ "name": "Government of Chile", "relation": "parent-agency" }],
     "url": "https://www.ifop.cl/",
