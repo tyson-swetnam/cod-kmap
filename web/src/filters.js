@@ -1,6 +1,5 @@
 import { fetchCSV } from './csv.js';
-
-const BASE = import.meta.env.BASE_URL;
+import { DATA_BASE as BASE } from './config.js';
 
 const COUNTRIES = [
   'US', 'CA', 'MX', 'BZ', 'GT', 'HN', 'SV', 'NI', 'CR', 'PA',

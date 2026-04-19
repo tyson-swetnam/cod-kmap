@@ -1,6 +1,6 @@
 // docs.js — Docs view: renders METHODS.md as styled HTML
 
-const BASE = import.meta.env.BASE_URL;
+import { DATA_BASE as BASE } from '../config.js';
 let _container = null;
 let _cachedHtml = null;
 

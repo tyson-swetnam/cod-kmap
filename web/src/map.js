@@ -1,8 +1,7 @@
 import L from 'leaflet';
 import 'leaflet.markercluster';
 import { fetchCSV } from './csv.js';
-
-const BASE = import.meta.env.BASE_URL;
+import { DATA_BASE as BASE } from './config.js';
 
 export const TYPE_COLORS = {
   federal: '#2563eb',

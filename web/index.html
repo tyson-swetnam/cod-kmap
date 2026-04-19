@@ -18,7 +18,16 @@
       rel="stylesheet"
       href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"
     />
-    <link rel="stylesheet" href="/src/styles.css" />
+    <link rel="stylesheet" href="./src/styles.css" />
+    <script type="importmap">
+    {
+      "imports": {
+        "leaflet": "https://esm.sh/leaflet@1.9.4",
+        "leaflet.markercluster": "https://esm.sh/leaflet.markercluster@1.5.3?deps=leaflet@1.9.4",
+        "@duckdb/duckdb-wasm": "https://esm.sh/@duckdb/duckdb-wasm@1.29.0"
+      }
+    }
+    </script>
   </head>
   <body>
     <header id="topbar">
@@ -54,6 +63,6 @@
         <section id="view-docs"   class="view"><div id="docs"></div></section>
       </main>
     </div>
-    <script type="module" src="/src/main.js"></script>
+    <script type="module" src="./src/main.js"></script>
   </body>
 </html>

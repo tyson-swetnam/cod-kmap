@@ -1,10 +1,11 @@
 import { applyFilters } from './filters.js';
+import { DATA_BASE } from './config.js';
 
 let db = null;        // duckdb.AsyncDuckDB instance
 let conn = null;
 let fallbackFeatures = null;
 
-const PARQUET_BASE = `${import.meta.env.BASE_URL}parquet/`;
+const PARQUET_BASE = `${DATA_BASE}parquet/`;
 
 async function fetchJson(path) {
   const res = await fetch(path);
@@ -13,7 +14,7 @@ async function fetchJson(path) {
 }
 
 export async function loadFallback() {
-  const geojson = await fetchJson(`${import.meta.env.BASE_URL}facilities.geojson`);
+  const geojson = await fetchJson(`${DATA_BASE}facilities.geojson`);
   fallbackFeatures = geojson.features || [];
   return fallbackFeatures;
 }
