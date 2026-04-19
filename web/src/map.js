@@ -33,6 +33,8 @@ function typeColorExpr() {
 let map;
 let _currentFeatures = [];
 let _hullsVisible = true;
+let _mapReady = false;
+let _pendingFeatures = null;
 
 const COASTLINE_URL =
   'https://raw.githubusercontent.com/martynafford/natural-earth-geojson/master/50m/physical/ne_50m_coastline.json';
@@ -215,24 +217,41 @@ export function initMap(container) {
     });
     map.on('mouseenter', 'clusters', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'clusters', () => { map.getCanvas().style.cursor = ''; });
+
+    // Mark ready and flush any features that arrived before the sources existed
+    _mapReady = true;
+    const pending = _pendingFeatures ?? _currentFeatures;
+    if (pending && pending.length) applyFeatures(pending);
   });
 
   return map;
 }
 
+// Re-layout the canvas (useful after sidebar drawer opens/closes on mobile)
+export function resizeMap() {
+  if (map) map.resize();
+}
+
 // ── renderFacilities ───────────────────────────────────────────────
 export function renderFacilities(features) {
   _currentFeatures = features;
-  const waitForMap = () => {
-    if (!map || !map.isStyleLoaded()) {
-      setTimeout(waitForMap, 100);
-      return;
-    }
-    const fc = { type: 'FeatureCollection', features };
-    map.getSource('facilities')?.setData(fc);
-    updateHulls(features);
-  };
-  waitForMap();
+  if (!_mapReady) {
+    // Stash until the map 'load' handler runs and registers sources
+    _pendingFeatures = features;
+    return;
+  }
+  applyFeatures(features);
+}
+
+function applyFeatures(features) {
+  const src = map.getSource('facilities');
+  if (!src) {
+    // Sources not yet registered — try again shortly
+    setTimeout(() => applyFeatures(features), 100);
+    return;
+  }
+  src.setData({ type: 'FeatureCollection', features });
+  updateHulls(features);
 }
 
 function updateHulls(features) {

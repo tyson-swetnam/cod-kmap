@@ -1,4 +1,4 @@
-import { initMap, renderFacilities } from './map.js';
+import { initMap, renderFacilities, resizeMap } from './map.js';
 import { initFilters } from './filters.js';
 import { initDB, loadFallback, query } from './db.js';
 import { initListView, renderList } from './views/list.js';
@@ -23,9 +23,13 @@ const backdrop = document.getElementById('sidebar-backdrop');
 function setDrawer(open) {
   document.body.classList.toggle('sidebar-open', open);
   toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  // Wait for the CSS transform animation (~200ms) then re-measure MapLibre
+  setTimeout(resizeMap, 250);
 }
 toggle.addEventListener('click', () => setDrawer(!document.body.classList.contains('sidebar-open')));
 backdrop.addEventListener('click', () => setDrawer(false));
+window.addEventListener('resize', () => resizeMap());
+window.addEventListener('orientationchange', () => setTimeout(resizeMap, 300));
 
 // ── Init map into its container ──────────────────────────────────────
 const map = initMap(document.getElementById('map'), state);
@@ -96,6 +100,8 @@ initRouter({
     document.body.classList.remove('no-sidebar');
     setDrawer(false);
     renderFacilities(state.lastFeatures);
+    // The map container may have been display:none while off-view — re-measure
+    setTimeout(resizeMap, 50);
   },
   '/browse': () => {
     showView('/browse');
