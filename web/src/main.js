@@ -63,21 +63,22 @@ qClear.addEventListener('click', () => {
   state.setFilters({ q: '' });
 });
 
-// ── Refresh: query + update active view ─────────────────────────────
+// Render all data-driven views from the same feature set so that switching
+// tabs is instant and bootstrap works regardless of which route the user
+// landed on.
+function renderAll(features) {
+  renderFacilities(features);
+  renderList(features);
+  renderStats(features);
+}
+
+// ── Refresh: query + update all views ───────────────────────────────
 async function refresh() {
   statusEl.textContent = 'Querying…';
   try {
     const features = await query(state.filters);
     state.lastFeatures = features;
-
-    const path = currentPath() || '/';
-    if (path === '/') {
-      renderFacilities(features);
-    } else if (path === '/browse') {
-      renderList(features);
-    } else if (path === '/stats') {
-      renderStats(features);
-    }
+    renderAll(features);
     statusEl.textContent = `${features.length.toLocaleString()} facilities shown`;
   } catch (err) {
     console.error(err);
@@ -135,7 +136,7 @@ function showView(path) {
   try {
     const fallback = await loadFallback();
     state.lastFeatures = fallback;
-    renderFacilities(fallback);
+    renderAll(fallback);
     statusEl.textContent = `${fallback.length.toLocaleString()} facilities (fallback)`;
   } catch (e) {
     statusEl.textContent = 'No data yet — run the ingest pipeline.';
