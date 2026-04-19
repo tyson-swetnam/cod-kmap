@@ -157,8 +157,7 @@ export function applyFilters(filterState) {
     const slugs = Array.from(filterState.areas);
     clauses.push(
       `f.facility_id IN (SELECT al.facility_id FROM area_links al ` +
-      `JOIN research_areas ra ON ra.area_id = al.area_id ` +
-      `WHERE ra.slug IN (${slugs.map(() => '?').join(',')}))`
+      `WHERE al.area_id IN (${slugs.map(() => '?').join(',')}))`
     );
     params.push(...slugs);
   }
@@ -166,8 +165,7 @@ export function applyFilters(filterState) {
     const slugs = Array.from(filterState.networks);
     clauses.push(
       `f.facility_id IN (SELECT nm.facility_id FROM network_membership nm ` +
-      `JOIN networks n ON n.network_id = nm.network_id ` +
-      `WHERE n.slug IN (${slugs.map(() => '?').join(',')}))`
+      `WHERE nm.network_id IN (${slugs.map(() => '?').join(',')}))`
     );
     params.push(...slugs);
   }
