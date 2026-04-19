@@ -223,8 +223,11 @@ footer a:hover { color: var(--c-primary); }
 #map { height: 100%; width: 100%; }
 
 /* ── Popups ─────────────────────────────────────────────────────── */
-.leaflet-popup-content-wrapper { border-radius: var(--radius) !important; }
-.leaflet-popup-content { margin: 12px 14px !important; }
+.maplibregl-popup-content {
+  border-radius: var(--radius) !important;
+  padding: 12px 14px !important;
+  box-shadow: var(--shadow-sm) !important;
+}
 
 .popup { max-width: 300px; font-size: 13px; line-height: 1.5; }
 .popup-name { font-weight: 700; font-size: 14px; color: var(--c-text); }
@@ -313,6 +316,23 @@ footer a:hover { color: var(--c-primary); }
   white-space: nowrap;
 }
 .fit-control a:hover { background: var(--c-chip-bg); color: var(--c-primary); }
+
+/* ── Hull-toggle control ────────────────────────────────────────── */
+.hull-toggle-control {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 5px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--c-primary-d);
+  white-space: nowrap;
+  user-select: none;
+}
+.hull-toggle-control:hover { background: var(--c-chip-bg); }
+.hull-toggle-control.hull-off { color: var(--c-muted); }
 
 /* ── Browse view ────────────────────────────────────────────────── */
 #view-browse { overflow: hidden; display: flex; flex-direction: column; }
@@ -475,13 +495,103 @@ footer a:hover { color: var(--c-primary); }
 .md-table thead { background: var(--c-chip-bg); font-weight: 600; }
 .md-table tr:nth-child(even) td { background: var(--c-bg); }
 
-/* ── Mobile ─────────────────────────────────────────────────────── */
-@media (max-width: 720px) {
-  body { height: auto; min-height: 100vh; }
-  #topbar { flex-wrap: wrap; height: auto; padding: 8px 12px; gap: 4px; }
+/* ── Hamburger button (hidden on desktop) ───────────────────────── */
+.sidebar-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: #fff;
+  padding: 10px 12px;
+  margin-right: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.hamburger-icon,
+.hamburger-icon::before,
+.hamburger-icon::after {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: #fff;
+  border-radius: 1px;
+}
+.hamburger-icon { position: relative; }
+.hamburger-icon::before,
+.hamburger-icon::after { content: ''; position: absolute; left: 0; }
+.hamburger-icon::before { top: -6px; }
+.hamburger-icon::after  { top:  6px; }
+
+/* ── Backdrop (mobile drawer) ───────────────────────────────────── */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 48px 0 0 0;
+  background: rgba(15,23,42,.45);
+  z-index: 900;
+}
+
+/* ── Stats cards: SVG scales down ──────────────────────────────── */
+#view-stats .card { min-width: 0; }
+#view-stats .card svg { max-width: 100%; height: auto; display: block; }
+
+/* ── Browse table scroll wrapper ────────────────────────────────── */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+
+/* ── Mobile: 900px breakpoint ───────────────────────────────────── */
+@media (max-width: 900px) {
+  .sidebar-toggle { display: inline-flex; align-items: center; }
   .brand-sub { display: none; }
+
+  /* Drawer behavior */
+  #sidebar {
+    position: fixed;
+    top: 48px; bottom: 0; left: 0;
+    width: 85vw; max-width: 340px;
+    transform: translateX(-100%);
+    transition: transform .2s ease-out;
+    z-index: 1000;
+    box-shadow: 2px 0 8px rgba(0,0,0,.1);
+    overflow-y: auto;
+  }
+  body.sidebar-open #sidebar { transform: translateX(0); }
+  body.sidebar-open .sidebar-backdrop { display: block; }
   #app { grid-template-columns: 1fr; }
-  body.no-sidebar #app { grid-template-columns: 1fr; }
-  #sidebar { max-height: 45vh; grid-template-rows: auto 1fr auto auto; }
+
+  /* Hide hamburger/backdrop when no sidebar (stats/docs views) */
+  body.no-sidebar .sidebar-toggle { display: none; }
+  body.no-sidebar .sidebar-backdrop { display: none !important; }
+
+  /* Stats cards stack vertically */
   .stats-charts { flex-direction: column; }
+  #view-stats .card { flex: 1 1 100% !important; }
+
+  /* Tabs compress */
+  .tabs a { padding: 6px 10px; font-size: 0.85rem; }
+
+  /* MapLibre controls: don't overlap topbar */
+  .maplibregl-ctrl-top-right { top: 8px; }
+}
+
+/* ── Mobile: 560px breakpoint ───────────────────────────────────── */
+@media (max-width: 560px) {
+  .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+  .tabs a { padding: 6px 8px; font-size: 0.8rem; white-space: nowrap; }
+
+  #topbar { padding: 0 8px; height: 48px; }
+  .brand { font-size: 0.95rem; }
+
+  /* Browse: tighter padding and smaller font */
+  #view-browse table { font-size: 0.82rem; }
+  #view-browse th, #view-browse td { padding: 5px 6px !important; }
+
+  /* Docs: reduce side padding, scale body font */
+  #view-docs .docs-body { padding: 14px !important; font-size: 15px; line-height: 1.55; }
+
+  /* Bigger tap targets for filter checkboxes */
+  .facet-body input[type=checkbox] { transform: scale(1.15); margin-right: 4px; }
+  .facet-body label { padding: 5px 0; }
+
+  /* Search input: larger tap area */
+  #q { padding: 10px 34px 10px 12px; font-size: 1rem; }
+  #q-clear { right: 10px; font-size: 1.2rem; padding: 6px; }
 }

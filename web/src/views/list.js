@@ -55,10 +55,10 @@ function buildTable(features) {
     </tr>`;
   }).join('');
 
-  return `<table class="browse-table">
+  return `<div class="table-scroll"><table class="browse-table">
     <thead><tr>${thead}</tr></thead>
     <tbody>${tbody}</tbody>
-  </table>`;
+  </table></div>`;
 }
 
 export function renderList(features) {
