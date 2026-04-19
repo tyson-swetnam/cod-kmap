@@ -462,6 +462,101 @@
 "geometry": {
 "type": "Point",
 "coordinates": [
+-157.9392,
+21.3461
+]
+},
+"properties": {
+"id": "dd3095175b685662",
+"name": "Pacific Islands Fisheries Science Center",
+"acronym": "PIFSC",
+"type": "federal",
+"country": "US",
+"url": "https://www.fisheries.noaa.gov/about/pacific-islands-fisheries-science-center",
+"parent_org": "NOAA National Marine Fisheries Service"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-117.2536,
+32.8669
+]
+},
+"properties": {
+"id": "857ab02255cf1f50",
+"name": "Southwest Fisheries Science Center",
+"acronym": "SWFSC",
+"type": "federal",
+"country": "US",
+"url": "https://www.fisheries.noaa.gov/about/southwest-fisheries-science-center",
+"parent_org": "NOAA National Marine Fisheries Service"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-82.5515,
+35.5951
+]
+},
+"properties": {
+"id": "92c3a14e84367d13",
+"name": "NOAA National Centers for Environmental Information",
+"acronym": "NCEI",
+"type": "federal",
+"country": "US",
+"url": "https://www.ncei.noaa.gov/",
+"parent_org": "NOAA Office of Oceanic and Atmospheric Research"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-77.0262,
+38.9907
+]
+},
+"properties": {
+"id": "d0c73a05032034a7",
+"name": "NOAA Center for Operational Oceanographic Products and Services",
+"acronym": "CO-OPS",
+"type": "federal",
+"country": "US",
+"url": "https://tidesandcurrents.noaa.gov/",
+"parent_org": "NOAA National Ocean Service"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-75.6658,
+35.9083
+]
+},
+"properties": {
+"id": "4fc4a5777ced0680",
+"name": "Cape Hatteras National Seashore",
+"acronym": "CAHA",
+"type": "federal",
+"country": "US",
+"url": "https://www.nps.gov/caha/",
+"parent_org": "US National Park Service"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
 -117.2533,
 32.8661
 ]
@@ -1253,6 +1348,101 @@
 "country": "US",
 "url": "https://schmidtocean.org/",
 "parent_org": "Independent 501(c)(3)"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-91.1875,
+30.45
+]
+},
+"properties": {
+"id": "a466a5260f8b77f9",
+"name": "Louisiana Coastal Protection and Restoration Authority",
+"acronym": "CPRA",
+"type": "state",
+"country": "US",
+"url": "https://coastal.la.gov/",
+"parent_org": "State of Louisiana"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-76.4928,
+38.9786
+]
+},
+"properties": {
+"id": "8c1ee7da2ea7726b",
+"name": "Maryland Department of Natural Resources \u2014 Coastal and Ocean Program",
+"acronym": "MD-DNR",
+"type": "state",
+"country": "US",
+"url": "https://dnr.maryland.gov/",
+"parent_org": "Maryland Department of Natural Resources"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-84.2947,
+30.4519
+]
+},
+"properties": {
+"id": "0ea7f7e7b79ebe69",
+"name": "Florida Department of Environmental Protection \u2014 Coastal and Aquatic Managed Areas",
+"acronym": "FDEP-CAMA",
+"type": "state",
+"country": "US",
+"url": "https://floridadep.gov/rcp/cama",
+"parent_org": "Florida Department of Environmental Protection"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-117.6189,
+33.4269
+]
+},
+"properties": {
+"id": "84fa48262b38b6c8",
+"name": "Surfrider Foundation",
+"acronym": "Surfrider",
+"type": "nonprofit",
+"country": "US",
+"url": "https://www.surfrider.org/",
+"parent_org": "Independent 501(c)(3)"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-73.9882,
+40.7405
+]
+},
+"properties": {
+"id": "8ec1a3c5596cbc64",
+"name": "Environmental Defense Fund \u2014 Oceans Program",
+"acronym": "EDF Oceans",
+"type": "nonprofit",
+"country": "US",
+"url": "https://www.edf.org/oceans",
+"parent_org": "Environmental Defense Fund"
 }
 },
 {
