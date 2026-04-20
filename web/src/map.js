@@ -221,8 +221,13 @@ function applyFeatures(features) {
     setTimeout(() => applyFeatures(features), 100);
     return;
   }
-  src.setData({ type: 'FeatureCollection', features });
-  updateHulls(features);
+  const mappable = features.filter(
+    (f) => f && f.geometry && Array.isArray(f.geometry.coordinates)
+      && Number.isFinite(f.geometry.coordinates[0])
+      && Number.isFinite(f.geometry.coordinates[1])
+  );
+  src.setData({ type: 'FeatureCollection', features: mappable });
+  updateHulls(mappable);
 }
 
 function updateHulls(features) {

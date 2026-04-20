@@ -74,7 +74,34 @@ export async function query(filterState) {
   `;
   const prepared = await conn.prepare(sql);
   const result = await prepared.query(...params);
-  return result.toArray().map((row) => row.toJSON());
+  const toArr = (v) => {
+    if (v == null) return [];
+    if (Array.isArray(v)) return v.filter((x) => x != null);
+    if (typeof v[Symbol.iterator] === 'function') return [...v].filter((x) => x != null);
+    return [];
+  };
+  return result.toArray().map((row) => {
+    const r = row.toJSON();
+    const lng = Number(r.lng);
+    const lat = Number(r.lat);
+    const hasCoords = Number.isFinite(lng) && Number.isFinite(lat);
+    return {
+      type: 'Feature',
+      geometry: hasCoords ? { type: 'Point', coordinates: [lng, lat] } : null,
+      properties: {
+        id: r.id,
+        name: r.name,
+        acronym: r.acronym,
+        type: r.type,
+        country: r.country,
+        parent_org: r.parent_org,
+        url: r.url,
+        funders: toArr(r.funders),
+        areas: toArr(r.areas),
+        networks: toArr(r.networks),
+      },
+    };
+  }).filter((f) => f.geometry !== null || f.properties.name);
 }
 
 function filterFallback(filterState) {
