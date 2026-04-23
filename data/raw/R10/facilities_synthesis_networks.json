@@ -1,0 +1,3891 @@
+[
+  {
+    "record_id": "R10-0001",
+    "canonical_name": "North Temperate Lakes LTER",
+    "acronym": "LTER",
+    "parent_org": "US Long-Term Ecological Research Network",
+    "facility_type": "network",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 46.0124,
+      "lng": -89.672
+    },
+    "locations": [
+      {
+        "label": "North Temperate Lakes LTER",
+        "address": null,
+        "lat": 46.0124,
+        "lng": -89.672,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "long-term-ecological-research",
+      "coastal-processes",
+      "coastal-terrestrial-ecosystems",
+      "estuaries-and-wetlands"
+    ],
+    "networks": [
+      "LTER",
+      "lter-site"
+    ],
+    "funders": [
+      {
+        "name": "NSF",
+        "relation": "grant"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0002",
+    "canonical_name": "Plum Island LTER",
+    "acronym": "LTER",
+    "parent_org": "US Long-Term Ecological Research Network",
+    "facility_type": "network",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 42.759,
+      "lng": -70.891
+    },
+    "locations": [
+      {
+        "label": "Plum Island LTER",
+        "address": null,
+        "lat": 42.759,
+        "lng": -70.891,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "long-term-ecological-research",
+      "coastal-processes",
+      "coastal-terrestrial-ecosystems",
+      "estuaries-and-wetlands"
+    ],
+    "networks": [
+      "LTER",
+      "lter-site"
+    ],
+    "funders": [
+      {
+        "name": "NSF",
+        "relation": "grant"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0003",
+    "canonical_name": "Northeast US Margin LTER",
+    "acronym": "LTER",
+    "parent_org": "US Long-Term Ecological Research Network",
+    "facility_type": "network",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 40.6967,
+      "lng": -70.8833
+    },
+    "locations": [
+      {
+        "label": "Northeast US Margin LTER",
+        "address": null,
+        "lat": 40.6967,
+        "lng": -70.8833,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "long-term-ecological-research",
+      "coastal-processes",
+      "coastal-terrestrial-ecosystems",
+      "estuaries-and-wetlands"
+    ],
+    "networks": [
+      "LTER",
+      "lter-site"
+    ],
+    "funders": [
+      {
+        "name": "NSF",
+        "relation": "grant"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0004",
+    "canonical_name": "Virginia Coast LTER",
+    "acronym": "LTER",
+    "parent_org": "US Long-Term Ecological Research Network",
+    "facility_type": "network",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 37.283,
+      "lng": -75.913
+    },
+    "locations": [
+      {
+        "label": "Virginia Coast LTER",
+        "address": null,
+        "lat": 37.283,
+        "lng": -75.913,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "long-term-ecological-research",
+      "coastal-processes",
+      "coastal-terrestrial-ecosystems",
+      "estuaries-and-wetlands"
+    ],
+    "networks": [
+      "LTER",
+      "lter-site"
+    ],
+    "funders": [
+      {
+        "name": "NSF",
+        "relation": "grant"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0005",
+    "canonical_name": "Georgia Coast LTER",
+    "acronym": "LTER",
+    "parent_org": "US Long-Term Ecological Research Network",
+    "facility_type": "network",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 31.427,
+      "lng": -81.371
+    },
+    "locations": [
+      {
+        "label": "Georgia Coast LTER",
+        "address": null,
+        "lat": 31.427,
+        "lng": -81.371,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "long-term-ecological-research",
+      "coastal-processes",
+      "coastal-terrestrial-ecosystems",
+      "estuaries-and-wetlands"
+    ],
+    "networks": [
+      "LTER",
+      "lter-site"
+    ],
+    "funders": [
+      {
+        "name": "NSF",
+        "relation": "grant"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0006",
+    "canonical_name": "Florida Coast LTER",
+    "acronym": "LTER",
+    "parent_org": "US Long-Term Ecological Research Network",
+    "facility_type": "network",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 25.4682,
+      "lng": -80.8533
+    },
+    "locations": [
+      {
+        "label": "Florida Coast LTER",
+        "address": null,
+        "lat": 25.4682,
+        "lng": -80.8533,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "long-term-ecological-research",
+      "coastal-processes",
+      "coastal-terrestrial-ecosystems",
+      "estuaries-and-wetlands"
+    ],
+    "networks": [
+      "LTER",
+      "lter-site"
+    ],
+    "funders": [
+      {
+        "name": "NSF",
+        "relation": "grant"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0007",
+    "canonical_name": "Santa Barbara Coastal LTER",
+    "acronym": "LTER",
+    "parent_org": "US Long-Term Ecological Research Network",
+    "facility_type": "network",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 34.4125,
+      "lng": -119.842
+    },
+    "locations": [
+      {
+        "label": "Santa Barbara Coastal LTER",
+        "address": null,
+        "lat": 34.4125,
+        "lng": -119.842,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "long-term-ecological-research",
+      "coastal-processes",
+      "coastal-terrestrial-ecosystems",
+      "estuaries-and-wetlands"
+    ],
+    "networks": [
+      "LTER",
+      "lter-site"
+    ],
+    "funders": [
+      {
+        "name": "NSF",
+        "relation": "grant"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0008",
+    "canonical_name": "California Current LTER",
+    "acronym": "LTER",
+    "parent_org": "US Long-Term Ecological Research Network",
+    "facility_type": "network",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 32.8736,
+      "lng": -120.28
+    },
+    "locations": [
+      {
+        "label": "California Current LTER",
+        "address": null,
+        "lat": 32.8736,
+        "lng": -120.28,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "long-term-ecological-research",
+      "coastal-processes",
+      "coastal-terrestrial-ecosystems",
+      "estuaries-and-wetlands"
+    ],
+    "networks": [
+      "LTER",
+      "lter-site"
+    ],
+    "funders": [
+      {
+        "name": "NSF",
+        "relation": "grant"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0009",
+    "canonical_name": "Northern Gulf of Alaska LTER",
+    "acronym": "LTER",
+    "parent_org": "US Long-Term Ecological Research Network",
+    "facility_type": "network",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 59.045,
+      "lng": -148.7
+    },
+    "locations": [
+      {
+        "label": "Northern Gulf of Alaska LTER",
+        "address": null,
+        "lat": 59.045,
+        "lng": -148.7,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "long-term-ecological-research",
+      "coastal-processes",
+      "coastal-terrestrial-ecosystems",
+      "estuaries-and-wetlands"
+    ],
+    "networks": [
+      "LTER",
+      "lter-site"
+    ],
+    "funders": [
+      {
+        "name": "NSF",
+        "relation": "grant"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0010",
+    "canonical_name": "Beaufort Lagoon LTER",
+    "acronym": "LTER",
+    "parent_org": "US Long-Term Ecological Research Network",
+    "facility_type": "network",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 71.29005,
+      "lng": -156.78861
+    },
+    "locations": [
+      {
+        "label": "Beaufort Lagoon LTER",
+        "address": null,
+        "lat": 71.29005,
+        "lng": -156.78861,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "long-term-ecological-research",
+      "coastal-processes",
+      "coastal-terrestrial-ecosystems",
+      "estuaries-and-wetlands"
+    ],
+    "networks": [
+      "LTER",
+      "lter-site"
+    ],
+    "funders": [
+      {
+        "name": "NSF",
+        "relation": "grant"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0011",
+    "canonical_name": "SERC, GCREW MarineGEO",
+    "acronym": null,
+    "parent_org": "Smithsonian Tennenbaum Marine Observatories Network",
+    "facility_type": "network",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 38.887,
+      "lng": -76.54
+    },
+    "locations": [
+      {
+        "label": "SERC, GCREW MarineGEO",
+        "address": null,
+        "lat": 38.887,
+        "lng": -76.54,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "marine-ecosystems",
+      "biological-oceanography",
+      "coastal-processes"
+    ],
+    "networks": [
+      "MarineGEO"
+    ],
+    "funders": [
+      {
+        "name": "Smithsonian Institution",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0012",
+    "canonical_name": "Indian River Lagoon MarineGEO",
+    "acronym": null,
+    "parent_org": "Smithsonian Tennenbaum Marine Observatories Network",
+    "facility_type": "network",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 27.460121,
+      "lng": -80.31134
+    },
+    "locations": [
+      {
+        "label": "Indian River Lagoon MarineGEO",
+        "address": null,
+        "lat": 27.460121,
+        "lng": -80.31134,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "marine-ecosystems",
+      "biological-oceanography",
+      "coastal-processes"
+    ],
+    "networks": [
+      "MarineGEO"
+    ],
+    "funders": [
+      {
+        "name": "Smithsonian Institution",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0013",
+    "canonical_name": "San Francisco Bay MarineGEO",
+    "acronym": null,
+    "parent_org": "Smithsonian Tennenbaum Marine Observatories Network",
+    "facility_type": "network",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 37.890491,
+      "lng": -122.44679
+    },
+    "locations": [
+      {
+        "label": "San Francisco Bay MarineGEO",
+        "address": null,
+        "lat": 37.890491,
+        "lng": -122.44679,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "marine-ecosystems",
+      "biological-oceanography",
+      "coastal-processes"
+    ],
+    "networks": [
+      "MarineGEO"
+    ],
+    "funders": [
+      {
+        "name": "Smithsonian Institution",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0014",
+    "canonical_name": "Gulf Coast MarineGEO",
+    "acronym": null,
+    "parent_org": "Smithsonian Tennenbaum Marine Observatories Network",
+    "facility_type": "network",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 27.712745,
+      "lng": -97.324143
+    },
+    "locations": [
+      {
+        "label": "Gulf Coast MarineGEO",
+        "address": null,
+        "lat": 27.712745,
+        "lng": -97.324143,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "marine-ecosystems",
+      "biological-oceanography",
+      "coastal-processes"
+    ],
+    "networks": [
+      "MarineGEO"
+    ],
+    "funders": [
+      {
+        "name": "Smithsonian Institution",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0015",
+    "canonical_name": "Swan's Island LTREB",
+    "acronym": "LTREB",
+    "parent_org": "NSF Long-term Research in Environmental Biology",
+    "facility_type": "network",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 44.1454423,
+      "lng": -68.4514095
+    },
+    "locations": [
+      {
+        "label": "Swan's Island LTREB",
+        "address": null,
+        "lat": 44.1454423,
+        "lng": -68.4514095,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "long-term-ecological-research",
+      "coastal-terrestrial-ecosystems",
+      "salt-marshes",
+      "tidal-wetlands"
+    ],
+    "networks": [
+      "LTREB"
+    ],
+    "funders": [
+      {
+        "name": "NSF",
+        "relation": "grant"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0016",
+    "canonical_name": "West Falmouth Harbor LTREB",
+    "acronym": "LTREB",
+    "parent_org": "NSF Long-term Research in Environmental Biology",
+    "facility_type": "network",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 41.6056631,
+      "lng": -70.6494753
+    },
+    "locations": [
+      {
+        "label": "West Falmouth Harbor LTREB",
+        "address": null,
+        "lat": 41.6056631,
+        "lng": -70.6494753,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "long-term-ecological-research",
+      "coastal-terrestrial-ecosystems",
+      "salt-marshes",
+      "tidal-wetlands"
+    ],
+    "networks": [
+      "LTREB"
+    ],
+    "funders": [
+      {
+        "name": "NSF",
+        "relation": "grant"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0017",
+    "canonical_name": "North Inlet LTREB",
+    "acronym": "LTREB",
+    "parent_org": "NSF Long-term Research in Environmental Biology",
+    "facility_type": "network",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 33.3293508,
+      "lng": -79.165617
+    },
+    "locations": [
+      {
+        "label": "North Inlet LTREB",
+        "address": null,
+        "lat": 33.3293508,
+        "lng": -79.165617,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "long-term-ecological-research",
+      "coastal-terrestrial-ecosystems",
+      "salt-marshes",
+      "tidal-wetlands"
+    ],
+    "networks": [
+      "LTREB"
+    ],
+    "funders": [
+      {
+        "name": "NSF",
+        "relation": "grant"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0018",
+    "canonical_name": "SERC GCREW LTREB",
+    "acronym": "LTREB",
+    "parent_org": "NSF Long-term Research in Environmental Biology",
+    "facility_type": "network",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 38.8853928,
+      "lng": -76.5466181
+    },
+    "locations": [
+      {
+        "label": "SERC GCREW LTREB",
+        "address": null,
+        "lat": 38.8853928,
+        "lng": -76.5466181,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "long-term-ecological-research",
+      "coastal-terrestrial-ecosystems",
+      "salt-marshes",
+      "tidal-wetlands"
+    ],
+    "networks": [
+      "LTREB"
+    ],
+    "funders": [
+      {
+        "name": "NSF",
+        "relation": "grant"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0019",
+    "canonical_name": "Casco Bay Estuary Partnership NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 1",
+    "hq": {
+      "address": null,
+      "lat": 43.6615123,
+      "lng": -70.2741546
+    },
+    "locations": [
+      {
+        "label": "Casco Bay Estuary Partnership NEP",
+        "address": null,
+        "lat": 43.6615123,
+        "lng": -70.2741546,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1990,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0020",
+    "canonical_name": "Piscataqua Region Estuaries Partnership NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 1",
+    "hq": {
+      "address": null,
+      "lat": 43.1321379,
+      "lng": -70.9370526
+    },
+    "locations": [
+      {
+        "label": "Piscataqua Region Estuaries Partnership NEP",
+        "address": null,
+        "lat": 43.1321379,
+        "lng": -70.9370526,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1995,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0021",
+    "canonical_name": "Massachusetts Bays National Estuary Program",
+    "acronym": null,
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 1",
+    "hq": {
+      "address": null,
+      "lat": 42.3250713,
+      "lng": -70.7882655
+    },
+    "locations": [
+      {
+        "label": "Massachusetts Bays National Estuary Program",
+        "address": null,
+        "lat": 42.3250713,
+        "lng": -70.7882655,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1990,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0022",
+    "canonical_name": "Buzzards Bay National Estuary Program",
+    "acronym": null,
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 1",
+    "hq": {
+      "address": null,
+      "lat": 41.5292751,
+      "lng": -70.8357792
+    },
+    "locations": [
+      {
+        "label": "Buzzards Bay National Estuary Program",
+        "address": null,
+        "lat": 41.5292751,
+        "lng": -70.8357792,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1987,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0023",
+    "canonical_name": "Narragansett Bay Estuary Program NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 1",
+    "hq": {
+      "address": null,
+      "lat": 41.8258457,
+      "lng": -71.4194802
+    },
+    "locations": [
+      {
+        "label": "Narragansett Bay Estuary Program NEP",
+        "address": null,
+        "lat": 41.8258457,
+        "lng": -71.4194802,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1987,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0024",
+    "canonical_name": "Long Island Sound Study NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 1",
+    "hq": {
+      "address": null,
+      "lat": 41.0439675,
+      "lng": -72.9479882
+    },
+    "locations": [
+      {
+        "label": "Long Island Sound Study NEP",
+        "address": null,
+        "lat": 41.0439675,
+        "lng": -72.9479882,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1987,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0025",
+    "canonical_name": "Peconic Estuary Program NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 2",
+    "hq": {
+      "address": null,
+      "lat": 40.9019576,
+      "lng": -72.6459415
+    },
+    "locations": [
+      {
+        "label": "Peconic Estuary Program NEP",
+        "address": null,
+        "lat": 40.9019576,
+        "lng": -72.6459415,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1993,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0026",
+    "canonical_name": "New York-New Jersey Harbor Estuary Program NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 40.7056857,
+      "lng": -74.0187937
+    },
+    "locations": [
+      {
+        "label": "New York-New Jersey Harbor Estuary Program NEP",
+        "address": null,
+        "lat": 40.7056857,
+        "lng": -74.0187937,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0027",
+    "canonical_name": "Barnegat Bay Partnership NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 2",
+    "hq": {
+      "address": null,
+      "lat": 39.8569748,
+      "lng": -74.1133082
+    },
+    "locations": [
+      {
+        "label": "Barnegat Bay Partnership NEP",
+        "address": null,
+        "lat": 39.8569748,
+        "lng": -74.1133082,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1995,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0028",
+    "canonical_name": "Partnership for the Delaware Estuary NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 3",
+    "hq": {
+      "address": null,
+      "lat": 39.7279463,
+      "lng": -75.5499614
+    },
+    "locations": [
+      {
+        "label": "Partnership for the Delaware Estuary NEP",
+        "address": null,
+        "lat": 39.7279463,
+        "lng": -75.5499614,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1988,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0029",
+    "canonical_name": "Delaware Center for the Inland Bays NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 3",
+    "hq": {
+      "address": null,
+      "lat": 38.610441,
+      "lng": -75.068486
+    },
+    "locations": [
+      {
+        "label": "Delaware Center for the Inland Bays NEP",
+        "address": null,
+        "lat": 38.610441,
+        "lng": -75.068486,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1988,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0030",
+    "canonical_name": "Maryland Coastal Bays Program NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 3",
+    "hq": {
+      "address": null,
+      "lat": 38.2303007,
+      "lng": -75.156004
+    },
+    "locations": [
+      {
+        "label": "Maryland Coastal Bays Program NEP",
+        "address": null,
+        "lat": 38.2303007,
+        "lng": -75.156004,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1995,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0031",
+    "canonical_name": "Albemarle-Pamlico National Estuary Partnership NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 4",
+    "hq": {
+      "address": null,
+      "lat": 35.6727638,
+      "lng": -76.2099182
+    },
+    "locations": [
+      {
+        "label": "Albemarle-Pamlico National Estuary Partnership NEP",
+        "address": null,
+        "lat": 35.6727638,
+        "lng": -76.2099182,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1987,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0032",
+    "canonical_name": "Indian River Lagoon National Estuary Program",
+    "acronym": null,
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 4",
+    "hq": {
+      "address": null,
+      "lat": 27.8171768,
+      "lng": -80.4758653
+    },
+    "locations": [
+      {
+        "label": "Indian River Lagoon National Estuary Program",
+        "address": null,
+        "lat": 27.8171768,
+        "lng": -80.4758653,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1990,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0033",
+    "canonical_name": "San Juan Bay Estuary Program",
+    "acronym": null,
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 2",
+    "hq": {
+      "address": null,
+      "lat": 18.4658555,
+      "lng": -66.1146247
+    },
+    "locations": [
+      {
+        "label": "San Juan Bay Estuary Program",
+        "address": null,
+        "lat": 18.4658555,
+        "lng": -66.1146247,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1992,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0034",
+    "canonical_name": "Sarasota Bay Estuary Program NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 4",
+    "hq": {
+      "address": null,
+      "lat": 27.3342869,
+      "lng": -82.5384102
+    },
+    "locations": [
+      {
+        "label": "Sarasota Bay Estuary Program NEP",
+        "address": null,
+        "lat": 27.3342869,
+        "lng": -82.5384102,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1988,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0035",
+    "canonical_name": "Tampa Bay Estuary Program NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 4",
+    "hq": {
+      "address": null,
+      "lat": 27.7569975,
+      "lng": -82.6366511
+    },
+    "locations": [
+      {
+        "label": "Tampa Bay Estuary Program NEP",
+        "address": null,
+        "lat": 27.7569975,
+        "lng": -82.6366511,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1990,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0036",
+    "canonical_name": "Mobile Bay National Estuary Program",
+    "acronym": null,
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 4",
+    "hq": {
+      "address": null,
+      "lat": 30.6884137,
+      "lng": -88.0396853
+    },
+    "locations": [
+      {
+        "label": "Mobile Bay National Estuary Program",
+        "address": null,
+        "lat": 30.6884137,
+        "lng": -88.0396853,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1995,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0037",
+    "canonical_name": "Barataria-Terrebonne National Estuary Program",
+    "acronym": null,
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 6",
+    "hq": {
+      "address": null,
+      "lat": 29.7904764,
+      "lng": -90.8053132
+    },
+    "locations": [
+      {
+        "label": "Barataria-Terrebonne National Estuary Program",
+        "address": null,
+        "lat": 29.7904764,
+        "lng": -90.8053132,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1990,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0038",
+    "canonical_name": "Galveston Bay Estuary Program NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 6",
+    "hq": {
+      "address": null,
+      "lat": 29.5297941,
+      "lng": -95.1173026
+    },
+    "locations": [
+      {
+        "label": "Galveston Bay Estuary Program NEP",
+        "address": null,
+        "lat": 29.5297941,
+        "lng": -95.1173026,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1988,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0039",
+    "canonical_name": "Coastal Bend Bays and Estuaries Program NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 6",
+    "hq": {
+      "address": null,
+      "lat": 27.7833656,
+      "lng": -97.3953712
+    },
+    "locations": [
+      {
+        "label": "Coastal Bend Bays and Estuaries Program NEP",
+        "address": null,
+        "lat": 27.7833656,
+        "lng": -97.3953712,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1992,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0040",
+    "canonical_name": "Santa Monica Bay National Estuary Program",
+    "acronym": null,
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 9",
+    "hq": {
+      "address": null,
+      "lat": 33.9584156,
+      "lng": -118.460678
+    },
+    "locations": [
+      {
+        "label": "Santa Monica Bay National Estuary Program",
+        "address": null,
+        "lat": 33.9584156,
+        "lng": -118.460678,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1988,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0041",
+    "canonical_name": "Morro Bay National Estuary Program",
+    "acronym": null,
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 9",
+    "hq": {
+      "address": null,
+      "lat": 35.3603128,
+      "lng": -120.8528731
+    },
+    "locations": [
+      {
+        "label": "Morro Bay National Estuary Program",
+        "address": null,
+        "lat": 35.3603128,
+        "lng": -120.8528731,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1995,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0042",
+    "canonical_name": "San Francisco Estuary Partnership NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 37.8952864,
+      "lng": -122.3180888
+    },
+    "locations": [
+      {
+        "label": "San Francisco Estuary Partnership NEP",
+        "address": null,
+        "lat": 37.8952864,
+        "lng": -122.3180888,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0043",
+    "canonical_name": "Tillamook Estuaries Partnership NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 10",
+    "hq": {
+      "address": null,
+      "lat": 45.5533608,
+      "lng": -123.9140618
+    },
+    "locations": [
+      {
+        "label": "Tillamook Estuaries Partnership NEP",
+        "address": null,
+        "lat": 45.5533608,
+        "lng": -123.9140618,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1994,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0044",
+    "canonical_name": "Lower Columbia Estuary Partnership NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 10",
+    "hq": {
+      "address": null,
+      "lat": 46.2574247,
+      "lng": -123.4792083
+    },
+    "locations": [
+      {
+        "label": "Lower Columbia Estuary Partnership NEP",
+        "address": null,
+        "lat": 46.2574247,
+        "lng": -123.4792083,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1995,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0045",
+    "canonical_name": "Puget Sound Partnership NEP",
+    "acronym": "NEP",
+    "parent_org": "EPA National Estuary Program",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "EPA Region 10",
+    "hq": {
+      "address": null,
+      "lat": 47.0201352,
+      "lng": -122.897359
+    },
+    "locations": [
+      {
+        "label": "Puget Sound Partnership NEP",
+        "address": null,
+        "lat": 47.0201352,
+        "lng": -122.897359,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "EPA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": 1987,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0046",
+    "canonical_name": "Mission Aransas NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 28.0514826,
+      "lng": -97.066865
+    },
+    "locations": [
+      {
+        "label": "Mission Aransas NERR",
+        "address": null,
+        "lat": 28.0514826,
+        "lng": -97.066865,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0047",
+    "canonical_name": "Wells NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 43.3392876,
+      "lng": -70.5530995
+    },
+    "locations": [
+      {
+        "label": "Wells NERR",
+        "address": null,
+        "lat": 43.3392876,
+        "lng": -70.5530995,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0048",
+    "canonical_name": "Great Bay NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 43.0712922,
+      "lng": -70.8773928
+    },
+    "locations": [
+      {
+        "label": "Great Bay NERR",
+        "address": null,
+        "lat": 43.0712922,
+        "lng": -70.8773928,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0049",
+    "canonical_name": "Waquoit Bay NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 41.5809498,
+      "lng": -70.5251321
+    },
+    "locations": [
+      {
+        "label": "Waquoit Bay NERR",
+        "address": null,
+        "lat": 41.5809498,
+        "lng": -70.5251321,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0050",
+    "canonical_name": "Narragansett Bay NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 41.5909573,
+      "lng": -71.3244867
+    },
+    "locations": [
+      {
+        "label": "Narragansett Bay NERR",
+        "address": null,
+        "lat": 41.5909573,
+        "lng": -71.3244867,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0051",
+    "canonical_name": "Jacques Cousteau NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 39.4808883,
+      "lng": -74.2999018
+    },
+    "locations": [
+      {
+        "label": "Jacques Cousteau NERR",
+        "address": null,
+        "lat": 39.4808883,
+        "lng": -74.2999018,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0052",
+    "canonical_name": "Hudson River NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 41.2978484,
+      "lng": -73.974922
+    },
+    "locations": [
+      {
+        "label": "Hudson River NERR",
+        "address": null,
+        "lat": 41.2978484,
+        "lng": -73.974922,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0053",
+    "canonical_name": "Delaware NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 39.0670137,
+      "lng": -75.3959892
+    },
+    "locations": [
+      {
+        "label": "Delaware NERR",
+        "address": null,
+        "lat": 39.0670137,
+        "lng": -75.3959892,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0054",
+    "canonical_name": "Chesapeake Bay Virginia NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 37.5456328,
+      "lng": -76.8856386
+    },
+    "locations": [
+      {
+        "label": "Chesapeake Bay Virginia NERR",
+        "address": null,
+        "lat": 37.5456328,
+        "lng": -76.8856386,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0055",
+    "canonical_name": "Chesapeake Bay Maryland NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 38.1470648,
+      "lng": -75.9705135
+    },
+    "locations": [
+      {
+        "label": "Chesapeake Bay Maryland NERR",
+        "address": null,
+        "lat": 38.1470648,
+        "lng": -75.9705135,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0056",
+    "canonical_name": "North Carolina NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 35.7002172,
+      "lng": -79.0159315
+    },
+    "locations": [
+      {
+        "label": "North Carolina NERR",
+        "address": null,
+        "lat": 35.7002172,
+        "lng": -79.0159315,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0057",
+    "canonical_name": "North Inlet-Winyah Bay NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 33.299152,
+      "lng": -79.2045709
+    },
+    "locations": [
+      {
+        "label": "North Inlet-Winyah Bay NERR",
+        "address": null,
+        "lat": 33.299152,
+        "lng": -79.2045709,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0058",
+    "canonical_name": "ACE Basin NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 32.4785392,
+      "lng": -80.4437779
+    },
+    "locations": [
+      {
+        "label": "ACE Basin NERR",
+        "address": null,
+        "lat": 32.4785392,
+        "lng": -80.4437779,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0059",
+    "canonical_name": "Sapelo Island NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 31.4393168,
+      "lng": -81.2900631
+    },
+    "locations": [
+      {
+        "label": "Sapelo Island NERR",
+        "address": null,
+        "lat": 31.4393168,
+        "lng": -81.2900631,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0060",
+    "canonical_name": "Guana Tolomato Matanza NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 30.0222118,
+      "lng": -81.3261408
+    },
+    "locations": [
+      {
+        "label": "Guana Tolomato Matanza NERR",
+        "address": null,
+        "lat": 30.0222118,
+        "lng": -81.3261408,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0061",
+    "canonical_name": "Old Woman Creek NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 41.3734803,
+      "lng": -82.5102793
+    },
+    "locations": [
+      {
+        "label": "Old Woman Creek NERR",
+        "address": null,
+        "lat": 41.3734803,
+        "lng": -82.5102793,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0062",
+    "canonical_name": "Lake Superior NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 46.6604375,
+      "lng": -92.1589445
+    },
+    "locations": [
+      {
+        "label": "Lake Superior NERR",
+        "address": null,
+        "lat": 46.6604375,
+        "lng": -92.1589445,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0063",
+    "canonical_name": "Jobos Bay NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 17.9527965,
+      "lng": -66.2226115
+    },
+    "locations": [
+      {
+        "label": "Jobos Bay NERR",
+        "address": null,
+        "lat": 17.9527965,
+        "lng": -66.2226115,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0064",
+    "canonical_name": "Rookery Bay NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 26.0444299,
+      "lng": -81.699722
+    },
+    "locations": [
+      {
+        "label": "Rookery Bay NERR",
+        "address": null,
+        "lat": 26.0444299,
+        "lng": -81.699722,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0065",
+    "canonical_name": "Apalachicola NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 29.6523967,
+      "lng": -84.9591821
+    },
+    "locations": [
+      {
+        "label": "Apalachicola NERR",
+        "address": null,
+        "lat": 29.6523967,
+        "lng": -84.9591821,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0066",
+    "canonical_name": "Weeks Bay NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 30.4070136,
+      "lng": -87.8325039
+    },
+    "locations": [
+      {
+        "label": "Weeks Bay NERR",
+        "address": null,
+        "lat": 30.4070136,
+        "lng": -87.8325039,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0067",
+    "canonical_name": "Grand Bay NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 30.3594682,
+      "lng": -88.4315339
+    },
+    "locations": [
+      {
+        "label": "Grand Bay NERR",
+        "address": null,
+        "lat": 30.3594682,
+        "lng": -88.4315339,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0068",
+    "canonical_name": "Kachemak Bay NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 59.6289168,
+      "lng": -151.4835234
+    },
+    "locations": [
+      {
+        "label": "Kachemak Bay NERR",
+        "address": null,
+        "lat": 59.6289168,
+        "lng": -151.4835234,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0069",
+    "canonical_name": "Padilla Bay NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 48.4920918,
+      "lng": -122.4825888
+    },
+    "locations": [
+      {
+        "label": "Padilla Bay NERR",
+        "address": null,
+        "lat": 48.4920918,
+        "lng": -122.4825888,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0070",
+    "canonical_name": "South Slough NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 43.2945448,
+      "lng": -124.3347
+    },
+    "locations": [
+      {
+        "label": "South Slough NERR",
+        "address": null,
+        "lat": 43.2945448,
+        "lng": -124.3347,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0071",
+    "canonical_name": "Elkhorn Slough NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 36.8150084,
+      "lng": -121.7286998
+    },
+    "locations": [
+      {
+        "label": "Elkhorn Slough NERR",
+        "address": null,
+        "lat": 36.8150084,
+        "lng": -121.7286998,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0072",
+    "canonical_name": "Tijuana River NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 32.546822,
+      "lng": -117.1144559
+    },
+    "locations": [
+      {
+        "label": "Tijuana River NERR",
+        "address": null,
+        "lat": 32.546822,
+        "lng": -117.1144559,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0073",
+    "canonical_name": "He'eia NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 21.4279623,
+      "lng": -157.8150528
+    },
+    "locations": [
+      {
+        "label": "He'eia NERR",
+        "address": null,
+        "lat": 21.4279623,
+        "lng": -157.8150528,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0074",
+    "canonical_name": "Chesapeake Bay Sentinel Site",
+    "acronym": null,
+    "parent_org": "NOAA Sentinel Site Program",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 37.5211664,
+      "lng": -76.1064047
+    },
+    "locations": [
+      {
+        "label": "Chesapeake Bay Sentinel Site",
+        "address": null,
+        "lat": 37.5211664,
+        "lng": -76.1064047,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "climate-and-sea-level",
+      "coastal-processes",
+      "estuaries-and-wetlands",
+      "coastal-disturbance"
+    ],
+    "networks": [
+      "Sentinel-Site"
+    ],
+    "funders": [
+      {
+        "name": "NOAA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0075",
+    "canonical_name": "Hawaiian Islands Sentinel Site",
+    "acronym": null,
+    "parent_org": "NOAA Sentinel Site Program",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 19.8967649,
+      "lng": -155.5827817
+    },
+    "locations": [
+      {
+        "label": "Hawaiian Islands Sentinel Site",
+        "address": null,
+        "lat": 19.8967649,
+        "lng": -155.5827817,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "climate-and-sea-level",
+      "coastal-processes",
+      "estuaries-and-wetlands",
+      "coastal-disturbance"
+    ],
+    "networks": [
+      "Sentinel-Site"
+    ],
+    "funders": [
+      {
+        "name": "NOAA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0076",
+    "canonical_name": "North Carolina Sentinel Site",
+    "acronym": null,
+    "parent_org": "NOAA Sentinel Site Program",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 36.0669857,
+      "lng": -75.7169092
+    },
+    "locations": [
+      {
+        "label": "North Carolina Sentinel Site",
+        "address": null,
+        "lat": 36.0669857,
+        "lng": -75.7169092,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "climate-and-sea-level",
+      "coastal-processes",
+      "estuaries-and-wetlands",
+      "coastal-disturbance"
+    ],
+    "networks": [
+      "Sentinel-Site"
+    ],
+    "funders": [
+      {
+        "name": "NOAA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0077",
+    "canonical_name": "San Francisco Bay NERR",
+    "acronym": "NERR",
+    "parent_org": "NOAA Office for Coastal Management",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 37.6734062,
+      "lng": -122.3070573
+    },
+    "locations": [
+      {
+        "label": "San Francisco Bay NERR",
+        "address": null,
+        "lat": 37.6734062,
+        "lng": -122.3070573,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "coastal-processes",
+      "salt-marshes",
+      "tidal-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [
+      "NERRS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA Office for Coastal Management",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0078",
+    "canonical_name": "Stellwagen Bank Marine Sanctuary",
+    "acronym": null,
+    "parent_org": "NOAA Office of National Marine Sanctuaries",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 42.4538098,
+      "lng": -70.3371919
+    },
+    "locations": [
+      {
+        "label": "Stellwagen Bank Marine Sanctuary",
+        "address": null,
+        "lat": 42.4538098,
+        "lng": -70.3371919,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "marine-ecosystems",
+      "coastal-processes",
+      "biological-oceanography",
+      "coral-reefs"
+    ],
+    "networks": [
+      "NMS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0079",
+    "canonical_name": "Mallows Bay-Potomac River Marine Sanctuary",
+    "acronym": null,
+    "parent_org": "NOAA Office of National Marine Sanctuaries",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 38.4730259,
+      "lng": -77.2557661
+    },
+    "locations": [
+      {
+        "label": "Mallows Bay-Potomac River Marine Sanctuary",
+        "address": null,
+        "lat": 38.4730259,
+        "lng": -77.2557661,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "marine-ecosystems",
+      "coastal-processes",
+      "biological-oceanography",
+      "coral-reefs"
+    ],
+    "networks": [
+      "NMS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0080",
+    "canonical_name": "Monitor Marine Sanctuary",
+    "acronym": null,
+    "parent_org": "NOAA Office of National Marine Sanctuaries",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 35.0086194,
+      "lng": -75.4082562
+    },
+    "locations": [
+      {
+        "label": "Monitor Marine Sanctuary",
+        "address": null,
+        "lat": 35.0086194,
+        "lng": -75.4082562,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "marine-ecosystems",
+      "coastal-processes",
+      "biological-oceanography",
+      "coral-reefs"
+    ],
+    "networks": [
+      "NMS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0081",
+    "canonical_name": "Gray's Reef Marine Sanctuary",
+    "acronym": null,
+    "parent_org": "NOAA Office of National Marine Sanctuaries",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 31.3821099,
+      "lng": -80.8654534
+    },
+    "locations": [
+      {
+        "label": "Gray's Reef Marine Sanctuary",
+        "address": null,
+        "lat": 31.3821099,
+        "lng": -80.8654534,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "marine-ecosystems",
+      "coastal-processes",
+      "biological-oceanography",
+      "coral-reefs"
+    ],
+    "networks": [
+      "NMS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  },
+  {
+    "record_id": "R10-0082",
+    "canonical_name": "Florida Keys Marine Sanctuary",
+    "acronym": null,
+    "parent_org": "NOAA Office of National Marine Sanctuaries",
+    "facility_type": "federal",
+    "country": "US",
+    "region": null,
+    "hq": {
+      "address": null,
+      "lat": 24.3953094,
+      "lng": -83.108599
+    },
+    "locations": [
+      {
+        "label": "Florida Keys Marine Sanctuary",
+        "address": null,
+        "lat": 24.3953094,
+        "lng": -83.108599,
+        "role": "observatory"
+      }
+    ],
+    "research_areas": [
+      "marine-ecosystems",
+      "coastal-processes",
+      "biological-oceanography",
+      "coral-reefs"
+    ],
+    "networks": [
+      "NMS"
+    ],
+    "funders": [
+      {
+        "name": "NOAA",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": null,
+    "contact": null,
+    "established": null,
+    "provenance": {
+      "source_url": "https://github.com/COMPASS-DOE/synthesis-networks",
+      "retrieved_at": "2026-04-23",
+      "confidence": "medium",
+      "agent": "R10"
+    }
+  }
+]

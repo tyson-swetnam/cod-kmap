@@ -8,9 +8,11 @@ metadata — location, facility type, parent organization, research focus, fundi
 source, and network membership — to help researchers and decision-makers
 understand the landscape of observing infrastructure.
 
-Current snapshot: **118 facilities**, **15 countries**, with coverage weighted
-toward the United States (federal, state, university, and NGO) and secondary
-coverage for Canada, Mexico, the Caribbean, and South America.
+Current snapshot: **200 facilities**, **15 countries**, with coverage weighted
+toward the United States (federal, state, university, NGO, and the member
+sites of the LTER, LTREB, MarineGEO, NERR, NEP, NMS, and NOAA Sentinel Site
+networks) and secondary coverage for Canada, Mexico, the Caribbean, and
+South America.
 
 ---
 
@@ -62,13 +64,19 @@ Each research agent produces a Markdown brief in `agents/<ID>-*.md`.
 - CONABIO / CONACYT Mexico
 - IOC-UNESCO Ocean Biodiversity Information System (obis.org)
 
-**External datasets**
+**External datasets (R10)**
 - COMPASS-DOE / synthesis-networks (github.com/COMPASS-DOE/synthesis-networks) —
   52-network attribute table and hexagon × ecoregion × hazard table
   from Myers-Pigg et al., *Advancing the understanding of coastal disturbances
   with a network-of-networks approach* (Ecosphere). Mirrored verbatim under
-  `data/raw/synthesis-networks/`; R10 agent spec governs the harmonization
-  path into the facilities graph.
+  `data/raw/synthesis-networks/`.
+- Spatial layers in `network_synth_spatial_analysis/` (LTER, LTREB, MarineGEO,
+  Sentinel Site, NERR, NEP, NMS points and NEP polygons) — harmonized into
+  82 facility records by `scripts/build_r10_from_spatial.py` and written to
+  `data/raw/R10/facilities_synthesis_networks.json`. This pass adds the
+  terrestrial coastal ecosystem sites (salt-marsh LTREB plots, LTER coastal
+  sites, NERR reserves) that the R1–R8 passes captured only at the parent
+  network level.
 
 ---
 
