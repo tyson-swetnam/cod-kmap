@@ -1,0 +1,15 @@
+{
+"type": "FeatureCollection",
+"features": [
+{ "type": "Feature", "properties": { "Name": "North Temperate Lakes LTER", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -89.672, 46.0124, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Plum Island LTER", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -70.891, 42.759, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Northeast US Margin LTER", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -70.8833, 40.6967, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Virginia Coast LTER", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -75.913, 37.283, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Georgia Coast LTER", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -81.371, 31.427, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Florida Coast LTER", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -80.8533, 25.4682, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Santa Barbara Coastal LTER", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -119.842, 34.4125, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "California Current LTER", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -120.28, 32.8736, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Northern Gulf of Alaska LTER", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -148.7, 59.045, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Beaufort Lagoon LTER", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -156.78861, 71.29005, 0.0 ] } }
+]
+}

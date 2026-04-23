@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"features": [
+{ "type": "Feature", "properties": { "Name": "Swan's Island LTREB", "FolderPath": "LTREB.kmz/LTREB", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -68.4514095, 44.1454423, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "West Falmouth Harbor LTREB", "FolderPath": "LTREB.kmz/LTREB", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -70.6494753, 41.6056631, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "North Inlet LTREB", "FolderPath": "LTREB.kmz/LTREB", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -79.165617, 33.3293508, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "SERC GCREW LTREB", "FolderPath": "LTREB.kmz/LTREB", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -76.5466181, 38.8853928, 0.0 ] } }
+]
+}

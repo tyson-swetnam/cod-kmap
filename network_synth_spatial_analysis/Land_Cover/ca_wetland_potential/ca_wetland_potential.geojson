@@ -1,0 +1,6 @@
+{
+"type": "FeatureCollection",
+"features": [
+{ "type": "Feature", "properties": { "GM_LAYER": "Unknown Area Type", "GM_TYPE": "Unknown Area Type", "LAYER": "Unknown Area Type", "location": "ca_wetland_potential.img", "URL": "ftp://csc.noaa.gov/pub/DigitalCoast/raster1/landcover/WetlandPotentialLayers/ca_wetland_potential.img", "MissionID": 4708 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ -125.1434821, 41.8580863 ], [ -121.2703671, 31.4418113 ], [ -114.7555599, 32.7376743 ], [ -117.7078254, 43.346113 ], [ -125.1434821, 41.8580863 ] ] ] } }
+]
+}

@@ -1,0 +1,872 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML xmlns="http://www.w3.org/1999/xhtml"><HEAD>
+<META content="text/html; charset=UTF-8" http-equiv=Content-Type>
+<SCRIPT type=text/javascript><!--
+      function fix(e) {
+        var par = e.parentNode;
+        e.id = "";
+        e.style.marginLeft = "0.42in";
+        var pos = e.innerText.indexOf("\n");
+        if (pos > 0) {
+          while (pos > 0) {
+            var t = e.childNodes(0);
+            var n = document.createElement("pre");
+            var s = t.splitText(pos);
+            e.insertAdjacentElement("afterEnd", n);
+            n.appendChild(s);
+            n.style.marginLeft = "0.42in";
+            e = n;
+            pos = e.innerText.indexOf("\n");
+          }
+          var count = (par.children.length);
+          for (var i = 0; i < count; i++) {
+            e = par.children(i);
+            if (e.tagName == "pre") {
+              pos = e.innerText.indexOf(">");
+              if (pos != 0) {
+                n = document.createElement("dd");
+                e.insertAdjacentElement("afterEnd", n);
+                n.innerText = e.innerText;
+                e.removeNode(true);
+              }
+            }
+          }
+          if (par.children.tags("pre").length > 0) {
+            count = (par.children.length);
+            for (i = 0; i < count; i++) {
+              e = par.children(i);
+              if (e.tagName == "pre") {
+                e.id = "";
+                if (i < (count-1)) {
+                  var e2 = par.children(i + 1);
+                  if (e2.tagName == "pre") {
+                    e.insertAdjacentText("beforeEnd", e2.innerText+"\n");
+                    e2.removeNode(true);
+                    count = count-1;
+                    i = i-1;
+                  }
+                }
+              }
+            }
+          }
+        }
+        else {
+          n = document.createElement("dd");
+          par.appendChild(n);
+          n.innerText = e.innerText;
+          e.removeNode(true);
+        }
+      }
+    -->
+</SCRIPT>
+
+<STYLE>BODY {
+	FONT-FAMILY: arial; COLOR: #000000; FONT-SIZE: 11pt
+}
+LI {
+	FONT-FAMILY: arial; COLOR: #000000; FONT-SIZE: 11pt
+}
+P {
+	FONT-FAMILY: arial; COLOR: #000000; FONT-SIZE: 11pt
+}
+DT {
+	FONT-FAMILY: arial; COLOR: #000000; FONT-SIZE: 11pt
+}
+DD {
+	FONT-FAMILY: arial; COLOR: #000000; FONT-SIZE: 11pt
+}
+DD {
+	FONT-FAMILY: arial; COLOR: #000000; FONT-SIZE: 11pt
+}
+TABLE.head {
+	BORDER-BOTTOM: #cccccc 1px solid; BORDER-LEFT: #cccccc 1px solid; BORDER-TOP: #cccccc 1px solid; BORDER-RIGHT: #cccccc 1px solid
+}
+TH {
+	TEXT-ALIGN: left; PADDING-BOTTOM: 5px; PADDING-LEFT: 5px; PADDING-RIGHT: 10px; FONT-FAMILY: arial; COLOR: #000000; FONT-SIZE: 11pt; PADDING-TOP: 5px
+}
+TD {
+	PADDING-BOTTOM: 5px; PADDING-LEFT: 5px; PADDING-RIGHT: 10px; FONT-FAMILY: arial; COLOR: #000000; FONT-SIZE: 10pt; PADDING-TOP: 5px
+}
+H1 {
+	COLOR: #000000; TEXT-DECORATION: none
+}
+H2 {
+	TEXT-DECORATION: none
+}
+.head_row {
+	BACKGROUND-COLOR: #f6f6f6
+}
+TABLE.head {
+	BORDER-BOTTOM: #cccccc 1px solid; BORDER-LEFT: #cccccc 1px solid; BORDER-TOP: #cccccc 1px solid; BORDER-RIGHT: #cccccc 1px solid
+}
+TD.head {
+	BORDER-BOTTOM: #e4e4e4 0px solid; BORDER-LEFT: #e4e4e4 0px solid; PADDING-BOTTOM: 5px; PADDING-LEFT: 5px; PADDING-RIGHT: 10px; FONT-FAMILY: arial; COLOR: #000000; FONT-SIZE: 11pt; BORDER-TOP: #e4e4e4 0px solid; BORDER-RIGHT: #e4e4e4 1px solid; PADDING-TOP: 5px
+}
+TH.head {
+	BORDER-BOTTOM: #e4e4e4 1px solid; TEXT-ALIGN: left; BORDER-LEFT: #e4e4e4 0px solid; PADDING-BOTTOM: 5px; PADDING-LEFT: 5px; PADDING-RIGHT: 10px; FONT-FAMILY: arial; COLOR: #000000; FONT-SIZE: 11pt; BORDER-TOP: #e4e4e4 0px solid; BORDER-RIGHT: #e4e4e4 1px solid; PADDING-TOP: 5px
+}
+.head_row {
+	BACKGROUND-COLOR: #f6f6f6
+}
+.even_row {
+	BACKGROUND-COLOR: #f8f8f8
+}
+</STYLE>
+
+<META name=GENERATOR content="MSHTML 9.00.8112.16490"></HEAD>
+<BODY oncontextmenu="return true">
+<TABLE>
+  <THEAD>
+  <TR>
+    <TD>
+      <TABLE border=0 cellSpacing=0 cellPadding=0 width="100%">
+        <TBODY>
+        <TR></TR></TBODY></TABLE>
+      <HR>
+    </TD></TR></THEAD>
+  <TBODY>
+  <TR>
+    <TD><A name=Top>
+      <H1>National Marine Sanctuary of American Samoa Boundary (polygon)</H1>
+      <H2><FONT color=green>Metadata:</FONT> </H2>
+      <UL>
+        <LI><A 
+        href="file:///C:/Users/tony.reyer/AppData/Local/Temp/8/tmpF97E.tmp.html#Identification_Information">Identification 
+        Information</A> 
+        <LI><A 
+        href="file:///C:/Users/tony.reyer/AppData/Local/Temp/8/tmpF97E.tmp.html#Data_Quality_Information">Data 
+        Quality Information</A> 
+        <LI><A 
+        href="file:///C:/Users/tony.reyer/AppData/Local/Temp/8/tmpF97E.tmp.html#Spatial_Data_Organization_Information">Spatial 
+        Data Organization Information</A> 
+        <LI><A 
+        href="file:///C:/Users/tony.reyer/AppData/Local/Temp/8/tmpF97E.tmp.html#Spatial_Reference_Information">Spatial 
+        Reference Information</A> 
+        <LI><A 
+        href="file:///C:/Users/tony.reyer/AppData/Local/Temp/8/tmpF97E.tmp.html#Entity_and_Attribute_Information">Entity 
+        and Attribute Information</A> 
+        <LI><A 
+        href="file:///C:/Users/tony.reyer/AppData/Local/Temp/8/tmpF97E.tmp.html#IDA5SNWC">Distribution 
+        Information</A> 
+        <LI><A 
+        href="file:///C:/Users/tony.reyer/AppData/Local/Temp/8/tmpF97E.tmp.html#Metadata_Reference_Information">Metadata 
+        Reference Information</A> </LI></UL><A name=Identification_Information 
+      xmlns="">
+      <HR>
+      </A>
+      <DL xmlns="">
+        <DT><I>Identification Information:</I> 
+        <DD>
+        <DL>
+          <DT><I>Citation:</I> 
+          <DD>
+          <DL>
+            <DT><I>Citation Information:</I> 
+            <DD>
+            <DL>
+              <DT><I>Originator: </I>NOAA / Office of National Marine 
+              Sanctuaries 
+              <DT><I>Publication Date: </I>07/03/2013 
+              <DT><I>Publication Time: </I>08:10 
+              <DT><I>Title:</I> 
+              <DD>National Marine Sanctuary of American Samoa Boundary (polygon) 
+
+              <DT><I>Edition: </I>201307 
+              <DT><I>Geospatial Data Presentation Form: </I>vector digital data 
+              <DT><I>Series Information:</I> 
+              <DD>
+              <DL>
+                <DT><I>Series Name: </I>Office of Naitonal Marine Sanctuaries 
+                Boundary Data 
+                <DT><I>Issue Identification: </I>Sanctuary Boundary </DT></DL>
+              <DT><I>Publication Information:</I> 
+              <DD>
+              <DL>
+                <DT><I>Publication Place: </I>Silver Spring, MD 
+                <DT><I>Publisher: </I>NOAA / Office of National Marine 
+                Sanctuaries </DT></DL>
+              <DT><I>Other Citation Details:</I> 
+              <DD>none 
+              <DT><I>Online Linkage: </I><A href="http://www.sanctuaries.gov/" 
+              target=viewer>http://www.sanctuaries.gov/</A> 
+              <DT><I>Larger Work Citation:</I> 
+              <DD>
+              <DL>
+                <DT><I>Citation Information:</I> 
+                <DD>
+                <DL>
+                  <DT><I>Originator: </I>NOAA / Office of Naitonal Marine 
+                  Sanctuaries 
+                  <DT><I>Publication Date: </I>07/03/2013 
+                  <DT><I>Publication Time: </I>08:16 
+                  <DT><I>Title:</I> 
+                  <DD>National Marine Sanctuary of American Samoa 
+                  <DT><I>Edition: </I>201307 
+                  <DT><I>Geospatial Data Presentation Form: </I>vector digital 
+                  data 
+                  <DT><I>Series Information:</I> 
+                  <DD>
+                  <DL>
+                    <DT><I>Series Name: </I>Office of National Marine 
+                    Sanctuaries Boundary 
+                    <DT><I>Issue Identification: </I>Sanctuary Boundary </DT></DL>
+                  <DT><I>Publication Information:</I> 
+                  <DD>
+                  <DL>
+                    <DT><I>Publication Place: </I>SIlver Spring, MD 
+                    <DT><I>Publisher: </I>NOAA / Office of National Marine 
+                    Sanctuaries </DT></DL>
+                  <DT><I>Online Linkage: </I><A 
+                  href="http://sanctuaries.noaa.gov/" 
+                  target=viewer>http://sanctuaries.noaa.gov/</A> 
+              </DT></DL></DD></DL></DD></DL></DD></DL>
+          <DT><I>Description:</I> 
+          <DD>
+          <DL>
+            <DIV>
+            <DT><I>Abstract:</I> <PRE id=original>The Office of National Marine Sanctuaries manages a system of sanctuaries and other managed areas around the country. The legal boundaries of these sanctuaries are defined within the Code of Federal Regulations, at 15 C.F.R. Part 922 and the subparts for each national marine sanctuary. The GIS compatible digital boundary files for each national marine sanctuary are representations of those legal boundaries and are based on the best available data. These files are available for public use at locations defined in this metadata record. </PRE>
+            <SCRIPT>fix(original)</SCRIPT>
+            </DT></DIV>
+            <DIV>
+            <DT><I>Purpose:</I> <PRE id=original>These GIS compatible digital files are provided to promote an understanding of the boundaries of each national marine sanctuary. They are based on the legal definition of each sanctuary as defined in the Code of Federal Regulations, at 15 C.F.R. Part 922 and the subparts for each national marine sanctuary. These digital files are not intended and should not be relied upon for use in navigation or legal purposes. For legal questions relating to the digital files, please contact the ONMS at the information provided in this metadata record. </PRE>
+            <SCRIPT>fix(original)</SCRIPT>
+            </DT></DIV>
+            <DIV>
+            <DT><I>Supplemental Information:</I> <PRE id=original>The FwsInterest feature class is an aggregated data layer derived by appending separate regional feature data sets into a single national set. The spatial and positional accuracy of this information will vary depending on the original source data and methods utilized. Data sources are not listed in this document but are maintained for each region and can be requested. We strive to improve the accuracy of this data and incorporate more reliable information when available.</PRE>
+            <SCRIPT>fix(original)</SCRIPT>
+            </DT></DIV></DL>
+          <DT><I>Time Period of Content:</I> 
+          <DD>
+          <DL>
+            <DT><I>Time Period Information:</I> 
+            <DD>
+            <DL>
+              <DT><I>Single Date/Time:</I> 
+              <DD>
+              <DL>
+                <DT><I>Calendar Date: </I>07/03/2013 
+                <DT><I>Time of Day: </I>08:20 </DT></DL></DD></DL>
+            <DIV></DIV>
+            <DT><I>Currentness Reference:</I> <PRE id=original>publication date</PRE>
+            <SCRIPT>fix(original)</SCRIPT>
+
+            <DIV></DIV></DT></DL>
+          <DT><I>Status:</I> 
+          <DD>
+          <DL>
+            <DT><I>Progress: </I>Complete 
+            <DT><I>Maintenance and Update Frequency: </I>Daily </DT></DL>
+          <DT><I>Spatial Domain:</I> 
+          <DD>
+          <DL>
+            <DT><I>Bounding Coordinates:</I> 
+            <DD>
+            <DL>
+              <DT><I>West Bounding Coordinate: </I>-179.147969 
+              <DT><I>East Bounding Coordinate: </I>179.772678 
+              <DT><I>North Bounding Coordinate: </I>70.329407 
+              <DT><I>South Bounding Coordinate: </I>-14.609461 </DT></DL></DD></DL>
+          <DT><I>Keywords:</I> 
+          <DD>
+          <DL>
+            <DT><I>Theme:</I> 
+            <DD>
+            <DL>
+              <DT><I>Theme Keyword Thesaurus: </I>ISO 19115 Topic Categories 
+              <DT><I>Theme Keyword: </I>boundaries 
+              <DT><I>Theme Keyword: </I></DT></DL>
+            <DT><I>Theme:</I> 
+            <DD>
+            <DL>
+              <DT><I>Theme Keyword Thesaurus: </I>None 
+              <DT><I>Theme Keyword: </I>Code of Federal Regulation 
+              <DT><I>Theme Keyword: </I>marine protected area 
+              <DT><I>Theme Keyword: </I>MPA 
+              <DT><I>Theme Keyword: </I>National Marine Sanctuary 
+              <DT><I>Theme Keyword: </I>NMS 
+              <DT><I>Theme Keyword: </I>ONMS 
+              <DT><I>Theme Keyword: </I>CFR </DT></DL>
+            <DT><I>Place:</I> 
+            <DD>
+            <DL>
+              <DT><I>Place Keyword Thesaurus: </I>Sanctuary 
+              <DT><I>Place Keyword: </I>American Samoa 
+              <DT><I>Place Keyword: </I>Marine 
+              <DT><I>Place Keyword: </I>National Marine Sanctuary 
+              <DT><I>Place Keyword: </I>NMS 
+              <DT><I>Place Keyword: </I>South Pacific </DT></DL></DD></DL>
+          <DT><I>Access Constraints: </I>None 
+          <DIV></DIV>
+          <DT><I>Use Constraints:</I> <PRE id=original>This data layer was compiled for use with natural resource mapping and GIS applications. It is inappropriate to use these data for legal purposes.</PRE>
+          <SCRIPT>fix(original)</SCRIPT>
+
+          <DIV></DIV>
+          <DT><I>Point of Contact:</I> 
+          <DD>
+          <DL>
+            <DT><I>Contact Information:</I> 
+            <DD>
+            <DL>
+              <DT><I>Contact Person Primary:</I> 
+              <DD>
+              <DL>
+                <DT><I>Contact Person: </I>ONMS Boundary Coordinator 
+                <DT><I>Contact Organization: </I>NOAA / Office of National 
+                Marine Sanctuaries </DT></DL>
+              <DT><I>Contact Position: </I>ONMS Boundary Coordinator 
+              <DT><I>Contact Address:</I> 
+              <DD>
+              <DL>
+                <DT><I>Address Type: </I>mailing and physical address 
+                <DIV></DIV>
+                <DT><I>Address:</I> <PRE id=original>N/NMS, SSMC4, 1305 East West Hwy</PRE>
+                <SCRIPT>fix(original)</SCRIPT>
+
+                <DIV></DIV>
+                <DT><I>City: </I>Silver Spring 
+                <DT><I>State or Province: </I>MD 
+                <DT><I>Postal Code: </I>20910 
+                <DT><I>Country: </I>United States of America </DT></DL>
+              <DT><I>Contact Voice Telephone: </I>(301) 713-3125 
+              <DT><I>Contact Facsimile Telephone: </I>(310) 713-4306 
+              <DT><I>Contact Electronic Mail Address: </I>sanctuaries@noaa.gov 
+              <DT><I>Hours of Service: </I>9:00AM to 4:00PM EST; Monday - Friday 
+              </DT></DL></DD></DL>
+          <DT><I>Native Data Set Environment:</I> 
+          <DD>Microsoft Windows XP Version 5.1 (Build 2600) Service Pack 2; ESRI 
+          ArcCatalog 9.3.1.1850 </DD></DL></DD></DL><A 
+      href="file:///C:/Users/tony.reyer/AppData/Local/Temp/8/tmpF97E.tmp.html#Top" 
+      xmlns="">Back to Top</A><A name=Data_Quality_Information xmlns="">
+      <HR>
+      </A>
+      <DL xmlns="">
+        <DT><I>Data Quality Information:</I> 
+        <DD>
+        <DL>
+          <DT><I>Attribute Accuracy:</I> 
+          <DD>
+          <DL>
+            <DIV>
+            <DT><I>Attribute Accuracy Report:</I> <PRE id=original>Attributes were standardized by feature type (point, line, and polygon) across all sanctuary boundaries. The values recorded for each attribute were quality assured and believed to be accurate. </PRE>
+            <SCRIPT>fix(original)</SCRIPT>
+            </DT></DIV></DL>
+          <DIV></DIV>
+          <DT><I>Logical Consistency Report:</I> <PRE id=original>The data were topologically cleaned.</PRE>
+          <SCRIPT>fix(original)</SCRIPT>
+
+          <DIV></DIV>
+          <DIV></DIV>
+          <DT><I>Completeness Report:</I> <PRE id=original>Where possible, the entire boundary for the sanctuary is represented by this digital file. </PRE>
+          <SCRIPT>fix(original)</SCRIPT>
+
+          <DIV></DIV>
+          <DT><I>Positional Accuracy:</I> 
+          <DD>
+          <DL>
+            <DT><I>Horizontal Positional Accuracy:</I> 
+            <DD>
+            <DL>
+              <DIV>
+              <DT><I>Horizontal Positional Accuracy Report:</I> <PRE id=original>Positional accuracy will vary depending on source</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+              </DT></DIV></DL>
+            <DT><I>Vertical Positional Accuracy:</I> 
+            <DD>
+            <DL>
+              <DIV>
+              <DT><I>Vertical Positional Accuracy Report:</I> <PRE id=original>Positional accuracy will vary</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+              </DT></DIV></DL></DD></DL>
+          <DT><I>Lineage:</I> 
+          <DD>
+          <DL>
+            <DT><I>Source Information:</I> 
+            <DD>
+            <DL>
+              <DT><I>Source Citation:</I> 
+              <DD>
+              <DL>
+                <DT><I>Citation Information:</I> 
+                <DD>
+                <DL>
+                  <DT><I>Originator: </I>NOAA Office of Coast Survey (OCS) 
+                  <DT><I>Publication Date: </I>
+                  <DT><I>Title:</I> 
+                  <DD>Raster Coastal Map Series Showing Hydrography and 
+                  Topography Found on NOAA's Charted Nautical Charts for All 
+                  Near-Shore Geographic Areas of the U.S. 
+                  <DT><I>Geospatial Data Presentation Form: </I>raster digital 
+                  data 
+                  <DT><I>Series Information:</I> 
+                  <DD>
+                  <DL>
+                    <DT><I>Series Name: </I>Coastal Map series 
+                    <DT><I>Issue Identification: </I>kapp number </DT></DL>
+                  <DT><I>Publication Information:</I> 
+                  <DD>
+                  <DL>
+                    <DT><I>Publication Place: </I>Silver Spring, MD 
+                    <DT><I>Publisher: </I>NOAA's Ocean Service, Office of Coast 
+                    Survey (OCS) </DT></DL>
+                  <DT><I>Other Citation Details:</I> 
+                  <DD>Scale of source material ranges from 1:20000 to 1:80000 
+                  <DT><I>Online Linkage: </I><A 
+                  href="http://chartmaker.ncd.noaa.gov/" 
+                  target=viewer>http://chartmaker.ncd.noaa.gov/</A> 
+                  <DT><I>Larger Work Citation:</I> 
+                  <DD>
+                  <DL>
+                    <DT><I>Citation Information:</I> 
+                    <DD>
+                    <DL>
+                      <DT><I>Originator: </I>NOAA, NOS, OCS, Marine Charting 
+                      Division 
+                      <DT><I>Publication Date: </I>
+                      <DT><I>Title:</I> 
+                      <DD>Nautical Charts 
+                      <DT><I>Geospatial Data Presentation Form: </I>raster 
+                      digital data 
+                      <DT><I>Series Information:</I> 
+                      <DD>
+                      <DL>
+                        <DT><I>Series Name: </I>NOAA Nautical Charts 
+                        <DT><I>Issue Identification: </I>kapp number </DT></DL>
+                      <DT><I>Publication Information:</I> 
+                      <DD>
+                      <DL>
+                        <DT><I>Publication Place: </I>Silver Spring, MD 
+                        <DT><I>Publisher: </I>NOAA's Ocean Service, Office of 
+                        Coast Survey </DT></DL>
+                      <DT><I>Online Linkage: </I><A 
+                      href="http://chartmaker.ncd.noaa.gov/" 
+                      target=viewer>http://chartmaker.ncd.noaa.gov/</A> 
+                    </DT></DL></DD></DL></DD></DL></DD></DL>
+              <DT><I>Source Scale Denominator: </I>
+              <DT><I>Type of Source Media: </I>chart 
+              <DT><I>Source Time Period of Content:</I> 
+              <DD>
+              <DL>
+                <DT><I>Time Period Information:</I> 
+                <DD>
+                <DL>
+                  <DT><I>Range of Dates/Times:</I> 
+                  <DD>
+                  <DL>
+                    <DT><I>Beginning Date: </I>07/03/2013 
+                    <DT><I>Beginning Time: </I>08:45 
+                    <DT><I>Ending Date: </I>07/03/2013 
+                    <DT><I>Ending Time: </I>08:45 </DT></DL></DD></DL>
+                <DT><I>Source Currentness Reference:</I> 
+                <DD>publication date </DD></DL>
+              <DT><I>Source Citation Abbreviation:</I> 
+              <DD>nautical chart 
+              <DIV></DIV>
+              <DT><I>Source Contribution:</I> <PRE id=original>Spatial and attribute information</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV></DT></DL>
+            <DT><I>Process Step:</I> 
+            <DD>
+            <DL>
+              <DIV>
+              <DT><I>Process Description:</I> <PRE id=original>The geographic boundary coordinates listed within the United States Code of Federal Regulations (CFR) were converted to decimal degrees and a text file was created. A point coverage was then generated using ArcInfo GIS. The coverage was projected into the Geographic Coordinate System and overlaid on large scale nautical charts and analyzed with additional data such as adjacent sanctuaries and shorelines. Specific attention was given to analysis of inconsistencies between textual descriptions and listed coordinates. The polyline files were created using a combination of the coordinate list from the CFR and applicable shoreline vector files. For point files, two methods were used. If the sanctuary had a shoreline component, a polyline to point script was used to create a point for each vertice. If a shoreline component was not present, then the original coordinates from the CFR were used to create a point shapefile. Polygon files were created by converting polylines to polygons. For more detailed process description, please use contact information below. </PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+              </DT></DIV>
+              <DT><I>Source Used Citation Abbreviation:</I> 
+              <DD>NWRS 
+              <DT><I>Process Date: </I>201301 
+              <DT><I>Source Produced Citation Abbreviation:</I> 
+              <DD>NWRS 
+              <DT><I>Process Contact:</I> 
+              <DD>
+              <DL>
+                <DT><I>Contact Information:</I> 
+                <DD>
+                <DL>
+                  <DT><I>Contact Person Primary:</I> 
+                  <DD>
+                  <DL>
+                    <DT><I>Contact Person: </I>ONMS Boundary Coordinator 
+                    <DT><I>Contact Organization: </I>NOAA / Office of National 
+                    Marine Sanctuaries </DT></DL>
+                  <DT><I>Contact Position: </I>Boundary Coordinator 
+                  <DT><I>Contact Address:</I> 
+                  <DD>
+                  <DL>
+                    <DT><I>Address Type: </I>mailing and physical address 
+                    <DIV></DIV>
+                    <DT><I>Address:</I> <PRE id=original>N/NMS, SSMC4, 1305 East West Hwy</PRE>
+                    <SCRIPT>fix(original)</SCRIPT>
+
+                    <DIV></DIV>
+                    <DT><I>City: </I>Silver Spring 
+                    <DT><I>State or Province: </I>MD 
+                    <DT><I>Postal Code: </I>20910 </DT></DL>
+                  <DT><I>Contact Voice Telephone: </I>(301) 713-3125 
+                  <DT><I>Contact Facsimile Telephone: </I>(301) 713-4306 
+                  <DT><I>Contact Electronic Mail Address: 
+                  </I>sanctuaries@noaa.gov 
+                  <DT><I>Hours of Service: </I>9:00AM to 4:00PM EST; Monday - 
+                  Friday </DT></DL></DD></DL></DD></DL></DD></DL></DD></DL></DD></DL><A 
+      href="file:///C:/Users/tony.reyer/AppData/Local/Temp/8/tmpF97E.tmp.html#Top" 
+      xmlns="">Back to Top</A><A name=Spatial_Data_Organization_Information 
+      xmlns="">
+      <HR>
+      </A>
+      <DL xmlns="">
+        <DT><I>Spatial Data Organization Information:</I> 
+        <DD>
+        <DL>
+          <DT><I>Direct Spatial Reference Method: </I>Vector 
+          <DT><I>Point and Vector Object Information:</I> 
+          <DD>
+          <DL></DL></DD></DL></DD></DL><A 
+      href="file:///C:/Users/tony.reyer/AppData/Local/Temp/8/tmpF97E.tmp.html#Top" 
+      xmlns="">Back to Top</A><A name=Spatial_Reference_Information xmlns="">
+      <HR>
+      </A>
+      <DL xmlns="">
+        <DT><I>Spatial Reference Information:</I> 
+        <DD>
+        <DL>
+          <DT><I>Horizontal Coordinate System Definition:</I> 
+          <DD>
+          <DL>
+            <DT><I>Geographic:</I> 
+            <DD>
+            <DL>
+              <DT><I>Latitude Resolution: </I>0.000003 
+              <DT><I>Longitude Resolution: </I>0.000003 
+              <DT><I>Geographic Coordinate Units: </I>Decimal degrees </DT></DL>
+            <DT><I>Geodetic Model:</I> 
+            <DD>
+            <DL>
+              <DT><I>Horizontal Datum Name: </I>North American Datum of 1983 
+              <DT><I>Ellipsoid Name: </I>Geodetic Reference System 80 
+              <DT><I>Semi-major Axis: </I>6378137.000000 
+              <DT><I>Denominator of Flattening Ratio: </I>298.257222 
+            </DT></DL></DD></DL></DD></DL></DD></DL><A 
+      href="file:///C:/Users/tony.reyer/AppData/Local/Temp/8/tmpF97E.tmp.html#Top" 
+      xmlns="">Back to Top</A><A name=Entity_and_Attribute_Information xmlns="">
+      <HR>
+      </A>
+      <DL xmlns="">
+        <DT><I>Entity and Attribute Information:</I> 
+        <DD>
+        <DL>
+          <DT><I>Detailed Description:</I> 
+          <DD>
+          <DL>
+            <DT><I>Entity Type:</I> 
+            <DD>
+            <DL>
+              <DT><I>Entity Type Label: </I>NMSAS_poly 
+              <DT><I>Entity Type Definition: </I>
+              <DD>
+              <DT><I>Entity Type Definition Source:</I> 
+              <DD></DD></DL>
+            <DT><I>Attribute:</I> 
+            <DD>
+            <DL>
+              <DT><I>Attribute Label: </I>FID 
+              <DIV></DIV>
+              <DT><I>Attribute Definition:</I> <PRE id=original>Internal feature number.</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV>
+              <DIV></DIV>
+              <DT><I>Attribute Definition Source:</I> <PRE id=original>ESRI</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV>
+              <DT><I>Attribute Domain Values:</I> 
+              <DD>
+              <DL>
+                <DT><I>Unrepresentable Domain:</I> 
+                <DD>Sequential unique whole numbers that are automatically 
+                generated. </DD></DL>
+              <DT><I>Beginning Date of Attribute Values: </I></DT></DL>
+            <DT><I>Attribute:</I> 
+            <DD>
+            <DL>
+              <DT><I>Attribute Label: </I>Shape 
+              <DIV></DIV>
+              <DT><I>Attribute Definition:</I> <PRE id=original>Feature geometry.</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV>
+              <DIV></DIV>
+              <DT><I>Attribute Definition Source:</I> <PRE id=original>ESRI</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV>
+              <DT><I>Attribute Domain Values:</I> 
+              <DD>
+              <DL>
+                <DT><I>Unrepresentable Domain:</I> 
+                <DD>Coordinates defining the features. </DD></DL>
+              <DT><I>Beginning Date of Attribute Values: </I></DT></DL>
+            <DT><I>Attribute:</I> 
+            <DD>
+            <DL>
+              <DT><I>Attribute Label: </I>Label 
+              <DIV></DIV>
+              <DT><I>Attribute Definition:</I> <PRE id=original>Sanctuary unit name</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV>
+              <DIV></DIV>
+              <DT><I>Attribute Definition Source:</I> <PRE id=original>Office of National Marine Sanctuaries</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV>
+              <DT><I>Beginning Date of Attribute Values: </I></DT></DL>
+            <DT><I>Attribute:</I> 
+            <DD>
+            <DL>
+              <DT><I>Attribute Label: </I>Sanctuary 
+              <DIV></DIV>
+              <DT><I>Attribute Definition:</I> <PRE id=original>National Marine Sanctuary name</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV>
+              <DIV></DIV>
+              <DT><I>Attribute Definition Source:</I> <PRE id=original>Office of National Marine Sanctuaries</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV>
+              <DT><I>Beginning Date of Attribute Values: </I></DT></DL>
+            <DT><I>Attribute:</I> 
+            <DD>
+            <DL>
+              <DT><I>Attribute Label: </I>Datum 
+              <DIV></DIV>
+              <DT><I>Attribute Definition:</I> <PRE id=original>Horizontal datum</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV>
+              <DIV></DIV>
+              <DT><I>Attribute Definition Source:</I> <PRE id=original>ONMS</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV>
+              <DT><I>Beginning Date of Attribute Values: </I></DT></DL>
+            <DT><I>Attribute:</I> 
+            <DD>
+            <DL>
+              <DT><I>Attribute Label: </I>Area_KM 
+              <DIV></DIV>
+              <DT><I>Attribute Definition:</I> <PRE id=original>Area calculated in square kilometers</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV>
+              <DIV></DIV>
+              <DT><I>Attribute Definition Source:</I> <PRE id=original>ONMS</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV>
+              <DT><I>Beginning Date of Attribute Values: </I></DT></DL>
+            <DT><I>Attribute:</I> 
+            <DD>
+            <DL>
+              <DT><I>Attribute Label: </I>Area_SM 
+              <DIV></DIV>
+              <DT><I>Attribute Definition:</I> <PRE id=original>Area calculated in square statute miles</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV>
+              <DIV></DIV>
+              <DT><I>Attribute Definition Source:</I> <PRE id=original>ONMS</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV>
+              <DT><I>Beginning Date of Attribute Values: </I></DT></DL>
+            <DT><I>Attribute:</I> 
+            <DD>
+            <DL>
+              <DT><I>Attribute Label: </I>Area_NM 
+              <DIV></DIV>
+              <DT><I>Attribute Definition:</I> <PRE id=original>Area calculated in square nautical miles</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV>
+              <DIV></DIV>
+              <DT><I>Attribute Definition Source:</I> <PRE id=original>ONMS</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV>
+              <DT><I>Beginning Date of Attribute Values: </I></DT></DL>
+            <DT><I>Attribute:</I> 
+            <DD>
+            <DL>
+              <DT><I>Attribute Label: </I>Area_Acres 
+              <DIV></DIV>
+              <DT><I>Attribute Definition:</I> <PRE id=original>Area calculated in acres</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV>
+              <DIV></DIV>
+              <DT><I>Attribute Definition Source:</I> <PRE id=original>ONMS</PRE>
+              <SCRIPT>fix(original)</SCRIPT>
+
+              <DIV></DIV>
+              <DT><I>Beginning Date of Attribute Values: 
+          </I></DT></DL></DD></DL></DD></DL></DD></DL><A 
+      href="file:///C:/Users/tony.reyer/AppData/Local/Temp/8/tmpF97E.tmp.html#Top" 
+      xmlns="">Back to Top</A><A name=IDA5SNWC xmlns="">
+      <HR>
+      </A>
+      <DL xmlns="">
+        <DT><I>Distribution Information:</I> 
+        <DD>
+        <DL>
+          <DT><I>Distributor:</I> 
+          <DD>
+          <DL>
+            <DT><I>Contact Information:</I> 
+            <DD>
+            <DL>
+              <DT><I>Contact Organization Primary:</I> 
+              <DD>
+              <DL>
+                <DT><I>Contact Organization: </I>NOAA / Office of National 
+                Marine Sanctuaries 
+                <DT><I>Contact Person: </I>ONMS Boundary Coordinator </DT></DL>
+              <DT><I>Contact Position: </I>Booundary Coordinator 
+              <DT><I>Contact Address:</I> 
+              <DD>
+              <DL>
+                <DT><I>Address Type: </I>mailing and physical address 
+                <DIV></DIV>
+                <DT><I>Address:</I> <PRE id=original>N/NMS, SSMC4, 1305 East West Hwy</PRE>
+                <SCRIPT>fix(original)</SCRIPT>
+
+                <DIV></DIV>
+                <DT><I>City: </I>Silver Spring 
+                <DT><I>State or Province: </I>MD 
+                <DT><I>Postal Code: </I>22203 </DT></DL>
+              <DT><I>Contact Voice Telephone: </I>(301) 713-3125 
+              <DT><I>Contact Facsimile Telephone: </I>(301) 713-4306 
+              <DT><I>Contact Electronic Mail Address: </I>Sanctuaries@noaa.gov 
+              <DT><I>Hours of Service: </I>9:00AM to 4:00PM EST; Monday - Friday 
+              </DT></DL></DD></DL>
+          <DT><I>Resource Description: </I>Downloadable Data 
+          <DIV></DIV>
+          <DT><I>Distribution Liability:</I> <PRE id=original>Users must assume responisibility to determine the appropriate use of Thesee data. These boundaries are not to be used as LEGAL definitions. The boundaries are created with the most recent and accurate boundary information available, but the edges and/or borders of the boundaries may change due to the natural land changes, site boundary modification or higher resolution maps. Therefore, the currency or accuracy of Thesee boundaries cannot be guaranteed.</PRE>
+          <SCRIPT>fix(original)</SCRIPT>
+
+          <DIV></DIV>
+          <DT><I>Standard Order Process:</I> 
+          <DD>
+          <DL>
+            <DT><I>Digital Form:</I> 
+            <DD>
+            <DL>
+              <DT><I>Digital Transfer Information:</I> 
+              <DD>
+              <DL>
+                <DT><I>Format Name: </I>ARCE 
+                <DT><I>File Decompression Technique: </I>no compression applied 
+                <DT><I>Transfer Size: </I>0.034 </DT></DL>
+              <DT><I>Digital Transfer Option:</I> 
+              <DD>
+              <DL>
+                <DT><I>Online Option:</I> 
+                <DD>
+                <DL>
+                  <DT><I>Computer Contact Information:</I> 
+                  <DD>
+                  <DL>
+                    <DT><I>Network Address:</I> 
+                    <DD>
+                    <DL>
+                      <DT><I>Network Resource Name: </I><A 
+                      href="http://www.fws.gov/GIS/data/CadastralDB/FWSInterest.zip" 
+                      target=viewer>http://www.fws.gov/GIS/data/CadastralDB/FWSInterest.zip</A> 
+                      </DT></DL></DD></DL>
+                  <DT><I>Online Computer and Operating System:</I> 
+                  <DD>http://www.fws.gov/GIS/data/CadastralDB/index.htm 
+                </DD></DL></DD></DL></DD></DL>
+            <DT><I>Fees: </I>None 
+            <DIV></DIV>
+            <DT><I>Ordering Instructions:</I> <PRE id=original></PRE>
+            <SCRIPT>fix(original)</SCRIPT>
+
+            <DIV></DIV>
+            <DT><I>Turnaround: </I></DT></DL>
+          <DIV></DIV>
+          <DT><I>Custom Order Process:</I> <PRE id=original>National Marine Sanctuary of American Samoa  Digital Boundary File (NMSAS_poly.shp)</PRE>
+          <SCRIPT>fix(original)</SCRIPT>
+
+          <DIV></DIV>
+          <DT><I>Technical Prerequisites:</I> 
+          <DD>Digital boundry files are available for public consumption from 
+          the National Marine Sanctuary Program through their internet site. 
+          Because URL addresses and pages change, the actual data URL is not 
+          listed here, but will be searchable within the site 
+          (&lt;http://sanctuaries.noaa.gov&gt;) Requests may also be made 
+          through the NMSP Boundary Coordinator. See Distributor Contact 
+          Information for contact details. 
+          <DT><I>Available Time Period:</I> 
+          <DD>
+          <DL>
+            <DT><I>Time Period Information:</I> 
+            <DD>
+            <DL></DL></DD></DL></DD></DL></DD></DL><A 
+      href="file:///C:/Users/tony.reyer/AppData/Local/Temp/8/tmpF97E.tmp.html#Top" 
+      xmlns="">Back to Top</A><A name=Metadata_Reference_Information xmlns="">
+      <HR>
+      </A>
+      <DL xmlns="">
+        <DT><I>Metadata Reference Information:</I> 
+        <DD>
+        <DL>
+          <DT><I>Metadata Date: </I>20101101 
+          <DT><I>Metadata Review Date: </I>
+          <DT><I>Metadata Future Review Date: </I>
+          <DT><I>Metadata Contact:</I> 
+          <DD>
+          <DL>
+            <DT><I>Contact Information:</I> 
+            <DD>
+            <DL>
+              <DT><I>Contact Organization Primary:</I> 
+              <DD>
+              <DL>
+                <DT><I>Contact Organization: </I>NOAA / Office of National 
+                Marine Sanctuaries 
+                <DT><I>Contact Person: </I>Booundary Coordinator </DT></DL>
+              <DT><I>Contact Position: </I>Boundary Coordinator 
+              <DT><I>Contact Address:</I> 
+              <DD>
+              <DL>
+                <DT><I>Address Type: </I>mailing and physical address 
+                <DIV></DIV>
+                <DT><I>Address:</I> <PRE id=original>N/NMS, SSMC4, 1305 East West Hwy</PRE>
+                <SCRIPT>fix(original)</SCRIPT>
+
+                <DIV></DIV>
+                <DT><I>City: </I>Silver Spring 
+                <DT><I>State or Province: </I>MD 
+                <DT><I>Postal Code: </I>22203 </DT></DL>
+              <DT><I>Contact Voice Telephone: </I>(301) 713-3125 
+              <DT><I>Contact Facsimile Telephone: </I>(301)713-4306 
+              <DT><I>Contact Electronic Mail Address: </I>sanctuaries@noaa.gov 
+              <DT><I>Hours of Service: </I>9:00AM to 4:00PM EST; Monday - Friday 
+              </DT></DL></DD></DL>
+          <DT><I>Metadata Standard Name: </I>FGDC Content Standards for Digital 
+          Geospatial Metadata 
+          <DT><I>Metadata Standard Version: </I>FGDC-STD-001-1998 
+          <DT><I>Metadata Time Convention: </I>local time 
+          <DT><I>Metadata Access Constraints: </I>None 
+          <DT><I>Metadata Use Constraints:</I> 
+          <DD>None 
+          <DT><I>Metadata Security Information:</I> 
+          <DD>
+          <DL>
+            <DT><I>Metadata Security Classification System: </I>
+            <DT><I>Metadata Security Classification: </I>
+            <DT><I>Metadata Security Handling Description:</I> 
+            <DD></DD></DL></DD></DL></DD></DL><A 
+      href="file:///C:/Users/tony.reyer/AppData/Local/Temp/8/tmpF97E.tmp.html#Top" 
+      xmlns="">Back to Top</A></TD></TR></TBODY></TABLE></BODY></HTML>

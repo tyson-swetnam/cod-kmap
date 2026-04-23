@@ -1,0 +1,15 @@
+{
+"type": "FeatureCollection",
+"features": [
+{ "type": "Feature", "properties": { "Name": "North Temperate Lakes LTER", "FolderPath": "LTER.kmz/LTER", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -89.672, 46.0124, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Plum Island LTER", "FolderPath": "LTER.kmz/LTER", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -70.891, 42.759, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Northeast US Margin LTER", "FolderPath": "LTER.kmz/LTER", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -70.8833, 40.6967, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Virginia Coast LTER", "FolderPath": "LTER.kmz/LTER", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -75.913, 37.283, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Georgia Coast LTER", "FolderPath": "LTER.kmz/LTER", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -81.371, 31.427, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Florida Coast LTER", "FolderPath": "LTER.kmz/LTER", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -80.8533, 25.4682, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Santa Barbara Coastal LTER", "FolderPath": "LTER.kmz/LTER", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -119.842, 34.4125, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "California Current LTER", "FolderPath": "LTER.kmz/LTER", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -120.28, 32.8736, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Northern Gulf of Alaska LTER", "FolderPath": "LTER.kmz/LTER", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -148.7, 59.045, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Beaufort Lagoon LTER", "FolderPath": "LTER.kmz/LTER", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -156.78861, 71.29005, 0.0 ] } }
+]
+}

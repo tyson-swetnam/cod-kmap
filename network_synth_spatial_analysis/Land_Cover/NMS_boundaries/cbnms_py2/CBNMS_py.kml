@@ -1,0 +1,113 @@
+﻿<?xml version="1.0" encoding="utf-8"?><kml><xmlns>http://www.opengis.net/kml/2.2</xmlns><Document><Snippet /><Style id="defaultStyle"><BalloonStyle><text><![CDATA[<html>
+  <head>
+    <META http-equiv="Content-Type" content="text/html; charset=utf-16">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  </head>
+  <body>
+    <table cellpadding="2" cellspacing="0" style="font-family:Arial,Verdana,Times;font-size:12px;text-align:left;width:100%;border-collapse:collapse;padding:3px 3px 3px 3px">
+      <thead style="text-align:center; font-weight:bold;background:#9CBCE2;">
+        <tr>
+          <th colspan="2">$[name]</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>$[CBNMS_py/FID/displayName]</td>
+          <td>$[CBNMS_py/FID]</td>
+        </tr>
+        <tr bgcolor="#D4E4F3">
+          <td>$[CBNMS_py/SANCTUARY/displayName]</td>
+          <td>$[CBNMS_py/SANCTUARY]</td>
+        </tr>
+        <tr>
+          <td>$[CBNMS_py/DATUM/displayName]</td>
+          <td>$[CBNMS_py/DATUM]</td>
+        </tr>
+        <tr bgcolor="#D4E4F3">
+          <td>$[CBNMS_py/POLY_ID/displayName]</td>
+          <td>$[CBNMS_py/POLY_ID]</td>
+        </tr>
+        <tr>
+          <td>$[CBNMS_py/ACRES/displayName]</td>
+          <td>$[CBNMS_py/ACRES]</td>
+        </tr>
+        <tr bgcolor="#D4E4F3">
+          <td>$[CBNMS_py/AREA_SM/displayName]</td>
+          <td>$[CBNMS_py/AREA_SM]</td>
+        </tr>
+        <tr>
+          <td>$[CBNMS_py/AREA_NAME/displayName]</td>
+          <td>$[CBNMS_py/AREA_NAME]</td>
+        </tr>
+        <tr bgcolor="#D4E4F3">
+          <td>$[CBNMS_py/AREA_KM/displayName]</td>
+          <td>$[CBNMS_py/AREA_KM]</td>
+        </tr>
+        <tr>
+          <td>$[CBNMS_py/AREA_NM/displayName]</td>
+          <td>$[CBNMS_py/AREA_NM]</td>
+        </tr>
+        <tr bgcolor="#D4E4F3">
+          <td>$[CBNMS_py/Area_SQMI/displayName]</td>
+          <td>$[CBNMS_py/Area_SQMI]</td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>]]></text><displayMode>default</displayMode></BalloonStyle></Style><Style id="style0"><LineStyle><color>bf732600</color><colorMode>normal</colorMode><width>2</width></LineStyle><PolyStyle><color>bfff7000</color><colorMode>normal</colorMode><fill>1</fill><outline>1</outline></PolyStyle><BalloonStyle><text><![CDATA[<html>
+  <head>
+    <META http-equiv="Content-Type" content="text/html; charset=utf-16">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  </head>
+  <body>
+    <table cellpadding="2" cellspacing="0" style="font-family:Arial,Verdana,Times;font-size:12px;text-align:left;width:100%;border-collapse:collapse;padding:3px 3px 3px 3px">
+      <thead style="text-align:center; font-weight:bold;background:#9CBCE2;">
+        <tr>
+          <th colspan="2">$[name]</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>$[CBNMS_py/FID/displayName]</td>
+          <td>$[CBNMS_py/FID]</td>
+        </tr>
+        <tr bgcolor="#D4E4F3">
+          <td>$[CBNMS_py/SANCTUARY/displayName]</td>
+          <td>$[CBNMS_py/SANCTUARY]</td>
+        </tr>
+        <tr>
+          <td>$[CBNMS_py/DATUM/displayName]</td>
+          <td>$[CBNMS_py/DATUM]</td>
+        </tr>
+        <tr bgcolor="#D4E4F3">
+          <td>$[CBNMS_py/POLY_ID/displayName]</td>
+          <td>$[CBNMS_py/POLY_ID]</td>
+        </tr>
+        <tr>
+          <td>$[CBNMS_py/ACRES/displayName]</td>
+          <td>$[CBNMS_py/ACRES]</td>
+        </tr>
+        <tr bgcolor="#D4E4F3">
+          <td>$[CBNMS_py/AREA_SM/displayName]</td>
+          <td>$[CBNMS_py/AREA_SM]</td>
+        </tr>
+        <tr>
+          <td>$[CBNMS_py/AREA_NAME/displayName]</td>
+          <td>$[CBNMS_py/AREA_NAME]</td>
+        </tr>
+        <tr bgcolor="#D4E4F3">
+          <td>$[CBNMS_py/AREA_KM/displayName]</td>
+          <td>$[CBNMS_py/AREA_KM]</td>
+        </tr>
+        <tr>
+          <td>$[CBNMS_py/AREA_NM/displayName]</td>
+          <td>$[CBNMS_py/AREA_NM]</td>
+        </tr>
+        <tr bgcolor="#D4E4F3">
+          <td>$[CBNMS_py/Area_SQMI/displayName]</td>
+          <td>$[CBNMS_py/Area_SQMI]</td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>]]></text><displayMode>default</displayMode></BalloonStyle></Style><Folder><name>CBNMS_py</name><Snippet /><Placemark><Snippet></Snippet><styleUrl>#style0</styleUrl><ExtendedData><SchemaData schemaUrl="#CBNMS_py"><SimpleData name="FID">0</SimpleData><SimpleData name="SANCTUARY">cbnms</SimpleData><SimpleData name="DATUM">NAD 83</SimpleData><SimpleData name="POLY_ID">1</SimpleData><SimpleData name="ACRES">338345.943</SimpleData><SimpleData name="AREA_SM">528.675</SimpleData><SimpleData name="AREA_NAME">cbnms</SimpleData><SimpleData name="AREA_KM">1369.267</SimpleData><SimpleData name="AREA_NM">399.278</SimpleData><SimpleData name="Area_SQMI">1285.54125</SimpleData></SchemaData></ExtendedData><Polygon><extrude>false</extrude><tessellate>false</tessellate><outerBoundaryIs><LinearRing><extrude>false</extrude><tessellate>false</tessellate><coordinates>-123.426937,37.766871,0.000000 -123.751428,37.766870,0.000000 -123.999877,38.299891,0.000000 -123.200047,38.299891,0.000000 -123.181377,38.263901,0.000000 -123.119127,38.210011,0.000000 -123.092067,38.165761,0.000000 -123.082367,38.140721,0.000000 -123.087417,38.128291,0.000000 -123.098037,38.102151,0.000000 -123.103867,38.090691,0.000000 -123.109237,38.078981,0.000000 -123.117107,38.065051,0.000000 -123.128267,38.052021,0.000000 -123.141367,37.992271,0.000000 -123.236147,37.989471,0.000000 -123.323117,37.958801,0.000000 -123.389577,37.904641,0.000000 -123.425787,37.834801,0.000000 -123.426937,37.766871,0.000000</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark></Folder><Schema id="CBNMS_py" name="CBNMS_py"><SimpleField type="string" name="FID"><displayName>FID</displayName></SimpleField><SimpleField type="string" name="SANCTUARY"><displayName>SANCTUARY</displayName></SimpleField><SimpleField type="string" name="DATUM"><displayName>DATUM</displayName></SimpleField><SimpleField type="int" name="POLY_ID"><displayName>POLY_ID</displayName></SimpleField><SimpleField type="double" name="ACRES"><displayName>ACRES</displayName></SimpleField><SimpleField type="double" name="AREA_SM"><displayName>AREA_SM</displayName></SimpleField><SimpleField type="string" name="AREA_NAME"><displayName>AREA_NAME</displayName></SimpleField><SimpleField type="double" name="AREA_KM"><displayName>AREA_KM</displayName></SimpleField><SimpleField type="double" name="AREA_NM"><displayName>AREA_NM</displayName></SimpleField><SimpleField type="double" name="Area_SQMI"><displayName>Area_SQMI</displayName></SimpleField></Schema></Document></kml>

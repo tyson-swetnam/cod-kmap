@@ -1,0 +1,15 @@
+{
+"type": "FeatureCollection",
+"features": [
+{ "type": "Feature", "properties": { "Name": "The Eiffel Tower", "description": "Located in Paris, France", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ 2.2959677, 48.857801, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Christ the Redeemer", "description": "Located in Rio, Brazil", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -43.2095357, -22.9504072, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "The Grand Canyon", "description": "Located in Arizona, USA", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -111.8393352, 36.1493697, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Sydney", "description": "New South Wales, Australia", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ 151.2122002, -33.855436, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "St Peters Basilica", "description": "Located in Vatican City", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ 12.4586323, 41.9023836, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "The London Eye", "description": "Located in London, England", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -0.1208038, 51.5029586, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "The Titanic", "description": "Located in the North Atlantic Ocean", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -49.9488101, 41.7283417, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "The Forbidden City", "description": "Located in China", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ 116.3908089, 39.9137992, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Mount Fuji", "description": "Located near Tokyo, Japan", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ 138.7818266, 35.3406301, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Google Headquarters", "description": "Located in Mountain View, California", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -122.0857031, 37.4216955, 0.0 ] } }
+]
+}
