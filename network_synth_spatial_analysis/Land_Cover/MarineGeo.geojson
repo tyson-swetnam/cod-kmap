@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"features": [
+{ "type": "Feature", "properties": { "Name": "SERC, GCREW", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -76.54, 38.887, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Indian River Lagoon", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -80.31134, 27.460121, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "San Francisco Bay", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -122.44679, 37.890491, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Gulf Coast", "tessellate": -1, "extrude": 0, "visibility": -1 }, "geometry": { "type": "Point", "coordinates": [ -97.324143, 27.712745, 0.0 ] } }
+]
+}

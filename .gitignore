@@ -19,6 +19,12 @@ db/*.duckdb
 db/parquet/*.parquet
 web/public/parquet/*.parquet
 
+# Large raster deliverables — too big for GitHub without LFS.
+# Use `git add -f path.img` only after `git lfs install` has been run.
+*.img
+*.tif
+*.tiff
+
 # Geocoder cache
 .geocode_cache.json
 

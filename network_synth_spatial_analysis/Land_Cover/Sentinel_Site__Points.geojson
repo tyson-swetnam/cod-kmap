@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"features": [
+{ "type": "Feature", "properties": { "Name": "Mission Aransas NERR", "FolderPath": "Sentinel Site.kmz/Sentinel Site", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -97.066865, 28.0514826, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "San Francisco Bay NERR", "FolderPath": "Sentinel Site.kmz/Sentinel Site", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -122.3070573, 37.6734062, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Chesapeake Bay Sentinel Site", "FolderPath": "Sentinel Site.kmz/Sentinel Site", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -76.1064047, 37.5211664, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Hawaiian Islands Sentinel Site", "FolderPath": "Sentinel Site.kmz/Sentinel Site", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -155.5827817, 19.8967649, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "North Carolina Sentinel Site", "FolderPath": "Sentinel Site.kmz/Sentinel Site", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -75.7169092, 36.0669857, 0.0 ] } }
+]
+}

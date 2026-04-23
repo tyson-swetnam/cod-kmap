@@ -1,0 +1,6 @@
+{
+"type": "FeatureCollection",
+"features": [
+{ "type": "Feature", "properties": { "SANCTUARY": "grnms", "DATUM": "NAD 83", "AREA_NAME": "grnms", "POLY_ID": 1, "AREA_KM": 57.1977, "AREA_NM": 16.6789, "AREA_SM": 22.0841, "AREA_ACRES": 14134.3328 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ -80.921201, 31.421064 ], [ -80.9212, 31.362732 ], [ -80.828143, 31.362732 ], [ -80.828145, 31.421064 ], [ -80.921201, 31.421064 ] ] ] } }
+]
+}

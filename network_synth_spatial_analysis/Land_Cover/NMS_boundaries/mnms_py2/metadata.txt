@@ -1,0 +1,337 @@
+Identification_Information:
+  Citation:
+    Citation_Information:
+      Originator: NOAA / National Marine Sanctuaries Program
+      Publication_Date: 200412
+      Title: Cordell Bank National Marine Sanctuary Boundary (polygon)
+      Edition: 200412
+      Geospatial_Data_Presentation_Form: vector digital data
+      Publication_Information:
+        Publication_Place: Silver Spring, MD
+        Publisher: NOAA / National Marine Sanctuary Program
+      Other_Citation_Details: none
+      Online_Linkage: http://www.sanctuaries.noaa.gov/
+      Larger_Work_Citation:
+        Citation_Information:
+          Originator: NOAA / National Marine Sanctuaries Program
+          Publication_Date: 2004
+          Title: National Marine Sanctuary Program Digital Boundary Files
+          Publication_Information:
+            Publication_Place: Silver Spring, Maryland
+            Publisher: NOAA / National Marine Sanctuary Program
+          Online_Linkage: http://www.sanctuaries.noaa.gov/
+  Description:
+    Abstract:
+      The National Marine Sanctuary Program manages a system of sanctuaries and other
+      managed areas around the country.  The legal boundaries of Thesee sanctuaries are
+      defined within the Code of Federal Regulations, at 15 C.F.R. Part 922 and the
+      subparts for each national marine sanctuary.  The GIS compatible digital boundary
+      files for each national marine sanctuary are representations of those legal
+      boundaries and are based on the best available data.  Thesee files are available
+      for public use at locations defined in this metadata record.
+    Purpose:
+      Thesee GIS compatible digital files are provided to promote an understanding of the
+      boundaries of each national marine sanctuary.  They are based on the legal
+      definition of each sanctuary as defined in the Code of Federal Regulations, at 15
+      C.F.R. Part 922 and the subparts for each national marine sanctuary.  Thesee digital
+      files are not intended and should not be relied upon for use in navigation or legal
+      purposes.  For legal questions relating to the digital files, please contact the
+      NMSP at the information provided in this metadata record.
+  Time_Period_of_Content:
+    Time_Period_Information:
+      Single_Date/Time:
+        Calendar_Date: 200412
+    Currentness_Reference: 200412
+  Status:
+    Progress: Complete
+    Maintenance_and_Update_Frequency: Continually on varying schedule
+  Spatial_Domain:
+    Bounding_Coordinates:
+      West_Bounding_Coordinate: -123.642650
+      East_Bounding_Coordinate: -123.082370
+      North_Bounding_Coordinate: 38.263900
+      South_Bounding_Coordinate: 37.766870
+  Keywords:
+    Theme:
+      Theme_Keyword_Thesaurus: None
+      Theme_Keyword: Code of Federal Regulations
+      Theme_Keyword: marine protected area
+      Theme_Keyword: MPA
+      Theme_Keyword: National Marine Sanctuary
+      Theme_Keyword: NMS
+      Theme_Keyword: NMSP
+    Theme:
+      Theme_Keyword_Thesaurus: ISO 19115 Topic Category
+      Theme_Keyword: boundaries
+    Place:
+      Place_Keyword_Thesaurus: None
+      Place_Keyword: California
+      Place_Keyword: Marine
+      Place_Keyword: Cordell Bank
+      Place_Keyword: National Marine Sanctuary
+      Place_Keyword: NMS
+      Place_Keyword: Pacific Ocean
+  Access_Constraints: To Be Determined
+  Use_Constraints: NOT FOR LEGAL USE
+  Point_of_Contact:
+    Contact_Information:
+      Contact_Organization_Primary:
+        Contact_Organization: NOAA / National Marine Sanctuary Program
+        Contact_Person: NMSP Boundary Coordinator
+      Contact_Position: NMSP Boundary Coordinator
+      Contact_Address:
+        Address_Type: mailing and physical address
+        Address: N/ORM-62, SSMC-4
+        Address: 1305 East West Highway
+        City: Silver Spring
+        State_or_Province: Maryland
+        Postal_Code: 20910
+        Country: United States
+      Contact_Voice_Telephone: (301) 713-3125
+      Contact_Facsimile_Telephone: (301) 713-0404
+      Contact_Electronic_Mail_Address: sanctuaries@noaa.gov
+      Hours_of_Service: 9:00AM to 4:00PM EST; Monday - Friday
+  Native_Data_Set_Environment: Microsoft Windows XP Version 5.1 (Build 2600) Service Pack 2; ESRI ArcCatalog 9.1.0.722
+Data_Quality_Information:
+  Attribute_Accuracy:
+    Attribute_Accuracy_Report:
+      Attributes were standardized by feature type (point, line, and polygon)
+      across all sanctuary boundaries.  The values recorded for each attribute
+      were quality assured and believed to be accurate.
+  Logical_Consistency_Report: The data were topologically cleaned.
+  Completeness_Report: Where possible, the entire boundary for the sanctuary is represented by this digital file.
+  Positional_Accuracy:
+    Horizontal_Positional_Accuracy:
+      Horizontal_Positional_Accuracy_Report: Positional accuracy will vary depending on source
+    Vertical_Positional_Accuracy:
+      Vertical_Positional_Accuracy_Report: Positional accuracy will vary
+  Lineage:
+    Source_Information:
+      Source_Citation:
+        Citation_Information:
+          Originator: NOAA Office of Coast Survey (OCS)
+          Publication_Date: 20010110
+          Title:
+            Raster Coastal Map Series Showing Hydrography and Topography
+            Found on NOAA's Charted Nautical Charts for All Near-Shore Geographic
+            Areas of the U.S.
+          Geospatial_Data_Presentation_Form: raster digital data
+          Series_Information:
+            Series_Name: Coastal Map Series
+            Issue_Identification: kapp number
+          Publication_Information:
+            Publication_Place: Silver Spring, MD
+            Publisher: NOAA's Ocean Service, Office of Coast Survey (OCS)
+          Other_Citation_Details:
+            Scale of source material ranges from 1:20000
+            to 1:80000
+          Online_Linkage: http://chartmaker.ncd.noaa.gov/
+          Larger_Work_Citation:
+            Citation_Information:
+              Originator: NOAA, NOS, OCS, Marine Charting Division
+              Publication_Date: 19950101
+              Title: Nautical Charts
+              Geospatial_Data_Presentation_Form: raster digital data
+              Series_Information:
+                Series_Name: NOAA Nautical Charts
+                Issue_Identification: kapp number
+              Publication_Information:
+                Publication_Place: Silver Spring, MD
+                Publisher: NOAA's Ocean Service, Office of Coast Survey
+      Type_of_Source_Media: Raster Images
+      Source_Time_Period_of_Content:
+        Time_Period_Information:
+          Range_of_Dates/Times:
+            Beginning_Date: 19950101
+            Ending_Date: present
+        Source_Currentness_Reference: publication date
+      Source_Citation_Abbreviation: Source Nautical Chart
+      Source_Contribution:
+        All information in Coastal Maps is derived from the Source Nautical
+        Chart.
+    Source_Information:
+      Source_Citation:
+        Citation_Information:
+          Originator: US Federal Government
+          Originator: US Department of Commerce
+          Originator: National Oceanic and Atmospheric Administration
+          Publication_Date: 20030101
+          Title: Code of Federal Regulations, Title 15, Volume 3
+          Publication_Information:
+            Publication_Place: Washington, DC
+            Publisher: US Dept. of Commerce
+          Other_Citation_Details:
+            The Code of Federal Regulations (CFR) is the codification of the
+            general and permanent
+            rules published in the Federal Register by the executive departments
+            and agencies
+            of the Federal Government.
+          Online_Linkage: http://www.gpoaccess.gov/cfr/
+      Type_of_Source_Media: online
+      Source_Time_Period_of_Content:
+        Time_Period_Information:
+          Range_of_Dates/Times:
+            Beginning_Date: 1996
+            Ending_Date: 2003
+        Source_Currentness_Reference: Publication date
+      Source_Citation_Abbreviation: 15CFR922
+      Source_Contribution:
+        The depicted shoreline of the sanctuary boundary was
+        derived in part from information contained within the CFR.
+    Process_Step:
+      Process_Description:
+        The geographic boundary coordinates listed within the United States
+        Code of Federal Regulations (CFR) were converted to decimal degrees
+        and a text file was created. A point coverage was then generated
+        using ArcInfo GIS. The coverage was projected into the Geographic
+        Coordinate System and overlaid on large scale nautical charts and
+        analyzed with additional data such as adjacent sanctuaries and
+        shorelines. Specific attention was given to analysis of
+        inconsistencies between textual descriptions and listed
+        coordinates. The polyline files were created using a combination of the
+        coordinate list from the CFR and applicable shoreline vector files. For
+        point files, two methods were used. If the sanctuary had a shoreline
+        component, a polyline to point script was used to create a point for
+        each vertice. If a shoreline component was not present, then the
+        original coordinates from the CFR were used to create a point shapefile.
+        Polygon files were created by converting polylines to polygons.  For
+        more detailed process description, please use contact information below.
+      Process_Date: 200412
+      Process_Contact:
+        Contact_Information:
+          Contact_Organization_Primary:
+            Contact_Organization: NOAA / National Marine Sanctuary Program
+            Contact_Person: NMSP Boundary Coordinator
+          Contact_Position: NMSP Boundary Coordinator
+          Contact_Address:
+            Address_Type: mailing and physical address
+            Address: N/ORM-2, SSMC-4, #11542
+            Address: 1305 East West Highway
+            City: Silver Spring
+            State_or_Province: Maryland
+            Postal_Code: 20910
+            Country: United States
+          Contact_Voice_Telephone: (301) 713-3125
+          Contact_Facsimile_Telephone: (301) 713-0404
+          Contact_Electronic_Mail_Address: sanctuaries@noaa.gov
+          Hours_of_Service: 9:00AM to 4:00PM EST; Monday - Friday
+    Process_Step:
+      Process_Description: Metadata imported.
+      Source_Used_Citation_Abbreviation: C:\DOCUME~1\CHRIST~1.TAY\LOCALS~1\Temp\xml23.tmp
+Spatial_Data_Organization_Information:
+  Direct_Spatial_Reference_Method: Vector
+  Point_and_Vector_Object_Information:
+    SDTS_Terms_Description:
+      SDTS_Point_and_Vector_Object_Type: G-polygon
+      Point_and_Vector_Object_Count: 1
+Spatial_Reference_Information:
+  Horizontal_Coordinate_System_Definition:
+    Geographic:
+      Latitude_Resolution: 0.000000
+      Longitude_Resolution: 0.000000
+      Geographic_Coordinate_Units: Decimal degrees
+    Geodetic_Model:
+      Horizontal_Datum_Name: North American Datum of 1983
+      Ellipsoid_Name: Geodetic Reference System 80
+      Semi-major_Axis: 6378137.000000
+      Denominator_of_Flattening_Ratio: 298.257222
+Entity_and_Attribute_Information:
+  Detailed_Description:
+    Entity_Type:
+      Entity_Type_Label: cbnms_py
+    Attribute:
+      Attribute_Label: FID
+      Attribute_Definition: Internal feature number.
+      Attribute_Definition_Source: ESRI
+      Attribute_Domain_Values:
+        Unrepresentable_Domain: Sequential unique whole numbers that are automatically generated.
+    Attribute:
+      Attribute_Label: Shape
+      Attribute_Definition: Feature geometry.
+      Attribute_Definition_Source: ESRI
+      Attribute_Domain_Values:
+        Unrepresentable_Domain: Coordinates defining the features.
+    Attribute:
+      Attribute_Label: SANCTUARY
+      Attribute_Definition: Acronym for National Marine Sanctuary
+      Attribute_Definition_Source: National Marine Sanctuary Program
+    Attribute:
+      Attribute_Label: DATUM
+      Attribute_Definition: The geometric model from which the geographic coordinate system is defined.  For the Sanctuary boundaries, the datum used is NAD83, or in the case of Fagatele Bay, WGS84
+    Attribute:
+      Attribute_Label: POLY_ID
+      Attribute_Definition: Polygon identification - the unique identifier for each polygon
+      Attribute_Definition_Source: Coastal Services Center
+    Attribute:
+      Attribute_Label: ACRES
+      Attribute_Definition: Area calculated in acres
+    Attribute:
+      Attribute_Label: AREA_SM
+      Attribute_Definition: area calculated in statute miles
+    Attribute:
+      Attribute_Label: AREA_NAME
+      Attribute_Definition: name of specific areas within a sanctuary, or in cases where there are no area names, the name of the sanctuary
+    Attribute:
+      Attribute_Label: AREA_KM
+      Attribute_Definition: area calculated in square kilometers
+    Attribute:
+      Attribute_Label: AREA_NM
+      Attribute_Definition: area calculated in square nautical miles
+Distribution_Information:
+  Distributor:
+    Contact_Information:
+      Contact_Organization_Primary:
+        Contact_Organization: NOAA / National Marine Sanctuary Program
+        Contact_Person: NMSP Boundary Coordinator
+      Contact_Position: NMSP Boundary Coordinator
+      Contact_Address:
+        Address_Type: mailing and physical address
+        Address: N/ORM-62, SSMC-4
+        Address: 1305 East West Highway
+        City: Silver Spring
+        State_or_Province: Maryland
+        Postal_Code: 20910
+        Country: United States
+      Contact_Voice_Telephone: (301) 713-3125
+      Contact_Facsimile_Telephone: (301) 713-0404
+      Contact_Electronic_Mail_Address: sanctuaries@noaa.gov
+      Hours_of_Service: 9:00AM to 4:00PM EST; Monday - Friday
+  Resource_Description: Downloadable Data
+  Distribution_Liability: Users must assume responisibility to determine the appropriate use of Thesee data.  These boundaries are not to be used as LEGAL definitions.  The boundaries are created with the most recent and accurate  boundary information available, but the edges and/or borders of the boundaries may change due to the natural land changes, site boundary modification or higher resolution maps.  Therefore, the currency or accuracy of Thesee boundaries cannot be guaranteed.
+  Standard_Order_Process:
+    Digital_Form:
+      Digital_Transfer_Information:
+        Transfer_Size: 0.001
+  Custom_Order_Process:
+    Cordell Bank National Marine Sanctuary digital boundary file (cbnms_py.shp)
+
+    Digital boundry files are available for public consumption from the National Marine Sanctuary Program through their internet site.  Because URL addresses and pages change, the actual data URL is not listed here, but will be searchable within the site (http://sanctuaries.noaa.gov)  Requests may also be made through the NMSP Boundary Coordinator.  See Distributor Contact Information for contact details.
+Metadata_Reference_Information:
+  Metadata_Date: 20060329
+  Metadata_Contact:
+    Contact_Information:
+      Contact_Organization_Primary:
+        Contact_Organization: NOAA / National Marine Sanctuary Program
+        Contact_Person: NMSP Boundary Coordinator
+      Contact_Position: NMSP Boundary Coordinator
+      Contact_Address:
+        Address_Type: mailing and physical address
+        Address: N/ORM62, SSMC-4
+        Address: 1305 East West Highway
+        City: Silver Spring
+        State_or_Province: Maryland
+        Postal_Code: 20910
+        Country: United States
+      Contact_Voice_Telephone: (301) 713-3125
+      Contact_Facsimile_Telephone: (301) 713-0404
+      Contact_Electronic_Mail_Address: sanctuaries@noaa.gov
+      Hours_of_Service: 9:00AM to 4:00PM EST; Monday - Friday
+  Metadata_Standard_Name: FGDC Content Standards for Digital Geospatial Metadata
+  Metadata_Standard_Version: FGDC-STD-001-1998
+  Metadata_Time_Convention: local time
+  Metadata_Extensions:
+    Online_Linkage: http://www.esri.com/metadata/esriprof80.html
+    Profile_Name: ESRI Metadata Profile
+  Metadata_Extensions:
+    Online_Linkage: http://www.esri.com/metadata/esriprof80.html
+    Profile_Name: ESRI Metadata Profile

@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"features": [
+{ "type": "Feature", "properties": { "Name": "SERC, GCREW", "FolderPath": "MarineGeo.kmz/MarineGeo", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -76.54, 38.887, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Indian River Lagoon", "FolderPath": "MarineGeo.kmz/MarineGeo", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -80.31134, 27.460121, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "San Francisco Bay", "FolderPath": "MarineGeo.kmz/MarineGeo", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -122.44679, 37.890491, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Gulf Coast", "FolderPath": "MarineGeo.kmz/MarineGeo", "SymbolID": 0, "AltMode": -1, "Base": 0.0, "Snippet": "", "PopupInfo": "", "HasLabel": -1, "LabelID": 0 }, "geometry": { "type": "Point", "coordinates": [ -97.324143, 27.712745, 0.0 ] } }
+]
+}

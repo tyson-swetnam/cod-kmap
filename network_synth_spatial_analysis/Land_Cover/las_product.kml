@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://earth.google.com/kml/2.1">
+  <NetworkLink>
+     <name>OSMC_new_schema: ID</name>
+     <flyToView>1</flyToView>
+     <Link>
+                      <href>http://osmc.noaa.gov/Monitor/output/80EC74AFE53F2295DA8FA76AC8B4027D_kmz.kmz</href>
+              </Link>
+  </NetworkLink>
+</kml>

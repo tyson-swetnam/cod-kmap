@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="https://www.ngdc.noaa.gov/metadata/published/xsd/ngdcSchema/schema.xsd">
+   <idinfo>
+      <datsetid>gov.noaa.nmfs.inport:48335</datsetid>
+      <citation>
+         <citeinfo>
+            <pubdate>20130521</pubdate>
+            <title>NOAA's Coastal Change Analysis Program (C-CAP) 2010 Regional Land Cover Data - Coastal United States</title>
+         </citeinfo>
+      </citation>
+      <descript>
+         <abstract>
+              This metadata record was derived from an ISO format record and may be missing components. See the ISO version for more information.
+                The NOAA Coastal Change Analysis Program (C-CAP) produces national standardized land cover and change products for the coastal regions of the U.S.  C-CAP products inventory coastal intertidal areas, wetlands, and adjacent uplands with the goal of monitoring changes in these habitats, on a one-to-five year repeat cycle. The timeframe for this metadata is reported as 2010-Era, but the actual dates of the Landsat imagery used to create the land cover may have been acquired a few years before or after each era.  These maps are developed utilizing Landsat Thematic Mapper imagery, and can be used to track changes in the landscape through time.  This trend information gives important feedback to managers on the success or failure of management policies and programs and aid in developing a scientific understanding of the Earth system and its response to natural and human-induced changes. This understanding allows for the prediction of impacts due to these changes and the assessment of their cumulative effects, helping coastal resource managers make more informed regional decisions. NOAA C-CAP is a contributing member to the Multi-Resolution Land Characteristics consortium and C-CAP products are included as the coastal expression of land cover within the National Land Cover Database.
+This data set has been cut into 20 tiles of size 20000 columns and 20000 rows and may have been mosaiced, reprojected, and clipped from the original tiles. The data set was generated from a larger data set and includes all valid data within the requested geographic bounds.
+		</abstract>
+         <purpose>C-CAP is dedicated to the development, distribution, and application of land cover and change data for the coastal regions of the U.S. This effort is being conducted in close coordination with state coastal management agencies, the interagency Multi-Resolution Land Characteristics (MRLC) consortium, and the National Land Cover Database (NLCD).</purpose>
+      </descript>
+      <status>
+         <progress>In work</progress>
+         <update>missing</update>
+      </status>
+      <spdom>
+         <bounding>
+            <westbc>
+		-124.84301757769902
+		</westbc>
+            <eastbc>
+		-66.8825073239538
+		</eastbc>
+            <northbc>51.07</northbc>
+            <southbc>22.6</southbc>
+         </bounding>
+      </spdom>
+      <keywords>
+         <theme>
+            <themekt>NASA/GCMD Earth Science Keywords</themekt>
+            <themekey>EARTH SCIENCE : Human Dimensions : Environmental Governance/Management : Land Management : Land Use/Land Cover Classification</themekey>
+            <themekey>EARTH SCIENCE : Land Surface : Land Use/Land Cover : Land Cover</themekey>
+            <themekey>EARTH SCIENCE : Land Surface : Land Use/Land Cover : Land Use Classes</themekey>
+         </theme>
+         <theme>
+            <themekey>CCAP</themekey>
+            <themekey>Coastal Change Analysis Program</themekey>
+            <themekey>Land Cover Analysis</themekey>
+            <themekey>Remotely Sensed Imagery/Photos</themekey>
+         </theme>
+         <theme>
+            <themekt>Global Change Master Directory (GCMD) Science Keywords</themekt>
+            <themekey>Earth Science &gt; Land Surface &gt; Land Use/Land Cover</themekey>
+            <themekey>Earth Science &gt; Land Surface &gt; Land Use/Land Cover &gt; Land Use/Land Cover Classification</themekey>
+         </theme>
+         <theme>
+            <themekt>Global Change Master Directory (GCMD) Instrument Keywords</themekt>
+            <themekey>Earth Remote Sensing Instruments &gt; Passive Remote Sensing &gt; Photon/Optical Detectors &gt; Cameras &gt; CAMERAS</themekey>
+         </theme>
+         <theme>
+            <themekt>Global Change Master Directory (GCMD) Platform Keywords</themekt>
+            <themekey>Earth Observation Satellites &gt; LANDSAT</themekey>
+         </theme>
+         <place>
+            <placekt>Global Change Master Directory (GCMD) Location Keywords</placekt>
+            <placekey>Continent &gt; North America &gt; United States Of America</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Alabama</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; California</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Connecticut</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Delaware</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; District Of Columbia</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Florida</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Georgia</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Illinois</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Indiana</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Louisiana</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Maine</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Maryland</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Massachusetts</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Michigan</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Minnesota</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Mississippi</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; New Hampshire</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; New Jersey</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; New York</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; North Carolina</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Ohio</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Oregon</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Pennsylvania</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Rhode Island</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; South Carolina</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Texas</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Vermont</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Virginia</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Washington</placekey>
+            <placekey>Continent &gt; North America &gt; United States Of America &gt; Wisconsin</placekey>
+         </place>
+         <place>
+            <placekey>Alabama</placekey>
+            <placekey>California</placekey>
+            <placekey>Connecticut</placekey>
+            <placekey>Delaware</placekey>
+            <placekey>Florida</placekey>
+            <placekey>Georgia</placekey>
+            <placekey>Illinois</placekey>
+            <placekey>Indiana</placekey>
+            <placekey>Louisiana</placekey>
+            <placekey>Maine</placekey>
+            <placekey>Maryland</placekey>
+            <placekey>Massachusetts</placekey>
+            <placekey>Michigan</placekey>
+            <placekey>Minnesota</placekey>
+            <placekey>Mississippi</placekey>
+            <placekey>New Hampshire</placekey>
+            <placekey>New Jersey</placekey>
+            <placekey>New York</placekey>
+            <placekey>North Carolina</placekey>
+            <placekey>Ohio</placekey>
+            <placekey>Oregon</placekey>
+            <placekey>Pennsylvania</placekey>
+            <placekey>Rhode Island</placekey>
+            <placekey>South Carolina</placekey>
+            <placekey>Texas</placekey>
+            <placekey>U.S.</placekey>
+            <placekey>U.S. Coastal Zone</placekey>
+            <placekey>Vermont</placekey>
+            <placekey>Virginia</placekey>
+            <placekey>Washington</placekey>
+            <placekey>Wisconsin</placekey>
+         </place>
+      </keywords>
+      <accconst>Restriction Code: otherRestrictions;  </accconst>
+      <useconst>Use Limitation: NOAA provides no warranty, nor accepts any liability occurring from any incomplete, incorrect, or misleading data, or from any incorrect, incomplete, or misleading use of the data. It is the responsibility of the user to determine whether or not the data is suitable for the intended purpose.;   Other: 
+		This data set was compiled dynamically, and will exist on https://chs.coast.noaa.gov/pickup/dav/510705/Job510705_2010_CCAP.zip until 10 days after 01/08/2020. The file will then be deleted from the system.
+			Access Constraints: None | Use Constraints: Data set is not for use in litigation. While efforts have been made to ensure that these data are accurate and reliable, NOAA, cannot assume liability for any damages, or misrepresentations, caused by any inaccuracies in the data. NOAA makes no warranty, expressed or implied, nor does the fact of distribution constitute such a warranty. | Distribution Liability: Users must assume responsibility to determine the appropriate use of these data. DATA SHOULD NOT BE USED FOR LEGALLY BINDING APPLICATIONS.;   </useconst>
+   </idinfo>
+   <distinfo>
+      <distrib>
+         <cntinfo>
+            <cntorgp>
+               <cntorg>NOAA Office for Coastal Management</cntorg>
+            </cntorgp>
+            <cntaddr>
+               <addrtype>physical and mailing</addrtype>
+               <address>2234 South Hobson Ave</address>
+               <city>Charleston</city>
+               <state>SC</state>
+               <postal>29405-2413</postal>
+            </cntaddr>
+            <cntvoice>(843) 740-1202</cntvoice>
+            <cntemail>coastal.info@noaa.gov</cntemail>
+         </cntinfo>
+      </distrib>
+      <distliab>Unknown </distliab>
+   </distinfo>
+   <metainfo>
+      <metd>20191022</metd>
+      <metc>
+         <cntinfo>
+            <cntperp>
+               <cntorg>Office for Coastal Management</cntorg>
+            </cntperp>
+            <cntaddr>
+               <addrtype>mailing and physical</addrtype>
+               <address>2234 South Hobson Avenue</address>
+               <city>Charleston</city>
+               <state>SC</state>
+               <postal>29405-2413</postal>
+            </cntaddr>
+            <cntvoice>missing</cntvoice>
+         </cntinfo>
+      </metc>
+      <metc>
+         <cntinfo>
+            <cntperp>
+               <cntorg>NOAA Office for Coastal Management</cntorg>
+            </cntperp>
+            <cntaddr>
+               <addrtype>mailing and physical</addrtype>
+               <address>2234 South Hobson Ave</address>
+               <city>Charleston</city>
+               <state>SC</state>
+               <postal>29405-2413</postal>
+            </cntaddr>
+            <cntvoice>(843) 740-1202</cntvoice>
+            <cntemail>coastal.info@noaa.gov</cntemail>
+         </cntinfo>
+      </metc>
+      <metstdn>Content Standard for Digital Geospatial Metadata: Extensions for Remote Sensing Metadata</metstdn>
+      <metstdv>FGDC-STD-012-2002</metstdv>
+   </metainfo>
+</metadata>
