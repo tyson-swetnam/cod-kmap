@@ -1,0 +1,37 @@
+{
+  "nerr-reserves": {
+    "label": "NERR reserves",
+    "color": "#0d9488",
+    "category": "coastal"
+  },
+  "nep-programs": {
+    "label": "National Estuary Program",
+    "color": "#7c3aed",
+    "category": "coastal"
+  },
+  "marine-sanctuaries": {
+    "label": "Marine Sanctuaries",
+    "color": "#0369a1",
+    "category": "marine"
+  },
+  "marine-monuments": {
+    "label": "Marine Monuments",
+    "color": "#1e40af",
+    "category": "marine"
+  },
+  "nps-coastal": {
+    "label": "NPS Coastal Units",
+    "color": "#16a34a",
+    "category": "marine"
+  },
+  "neon-domains": {
+    "label": "NEON Ecological Domains",
+    "color": "#d4a017",
+    "category": "context"
+  },
+  "epa-regions": {
+    "label": "EPA Regions",
+    "color": "#64748b",
+    "category": "context"
+  }
+}

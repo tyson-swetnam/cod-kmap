@@ -20,19 +20,24 @@ export const TYPE_COLORS = {
   virtual: '#94a3b8',
 };
 
-// Build a MapLibre match expression for facility type → color
 function typeColorExpr() {
   const expr = ['match', ['get', 'type']];
-  for (const [k, v] of Object.entries(TYPE_COLORS)) {
-    expr.push(k, v);
-  }
-  expr.push('#64748b'); // default
+  for (const [k, v] of Object.entries(TYPE_COLORS)) expr.push(k, v);
+  expr.push('#64748b');
   return expr;
 }
 
 let map;
 let _currentFeatures = [];
-let _hullsVisible = true;
+
+// Plug-in API used by overlays.js to publish what's currently rendered.
+let _legendOverlayProvider = () => [];
+export function registerLegendOverlayProvider(fn) {
+  _legendOverlayProvider = fn || (() => []);
+}
+export function refreshLegend() {
+  document.querySelector('.legend-control')?.dispatchEvent(new CustomEvent('legend:refresh'));
+}
 
 const COASTLINE_URL =
   'https://raw.githubusercontent.com/martynafford/natural-earth-geojson/master/50m/physical/ne_50m_coastline.json';
@@ -43,65 +48,31 @@ export function initMap(container) {
     style: 'https://tiles.openfreemap.org/styles/positron',
     center: [-85, 32],
     zoom: 3,
+    attributionControl: false,
   });
 
-  map.addControl(new maplibregl.NavigationControl(), 'top-right');
+  map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
   map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
 
-  // Custom fit-to-data control
   map.addControl(makeFitControl(), 'top-right');
-
-  // Custom hull-toggle control
-  map.addControl(makeHullToggleControl(), 'top-left');
-
-  // Custom legend control
   map.addControl(makeLegendControl(), 'bottom-left');
 
   map.on('load', () => {
-    // ── Coastline source + layer ─────────────────────────────────
-    map.addSource('coastline', {
-      type: 'geojson',
-      data: COASTLINE_URL,
-    });
+    // Coastline reference line — subtle teal
+    map.addSource('coastline', { type: 'geojson', data: COASTLINE_URL });
     map.addLayer({
       id: 'coastline-line',
       type: 'line',
       source: 'coastline',
-      layout: {},
       paint: {
         'line-color': '#0d6e6e',
-        'line-width': 0.8,
-        'line-opacity': 0.6,
+        'line-width': 0.6,
+        'line-opacity': 0.45,
       },
     });
 
-    // ── Observatory-region hull sources + layers ─────────────────
-    map.addSource('hulls', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: [] },
-    });
-    map.addLayer({
-      id: 'hulls-fill',
-      type: 'fill',
-      source: 'hulls',
-      paint: {
-        'fill-color': TYPE_COLORS['network'],
-        'fill-opacity': 0.08,
-      },
-    });
-    map.addLayer({
-      id: 'hulls-outline',
-      type: 'line',
-      source: 'hulls',
-      paint: {
-        'line-color': TYPE_COLORS['network'],
-        'line-width': 1.2,
-        'line-opacity': 0.3,
-        'line-dasharray': [4, 3],
-      },
-    });
-
-    // ── Facility clustered source ────────────────────────────────
+    // Facilities source (clustered)
     map.addSource('facilities', {
       type: 'geojson',
       data: { type: 'FeatureCollection', features: [] },
@@ -110,7 +81,6 @@ export function initMap(container) {
       clusterMaxZoom: 10,
     });
 
-    // Cluster circles
     map.addLayer({
       id: 'clusters',
       type: 'circle',
@@ -119,22 +89,17 @@ export function initMap(container) {
       paint: {
         'circle-color': [
           'step', ['get', 'point_count'],
-          '#14b8a6', 10,
-          '#0d9488', 40,
-          '#095454',
+          '#14b8a6', 10, '#0d9488', 40, '#095454',
         ],
         'circle-radius': [
           'step', ['get', 'point_count'],
-          16, 10,
-          22, 40,
-          30,
+          16, 10, 22, 40, 30,
         ],
         'circle-stroke-width': 2,
         'circle-stroke-color': '#fff',
       },
     });
 
-    // Cluster count labels
     map.addLayer({
       id: 'cluster-count',
       type: 'symbol',
@@ -148,7 +113,6 @@ export function initMap(container) {
       paint: { 'text-color': '#fff' },
     });
 
-    // Unclustered facility points
     map.addLayer({
       id: 'unclustered-point',
       type: 'circle',
@@ -162,7 +126,6 @@ export function initMap(container) {
       },
     });
 
-    // Hover halo on unclustered points
     map.addLayer({
       id: 'unclustered-point-hover',
       type: 'circle',
@@ -176,7 +139,6 @@ export function initMap(container) {
       },
     });
 
-    // ── Cluster click → zoom in ──────────────────────────────────
     map.on('click', 'clusters', (e) => {
       const feat = e.features[0];
       const clusterId = feat.properties.cluster_id;
@@ -186,12 +148,10 @@ export function initMap(container) {
       });
     });
 
-    // ── Unclustered point click → popup ─────────────────────────
     map.on('click', 'unclustered-point', (e) => {
       const feat = e.features[0];
       const coords = feat.geometry.coordinates.slice();
       const p = feat.properties;
-      // Properties from GeoJSON are stringified arrays — parse them
       for (const key of ['areas', 'networks', 'funders']) {
         if (typeof p[key] === 'string') {
           try { p[key] = JSON.parse(p[key]); } catch (_) { p[key] = []; }
@@ -203,7 +163,6 @@ export function initMap(container) {
         .addTo(map);
     });
 
-    // ── Hover state ──────────────────────────────────────────────
     map.on('mousemove', 'unclustered-point', (e) => {
       map.getCanvas().style.cursor = 'pointer';
       const id = e.features[0].properties.id || '';
@@ -220,7 +179,6 @@ export function initMap(container) {
   return map;
 }
 
-// ── renderFacilities ───────────────────────────────────────────────
 export function renderFacilities(features) {
   _currentFeatures = features;
   const waitForMap = () => {
@@ -228,67 +186,11 @@ export function renderFacilities(features) {
       setTimeout(waitForMap, 100);
       return;
     }
-    const fc = { type: 'FeatureCollection', features };
-    map.getSource('facilities')?.setData(fc);
-    updateHulls(features);
+    map.getSource('facilities')?.setData({ type: 'FeatureCollection', features });
   };
   waitForMap();
 }
 
-function updateHulls(features) {
-  // Group by networks[0] if present, else by country
-  const groups = new Map();
-  for (const f of features) {
-    const p = f.properties ?? {};
-    let nets = p.networks;
-    if (typeof nets === 'string') { try { nets = JSON.parse(nets); } catch (_) { nets = null; } }
-    const key = (Array.isArray(nets) && nets.length > 0) ? nets[0] : (p.country || 'unknown');
-    if (!groups.has(key)) groups.set(key, []);
-    const coords = f.geometry?.coordinates;
-    if (coords) groups.get(key).push(coords);
-  }
-
-  const hullFeatures = [];
-  for (const [, pts] of groups) {
-    if (pts.length < 3) continue;
-    const hull = convexHull(pts);
-    if (hull.length < 3) continue;
-    hullFeatures.push({
-      type: 'Feature',
-      geometry: {
-        type: 'Polygon',
-        coordinates: [[...hull, hull[0]]],
-      },
-      properties: {},
-    });
-  }
-
-  const src = map.getSource('hulls');
-  if (src) src.setData({ type: 'FeatureCollection', features: hullFeatures });
-}
-
-// ── Convex hull (monotone chain) ───────────────────────────────────
-function convexHull(points) {
-  const pts = points.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
-  const lower = [];
-  for (const p of pts) {
-    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0)
-      lower.pop();
-    lower.push(p);
-  }
-  const upper = [];
-  for (let i = pts.length - 1; i >= 0; i--) {
-    const p = pts[i];
-    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0)
-      upper.pop();
-    upper.push(p);
-  }
-  upper.pop(); lower.pop();
-  return lower.concat(upper);
-}
-
-// ── Popup HTML ─────────────────────────────────────────────────────
 function popupHtml(p) {
   const color = TYPE_COLORS[p.type] || '#64748b';
   const nameHtml = p.url
@@ -311,7 +213,7 @@ function popupHtml(p) {
     ${areas ? `<div class="popup-row"><em>Research:</em> ${areas}</div>` : ''}
     ${networks ? `<div class="popup-row"><em>Networks:</em> ${networks}</div>` : ''}
     ${funders ? `<div class="popup-row"><em>Funders:</em> ${funders}</div>` : ''}
-    ${p.url ? `<a class="popup-source" href="${esc(p.url)}" target="_blank" rel="noopener">View source</a>` : ''}
+    ${p.url ? `<a class="popup-source" href="${esc(p.url)}" target="_blank" rel="noopener">Visit website</a>` : ''}
   </div>`;
 }
 
@@ -330,37 +232,14 @@ function makeFitControl() {
       div.querySelector('a').addEventListener('click', (e) => {
         e.preventDefault();
         if (_currentFeatures.length === 0) return;
-        const coords = _currentFeatures
-          .map((f) => f.geometry?.coordinates)
-          .filter(Boolean);
+        const coords = _currentFeatures.map((f) => f.geometry?.coordinates).filter(Boolean);
         if (!coords.length) return;
         const lngs = coords.map((c) => c[0]);
         const lats = coords.map((c) => c[1]);
         m.fitBounds(
           [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
-          { padding: 40 }
+          { padding: 60 }
         );
-      });
-      return div;
-    },
-    onRemove() {},
-  };
-}
-
-function makeHullToggleControl() {
-  return {
-    onAdd(m) {
-      const div = document.createElement('div');
-      div.className = 'maplibregl-ctrl hull-toggle-control';
-      div.title = 'Toggle observatory regions';
-      div.textContent = 'Regions ON';
-      div.addEventListener('click', () => {
-        _hullsVisible = !_hullsVisible;
-        const vis = _hullsVisible ? 'visible' : 'none';
-        if (m.getLayer('hulls-fill')) m.setLayoutProperty('hulls-fill', 'visibility', vis);
-        if (m.getLayer('hulls-outline')) m.setLayoutProperty('hulls-outline', 'visibility', vis);
-        div.textContent = _hullsVisible ? 'Regions ON' : 'Regions OFF';
-        div.classList.toggle('hull-off', !_hullsVisible);
       });
       return div;
     },
@@ -375,10 +254,19 @@ function makeLegendControl() {
       div.className = 'maplibregl-ctrl legend-control';
       div.innerHTML = `
         <div class="legend-header">
-          <span>Facility type</span>
+          <span>Legend</span>
           <span class="legend-toggle">&#9650;</span>
         </div>
-        <div class="legend-body" id="legend-body">Loading…</div>
+        <div class="legend-body">
+          <div class="legend-section legend-points">
+            <div class="legend-section-label">Facilities</div>
+            <div class="legend-types" id="legend-types">Loading…</div>
+          </div>
+          <div class="legend-section legend-overlays" id="legend-overlays" hidden>
+            <div class="legend-section-label">Overlays</div>
+            <div id="legend-overlay-rows"></div>
+          </div>
+        </div>
       `;
       div.querySelector('.legend-header').addEventListener('click', () => {
         div.classList.toggle('collapsed');
@@ -388,8 +276,28 @@ function makeLegendControl() {
       div.addEventListener('click', (e) => e.stopPropagation());
       div.addEventListener('wheel', (e) => e.stopPropagation());
 
+      const refresh = () => {
+        const ov = _legendOverlayProvider();
+        const sec = div.querySelector('#legend-overlays');
+        const rows = div.querySelector('#legend-overlay-rows');
+        if (!ov || ov.length === 0) {
+          sec.hidden = true;
+          rows.innerHTML = '';
+          return;
+        }
+        sec.hidden = false;
+        rows.innerHTML = ov.map((o) =>
+          `<div class="legend-row">
+            <span class="legend-chip legend-chip-square" style="background:${o.color}"></span>
+            <span>${esc(o.label)}</span>
+          </div>`
+        ).join('');
+      };
+      div.addEventListener('legend:refresh', refresh);
+
+      // Initial population: facility types via vocab CSV
       fetchCSV(`${BASE}vocab/facility_types.csv`).then((rows) => {
-        const body = div.querySelector('#legend-body');
+        const body = div.querySelector('#legend-types');
         body.innerHTML = rows.map((r) => {
           const color = TYPE_COLORS[r.slug] || '#64748b';
           return `<div class="legend-row">
@@ -398,11 +306,13 @@ function makeLegendControl() {
           </div>`;
         }).join('');
       }).catch(() => {
-        const body = div.querySelector('#legend-body');
+        const body = div.querySelector('#legend-types');
         body.innerHTML = Object.entries(TYPE_COLORS).map(([slug, color]) =>
           `<div class="legend-row"><span class="legend-chip" style="background:${color}"></span><span>${slug}</span></div>`
         ).join('');
       });
+
+      refresh();
       return div;
     },
     onRemove() {},

@@ -11,11 +11,12 @@ northern Caribbean, published as an interactive Leaflet map on GitHub Pages.
 | `agents/` | Specifications for the subagents that collect data, design the schema, and build the UI. Start with `agents/README.md`. |
 | `schema/schema.sql` | Canonical DuckDB schema (D1). |
 | `schema/vocab/` | Controlled vocabularies for facility types, research areas, and networks (D3). |
-| `scripts/` | Ingest, geocode, QA, and Parquet export pipeline (D2). `build_r10_from_spatial.py` harmonizes the R10 point layers into facility records. |
+| `scripts/` | Ingest, geocode, QA, and Parquet export pipeline (D2). `build_r10_from_spatial.py` harmonizes the R10 point layers into facility records; `build_web_overlays.py` bundles polygon overlays for the map. |
 | `scripts/synthesis-networks/` | R Markdown analysis imported from COMPASS-DOE/synthesis-networks (see R10). |
 | `data/raw/R*/` | Raw JSON produced by each research subagent (gitignored except `.gitkeep`). |
 | `data/raw/synthesis-networks/` | Verbatim import of the COMPASS-DOE/synthesis-networks dataset (MIT). |
 | `network_synth_spatial_analysis/` | GeoJSON point and polygon layers for the R10 ingest and map overlays (LTER, LTREB, MarineGEO, Sentinel, NERR, NEP, NMS, NPS, EPA, NEON, CCAP). |
+| `web/public/overlays/` | Simplified polygon overlays the map UI can toggle on demand (NERR reserves, NEP programs, Marine Sanctuaries, Marine Monuments, NPS coastal, NEON domains, EPA regions). |
 | `db/` | Built `cod_kmap.duckdb` and Parquet exports (gitignored). |
 | `web/` | Vite + Leaflet + `@duckdb/duckdb-wasm` static site. |
 | `.github/workflows/` | GitHub Pages deploy + weekly data-refresh workflows. |

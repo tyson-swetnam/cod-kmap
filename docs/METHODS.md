@@ -77,6 +77,11 @@ Each research agent produces a Markdown brief in `agents/<ID>-*.md`.
   terrestrial coastal ecosystem sites (salt-marsh LTREB plots, LTER coastal
   sites, NERR reserves) that the R1–R8 passes captured only at the parent
   network level.
+- Polygon overlay bundles built by `scripts/build_web_overlays.py` — NERR
+  reserves, NEP program boundaries, Marine Sanctuaries, Marine Monuments, NPS
+  coastal units, NEON ecological domains, and EPA regions — written to
+  `web/public/overlays/` with shapely-simplified geometries and a manifest
+  for the map UI to toggle on demand.
 
 ---
 
