@@ -29,6 +29,7 @@ Each research agent produces a Markdown brief in `agents/<ID>-*.md`.
 | R7 | South American coastal observatories |
 | R8 | Northern Caribbean island facilities |
 | R9 | Funding flows and funder-facility linkages (in progress) |
+| R10 | COMPASS synthesis-networks import (Myers-Pigg et al., Ecosphere) |
 | D1 | Schema design — tables, keys, enums; see `schema/schema.sql` |
 | D2 | Ingestion pipeline — `scripts/ingest.py` normalization and dedup |
 | D3 | Controlled vocabularies; see `schema/vocab/` |
@@ -60,6 +61,14 @@ Each research agent produces a Markdown brief in `agents/<ID>-*.md`.
 - Fisheries and Oceans Canada / DFO (dfo-mpo.gc.ca)
 - CONABIO / CONACYT Mexico
 - IOC-UNESCO Ocean Biodiversity Information System (obis.org)
+
+**External datasets**
+- COMPASS-DOE / synthesis-networks (github.com/COMPASS-DOE/synthesis-networks) —
+  52-network attribute table and hexagon × ecoregion × hazard table
+  from Myers-Pigg et al., *Advancing the understanding of coastal disturbances
+  with a network-of-networks approach* (Ecosphere). Mirrored verbatim under
+  `data/raw/synthesis-networks/`; R10 agent spec governs the harmonization
+  path into the facilities graph.
 
 ---
 
