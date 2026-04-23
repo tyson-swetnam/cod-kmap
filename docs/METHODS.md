@@ -147,7 +147,7 @@ JSON cache to avoid re-querying the same address.
 | In-browser query | DuckDB-Wasm (jsDelivr CDN) |
 | Map | Leaflet 1.9 + Leaflet.markercluster |
 | Front end | Vanilla JS ES modules, Vite 5 |
-| Hosting | GitHub Pages via `gh-pages` branch |
+| Hosting | GitHub Pages (static files, no build; CDN importmap for MapLibre + DuckDB-Wasm) |
 
 ---
 

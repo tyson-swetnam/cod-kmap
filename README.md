@@ -18,7 +18,7 @@ northern Caribbean, published as an interactive Leaflet map on GitHub Pages.
 | `network_synth_spatial_analysis/` | GeoJSON point and polygon layers for the R10 ingest and map overlays (LTER, LTREB, MarineGEO, Sentinel, NERR, NEP, NMS, NPS, EPA, NEON, CCAP). |
 | `web/public/overlays/` | Simplified polygon overlays the map UI can toggle on demand (NERR reserves, NEP programs, Marine Sanctuaries, Marine Monuments, NPS coastal, NEON domains, EPA regions). |
 | `db/` | Built `cod_kmap.duckdb` and Parquet exports (gitignored). |
-| `web/` | Vite + Leaflet + `@duckdb/duckdb-wasm` static site. |
+| `web/` | MapLibre GL + `@duckdb/duckdb-wasm` static site (ES modules + CDN importmap — no build step). |
 | `.github/workflows/` | GitHub Pages deploy + weekly data-refresh workflows. |
 
 ## Subagent pipeline
@@ -54,9 +54,12 @@ cd web && npm install && npm run dev
 
 ## Deployment
 
-Push to `main`; `.github/workflows/deploy.yml` builds `web/` and publishes to
-GitHub Pages. The weekly `refresh-data.yml` workflow re-runs the ingest
-pipeline and opens a PR with refreshed Parquet + GeoJSON artifacts.
+Push to `main`; `.github/workflows/deploy.yml` stages `web/` (flattens
+`web/public/` into the site root, keeps `web/index.html` and `web/src/`) and
+publishes it to GitHub Pages. There is no Node build step — the site runs
+plain ES modules with a CDN importmap for MapLibre GL and DuckDB-Wasm.
+The weekly `refresh-data.yml` workflow re-runs the ingest pipeline and opens
+a PR with refreshed Parquet + GeoJSON artifacts.
 
 ## External datasets
 
