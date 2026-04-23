@@ -19,6 +19,11 @@ db/*.duckdb
 db/parquet/*.parquet
 web/public/parquet/*.parquet
 
+# Exception: verbatim external dataset (COMPASS-DOE/synthesis-networks, MIT).
+# This is a citable third-party snapshot, not a regenerable artifact.
+!data/raw/synthesis-networks/
+!data/raw/synthesis-networks/**
+
 # Large raster deliverables — too big for GitHub without LFS.
 # Use `git add -f path.img` only after `git lfs install` has been run.
 *.img

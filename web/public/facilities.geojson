@@ -557,6 +557,1564 @@
 "geometry": {
 "type": "Point",
 "coordinates": [
+-89.672,
+46.0124
+]
+},
+"properties": {
+"id": "d8e10a908168815c",
+"name": "North Temperate Lakes LTER",
+"acronym": "LTER",
+"type": "network",
+"country": "US",
+"url": null,
+"parent_org": "US Long-Term Ecological Research Network"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-70.891,
+42.759
+]
+},
+"properties": {
+"id": "b93f51cc632277b0",
+"name": "Plum Island LTER",
+"acronym": "LTER",
+"type": "network",
+"country": "US",
+"url": null,
+"parent_org": "US Long-Term Ecological Research Network"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-70.8833,
+40.6967
+]
+},
+"properties": {
+"id": "4b897473a3d94b82",
+"name": "Northeast US Margin LTER",
+"acronym": "LTER",
+"type": "network",
+"country": "US",
+"url": null,
+"parent_org": "US Long-Term Ecological Research Network"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-75.913,
+37.283
+]
+},
+"properties": {
+"id": "b3c4acfee79eb573",
+"name": "Virginia Coast LTER",
+"acronym": "LTER",
+"type": "network",
+"country": "US",
+"url": null,
+"parent_org": "US Long-Term Ecological Research Network"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-81.371,
+31.427
+]
+},
+"properties": {
+"id": "8ae383aa534d8fe9",
+"name": "Georgia Coast LTER",
+"acronym": "LTER",
+"type": "network",
+"country": "US",
+"url": null,
+"parent_org": "US Long-Term Ecological Research Network"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-80.8533,
+25.4682
+]
+},
+"properties": {
+"id": "1496a5fc3a668206",
+"name": "Florida Coast LTER",
+"acronym": "LTER",
+"type": "network",
+"country": "US",
+"url": null,
+"parent_org": "US Long-Term Ecological Research Network"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-119.842,
+34.4125
+]
+},
+"properties": {
+"id": "a3250b6ee5b1e18e",
+"name": "Santa Barbara Coastal LTER",
+"acronym": "LTER",
+"type": "network",
+"country": "US",
+"url": null,
+"parent_org": "US Long-Term Ecological Research Network"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-120.28,
+32.8736
+]
+},
+"properties": {
+"id": "b6ad40b6cd18f42e",
+"name": "California Current LTER",
+"acronym": "LTER",
+"type": "network",
+"country": "US",
+"url": null,
+"parent_org": "US Long-Term Ecological Research Network"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-148.7,
+59.045
+]
+},
+"properties": {
+"id": "50642bf3064308c8",
+"name": "Northern Gulf of Alaska LTER",
+"acronym": "LTER",
+"type": "network",
+"country": "US",
+"url": null,
+"parent_org": "US Long-Term Ecological Research Network"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-156.78861,
+71.29005
+]
+},
+"properties": {
+"id": "01ef51b8abf6f751",
+"name": "Beaufort Lagoon LTER",
+"acronym": "LTER",
+"type": "network",
+"country": "US",
+"url": null,
+"parent_org": "US Long-Term Ecological Research Network"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-76.54,
+38.887
+]
+},
+"properties": {
+"id": "084d7f39d7bf0630",
+"name": "SERC, GCREW MarineGEO",
+"acronym": null,
+"type": "network",
+"country": "US",
+"url": null,
+"parent_org": "Smithsonian Tennenbaum Marine Observatories Network"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-80.31134,
+27.460121
+]
+},
+"properties": {
+"id": "10086fa6647815a9",
+"name": "Indian River Lagoon MarineGEO",
+"acronym": null,
+"type": "network",
+"country": "US",
+"url": null,
+"parent_org": "Smithsonian Tennenbaum Marine Observatories Network"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-122.44679,
+37.890491
+]
+},
+"properties": {
+"id": "c54df27d3d5ff656",
+"name": "San Francisco Bay MarineGEO",
+"acronym": null,
+"type": "network",
+"country": "US",
+"url": null,
+"parent_org": "Smithsonian Tennenbaum Marine Observatories Network"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-97.324143,
+27.712745
+]
+},
+"properties": {
+"id": "cc181c7953452ffc",
+"name": "Gulf Coast MarineGEO",
+"acronym": null,
+"type": "network",
+"country": "US",
+"url": null,
+"parent_org": "Smithsonian Tennenbaum Marine Observatories Network"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-68.4514095,
+44.1454423
+]
+},
+"properties": {
+"id": "5173db142db727f4",
+"name": "Swan's Island LTREB",
+"acronym": "LTREB",
+"type": "network",
+"country": "US",
+"url": null,
+"parent_org": "NSF Long-term Research in Environmental Biology"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-70.6494753,
+41.6056631
+]
+},
+"properties": {
+"id": "8b17ffd2b418fb60",
+"name": "West Falmouth Harbor LTREB",
+"acronym": "LTREB",
+"type": "network",
+"country": "US",
+"url": null,
+"parent_org": "NSF Long-term Research in Environmental Biology"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-79.165617,
+33.3293508
+]
+},
+"properties": {
+"id": "46598db0265aaa38",
+"name": "North Inlet LTREB",
+"acronym": "LTREB",
+"type": "network",
+"country": "US",
+"url": null,
+"parent_org": "NSF Long-term Research in Environmental Biology"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-76.5466181,
+38.8853928
+]
+},
+"properties": {
+"id": "0cc368787cd559c3",
+"name": "SERC GCREW LTREB",
+"acronym": "LTREB",
+"type": "network",
+"country": "US",
+"url": null,
+"parent_org": "NSF Long-term Research in Environmental Biology"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-70.2741546,
+43.6615123
+]
+},
+"properties": {
+"id": "1a8028552b3cd284",
+"name": "Casco Bay Estuary Partnership NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-70.9370526,
+43.1321379
+]
+},
+"properties": {
+"id": "6b49d19b5accaf76",
+"name": "Piscataqua Region Estuaries Partnership NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-70.7882655,
+42.3250713
+]
+},
+"properties": {
+"id": "8ef9ffb2262d2832",
+"name": "Massachusetts Bays National Estuary Program",
+"acronym": null,
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-70.8357792,
+41.5292751
+]
+},
+"properties": {
+"id": "c1b0708dda943534",
+"name": "Buzzards Bay National Estuary Program",
+"acronym": null,
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-71.4194802,
+41.8258457
+]
+},
+"properties": {
+"id": "9d4583c180914ac0",
+"name": "Narragansett Bay Estuary Program NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-72.9479882,
+41.0439675
+]
+},
+"properties": {
+"id": "0924c3fe89bb1392",
+"name": "Long Island Sound Study NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-72.6459415,
+40.9019576
+]
+},
+"properties": {
+"id": "14fa1197ed4975e3",
+"name": "Peconic Estuary Program NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-74.0187937,
+40.7056857
+]
+},
+"properties": {
+"id": "6fa9e6e6a2bb24ad",
+"name": "New York-New Jersey Harbor Estuary Program NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-74.1133082,
+39.8569748
+]
+},
+"properties": {
+"id": "2adc72ff42d9de08",
+"name": "Barnegat Bay Partnership NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-75.5499614,
+39.7279463
+]
+},
+"properties": {
+"id": "b18d4e304929d1f3",
+"name": "Partnership for the Delaware Estuary NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-75.068486,
+38.610441
+]
+},
+"properties": {
+"id": "ec5c32126ce47483",
+"name": "Delaware Center for the Inland Bays NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-75.156004,
+38.2303007
+]
+},
+"properties": {
+"id": "3cce246f72e42148",
+"name": "Maryland Coastal Bays Program NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-76.2099182,
+35.6727638
+]
+},
+"properties": {
+"id": "0d6b1e55d4c3c23d",
+"name": "Albemarle-Pamlico National Estuary Partnership NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-80.4758653,
+27.8171768
+]
+},
+"properties": {
+"id": "99abeaaed73bfb99",
+"name": "Indian River Lagoon National Estuary Program",
+"acronym": null,
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-66.1146247,
+18.4658555
+]
+},
+"properties": {
+"id": "f858cc0d008257c3",
+"name": "San Juan Bay Estuary Program",
+"acronym": null,
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-82.5384102,
+27.3342869
+]
+},
+"properties": {
+"id": "8cb1dfe4421dcd93",
+"name": "Sarasota Bay Estuary Program NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-82.6366511,
+27.7569975
+]
+},
+"properties": {
+"id": "6aa3e3a88696247f",
+"name": "Tampa Bay Estuary Program NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-88.0396853,
+30.6884137
+]
+},
+"properties": {
+"id": "db36727508052028",
+"name": "Mobile Bay National Estuary Program",
+"acronym": null,
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-90.8053132,
+29.7904764
+]
+},
+"properties": {
+"id": "c19eea5e35c4ff35",
+"name": "Barataria-Terrebonne National Estuary Program",
+"acronym": null,
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-95.1173026,
+29.5297941
+]
+},
+"properties": {
+"id": "e1a7385483473434",
+"name": "Galveston Bay Estuary Program NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-97.3953712,
+27.7833656
+]
+},
+"properties": {
+"id": "402ccdf886fa609d",
+"name": "Coastal Bend Bays and Estuaries Program NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-118.460678,
+33.9584156
+]
+},
+"properties": {
+"id": "e588b74d29fe8c36",
+"name": "Santa Monica Bay National Estuary Program",
+"acronym": null,
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-120.8528731,
+35.3603128
+]
+},
+"properties": {
+"id": "d9bad8026c38e336",
+"name": "Morro Bay National Estuary Program",
+"acronym": null,
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-122.3180888,
+37.8952864
+]
+},
+"properties": {
+"id": "458e96ead560e429",
+"name": "San Francisco Estuary Partnership NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-123.9140618,
+45.5533608
+]
+},
+"properties": {
+"id": "6d6ffba21e24b77d",
+"name": "Tillamook Estuaries Partnership NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-123.4792083,
+46.2574247
+]
+},
+"properties": {
+"id": "a3df950de95bd5e8",
+"name": "Lower Columbia Estuary Partnership NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-122.897359,
+47.0201352
+]
+},
+"properties": {
+"id": "c8a214243eb16597",
+"name": "Puget Sound Partnership NEP",
+"acronym": "NEP",
+"type": "nonprofit",
+"country": "US",
+"url": null,
+"parent_org": "EPA National Estuary Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-97.066865,
+28.0514826
+]
+},
+"properties": {
+"id": "bf2c2c67551f218f",
+"name": "Mission Aransas NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-70.5530995,
+43.3392876
+]
+},
+"properties": {
+"id": "80edf691ec74a1ad",
+"name": "Wells NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-70.8773928,
+43.0712922
+]
+},
+"properties": {
+"id": "7ddbc5ef577648ee",
+"name": "Great Bay NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-70.5251321,
+41.5809498
+]
+},
+"properties": {
+"id": "8f8db306000bd353",
+"name": "Waquoit Bay NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-71.3244867,
+41.5909573
+]
+},
+"properties": {
+"id": "dd32c151b310b8ae",
+"name": "Narragansett Bay NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-74.2999018,
+39.4808883
+]
+},
+"properties": {
+"id": "682babf9e6b9ee22",
+"name": "Jacques Cousteau NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-73.974922,
+41.2978484
+]
+},
+"properties": {
+"id": "f01f6bcc9502e905",
+"name": "Hudson River NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-75.3959892,
+39.0670137
+]
+},
+"properties": {
+"id": "9b4911f8fe1a9ebd",
+"name": "Delaware NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-76.8856386,
+37.5456328
+]
+},
+"properties": {
+"id": "d2d962156f88888d",
+"name": "Chesapeake Bay Virginia NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-75.9705135,
+38.1470648
+]
+},
+"properties": {
+"id": "b4519c13bf6c6b9d",
+"name": "Chesapeake Bay Maryland NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-79.0159315,
+35.7002172
+]
+},
+"properties": {
+"id": "4ac94e4e5da49682",
+"name": "North Carolina NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-79.2045709,
+33.299152
+]
+},
+"properties": {
+"id": "c42a82d1eef0f701",
+"name": "North Inlet-Winyah Bay NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-80.4437779,
+32.4785392
+]
+},
+"properties": {
+"id": "a90fce0f33af9666",
+"name": "ACE Basin NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-81.2900631,
+31.4393168
+]
+},
+"properties": {
+"id": "0ac30d8999613919",
+"name": "Sapelo Island NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-81.3261408,
+30.0222118
+]
+},
+"properties": {
+"id": "acfc1994d0e6cc5e",
+"name": "Guana Tolomato Matanza NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-82.5102793,
+41.3734803
+]
+},
+"properties": {
+"id": "f668c822976512fe",
+"name": "Old Woman Creek NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-92.1589445,
+46.6604375
+]
+},
+"properties": {
+"id": "1ebdb6e51e3d1712",
+"name": "Lake Superior NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-66.2226115,
+17.9527965
+]
+},
+"properties": {
+"id": "062a60fa77fbac44",
+"name": "Jobos Bay NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-81.699722,
+26.0444299
+]
+},
+"properties": {
+"id": "b989d5d297c3dec3",
+"name": "Rookery Bay NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-84.9591821,
+29.6523967
+]
+},
+"properties": {
+"id": "88a71bec0521cfdb",
+"name": "Apalachicola NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-87.8325039,
+30.4070136
+]
+},
+"properties": {
+"id": "def52201a4873868",
+"name": "Weeks Bay NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-88.4315339,
+30.3594682
+]
+},
+"properties": {
+"id": "960fc51b86672cc2",
+"name": "Grand Bay NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-151.4835234,
+59.6289168
+]
+},
+"properties": {
+"id": "575fa84330e60c4b",
+"name": "Kachemak Bay NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-122.4825888,
+48.4920918
+]
+},
+"properties": {
+"id": "347afc985afeade9",
+"name": "Padilla Bay NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-124.3347,
+43.2945448
+]
+},
+"properties": {
+"id": "f16c0b7401a72b61",
+"name": "South Slough NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-121.7286998,
+36.8150084
+]
+},
+"properties": {
+"id": "449c081d421f2116",
+"name": "Elkhorn Slough NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-117.1144559,
+32.546822
+]
+},
+"properties": {
+"id": "b5ba4ac41401a0b9",
+"name": "Tijuana River NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-157.8150528,
+21.4279623
+]
+},
+"properties": {
+"id": "d2beef812eb53bc7",
+"name": "He'eia NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-76.1064047,
+37.5211664
+]
+},
+"properties": {
+"id": "fe150287423eeeb2",
+"name": "Chesapeake Bay Sentinel Site",
+"acronym": null,
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Sentinel Site Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-155.5827817,
+19.8967649
+]
+},
+"properties": {
+"id": "885e59f7b4a660c3",
+"name": "Hawaiian Islands Sentinel Site",
+"acronym": null,
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Sentinel Site Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-75.7169092,
+36.0669857
+]
+},
+"properties": {
+"id": "02a62062148246a9",
+"name": "North Carolina Sentinel Site",
+"acronym": null,
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Sentinel Site Program"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-122.3070573,
+37.6734062
+]
+},
+"properties": {
+"id": "22defb4a3ee37d8a",
+"name": "San Francisco Bay NERR",
+"acronym": "NERR",
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office for Coastal Management"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-70.3371919,
+42.4538098
+]
+},
+"properties": {
+"id": "28fa3f8f2689c950",
+"name": "Stellwagen Bank Marine Sanctuary",
+"acronym": null,
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office of National Marine Sanctuaries"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-77.2557661,
+38.4730259
+]
+},
+"properties": {
+"id": "b925359d8a98761d",
+"name": "Mallows Bay-Potomac River Marine Sanctuary",
+"acronym": null,
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office of National Marine Sanctuaries"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-75.4082562,
+35.0086194
+]
+},
+"properties": {
+"id": "ccfca44c27995cea",
+"name": "Monitor Marine Sanctuary",
+"acronym": null,
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office of National Marine Sanctuaries"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-80.8654534,
+31.3821099
+]
+},
+"properties": {
+"id": "df62a44abf172c10",
+"name": "Gray's Reef Marine Sanctuary",
+"acronym": null,
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office of National Marine Sanctuaries"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-83.108599,
+24.3953094
+]
+},
+"properties": {
+"id": "cf68012de3b948de",
+"name": "Florida Keys Marine Sanctuary",
+"acronym": null,
+"type": "federal",
+"country": "US",
+"url": null,
+"parent_org": "NOAA Office of National Marine Sanctuaries"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
 -117.2533,
 32.8661
 ]

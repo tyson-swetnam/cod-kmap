@@ -54,7 +54,7 @@ function buildAreaTree(rows) {
 }
 
 export async function initFilters(container, state) {
-  // "Clear all" link
+  // "Clear all" link (only clears facility-filter checkboxes, not overlays)
   const clearLink = document.createElement('a');
   clearLink.id = 'clear-all';
   clearLink.textContent = 'Clear all filters';

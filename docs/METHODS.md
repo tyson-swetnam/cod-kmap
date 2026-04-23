@@ -8,9 +8,11 @@ metadata — location, facility type, parent organization, research focus, fundi
 source, and network membership — to help researchers and decision-makers
 understand the landscape of observing infrastructure.
 
-Current snapshot: **118 facilities**, **15 countries**, with coverage weighted
-toward the United States (federal, state, university, and NGO) and secondary
-coverage for Canada, Mexico, the Caribbean, and South America.
+Current snapshot: **200 facilities**, **15 countries**, with coverage weighted
+toward the United States (federal, state, university, NGO, and the member
+sites of the LTER, LTREB, MarineGEO, NERR, NEP, NMS, and NOAA Sentinel Site
+networks) and secondary coverage for Canada, Mexico, the Caribbean, and
+South America.
 
 ---
 
@@ -29,6 +31,7 @@ Each research agent produces a Markdown brief in `agents/<ID>-*.md`.
 | R7 | South American coastal observatories |
 | R8 | Northern Caribbean island facilities |
 | R9 | Funding flows and funder-facility linkages (in progress) |
+| R10 | COMPASS synthesis-networks import (Myers-Pigg et al., Ecosphere) |
 | D1 | Schema design — tables, keys, enums; see `schema/schema.sql` |
 | D2 | Ingestion pipeline — `scripts/ingest.py` normalization and dedup |
 | D3 | Controlled vocabularies; see `schema/vocab/` |
@@ -60,6 +63,25 @@ Each research agent produces a Markdown brief in `agents/<ID>-*.md`.
 - Fisheries and Oceans Canada / DFO (dfo-mpo.gc.ca)
 - CONABIO / CONACYT Mexico
 - IOC-UNESCO Ocean Biodiversity Information System (obis.org)
+
+**External datasets (R10)**
+- COMPASS-DOE / synthesis-networks (github.com/COMPASS-DOE/synthesis-networks) —
+  52-network attribute table and hexagon × ecoregion × hazard table
+  from Myers-Pigg et al., *Advancing the understanding of coastal disturbances
+  with a network-of-networks approach* (Ecosphere). Mirrored verbatim under
+  `data/raw/synthesis-networks/`.
+- Spatial layers in `network_synth_spatial_analysis/` (LTER, LTREB, MarineGEO,
+  Sentinel Site, NERR, NEP, NMS points and NEP polygons) — harmonized into
+  82 facility records by `scripts/build_r10_from_spatial.py` and written to
+  `data/raw/R10/facilities_synthesis_networks.json`. This pass adds the
+  terrestrial coastal ecosystem sites (salt-marsh LTREB plots, LTER coastal
+  sites, NERR reserves) that the R1–R8 passes captured only at the parent
+  network level.
+- Polygon overlay bundles built by `scripts/build_web_overlays.py` — NERR
+  reserves, NEP program boundaries, Marine Sanctuaries, Marine Monuments, NPS
+  coastal units, NEON ecological domains, and EPA regions — written to
+  `web/public/overlays/` with shapely-simplified geometries and a manifest
+  for the map UI to toggle on demand.
 
 ---
 
