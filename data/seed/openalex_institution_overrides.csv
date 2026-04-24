@@ -1,0 +1,24 @@
+facility_acronym,facility_id,openalex_institution_id,notes
+# Manual overrides for cases where scripts/seed_people_from_openalex.py
+# cannot resolve a facility to its OpenAlex institution ID automatically
+# (facility homepage not indexed; name is too generic; parent university
+# has multiple labs under one institution record; or OpenAlex just
+# hasn't crawled it).
+#
+# Either key works as the lookup — facility_acronym (when unique) OR
+# facility_id (when acronym is ambiguous, e.g. LTER sites all share
+# acronym "LTER"). The openalex_institution_id is the short form
+# starting with "I" (https://openalex.org/I123456789 → I123456789).
+#
+# Rows beginning with '#' are comments and skipped by the loader.
+#
+# === Curated overrides ===
+#
+# SBC LTER lives under UCSB Marine Science Institute (University of
+# California, Santa Barbara). The LTER website homepage alone doesn't
+# match, but UCSB is the actual institution where the PIs publish.
+# facility_acronym,facility_id,openalex_institution_id,notes
+# LTER,<hash-for-sbc-lter>,I5023651,UCSB — parent institution
+#
+# Add more rows below as resolution failures show up in the seed run's
+# [no OpenAlex institution] log lines.

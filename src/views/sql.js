@@ -173,6 +173,58 @@ SELECT facility_acronym,
 FROM   v_facility_key_personnel
 ORDER  BY facility, role, name;`,
   },
+  {
+    id: 'top-researchers-by-facility',
+    title: 'Top researchers per facility',
+    description:
+      'Every researcher linked to a facility via facility_personnel, ranked by ' +
+      'publication count. Populated by seed_people_from_openalex.py (top authors ' +
+      'from each facility\u2019s OpenAlex institution profile).',
+    sql: `-- Researchers grouped by facility, sorted by pub count
+SELECT f.canonical_name       AS facility,
+       f.acronym              AS acronym,
+       p.name                 AS researcher,
+       fp.role,
+       p.orcid,
+       p.openalex_id,
+       COUNT(DISTINCT a.publication_id) AS n_pubs,
+       p.research_interests
+FROM   facilities         f
+JOIN   facility_personnel fp ON fp.facility_id = f.facility_id
+JOIN   people             p  ON p.person_id    = fp.person_id
+LEFT   JOIN authorship    a  ON a.person_id    = p.person_id
+GROUP  BY f.canonical_name, f.acronym, p.name, fp.role,
+         p.orcid, p.openalex_id, p.research_interests
+ORDER  BY facility, n_pubs DESC, researcher
+LIMIT  500;`,
+  },
+  {
+    id: 'top-collaborations',
+    title: 'Top co-authorship pairs',
+    description:
+      'Strongest co-authorship pairs across all tracked facilities, from the ' +
+      'collaborations table computed by scripts/compute_collaborations.py. ' +
+      'Each row is one canonical (A, B) pair with A.person_id < B.person_id.',
+    sql: `-- Top 50 collaboration pairs by shared publication count
+SELECT pa.name                         AS person_a,
+       pb.name                         AS person_b,
+       c.co_pub_count                  AS shared_pubs,
+       c.first_year,
+       c.last_year,
+       ROUND(c.strength, 2)            AS strength,
+       list(DISTINCT fa.acronym || '/' || fb.acronym) AS facility_pairs
+FROM   collaborations c
+JOIN   people pa ON pa.person_id = c.person_a_id
+JOIN   people pb ON pb.person_id = c.person_b_id
+LEFT   JOIN facility_personnel fap ON fap.person_id = pa.person_id
+LEFT   JOIN facilities         fa  ON fa.facility_id = fap.facility_id
+LEFT   JOIN facility_personnel fbp ON fbp.person_id = pb.person_id
+LEFT   JOIN facilities         fb  ON fb.facility_id = fbp.facility_id
+GROUP  BY pa.name, pb.name, c.co_pub_count,
+         c.first_year, c.last_year, c.strength
+ORDER  BY shared_pubs DESC
+LIMIT  50;`,
+  },
 ];
 
 // ── State ───────────────────────────────────────────────────────────
