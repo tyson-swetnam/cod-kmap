@@ -3,9 +3,6 @@ import { DATA_BASE } from './config.js';
 
 let db = null;        // duckdb.AsyncDuckDB instance
 let conn = null;
-let ready = false;    // set once all parquet views are registered
-let readyResolve = null;
-const readyPromise = new Promise((r) => { readyResolve = r; });
 let fallbackFeatures = null;
 
 const PARQUET_BASE = `${DATA_BASE}parquet/`;
@@ -22,18 +19,8 @@ export async function loadFallback() {
   return fallbackFeatures;
 }
 
-// Return the DuckDB connection only after every parquet view has been
-// registered. Callers that need to run arbitrary SQL should always
-// `await whenReady()` first (or null-check both conn AND ready).
 export function getConn() {
-  return ready ? conn : null;
-}
-
-// Await this before issuing any SQL that doesn't go through query().
-// Resolves once initDB() has finished registering all parquet views.
-// Rejects if initDB is never called or fails (caller then falls back).
-export function whenReady() {
-  return readyPromise;
+  return conn;
 }
 
 export async function initDB() {
@@ -48,7 +35,7 @@ export async function initDB() {
   db = new duckdb.AsyncDuckDB(logger, worker);
   await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
   URL.revokeObjectURL(workerUrl);
-  const newConn = await db.connect();
+  conn = await db.connect();
 
   const tables = [
     'facilities', 'facility_types', 'locations',
@@ -59,20 +46,12 @@ export async function initDB() {
   ];
   for (const t of tables) {
     const url = `${PARQUET_BASE}${t}.parquet`;
-    await newConn.query(`CREATE OR REPLACE VIEW ${t} AS SELECT * FROM read_parquet('${url}')`);
+    await conn.query(`CREATE OR REPLACE VIEW ${t} AS SELECT * FROM read_parquet('${url}')`);
   }
-
-  // Only now — after every view is live — publish the connection to the
-  // rest of the app and flip the readiness flag. This closes a race where
-  // early readers (e.g. the Network tab loaded before initDB finishes)
-  // would hit a connection with only the first few tables registered.
-  conn = newConn;
-  ready = true;
-  if (readyResolve) readyResolve(conn);
 }
 
 export async function query(filterState) {
-  if (!ready || !conn) {
+  if (!conn) {
     return filterFallback(filterState);
   }
   const { where, params } = applyFilters(filterState);
