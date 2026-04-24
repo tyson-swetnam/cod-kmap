@@ -325,16 +325,28 @@ function makeLegendControl() {
       };
       div.addEventListener('legend:refresh', refresh);
 
-      // Initial population: facility types via vocab CSV
+      // Initial population: facility types via vocab CSV. Only the
+      // types that actually have facilities are shown — reserved slugs
+      // (industry / local-gov / university-institute / vessel / virtual)
+      // stay in the vocab file but are hidden from the legend so users
+      // don't see always-empty chips. Keep this in sync with the
+      // `typeSlugs` list in src/filters.js.
+      const SHOWN_TYPES = new Set([
+        'federal', 'state', 'university-marine-lab', 'nonprofit', 'foundation',
+        'network', 'international-federal', 'international-university',
+        'international-nonprofit', 'observatory',
+      ]);
       fetchCSV(`${BASE}vocab/facility_types.csv`).then((rows) => {
         const body = div.querySelector('#legend-types');
-        body.innerHTML = rows.map((r) => {
-          const color = TYPE_COLORS[r.slug] || '#64748b';
-          return `<div class="legend-row">
-            <span class="legend-chip" style="background:${color}"></span>
-            <span>${esc(r.label)}</span>
-          </div>`;
-        }).join('');
+        body.innerHTML = rows
+          .filter((r) => SHOWN_TYPES.has(r.slug))
+          .map((r) => {
+            const color = TYPE_COLORS[r.slug] || '#64748b';
+            return `<div class="legend-row">
+              <span class="legend-chip" style="background:${color}"></span>
+              <span>${esc(r.label)}</span>
+            </div>`;
+          }).join('');
       }).catch(() => {
         const body = div.querySelector('#legend-types');
         body.innerHTML = Object.entries(TYPE_COLORS).map(([slug, color]) =>

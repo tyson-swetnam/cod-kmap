@@ -1,10 +1,41 @@
 import { fetchCSV } from './csv.js';
 import { DATA_BASE as BASE } from './config.js';
 
+// ISO 3166-1 alpha-2 codes that cover the Atlantic/Gulf/Pacific/Caribbean
+// coastline the knowledge map tracks, paired with display names. The code
+// stays as the data value (facilities.country is ISO alpha-2), only the
+// label shown to the user becomes the full country / territory name.
+// Ordered roughly North → South along the Americas then outward through
+// the Caribbean to keep the vertical checklist intuitive to scan.
 const COUNTRIES = [
-  'US', 'CA', 'MX', 'BZ', 'GT', 'HN', 'SV', 'NI', 'CR', 'PA',
-  'CO', 'VE', 'EC', 'PE', 'CL', 'AR', 'UY', 'BR',
-  'PR', 'VI', 'CU', 'JM', 'DO', 'HT', 'BS', 'KY', 'TC',
+  ['US', 'United States'],
+  ['CA', 'Canada'],
+  ['MX', 'Mexico'],
+  ['BZ', 'Belize'],
+  ['GT', 'Guatemala'],
+  ['HN', 'Honduras'],
+  ['SV', 'El Salvador'],
+  ['NI', 'Nicaragua'],
+  ['CR', 'Costa Rica'],
+  ['PA', 'Panama'],
+  ['CO', 'Colombia'],
+  ['VE', 'Venezuela'],
+  ['EC', 'Ecuador'],
+  ['PE', 'Peru'],
+  ['CL', 'Chile'],
+  ['AR', 'Argentina'],
+  ['UY', 'Uruguay'],
+  ['BR', 'Brazil'],
+  ['PR', 'Puerto Rico'],
+  ['VI', 'U.S. Virgin Islands'],
+  ['CU', 'Cuba'],
+  ['JM', 'Jamaica'],
+  ['DO', 'Dominican Republic'],
+  ['HT', 'Haiti'],
+  ['BS', 'Bahamas'],
+  ['BB', 'Barbados'],
+  ['KY', 'Cayman Islands'],
+  ['TC', 'Turks and Caicos Islands'],
 ];
 
 /** Build a collapsible facet section element. */
@@ -70,10 +101,18 @@ export async function initFilters(container, state) {
   container.appendChild(clearLink);
 
   // ── Facility type (loaded synchronously from hardcoded slugs first, labels async) ──
+  //
+  // Only types that currently have ≥1 facility in the dataset are rendered
+  // as filter checkboxes. The five "reserved" slugs in the vocab CSV
+  // (industry, local-gov, university-institute, vessel, virtual) stay in
+  // schema/vocab/facility_types.csv so future ingests can use them, but
+  // showing them as always-zero-match checkboxes just clutters the UI.
+  // The async block below cross-checks the CSV against this list, so
+  // dropping or re-enabling a slug is a single edit here.
   const typeSlugs = [
-    'federal','state','local-gov','university-marine-lab','university-institute',
-    'nonprofit','foundation','network','international-federal','international-university',
-    'international-nonprofit','industry','vessel','observatory','virtual',
+    'federal', 'state', 'university-marine-lab', 'nonprofit', 'foundation',
+    'network', 'international-federal', 'international-university',
+    'international-nonprofit', 'observatory',
   ];
   const typeSection = makeFacetSection(
     'f-type', 'Facility type',
@@ -85,7 +124,9 @@ export async function initFilters(container, state) {
   // ── Country ──
   const countrySection = makeFacetSection(
     'f-country', 'Country / territory',
-    COUNTRIES.map((c) => checkbox('country', c, c)).join(''),
+    // Value stays the ISO alpha-2 code (matches facilities.country in the
+    // DB); label is the full country / territory name for readability.
+    COUNTRIES.map(([code, name]) => checkbox('country', code, name)).join(''),
     true,
   );
   container.appendChild(countrySection);
@@ -99,9 +140,16 @@ export async function initFilters(container, state) {
         fetchCSV(`${BASE}vocab/facility_types.csv`),
       ]);
 
-      // Update type labels now that we have the CSV
+      // Update type labels now that we have the CSV. Filter the rows
+      // against the in-use set above so "reserved" vocab entries
+      // (industry / local-gov / university-institute / vessel / virtual)
+      // stay in the schema but don't appear as dead-end checkboxes.
+      const usedSlugs = new Set(typeSlugs);
       const typeBody = typeSection.querySelector('.facet-body');
-      typeBody.innerHTML = typeRows.map((r) => checkbox('type', r.slug, r.label)).join('');
+      typeBody.innerHTML = typeRows
+        .filter((r) => usedSlugs.has(r.slug))
+        .map((r) => checkbox('type', r.slug, r.label))
+        .join('');
 
       // Network section
       const netSection = makeFacetSection(
