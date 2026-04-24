@@ -181,14 +181,45 @@ export function initMap(container) {
 
 export function renderFacilities(features) {
   _currentFeatures = features;
-  const waitForMap = () => {
-    if (!map || !map.isStyleLoaded()) {
-      setTimeout(waitForMap, 100);
-      return;
+  const payload = { type: 'FeatureCollection', features };
+
+  // The old gate was `map.isStyleLoaded()`, but that flips back to false every
+  // time a new source gets added to the style — e.g. when the default-on
+  // overlays kick off their lazy GeoJSON fetches in initOverlays(). In that
+  // window the polled setData call never fires and the facilities source
+  // stays empty even though its layers already exist. The only precondition
+  // that actually matters here is "the `facilities` source has been created",
+  // which happens synchronously inside `map.on('load', ...)`. Wait for that
+  // instead.
+  const trySet = () => {
+    const src = map?.getSource('facilities');
+    if (src) {
+      src.setData(payload);
+      return true;
     }
-    map.getSource('facilities')?.setData({ type: 'FeatureCollection', features });
+    return false;
   };
-  waitForMap();
+
+  if (trySet()) return;
+  if (!map) {
+    // Extremely early call (initMap hasn't returned yet): fall back to a
+    // short poll until the Map instance is created.
+    const iv = setInterval(() => {
+      if (map) { clearInterval(iv); waitForSource(); }
+    }, 50);
+    return;
+  }
+  waitForSource();
+
+  function waitForSource() {
+    if (trySet()) return;
+    const onStyleData = () => {
+      if (trySet()) map.off('styledata', onStyleData);
+    };
+    map.on('styledata', onStyleData);
+    // Safety net in case styledata never fires for this particular case.
+    map.once('load', trySet);
+  }
 }
 
 function popupHtml(p) {
