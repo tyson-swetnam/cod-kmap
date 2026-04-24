@@ -151,10 +151,23 @@ export async function initFilters(container, state) {
         .map((r) => checkbox('type', r.slug, r.label))
         .join('');
 
-      // Network section
+      // Network section — show "ACRONYM — Full Name" so users can both
+      // pattern-match on the acronym they know (IOOS, NERRS…) and read
+      // the full organisation name. The schema stores the short form
+      // in `label` and the expanded form(s) in `aliases` (pipe-separated
+      // when a network goes by multiple names). Fall back to label
+      // alone if no alias is on file or if the alias is identical
+      // to the label (e.g. "Sea Grant" row whose alias is just "Sea
+      // Grant"). Escaping happens inside checkbox().
+      const netLabel = (r) => {
+        const label = (r.label || '').trim();
+        const alias = String(r.aliases || '').split('|')[0].trim();
+        if (!alias || alias.toLowerCase() === label.toLowerCase()) return label;
+        return `${label} — ${alias}`;
+      };
       const netSection = makeFacetSection(
         'f-network', 'Network',
-        networkRows.map((r) => checkbox('network', r.slug, r.label)).join(''),
+        networkRows.map((r) => checkbox('network', r.slug, netLabel(r))).join(''),
         true,
       );
       container.insertBefore(netSection, typeSection);
