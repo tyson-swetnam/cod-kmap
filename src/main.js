@@ -1,4 +1,12 @@
-import { initMap, renderFacilities, registerLegendOverlayProvider, refreshLegend } from './map.js';
+import {
+  initMap,
+  renderFacilities,
+  registerLegendOverlayProvider,
+  refreshLegend,
+  onViewportChange,
+  featuresInView,
+  TYPE_COLORS,
+} from './map.js';
 import { initFilters } from './filters.js';
 import { initOverlays, activeOverlays } from './overlays.js';
 import { initDB, loadFallback, query } from './db.js';
@@ -61,6 +69,96 @@ qClear.addEventListener('click', () => {
   state.setFilters({ q: '' });
 });
 
+// ── Bottom "Facilities in view" panel ───────────────────────────────
+//
+// Lives beneath the map and shows the subset of `state.lastFeatures`
+// whose coordinates fall inside the current map viewport. Updates:
+//   - when the filter set changes (drives state.lastFeatures),
+//   - when the user pans/zooms the map (onViewportChange fires),
+//   - on initial bootstrap.
+const mapBrowseEl = document.getElementById('map-browse');
+const mapBrowseListEl = document.getElementById('map-browse-list');
+const mapBrowseCountEl = document.getElementById('map-browse-count');
+const mapBrowseToggleEl = document.getElementById('map-browse-toggle');
+
+function escHtml(s) {
+  return String(s ?? '').replace(/[&<>"]/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+function normalizeFeature(f) {
+  return f?.properties ?? f ?? {};
+}
+
+function renderMapBrowse(features) {
+  const n = features.length;
+  if (mapBrowseCountEl) mapBrowseCountEl.textContent = n.toLocaleString();
+  if (!mapBrowseListEl) return;
+
+  if (n === 0) {
+    mapBrowseListEl.innerHTML =
+      '<div class="map-browse-empty">No facilities in view. Zoom out or adjust filters.</div>';
+    return;
+  }
+
+  // Sort by name for stable display.
+  const sorted = [...features].sort((a, b) => {
+    const an = String(normalizeFeature(a).name || '').toLowerCase();
+    const bn = String(normalizeFeature(b).name || '').toLowerCase();
+    return an < bn ? -1 : an > bn ? 1 : 0;
+  });
+
+  const rows = sorted.map((f) => {
+    const p = normalizeFeature(f);
+    const color = TYPE_COLORS[p.type] || '#64748b';
+    const id = String(p.id ?? '');
+    const url = p.url ? escHtml(p.url) : '';
+    const nameCell = url
+      ? `<a href="${url}" target="_blank" rel="noopener">${escHtml(p.name ?? '')}</a>`
+      : escHtml(p.name ?? '');
+    return `<tr data-id="${escHtml(id)}">
+      <td class="col-name"><span class="map-browse-swatch" style="background:${color}"></span>${nameCell}</td>
+      <td class="col-acronym">${escHtml(p.acronym ?? '')}</td>
+      <td class="col-type">${escHtml((p.type ?? '').replace(/-/g, ' '))}</td>
+      <td class="col-country">${escHtml(p.country ?? '')}</td>
+    </tr>`;
+  }).join('');
+
+  mapBrowseListEl.innerHTML = `<table class="map-browse-table">
+    <thead><tr>
+      <th>Name</th><th>Acronym</th><th>Type</th><th>Country</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function updateMapBrowseFromViewport() {
+  renderMapBrowse(featuresInView());
+}
+
+if (mapBrowseToggleEl) {
+  mapBrowseToggleEl.addEventListener('click', () => {
+    const collapsed = mapBrowseEl.classList.toggle('collapsed');
+    mapBrowseToggleEl.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    // The map container just changed size — tell MapLibre to resize its
+    // canvas and recompute bounds, then re-sync the in-view list.
+    setTimeout(() => {
+      try { map.resize(); } catch (_) { /* map not ready yet */ }
+      scheduleMapBrowseUpdate();
+    }, 200);
+  });
+}
+// Throttle fast pan/zoom events so the list doesn't thrash.
+let _browseRaf = null;
+function scheduleMapBrowseUpdate() {
+  if (_browseRaf) return;
+  _browseRaf = requestAnimationFrame(() => {
+    _browseRaf = null;
+    updateMapBrowseFromViewport();
+  });
+}
+onViewportChange(scheduleMapBrowseUpdate);
+
 // ── Refresh: re-query and update active view ────────────────────────
 async function refresh() {
   statusEl.textContent = 'Querying…';
@@ -68,13 +166,20 @@ async function refresh() {
     const features = await query(state.filters);
     state.lastFeatures = features;
 
-    const path = currentPath() || '/';
-    if (path === '/') renderFacilities(features);
-    else if (path === '/browse') renderList(features);
-    else if (path === '/stats') renderStats(features);
+    // Always push the new feature set onto the map source (even if the
+    // active view isn't the map) so a tab-switch back to Map is instant
+    // and reflects the current filters.
+    renderFacilities(features);
+
+    // Keep the "browse" / "stats" tabs in sync with filters too.
+    renderList(features);
+    renderStats(features);
+
+    // The bottom "in view" panel always tracks the map viewport.
+    scheduleMapBrowseUpdate();
 
     const n = features.length.toLocaleString();
-    statusEl.innerHTML = `<strong>${n}</strong> facilit${features.length === 1 ? 'y' : 'ies'} shown`;
+    statusEl.innerHTML = `<strong>${n}</strong> facilit${features.length === 1 ? 'y' : 'ies'} match`;
   } catch (err) {
     console.error(err);
     statusEl.textContent = `Query failed: ${err.message}`;
@@ -127,6 +232,8 @@ initRouter({
     const fallback = await loadFallback();
     state.lastFeatures = fallback;
     renderFacilities(fallback);
+    renderList(fallback);
+    scheduleMapBrowseUpdate();
     statusEl.innerHTML = `<strong>${fallback.length.toLocaleString()}</strong> facilities (loading interactive query…)`;
   } catch (e) {
     statusEl.textContent = 'No data yet — run the ingest pipeline.';

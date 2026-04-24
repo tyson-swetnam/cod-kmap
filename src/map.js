@@ -72,52 +72,25 @@ export function initMap(container) {
       },
     });
 
-    // Facilities source (clustered)
+    // Facilities source — NON-CLUSTERED.
+    //
+    // We used to run this source with cluster:true + clusterRadius:50, but
+    // MapLibre-GL 4.7.1's GeoJSON source gets into a wedged state when the
+    // source is added with empty features and then later setData()-ed with
+    // real features while other sources (the default-on overlays) are still
+    // loading. The cluster index never rebuilds, and 200 points render as
+    // at most a single stray unclustered dot. At this dataset size (≈200
+    // points) clustering isn't necessary for performance, and the user-
+    // facing UX (viewport-driven browse list) is clearer without it.
     map.addSource('facilities', {
       type: 'geojson',
       data: { type: 'FeatureCollection', features: [] },
-      cluster: true,
-      clusterRadius: 50,
-      clusterMaxZoom: 10,
     });
 
     map.addLayer({
-      id: 'clusters',
+      id: 'facility-points',
       type: 'circle',
       source: 'facilities',
-      filter: ['has', 'point_count'],
-      paint: {
-        'circle-color': [
-          'step', ['get', 'point_count'],
-          '#14b8a6', 10, '#0d9488', 40, '#095454',
-        ],
-        'circle-radius': [
-          'step', ['get', 'point_count'],
-          16, 10, 22, 40, 30,
-        ],
-        'circle-stroke-width': 2,
-        'circle-stroke-color': '#fff',
-      },
-    });
-
-    map.addLayer({
-      id: 'cluster-count',
-      type: 'symbol',
-      source: 'facilities',
-      filter: ['has', 'point_count'],
-      layout: {
-        'text-field': '{point_count_abbreviated}',
-        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-        'text-size': 12,
-      },
-      paint: { 'text-color': '#fff' },
-    });
-
-    map.addLayer({
-      id: 'unclustered-point',
-      type: 'circle',
-      source: 'facilities',
-      filter: ['!', ['has', 'point_count']],
       paint: {
         'circle-radius': 6,
         'circle-color': typeColorExpr(),
@@ -127,7 +100,7 @@ export function initMap(container) {
     });
 
     map.addLayer({
-      id: 'unclustered-point-hover',
+      id: 'facility-points-hover',
       type: 'circle',
       source: 'facilities',
       filter: ['==', ['get', 'id'], ''],
@@ -139,16 +112,7 @@ export function initMap(container) {
       },
     });
 
-    map.on('click', 'clusters', (e) => {
-      const feat = e.features[0];
-      const clusterId = feat.properties.cluster_id;
-      map.getSource('facilities').getClusterExpansionZoom(clusterId, (err, zoom) => {
-        if (err) return;
-        map.easeTo({ center: feat.geometry.coordinates, zoom });
-      });
-    });
-
-    map.on('click', 'unclustered-point', (e) => {
+    map.on('click', 'facility-points', (e) => {
       const feat = e.features[0];
       const coords = feat.geometry.coordinates.slice();
       const p = feat.properties;
@@ -163,20 +127,50 @@ export function initMap(container) {
         .addTo(map);
     });
 
-    map.on('mousemove', 'unclustered-point', (e) => {
+    map.on('mousemove', 'facility-points', (e) => {
       map.getCanvas().style.cursor = 'pointer';
       const id = e.features[0].properties.id || '';
-      map.setFilter('unclustered-point-hover', ['==', ['get', 'id'], id]);
+      map.setFilter('facility-points-hover', ['==', ['get', 'id'], id]);
     });
-    map.on('mouseleave', 'unclustered-point', () => {
+    map.on('mouseleave', 'facility-points', () => {
       map.getCanvas().style.cursor = '';
-      map.setFilter('unclustered-point-hover', ['==', ['get', 'id'], '']);
+      map.setFilter('facility-points-hover', ['==', ['get', 'id'], '']);
     });
-    map.on('mouseenter', 'clusters', () => { map.getCanvas().style.cursor = 'pointer'; });
-    map.on('mouseleave', 'clusters', () => { map.getCanvas().style.cursor = ''; });
+
+    // Fire a custom 'facilities:sourceready' event so the rest of the app
+    // can know the source exists and start painting/list-syncing.
+    map.fire('facilities:sourceready');
   });
 
   return map;
+}
+
+/**
+ * Compute which of the currently-rendered features fall inside the map's
+ * current viewport bounds. Used by main.js to drive the bottom browse list
+ * and the facility-count status — "only show what's actually visible".
+ */
+export function featuresInView() {
+  if (!map) return _currentFeatures;
+  const b = map.getBounds();
+  return _currentFeatures.filter((f) => {
+    const c = f.geometry?.coordinates;
+    if (!Array.isArray(c)) return false;
+    const [lng, lat] = c;
+    return b.contains([lng, lat]);
+  });
+}
+
+/** Subscribe to map move events so the UI can re-sync viewport-visible features. */
+export function onViewportChange(handler) {
+  const fire = () => handler(featuresInView());
+  if (!map) return () => {};
+  map.on('moveend', fire);
+  map.on('zoomend', fire);
+  return () => {
+    map.off('moveend', fire);
+    map.off('zoomend', fire);
+  };
 }
 
 export function renderFacilities(features) {

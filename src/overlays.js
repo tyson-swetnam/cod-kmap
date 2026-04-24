@@ -21,11 +21,12 @@ const MANIFEST_URL = `${DATA_BASE}overlays/manifest.json`;
 // US are less useful by default than the coastal + marine boundaries.
 const DEFAULT_OFF = new Set(['epa-regions', 'neon-domains']);
 
+// Layer ids that must stay on top of every overlay so the facility dots
+// remain visible. Kept in sync with map.js. (Clustering was removed in
+// favour of plain per-feature circles; see the explanatory comment there.)
 const FACILITY_LAYERS = [
-  'clusters',
-  'cluster-count',
-  'unclustered-point',
-  'unclustered-point-hover',
+  'facility-points',
+  'facility-points-hover',
 ];
 
 let _map = null;

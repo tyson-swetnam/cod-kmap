@@ -99,6 +99,120 @@ body {
 .view { display: none; height: 100%; width: 100%; overflow: auto; }
 .view.active { display: block; }
 
+/* Map view takes the full area and stacks the map canvas + a collapsible
+ * list panel pinned to the bottom. The list shows only facilities whose
+ * coordinates fall inside the current map viewport. */
+#view-map {
+  display: none;
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+#view-map.active { display: grid; grid-template-rows: 1fr auto; }
+#view-map #map { width: 100%; height: 100%; min-height: 0; }
+
+.map-browse {
+  background: var(--c-surface);
+  border-top: 1px solid var(--c-border);
+  box-shadow: 0 -2px 6px rgba(15, 23, 42, .05);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  max-height: 38vh;
+  min-height: 40px;
+  transition: max-height .18s ease;
+}
+.map-browse.collapsed { max-height: 40px; }
+.map-browse.collapsed .map-browse-body { display: none; }
+
+.map-browse-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  background: var(--c-bg-alt);
+  border-bottom: 1px solid var(--c-border);
+  user-select: none;
+}
+.map-browse-title {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--c-text-soft);
+  letter-spacing: .02em;
+}
+.map-browse-count {
+  display: inline-block;
+  min-width: 28px;
+  margin-left: 8px;
+  padding: 1px 8px;
+  background: var(--c-chip-bg);
+  color: var(--c-primary-d);
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.map-browse-toggle {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--c-muted);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 4px 6px;
+}
+.map-browse.collapsed .map-browse-toggle { transform: rotate(180deg); }
+
+.map-browse-body {
+  overflow: auto;
+  padding: 0;
+  background: var(--c-surface);
+}
+.map-browse-list { width: 100%; }
+
+.map-browse-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.map-browse-table th,
+.map-browse-table td {
+  text-align: left;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--c-border);
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.map-browse-table th {
+  position: sticky;
+  top: 0;
+  background: var(--c-bg-alt);
+  color: var(--c-text-soft);
+  font-weight: 600;
+  z-index: 1;
+}
+.map-browse-table tbody tr { cursor: pointer; transition: background .1s; }
+.map-browse-table tbody tr:hover { background: var(--c-chip-bg); }
+.map-browse-table tbody tr.is-hovered { background: var(--c-chip-bg-d); }
+.map-browse-table td.col-type { text-transform: capitalize; }
+.map-browse-table td.col-name { max-width: 340px; }
+.map-browse-empty {
+  padding: 16px 18px;
+  color: var(--c-muted);
+  font-style: italic;
+  font-size: 13px;
+}
+.map-browse-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,.1);
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+
 body.no-sidebar #sidebar { display: none; }
 body.no-sidebar #app { grid-template-columns: 1fr; }
 

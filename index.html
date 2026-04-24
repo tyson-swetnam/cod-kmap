@@ -52,7 +52,23 @@
         </footer>
       </aside>
       <main id="viewport">
-        <section id="view-map"    class="view active"><div id="map"></div></section>
+        <section id="view-map" class="view active">
+          <div id="map"></div>
+          <aside id="map-browse" class="map-browse" aria-label="Facilities in view">
+            <header class="map-browse-header">
+              <span class="map-browse-title">
+                Facilities in view
+                <span id="map-browse-count" class="map-browse-count">0</span>
+              </span>
+              <button type="button" id="map-browse-toggle"
+                class="map-browse-toggle" aria-expanded="true"
+                aria-controls="map-browse-body" title="Show/hide list">&#9660;</button>
+            </header>
+            <div id="map-browse-body" class="map-browse-body">
+              <div id="map-browse-list" class="map-browse-list"></div>
+            </div>
+          </aside>
+        </section>
         <section id="view-browse" class="view"><div id="browse"></div></section>
         <section id="view-stats"  class="view"><div id="stats"></div></section>
         <section id="view-docs"   class="view"><div id="docs"></div></section>
