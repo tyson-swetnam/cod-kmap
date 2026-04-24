@@ -780,6 +780,171 @@ footer a:hover { color: var(--c-primary); }
   .maplibregl-ctrl-top-right { top: 8px; }
 }
 
+/* ── Network view ──────────────────────────────────────────────────── */
+/*
+ * Force-directed graph view. The stage is a full-bleed SVG container
+ * that fills the viewport; a floating legend sits top-right with
+ * per-kind checkboxes, and a tooltip follows the mouse.
+ */
+#view-network { background: var(--c-bg); }
+.network-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+.network-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px 8px;
+  border-bottom: 1px solid var(--c-border);
+  background: var(--c-surface);
+}
+.network-header h2 {
+  margin: 0 0 2px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--c-primary-d);
+}
+.network-sub {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--c-muted);
+  max-width: 720px;
+}
+.network-actions { display: flex; gap: 8px; }
+.network-actions .btn-ghost {
+  background: #fff;
+  border: 1px solid var(--c-border-d);
+  color: var(--c-text);
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.network-actions .btn-ghost:hover {
+  background: var(--c-chip-bg);
+  border-color: var(--c-primary);
+}
+.network-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--c-border);
+  background: var(--c-bg-alt);
+  flex-wrap: wrap;
+}
+.network-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+.net-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--c-text-soft);
+  user-select: none;
+}
+.net-toggle input { margin: 0; }
+.net-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(15,23,42,.15);
+}
+.network-status {
+  font-size: 0.82rem;
+  color: var(--c-muted);
+}
+.network-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 50%, #fff 0%, #f3f1ec 60%, #e8e4dc 100%);
+}
+.network-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+}
+.network-svg:active { cursor: grabbing; }
+
+/* Per-element styling set by d3 on attributes, so we only decorate the
+ * wrapper types here (selection highlight comes from d3 opacity changes). */
+.net-links line { pointer-events: none; }
+
+.network-tooltip {
+  position: absolute;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid var(--c-border-d);
+  border-left: 3px solid var(--c-primary);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  padding: 8px 12px;
+  min-width: 180px;
+  max-width: 320px;
+  pointer-events: none;
+  font-size: 0.82rem;
+  color: var(--c-text);
+}
+.network-tooltip .tt-kind {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+.network-tooltip .tt-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--c-text);
+}
+.network-tooltip .tt-sub {
+  color: var(--c-muted);
+  font-size: 0.78rem;
+  margin-top: 2px;
+}
+.network-tooltip .tt-meta {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--c-primary);
+}
+.network-tooltip .tt-url {
+  margin-top: 4px;
+  font-size: 0.78rem;
+}
+.network-tooltip .tt-url a {
+  color: var(--c-primary);
+  text-decoration: none;
+}
+.network-tooltip .tt-url a:hover { text-decoration: underline; }
+
+@media (max-width: 720px) {
+  .network-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .network-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .network-legend { gap: 8px 12px; }
+}
+
 @media (max-width: 560px) {
   .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
   .tabs a { padding: 6px 8px; font-size: 0.8rem; white-space: nowrap; }

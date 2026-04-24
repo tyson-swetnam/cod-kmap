@@ -13,6 +13,7 @@ import { initDB, loadFallback, query } from './db.js';
 import { initListView, renderList } from './views/list.js';
 import { initStatsView, renderStats } from './views/stats.js';
 import { initDocsView } from './views/docs.js';
+import { initNetworkView, renderNetworkView } from './views/network.js';
 import { initRouter, currentPath } from './router.js';
 
 const state = {
@@ -51,6 +52,7 @@ registerLegendOverlayProvider(activeOverlays);
 // ── Init other views ────────────────────────────────────────────────
 initListView(document.getElementById('browse'));
 initStatsView(document.getElementById('stats'));
+initNetworkView(document.getElementById('network'));
 
 // ── Debounced search + clear button ────────────────────────────────
 const qEl = document.getElementById('q');
@@ -188,10 +190,11 @@ async function refresh() {
 
 // ── View switching ──────────────────────────────────────────────────
 const views = {
-  '/':       document.getElementById('view-map'),
-  '/browse': document.getElementById('view-browse'),
-  '/stats':  document.getElementById('view-stats'),
-  '/docs':   document.getElementById('view-docs'),
+  '/':        document.getElementById('view-map'),
+  '/browse':  document.getElementById('view-browse'),
+  '/network': document.getElementById('view-network'),
+  '/stats':   document.getElementById('view-stats'),
+  '/docs':    document.getElementById('view-docs'),
 };
 function showView(path) {
   Object.entries(views).forEach(([p, el]) => {
@@ -211,6 +214,14 @@ initRouter({
     document.body.classList.remove('no-sidebar');
     setDrawer(false);
     renderList(state.lastFeatures);
+  },
+  '/network': () => {
+    showView('/network');
+    document.body.classList.add('no-sidebar');
+    setDrawer(false);
+    // Network view uses DuckDB directly; kick the render (it's idempotent
+    // and caches the graph so subsequent visits are fast).
+    renderNetworkView();
   },
   '/stats': () => {
     showView('/stats');

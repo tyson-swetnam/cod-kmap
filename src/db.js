@@ -19,6 +19,10 @@ export async function loadFallback() {
   return fallbackFeatures;
 }
 
+export function getConn() {
+  return conn;
+}
+
 export async function initDB() {
   const duckdb = await import('@duckdb/duckdb-wasm');
   const bundles = duckdb.getJsDelivrBundles();
