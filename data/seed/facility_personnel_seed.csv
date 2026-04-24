@@ -212,3 +212,28 @@ EPA-R5,,Anne M. Vogel,Regional Administrator,"Regional Administrator, EPA Region
 EPA-R6,,Scott Mason IV,Regional Administrator,"Regional Administrator, EPA South Central (Region 6) (Jan 2025)",true,,,,https://www.epa.gov/aboutepa/regional-administrator-epas-south-central-region-region-6,press-release,https://www.epa.gov/newsreleases/president-trump-appoints-scott-mason-iv-epa-south-central-regional-administrator,high
 EPA-R9,,Josh F.W. Cook,Regional Administrator,"Regional Administrator, EPA Pacific Southwest (Region 9)",true,,,,https://www.epa.gov/aboutepa/epa-region-9-pacific-southwest,press-release,https://www.epa.gov/newsreleases/josh-fw-cook-appointed-epa-pacific-southwest-regional-administrator,medium
 EPA-R10,,Emma Pokon,Regional Administrator,"Regional Administrator, EPA Pacific Northwest (Region 10) (Feb 2025)",true,,,,https://www.epa.gov/aboutepa/about-administrator-epas-region-10,press-release,https://www.epa.gov/newsreleases/emma-pokon-appointed-epa-region-10-administrator,high
+EPA-R7,,Jim Macy,Regional Administrator,"Regional Administrator, EPA Region 7 (IA/KS/MO/NE) (Feb 2025)",true,,,,https://www.epa.gov/aboutepa/about-regional-administrator-epas-region-7-office-kansas-city,press-release,https://www.epa.gov/newsreleases/jim-macy-appointed-epa-region-7-administrator,high
+EPA-R8,,Cyrus M. Western,Regional Administrator,"Regional Administrator, EPA Mountains and Plains (Region 8) (Mar 2025)",true,,,,https://www.epa.gov/aboutepa/about-administrator-epas-mountains-and-plains-region-region-8,press-release,https://www.epa.gov/newsreleases/cyrus-m-western-appointed-epa-mountains-and-plains-regional-administrator,high
+ACESD,,Wayne Munns,Division Director,"Director, EPA Atlantic Coastal Environmental Sciences Division (ORD/CEMM)",true,,,,https://www.epa.gov/aboutepa/about-atlantic-coastal-environmental-sciences-division,facility-webpage,https://www.researchgate.net/profile/Wayne-Munns-Jr,high
+GLSC,,Kurt Newman,Director,"Director, USGS Great Lakes Science Center (since Aug 2024)",true,,,,https://www.usgs.gov/centers/great-lakes-science-center,facility-webpage,https://www.usgs.gov/staff-profiles/kurt-r-newman,high
+#
+# Additional Canadian marine science centres
+BMSC,,Sean Rogers,Director,"Director, Bamfield Marine Sciences Centre (since July 2018)",true,,,,https://bamfieldmsc.com/bmsc-overview/staff-directory/,facility-webpage,https://bamfieldmsc.com/bmsc-overview/staff-directory/,high
+,Huntsman Marine Science Centre,Chris Bridger,Executive Director,"Executive Director, Huntsman Marine Science Centre (New Brunswick)",true,,,,https://www.huntsmanmarine.ca/huntsmanoverview,facility-webpage,https://www.huntsmanmarine.ca,high
+IOS,,Andrew Thomson,Regional Director Science,"Regional Director Science, Institute of Ocean Sciences (DFO Pacific)",true,,,,https://www.pac.dfo-mpo.gc.ca/science/facilities-installations/ios-ism/peopleios-gensism-eng.html,facility-webpage,https://www.pac.dfo-mpo.gc.ca/science/facilities-installations/ios-ism/peopleios-gensism-eng.html,medium
+#
+# Galápagos / Latin America
+CDF,,Rakan A. Zahawi,Executive Director,"Executive Director, Charles Darwin Foundation (Galápagos); since March 2021",true,,,,https://www.darwinfoundation.org/en/about/our-people/management-team/,press-release,https://www.darwinfoundation.org/en/news/all-news-stories/the-charles-darwin-foundation-appoints-researcher-arturo-izurieta-valery-as-new-executive-director/,medium
+#
+# US state agencies (coastal management)
+FWC,,Roger Young,Executive Director,"Executive Director, Florida Fish and Wildlife Conservation Commission",true,,,,https://myfwc.com/contact/fwc-office/senior-staff/executive-director/,press-release,https://myfwc.com/news/all-news/director-young-com-523/,high
+CPRA,,Michael H. Hare,Executive Director,"Executive Director, Louisiana Coastal Protection and Restoration Authority (since July 2025)",true,,,,https://coastal.la.gov/executive-leadership-team/,press-release,https://gov.louisiana.gov/news/4882,high
+#
+# Sentinel sites
+,Chesapeake Bay Sentinel Site,Taryn Sudol,Coordinator,"Coordinator, Chesapeake Bay Sentinel Site Cooperative (Maryland Sea Grant)",true,,,sudol@mdsg.umd.edu,https://chesapeakebayssc.org/contact-us/,facility-webpage,https://chesapeakebayssc.org/contact-us/,high
+#
+# Additional USGS / MBARI / Monterey Bay Aquarium / IOCARIBE
+PCMSC,,Guy Gelfenbaum,Director,"Director, USGS Pacific Coastal and Marine Science Center (since Jan 2017)",true,,,,https://www.usgs.gov/centers/pcmsc/about,facility-webpage,https://www.usgs.gov/programs/cmhrp/news/new-director-pacific-coastal-and-marine-science-center,high
+,Monterey Bay Aquarium Research Institute,Antje Boetius,President & CEO,"President & CEO, Monterey Bay Aquarium Research Institute (MBARI)",true,,,,https://www.mbari.org/about/leadership-staff/,facility-webpage,https://en.wikipedia.org/wiki/Monterey_Bay_Aquarium_Research_Institute,high
+MBA,,Jenny Gray,CEO,"CEO, Monterey Bay Aquarium (effective May 2026, replacing Julie Packard)",true,,,,https://www.montereybayaquarium.org/about-us/our-mission-and-leadership,press-release,https://nationaltoday.com/us/ca/monterey/news/2026/02/26/monterey-bay-aquarium-names-new-ceo/,high
+MBA,,Julie Packard,Emeritus Director,"Founding Executive Director, Monterey Bay Aquarium (1984-May 2026); transitioning to Board of Trustees",false,,,,https://www.montereybayaquarium.org/newsroom/staff-bios/julie-packard,press-release,https://www.montereybayaquarium.org/newsroom/press-releases/julie-packard-announces-transition-to-board-of-trustees-leadership-role,high
