@@ -7,7 +7,6 @@ venv/
 
 # Node
 node_modules/
-web/dist/
 .vite/
 
 # Data artifacts (regenerable — do not commit large binaries)
@@ -17,7 +16,7 @@ data/processed/*.parquet
 data/processed/*.csv
 db/*.duckdb
 db/parquet/*.parquet
-web/public/parquet/*.parquet
+public/parquet/*.parquet
 
 # Exception: verbatim external dataset (COMPASS-DOE/synthesis-networks, MIT).
 # This is a citable third-party snapshot, not a regenerable artifact.

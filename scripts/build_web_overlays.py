@@ -1,7 +1,7 @@
 """Bundle polygon overlay layers from network_synth_spatial_analysis/ into
 web-ready GeoJSON for the map UI.
 
-Outputs land in web/public/overlays/:
+Outputs land in public/overlays/:
 
   nerr-reserves.geojson       one polygon per NERR reserve (latest year file)
   marine-sanctuaries.geojson  every NMS boundary polygon
@@ -30,7 +30,7 @@ from shapely.ops import transform as shp_transform
 
 ROOT = Path(__file__).resolve().parent.parent
 SPATIAL = ROOT / "network_synth_spatial_analysis"
-OUT = ROOT / "web" / "public" / "overlays"
+OUT = ROOT / "public" / "overlays"
 
 SOURCE = "COMPASS-DOE/synthesis-networks"
 
