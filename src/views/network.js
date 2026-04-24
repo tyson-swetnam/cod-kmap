@@ -16,7 +16,7 @@
 // are structural (region → network, area taxonomy) don't need the
 // facility join — they're built directly from the link tables.
 
-import { getConn, whenReady } from '../db.js';
+import { getConn } from '../db.js';
 
 let _container = null;
 let _graphData = null;
@@ -52,11 +52,6 @@ function loadD3() {
 
 // ── Data assembly ───────────────────────────────────────────────────
 async function buildGraphFromDuckDB() {
-  // Wait until every parquet view is registered. Without this, clicking
-  // the Network tab during the initial bootstrap window hits a partially
-  // initialised connection where some tables (e.g. `networks`) don't
-  // yet exist, and the first query fails with a Catalog Error.
-  await whenReady();
   const conn = getConn();
   if (!conn) throw new Error('DuckDB connection not ready');
 
@@ -282,50 +277,28 @@ function filterGraph(graph, activeKinds, minWeight) {
   return { nodes: nodes.map((n) => ({ ...n })), edges };
 }
 
-// Wait until the stage has a real size. When the user clicks the
-// Network tab the section transitions from display:none → block, but
-// the browser hasn't necessarily laid out yet, so stage.clientWidth
-// can be 0 on the very first read. Polling a couple of rAFs with a
-// fallback protects us from centering every node at origin.
-async function waitForStageSize(stage) {
-  for (let i = 0; i < 20; i++) {
-    const w = stage.clientWidth;
-    const h = stage.clientHeight;
-    if (w > 0 && h > 0) return { w, h };
-    await new Promise((r) => requestAnimationFrame(r));
-  }
-  return { w: stage.clientWidth || 1000, h: stage.clientHeight || 700 };
-}
-
 async function render() {
-  const statusEl = _container.querySelector('#net-status');
-  try {
-    const d3 = await loadD3();
-    const graph = await ensureData();
-    const { nodes, edges } = filterGraph(graph, _activeKinds, _minWeight);
-    if (!nodes.length) {
-      statusEl.textContent = 'No nodes to display — enable at least one layer.';
-      const stage0 = _container.querySelector('#net-stage');
-      if (stage0) stage0.innerHTML = '';
-      return;
-    }
+  const d3 = await loadD3();
+  const graph = await ensureData();
+  const { nodes, edges } = filterGraph(graph, _activeKinds, _minWeight);
 
-    const degree = new Map();
-    const weightedDegree = new Map();
-    for (const e of edges) {
-      degree.set(e.source, (degree.get(e.source) || 0) + 1);
-      degree.set(e.target, (degree.get(e.target) || 0) + 1);
-      weightedDegree.set(e.source, (weightedDegree.get(e.source) || 0) + e.weight);
-      weightedDegree.set(e.target, (weightedDegree.get(e.target) || 0) + e.weight);
-    }
-    for (const n of nodes) {
-      n.degree = degree.get(n.id) || 0;
-      n.wdegree = weightedDegree.get(n.id) || 0;
-    }
+  const degree = new Map();
+  const weightedDegree = new Map();
+  for (const e of edges) {
+    degree.set(e.source, (degree.get(e.source) || 0) + 1);
+    degree.set(e.target, (degree.get(e.target) || 0) + 1);
+    weightedDegree.set(e.source, (weightedDegree.get(e.source) || 0) + e.weight);
+    weightedDegree.set(e.target, (weightedDegree.get(e.target) || 0) + e.weight);
+  }
+  for (const n of nodes) {
+    n.degree = degree.get(n.id) || 0;
+    n.wdegree = weightedDegree.get(n.id) || 0;
+  }
 
-    const stage = _container.querySelector('#net-stage');
-    stage.innerHTML = '';
-    const { w, h } = await waitForStageSize(stage);
+  const stage = _container.querySelector('#net-stage');
+  stage.innerHTML = '';
+  const w = stage.clientWidth || 1000;
+  const h = stage.clientHeight || 700;
 
   const svg = d3.select(stage).append('svg')
     .attr('viewBox', `0 0 ${w} ${h}`)
@@ -368,14 +341,6 @@ async function render() {
   };
   const nodeColor = (d) => KIND_COLORS[d.kind] || '#64748b';
 
-  // Seed node positions at their "home" plus a little jitter so the
-  // initial frame (before the first tick) doesn't show every node piled
-  // at origin, and the simulation has a good starting condition.
-  for (const n of nodes) {
-    n.x = homeX(n) + (Math.random() - 0.5) * 80;
-    n.y = homeY(n) + (Math.random() - 0.5) * 80;
-  }
-
   _sim = d3.forceSimulation(nodes)
     .force('link', d3.forceLink(edges)
       .id((d) => d.id)
@@ -391,11 +356,9 @@ async function render() {
       }))
     .force('charge', d3.forceManyBody().strength(-320))
     .force('collision', d3.forceCollide().radius((d) => nodeRadius(d) + 4))
-    .force('center', d3.forceCenter(cx, cy).strength(0.05))
+    .force('center', d3.forceCenter(cx, cy))
     .force('x', d3.forceX(homeX).strength(0.12))
     .force('y', d3.forceY(homeY).strength(0.12));
-  // Reheat so the seeded positions relax into a stable layout.
-  _sim.alpha(1).restart();
 
   const link = g.append('g').attr('class', 'net-links')
     .selectAll('line').data(edges).join('line')
@@ -491,28 +454,11 @@ async function render() {
     labels.attr('x', (d) => d.x).attr('y', (d) => d.y);
   });
 
-    statusEl.innerHTML =
-      `<strong>${nodes.length.toLocaleString()}</strong> nodes · ` +
-      `<strong>${edges.length.toLocaleString()}</strong> edges · ` +
-      `drag to pin · scroll to zoom · hover to highlight`;
-
-    // Keep the SVG viewBox in sync if the stage is resized (sidebar toggle,
-    // browser resize). Without this the graph becomes cramped when the
-    // window grows.
-    if (!_container._netResizeObserver && typeof ResizeObserver !== 'undefined') {
-      const ro = new ResizeObserver(() => {
-        const cur = _container.querySelector('#net-stage svg');
-        if (!cur) return;
-        const nw = stage.clientWidth, nh = stage.clientHeight;
-        if (nw > 0 && nh > 0) cur.setAttribute('viewBox', `0 0 ${nw} ${nh}`);
-      });
-      ro.observe(stage);
-      _container._netResizeObserver = ro;
-    }
-  } catch (err) {
-    console.error('Network render failed:', err);
-    statusEl.textContent = `Network render failed: ${err.message}`;
-  }
+  const statusEl = _container.querySelector('#net-status');
+  statusEl.innerHTML =
+    `<strong>${nodes.length.toLocaleString()}</strong> nodes · ` +
+    `<strong>${edges.length.toLocaleString()}</strong> edges · ` +
+    `drag to pin · scroll to zoom · hover to highlight`;
 }
 
 function esc(s) {
