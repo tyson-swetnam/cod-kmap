@@ -154,21 +154,23 @@ def upsert_publication(conn, work: dict) -> str | None:
             [pub_id, doi, title, year, pub_type, journal, cbc,
              oa or None, url, "openalex"],
         )
-    else:
-        # Keep the higher cited_by_count; fill any NULLs from the new data.
-        prev_cbc = int(existing[0] or 0)
-        new_cbc = max(prev_cbc, cbc or 0)
-        conn.execute(
-            """
-            UPDATE publications SET
-                doi            = COALESCE(?, doi),
-                title          = COALESCE(?, title),
-                cited_by_count = ?,
-                retrieved_at   = current_date
-            WHERE publication_id = ?
-            """,
-            [doi, title, new_cbc, pub_id],
-        )
+    # existing row case: skip the UPDATE.
+    #
+    # DuckDB (≥1.0, as of 1.5.x) refuses to UPDATE a row that has any
+    # FK still pointing at it, even when the UPDATE doesn't touch the
+    # PK column. This breaks co-author enrichment: if person A is
+    # enriched first and has paper X, paper X gets an authorship row
+    # (A, X). When we then process co-author B on the same paper,
+    # upsert_publication tries to UPDATE publications.cited_by_count
+    # for X, and DuckDB aborts with
+    #
+    #   Constraint Error: Violates foreign key constraint because key
+    #   "publication_id: W…" is still referenced by a foreign key in
+    #   a different table
+    #
+    # The first write is already factually correct (same OpenAlex
+    # data, minutes apart), so we can safely skip the refresh and
+    # just fall through to the authorship INSERT.
     return pub_id
 
 
