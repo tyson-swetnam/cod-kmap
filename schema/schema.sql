@@ -96,6 +96,52 @@ CREATE OR REPLACE TABLE network_membership (
 );
 
 -------------------------------------------------------------------------------
+-- Regions (overlay polygons as first-class records)
+-------------------------------------------------------------------------------
+--
+-- Every polygon shown under "Map overlays" (NMS sanctuaries, marine national
+-- monuments, NERR reserves, NPS coastal units, NEP programs, NEON ecological
+-- domains, EPA regions) becomes a row here, with the same rich metadata the
+-- per-point facilities already carry (name / acronym / url / manager / etc.)
+-- plus a foreign key to the `networks` vocabulary so region ↔ facility
+-- joins are cheap.
+
+CREATE OR REPLACE TABLE regions (
+    region_id       VARCHAR PRIMARY KEY,             -- hash(network_id||lower(name))
+    name            VARCHAR NOT NULL,
+    acronym         VARCHAR,
+    kind            VARCHAR,                          -- sanctuary | monument | nerr-reserve | nep-program | nps-unit | neon-domain | epa-region
+    network_id      VARCHAR REFERENCES networks(network_id),
+    url             VARCHAR,
+    manager         VARCHAR,
+    designated      INTEGER,
+    state           VARCHAR,
+    description     VARCHAR,
+    source_file     VARCHAR,                          -- which public/overlays/*.geojson produced this row
+    source          VARCHAR,                          -- upstream attribution (e.g. COMPASS-DOE/synthesis-networks)
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Region ↔ research_area (editable; empty by default — seed via
+-- scripts/populate_regions.py based on kind heuristics, or by hand).
+CREATE OR REPLACE TABLE region_area_links (
+    region_id       VARCHAR NOT NULL REFERENCES regions(region_id),
+    area_id         VARCHAR NOT NULL REFERENCES research_areas(area_id),
+    PRIMARY KEY (region_id, area_id)
+);
+
+-- Facility ↔ region (derived: point-in-polygon against each overlay).
+-- `relation` is 'within' when the facility's HQ coordinate lies inside
+-- the polygon; future work may add 'nearby' or 'adjacent' links.
+CREATE OR REPLACE TABLE facility_regions (
+    facility_id     VARCHAR NOT NULL REFERENCES facilities(facility_id),
+    region_id       VARCHAR NOT NULL REFERENCES regions(region_id),
+    relation        VARCHAR,                          -- within | nearby | adjacent
+    distance_km     DOUBLE,                           -- 0.0 when within
+    PRIMARY KEY (facility_id, region_id)
+);
+
+-------------------------------------------------------------------------------
 -- Provenance & ingest bookkeeping
 -------------------------------------------------------------------------------
 
@@ -148,7 +194,8 @@ SELECT
     f.url,
     list(DISTINCT ra.label)        AS research_areas,
     list(DISTINCT n.label)         AS networks,
-    list(DISTINCT fu.name)         AS funders
+    list(DISTINCT fu.name)         AS funders,
+    list(DISTINCT r.name)          AS regions
 FROM facilities f
 LEFT JOIN area_links al        ON al.facility_id = f.facility_id
 LEFT JOIN research_areas ra    ON ra.area_id    = al.area_id
@@ -156,5 +203,33 @@ LEFT JOIN network_membership nm ON nm.facility_id = f.facility_id
 LEFT JOIN networks n           ON n.network_id   = nm.network_id
 LEFT JOIN funding_links fl     ON fl.facility_id = f.facility_id
 LEFT JOIN funders fu           ON fu.funder_id   = fl.funder_id
+LEFT JOIN facility_regions fr  ON fr.facility_id = f.facility_id
+LEFT JOIN regions r            ON r.region_id    = fr.region_id
 GROUP BY f.facility_id, f.canonical_name, f.acronym, f.facility_type,
          f.country, f.hq_lat, f.hq_lng, f.url;
+
+-- Region enriched — every polygon with its network + any facilities within.
+CREATE OR REPLACE VIEW v_region_enriched AS
+SELECT
+    r.region_id,
+    r.name,
+    r.acronym,
+    r.kind,
+    r.network_id,
+    n.label         AS network_label,
+    r.url,
+    r.manager,
+    r.designated,
+    r.state,
+    r.description,
+    list(DISTINCT ra.label)         AS research_areas,
+    list(DISTINCT f.canonical_name) AS facilities,
+    count(DISTINCT fr.facility_id)  AS facility_count
+FROM regions r
+LEFT JOIN networks n             ON n.network_id  = r.network_id
+LEFT JOIN region_area_links ral  ON ral.region_id = r.region_id
+LEFT JOIN research_areas ra      ON ra.area_id    = ral.area_id
+LEFT JOIN facility_regions fr    ON fr.region_id  = r.region_id
+LEFT JOIN facilities f           ON f.facility_id = fr.facility_id
+GROUP BY r.region_id, r.name, r.acronym, r.kind, r.network_id, n.label,
+         r.url, r.manager, r.designated, r.state, r.description;

@@ -25,3 +25,6 @@ nms,NMS,National Marine Sanctuary System,us-national,https://sanctuaries.noaa.go
 marinegeo,MarineGEO,Tennenbaum Marine Observatories Network / Marine Global Earth Observatory,international,https://marinegeo.si.edu
 sentinel-site,Sentinel Site,NOAA Sentinel Site Program,us-national,https://oceanservice.noaa.gov/sentinel-sites/
 lter-site,LTER Site,Long-Term Ecological Research member site,us-regional,https://lternet.edu/site/
+marine-monument,Marine National Monuments,U.S. Marine National Monument|USFWS Marine National Monuments,us-national,https://www.fws.gov/program/national-wildlife-refuge-system
+nps-coastal,NPS Coastal Units,National Park Service Coastal Units,us-national,https://www.nps.gov/
+epa-region,EPA Regions,U.S. EPA Administrative Regions,us-national,https://www.epa.gov/aboutepa/regional-and-geographic-offices

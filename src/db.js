@@ -36,6 +36,8 @@ export async function initDB() {
   const tables = [
     'facilities', 'locations', 'funders', 'funding_links',
     'research_areas', 'area_links', 'networks', 'network_membership',
+    // Region-side (polygons as first-class rows + spatial containment edges).
+    'regions', 'region_area_links', 'facility_regions',
   ];
   for (const t of tables) {
     const url = `${PARQUET_BASE}${t}.parquet`;
@@ -48,6 +50,12 @@ export async function query(filterState) {
     return filterFallback(filterState);
   }
   const { where, params } = applyFilters(filterState);
+  // NOTE: we LEFT JOIN facility_regions + regions so every facility row
+  // comes back with the list of overlay polygons it sits inside. The list
+  // can be empty (e.g., an offshore research vessel that falls outside every
+  // NMS / NERR / NPS / NEP / NEON / EPA polygon). This lets the popup show
+  // "Inside: <sanctuary>, <EPA region>, <NEON domain>" without a second
+  // round-trip for each click.
   const sql = `
     SELECT f.facility_id AS id,
            f.canonical_name AS name,
@@ -58,16 +66,20 @@ export async function query(filterState) {
            f.hq_lng AS lng,
            f.url,
            f.parent_org,
-           list(DISTINCT fu.name)   AS funders,
-           list(DISTINCT ra.label)  AS areas,
-           list(DISTINCT n.label)   AS networks
+           list(DISTINCT fu.name)        AS funders,
+           list(DISTINCT ra.label)       AS areas,
+           list(DISTINCT n.label)        AS networks,
+           list(DISTINCT r.name)         AS regions,
+           list(DISTINCT r.kind)         AS region_kinds
     FROM facilities f
-    LEFT JOIN funding_links fl ON fl.facility_id = f.facility_id
-    LEFT JOIN funders fu       ON fu.funder_id  = fl.funder_id
-    LEFT JOIN area_links al    ON al.facility_id = f.facility_id
-    LEFT JOIN research_areas ra ON ra.area_id   = al.area_id
+    LEFT JOIN funding_links fl  ON fl.facility_id = f.facility_id
+    LEFT JOIN funders fu        ON fu.funder_id  = fl.funder_id
+    LEFT JOIN area_links al     ON al.facility_id = f.facility_id
+    LEFT JOIN research_areas ra ON ra.area_id    = al.area_id
     LEFT JOIN network_membership nm ON nm.facility_id = f.facility_id
-    LEFT JOIN networks n       ON n.network_id  = nm.network_id
+    LEFT JOIN networks n        ON n.network_id   = nm.network_id
+    LEFT JOIN facility_regions fr ON fr.facility_id = f.facility_id
+    LEFT JOIN regions r         ON r.region_id   = fr.region_id
     ${where}
     GROUP BY f.facility_id, f.canonical_name, f.acronym, f.facility_type,
              f.country, f.hq_lat, f.hq_lng, f.url, f.parent_org

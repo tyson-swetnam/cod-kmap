@@ -31,6 +31,12 @@ TABLES = [
     "network_membership",
     "facility_types",
     "provenance",
+    # Region-side tables (regions = one row per overlay polygon,
+    # region_area_links = region ↔ research_area many-to-many, and
+    # facility_regions = which facilities sit inside which regions).
+    "regions",
+    "region_area_links",
+    "facility_regions",
 ]
 
 

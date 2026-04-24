@@ -325,6 +325,10 @@ def log_run(conn: duckdb.DuckDBPyConnection, started: datetime, count: int, stat
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--skip-geocode", action="store_true")
+    parser.add_argument("--skip-regions",  action="store_true",
+                        help="Don't rebuild the regions / facility_regions "
+                             "tables from public/overlays/ (saves time if "
+                             "overlays haven't changed).")
     args = parser.parse_args()
 
     started = datetime.now(timezone.utc)
@@ -344,6 +348,17 @@ def main() -> int:
         log_run(conn, started, len(records), "success")
 
     print(f"[ok] wrote {len(records)} facilities to {DB_PATH}")
+
+    # Rebuild the overlay-derived tables unless the caller opted out.
+    if not args.skip_regions:
+        try:
+            # Import lazily so the ingest step doesn't require shapely
+            # unless the user asks for the regions pass.
+            from populate_regions import populate as populate_regions
+            populate_regions(DB_PATH)
+        except Exception as e:
+            print(f"[warn] populate_regions failed ({e!r}); continuing")
+
     return 0
 
 

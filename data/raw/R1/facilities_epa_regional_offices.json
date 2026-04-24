@@ -1,0 +1,472 @@
+[
+  {
+    "record_id": "R1-EPA-R01",
+    "canonical_name": "U.S. EPA Region 1 — New England",
+    "acronym": "EPA-R1",
+    "parent_org": "U.S. Environmental Protection Agency",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Boston, MA",
+    "hq": {
+      "address": "5 Post Office Square, Suite 100, Boston, MA, 02109-3912",
+      "lat": 42.3575,
+      "lng": -71.0564
+    },
+    "locations": [
+      {
+        "label": "U.S. EPA Region 1 — New England HQ",
+        "address": "5 Post Office Square, Suite 100, Boston, MA, 02109-3912",
+        "lat": 42.3575,
+        "lng": -71.0564,
+        "role": "headquarters"
+      }
+    ],
+    "research_areas": [
+      "marine-policy-and-socio-economics",
+      "estuaries-and-wetlands",
+      "coastal-processes"
+    ],
+    "networks": [
+      "EPA-Region",
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "U.S. Environmental Protection Agency",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": "https://www.epa.gov/aboutepa/epa-region-1-new-england",
+    "contact": "888-372-7341",
+    "established": null,
+    "provenance": {
+      "source_url": "https://www.epa.gov/aboutepa/regional-and-geographic-offices",
+      "retrieved_at": "2026-04-24",
+      "confidence": "high",
+      "agent": "R1"
+    }
+  },
+  {
+    "record_id": "R1-EPA-R02",
+    "canonical_name": "U.S. EPA Region 2",
+    "acronym": "EPA-R2",
+    "parent_org": "U.S. Environmental Protection Agency",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "New York, NY",
+    "hq": {
+      "address": "290 Broadway , New York, NY, 10007-1866",
+      "lat": 40.7148,
+      "lng": -74.0058
+    },
+    "locations": [
+      {
+        "label": "U.S. EPA Region 2 HQ",
+        "address": "290 Broadway , New York, NY, 10007-1866",
+        "lat": 40.7148,
+        "lng": -74.0058,
+        "role": "headquarters"
+      }
+    ],
+    "research_areas": [
+      "marine-policy-and-socio-economics",
+      "estuaries-and-wetlands",
+      "coastal-processes"
+    ],
+    "networks": [
+      "EPA-Region",
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "U.S. Environmental Protection Agency",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": "https://www.epa.gov/aboutepa/about-epa-region-2",
+    "contact": "212-637-3660",
+    "established": null,
+    "provenance": {
+      "source_url": "https://www.epa.gov/aboutepa/regional-and-geographic-offices",
+      "retrieved_at": "2026-04-24",
+      "confidence": "high",
+      "agent": "R1"
+    }
+  },
+  {
+    "record_id": "R1-EPA-R03",
+    "canonical_name": "U.S. EPA Region 3 — Mid-Atlantic",
+    "acronym": "EPA-R3",
+    "parent_org": "U.S. Environmental Protection Agency",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Philadelphia, PA",
+    "hq": {
+      "address": "1650 Arch Street , Philadelphia, PA, 19103-2029",
+      "lat": 39.9549,
+      "lng": -75.1672
+    },
+    "locations": [
+      {
+        "label": "U.S. EPA Region 3 — Mid-Atlantic HQ",
+        "address": "1650 Arch Street , Philadelphia, PA, 19103-2029",
+        "lat": 39.9549,
+        "lng": -75.1672,
+        "role": "headquarters"
+      }
+    ],
+    "research_areas": [
+      "marine-policy-and-socio-economics",
+      "estuaries-and-wetlands",
+      "coastal-processes"
+    ],
+    "networks": [
+      "EPA-Region",
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "U.S. Environmental Protection Agency",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": "https://www.epa.gov/aboutepa/about-epa-region-3-mid-atlantic",
+    "contact": "215-814-5000",
+    "established": null,
+    "provenance": {
+      "source_url": "https://www.epa.gov/aboutepa/regional-and-geographic-offices",
+      "retrieved_at": "2026-04-24",
+      "confidence": "high",
+      "agent": "R1"
+    }
+  },
+  {
+    "record_id": "R1-EPA-R04",
+    "canonical_name": "U.S. EPA Region 4 — Southeast",
+    "acronym": "EPA-R4",
+    "parent_org": "U.S. Environmental Protection Agency",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Atlanta, GA",
+    "hq": {
+      "address": "Sam Nunn Atlanta Federal Center, 61 Forsyth Street SW, Atlanta, GA, 30303-8960",
+      "lat": 33.7531,
+      "lng": -84.3932
+    },
+    "locations": [
+      {
+        "label": "U.S. EPA Region 4 — Southeast HQ",
+        "address": "Sam Nunn Atlanta Federal Center, 61 Forsyth Street SW, Atlanta, GA, 30303-8960",
+        "lat": 33.7531,
+        "lng": -84.3932,
+        "role": "headquarters"
+      }
+    ],
+    "research_areas": [
+      "marine-policy-and-socio-economics",
+      "estuaries-and-wetlands",
+      "coastal-processes"
+    ],
+    "networks": [
+      "EPA-Region",
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "U.S. Environmental Protection Agency",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": "https://www.epa.gov/aboutepa/about-epa-region-4-southeast",
+    "contact": "404-562-9900",
+    "established": null,
+    "provenance": {
+      "source_url": "https://www.epa.gov/aboutepa/regional-and-geographic-offices",
+      "retrieved_at": "2026-04-24",
+      "confidence": "high",
+      "agent": "R1"
+    }
+  },
+  {
+    "record_id": "R1-EPA-R05",
+    "canonical_name": "U.S. EPA Region 5 — Great Lakes",
+    "acronym": "EPA-R5",
+    "parent_org": "U.S. Environmental Protection Agency",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Chicago, IL",
+    "hq": {
+      "address": "77 W. Jackson Boulevard, Chicago, IL, 60604",
+      "lat": 41.8782,
+      "lng": -87.6302
+    },
+    "locations": [
+      {
+        "label": "U.S. EPA Region 5 — Great Lakes HQ",
+        "address": "77 W. Jackson Boulevard, Chicago, IL, 60604",
+        "lat": 41.8782,
+        "lng": -87.6302,
+        "role": "headquarters"
+      }
+    ],
+    "research_areas": [
+      "marine-policy-and-socio-economics",
+      "estuaries-and-wetlands",
+      "coastal-processes"
+    ],
+    "networks": [
+      "EPA-Region",
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "U.S. Environmental Protection Agency",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": "https://www.epa.gov/aboutepa/epa-region-5",
+    "contact": "312-353-2000",
+    "established": null,
+    "provenance": {
+      "source_url": "https://www.epa.gov/aboutepa/regional-and-geographic-offices",
+      "retrieved_at": "2026-04-24",
+      "confidence": "high",
+      "agent": "R1"
+    }
+  },
+  {
+    "record_id": "R1-EPA-R06",
+    "canonical_name": "U.S. EPA Region 6 — South Central",
+    "acronym": "EPA-R6",
+    "parent_org": "U.S. Environmental Protection Agency",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Dallas, TX",
+    "hq": {
+      "address": "1445 Ross Avenue, Suite 1200, Dallas, TX, 75202",
+      "lat": 32.7843,
+      "lng": -96.8023
+    },
+    "locations": [
+      {
+        "label": "U.S. EPA Region 6 — South Central HQ",
+        "address": "1445 Ross Avenue, Suite 1200, Dallas, TX, 75202",
+        "lat": 32.7843,
+        "lng": -96.8023,
+        "role": "headquarters"
+      }
+    ],
+    "research_areas": [
+      "marine-policy-and-socio-economics",
+      "estuaries-and-wetlands",
+      "coastal-processes"
+    ],
+    "networks": [
+      "EPA-Region",
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "U.S. Environmental Protection Agency",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": "https://www.epa.gov/aboutepa/about-epa-region-6-south-central",
+    "contact": "214-665-6444",
+    "established": null,
+    "provenance": {
+      "source_url": "https://www.epa.gov/aboutepa/regional-and-geographic-offices",
+      "retrieved_at": "2026-04-24",
+      "confidence": "high",
+      "agent": "R1"
+    }
+  },
+  {
+    "record_id": "R1-EPA-R07",
+    "canonical_name": "U.S. EPA Region 7",
+    "acronym": "EPA-R7",
+    "parent_org": "U.S. Environmental Protection Agency",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Lenexa, KS",
+    "hq": {
+      "address": "11201 Renner Blvd., Lenexa, KS, 66219",
+      "lat": 38.9257,
+      "lng": -94.7793
+    },
+    "locations": [
+      {
+        "label": "U.S. EPA Region 7 HQ",
+        "address": "11201 Renner Blvd., Lenexa, KS, 66219",
+        "lat": 38.9257,
+        "lng": -94.7793,
+        "role": "headquarters"
+      }
+    ],
+    "research_areas": [
+      "marine-policy-and-socio-economics",
+      "estuaries-and-wetlands",
+      "coastal-processes"
+    ],
+    "networks": [
+      "EPA-Region",
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "U.S. Environmental Protection Agency",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": "https://www.epa.gov/aboutepa/about-epa-region-7",
+    "contact": "913-551-7003",
+    "established": null,
+    "provenance": {
+      "source_url": "https://www.epa.gov/aboutepa/regional-and-geographic-offices",
+      "retrieved_at": "2026-04-24",
+      "confidence": "high",
+      "agent": "R1"
+    }
+  },
+  {
+    "record_id": "R1-EPA-R08",
+    "canonical_name": "U.S. EPA Region 8 — Mountains and Plains",
+    "acronym": "EPA-R8",
+    "parent_org": "U.S. Environmental Protection Agency",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Denver, CO",
+    "hq": {
+      "address": "1595 Wynkoop Street, Denver, CO, 80202-1129",
+      "lat": 39.7518,
+      "lng": -105.0009
+    },
+    "locations": [
+      {
+        "label": "U.S. EPA Region 8 — Mountains and Plains HQ",
+        "address": "1595 Wynkoop Street, Denver, CO, 80202-1129",
+        "lat": 39.7518,
+        "lng": -105.0009,
+        "role": "headquarters"
+      }
+    ],
+    "research_areas": [
+      "marine-policy-and-socio-economics",
+      "estuaries-and-wetlands",
+      "coastal-processes"
+    ],
+    "networks": [
+      "EPA-Region",
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "U.S. Environmental Protection Agency",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": "https://www.epa.gov/aboutepa/about-epa-region-8",
+    "contact": "303-312-6312",
+    "established": null,
+    "provenance": {
+      "source_url": "https://www.epa.gov/aboutepa/regional-and-geographic-offices",
+      "retrieved_at": "2026-04-24",
+      "confidence": "high",
+      "agent": "R1"
+    }
+  },
+  {
+    "record_id": "R1-EPA-R09",
+    "canonical_name": "U.S. EPA Region 9 — Pacific Southwest",
+    "acronym": "EPA-R9",
+    "parent_org": "U.S. Environmental Protection Agency",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "San Francisco, CA",
+    "hq": {
+      "address": "75 Hawthorne Street , San Francisco, CA, 94105",
+      "lat": 37.7851,
+      "lng": -122.3984
+    },
+    "locations": [
+      {
+        "label": "U.S. EPA Region 9 — Pacific Southwest HQ",
+        "address": "75 Hawthorne Street , San Francisco, CA, 94105",
+        "lat": 37.7851,
+        "lng": -122.3984,
+        "role": "headquarters"
+      }
+    ],
+    "research_areas": [
+      "marine-policy-and-socio-economics",
+      "estuaries-and-wetlands",
+      "coastal-processes"
+    ],
+    "networks": [
+      "EPA-Region",
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "U.S. Environmental Protection Agency",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": "https://www.epa.gov/aboutepa/about-epa-region-9-pacific-southwest",
+    "contact": "415-947-8000",
+    "established": null,
+    "provenance": {
+      "source_url": "https://www.epa.gov/aboutepa/regional-and-geographic-offices",
+      "retrieved_at": "2026-04-24",
+      "confidence": "high",
+      "agent": "R1"
+    }
+  },
+  {
+    "record_id": "R1-EPA-R10",
+    "canonical_name": "U.S. EPA Region 10 — Pacific Northwest",
+    "acronym": "EPA-R10",
+    "parent_org": "U.S. Environmental Protection Agency",
+    "facility_type": "federal",
+    "country": "US",
+    "region": "Seattle, WA",
+    "hq": {
+      "address": "1200 6th Avenue, Suite 900, Seattle, WA, 98101",
+      "lat": 47.6084,
+      "lng": -122.3319
+    },
+    "locations": [
+      {
+        "label": "U.S. EPA Region 10 — Pacific Northwest HQ",
+        "address": "1200 6th Avenue, Suite 900, Seattle, WA, 98101",
+        "lat": 47.6084,
+        "lng": -122.3319,
+        "role": "headquarters"
+      }
+    ],
+    "research_areas": [
+      "marine-policy-and-socio-economics",
+      "estuaries-and-wetlands",
+      "coastal-processes"
+    ],
+    "networks": [
+      "EPA-Region",
+      "NEP"
+    ],
+    "funders": [
+      {
+        "name": "U.S. Environmental Protection Agency",
+        "relation": "parent-agency"
+      }
+    ],
+    "url": "https://www.epa.gov/aboutepa/about-epa-region-10-pacific-northwest",
+    "contact": "206-553-1200",
+    "established": null,
+    "provenance": {
+      "source_url": "https://www.epa.gov/aboutepa/regional-and-geographic-offices",
+      "retrieved_at": "2026-04-24",
+      "confidence": "high",
+      "agent": "R1"
+    }
+  }
+]

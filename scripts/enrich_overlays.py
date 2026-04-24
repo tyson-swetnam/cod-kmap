@@ -472,6 +472,76 @@ NPS = {
 
 # ── RUN ────────────────────────────────────────────────────────────
 
+def normalize_properties(j, overlay_slug):
+    """
+    Final normalization pass — runs after the per-table enrichment so the
+    output is uniform across every overlay file.
+
+      * `name` is the canonical long form (never an acronym).
+      * `acronym` is always populated when one exists.
+      * `short` is dropped — it was the legacy pre-rename label and is now
+        redundant with `acronym`/`name`.
+      * `network_slug` is added so regions can join to networks.
+    """
+    # Mapping from the per-file `network` tag to the vocabulary slug.
+    NETWORK_SLUG = {
+        'NMS':             'nms',
+        'Marine-Monument': 'marine-monument',
+        'NERRS':           'nerrs',
+        'NEP':             'nep',
+        'NEON':            'neon',
+        'NPS-Coastal':     'nps-coastal',
+        'EPA-Region':      'epa-region',
+    }
+    # Per-overlay "kind" — keeps the polygon type first-class, independent
+    # of the network vocabulary slug.
+    KIND = {
+        'marine-sanctuaries.geojson': 'sanctuary',
+        'marine-monuments.geojson':   'monument',
+        'nerr-reserves.geojson':      'nerr-reserve',
+        'nep-programs.geojson':       'nep-program',
+        'nps-coastal.geojson':        'nps-unit',
+        'neon-domains.geojson':       'neon-domain',
+        'epa-regions.geojson':        'epa-region',
+    }
+    kind = KIND.get(overlay_slug, 'region')
+
+    for feat in j['features']:
+        p = feat.setdefault('properties', {})
+
+        # Infer acronym if missing.
+        if not p.get('acronym'):
+            if p.get('park_code'):
+                # NPS four-letter code — uppercase it.
+                p['acronym'] = str(p['park_code']).upper()
+            elif p.get('domain_id'):
+                p['acronym'] = f"D{int(p['domain_id']):02d}"
+            elif p.get('region'):
+                # "Region 1" -> "R1"
+                m = str(p['region']).strip().split()
+                if len(m) == 2 and m[0].lower() == 'region' and m[1].isdigit():
+                    p['acronym'] = f'R{m[1]}'
+            elif p.get('short') and 2 <= len(str(p['short'])) <= 10 \
+                    and str(p['short']).isupper():
+                # Legacy uppercase abbreviation hiding in `short`.
+                p['acronym'] = p['short']
+
+        # Drop the legacy `short` field — it's redundant now.
+        if 'short' in p:
+            del p['short']
+
+        # Always record the network slug so the DB can FK it.
+        if p.get('network') and 'network_slug' not in p:
+            slug = NETWORK_SLUG.get(p['network'])
+            if slug:
+                p['network_slug'] = slug
+
+        # Record the region kind.
+        p.setdefault('kind', kind)
+
+    return j
+
+
 def run():
     # 1. Merge same-name fragments in NERR + NEON (sanctuaries/monuments
     # were merged in an earlier commit).
@@ -516,8 +586,16 @@ def run():
             pr['url'] = f'https://www.nps.gov/{pc}/'
     save(p, j)
 
-    # 5. Post-process NERR — fill url if missing using the NOAA portal page.
-    # Done via the lookup table above; no action here.
+    # 5. Name normalization / acronym inference / drop legacy `short`.
+    for fn in ('marine-sanctuaries.geojson', 'marine-monuments.geojson',
+               'nerr-reserves.geojson', 'nep-programs.geojson',
+               'nps-coastal.geojson', 'neon-domains.geojson',
+               'epa-regions.geojson'):
+        p = os.path.join(OV, fn)
+        j = load(p)
+        normalize_properties(j, fn)
+        save(p, j)
+        print(f'normalized {fn}')
 
     print('done.')
 

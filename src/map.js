@@ -116,7 +116,9 @@ export function initMap(container) {
       const feat = e.features[0];
       const coords = feat.geometry.coordinates.slice();
       const p = feat.properties;
-      for (const key of ['areas', 'networks', 'funders']) {
+      // MapLibre stringifies array-valued feature properties when a feature
+      // passes through its tiler. Re-parse list fields back into real arrays.
+      for (const key of ['areas', 'networks', 'funders', 'regions', 'region_kinds']) {
         if (typeof p[key] === 'string') {
           try { p[key] = JSON.parse(p[key]); } catch (_) { p[key] = []; }
         }
@@ -227,6 +229,8 @@ function popupHtml(p) {
     ? p.networks.slice(0, 3).map(esc).join(', ') : null;
   const funders = Array.isArray(p.funders) && p.funders.length
     ? p.funders.slice(0, 3).map(esc).join(', ') : null;
+  const regions = Array.isArray(p.regions) && p.regions.length
+    ? p.regions.slice(0, 4).map(esc).join(', ') : null;
 
   return `<div class="popup">
     <div class="popup-name">${nameHtml}${p.acronym ? ` <span class="popup-acr">(${esc(p.acronym)})</span>` : ''}</div>
@@ -237,6 +241,7 @@ function popupHtml(p) {
     ${p.parent_org ? `<div class="popup-row"><em>Org:</em> ${esc(p.parent_org)}</div>` : ''}
     ${areas ? `<div class="popup-row"><em>Research:</em> ${areas}</div>` : ''}
     ${networks ? `<div class="popup-row"><em>Networks:</em> ${networks}</div>` : ''}
+    ${regions ? `<div class="popup-row"><em>Inside:</em> ${regions}</div>` : ''}
     ${funders ? `<div class="popup-row"><em>Funders:</em> ${funders}</div>` : ''}
     ${p.url ? `<a class="popup-source" href="${esc(p.url)}" target="_blank" rel="noopener">Visit website</a>` : ''}
   </div>`;
