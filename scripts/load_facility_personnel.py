@@ -103,7 +103,7 @@ def upsert_person(conn, row: dict) -> str:
             person_id, name, name_family, name_given, email, orcid,
             openalex_id, homepage_url, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, now())
         ON CONFLICT (person_id) DO UPDATE SET
             name         = excluded.name,
             name_family  = excluded.name_family,
@@ -112,7 +112,7 @@ def upsert_person(conn, row: dict) -> str:
             orcid        = COALESCE(excluded.orcid, people.orcid),
             openalex_id  = COALESCE(excluded.openalex_id, people.openalex_id),
             homepage_url = COALESCE(excluded.homepage_url, people.homepage_url),
-            updated_at   = CURRENT_TIMESTAMP
+            updated_at   = now()
         """,
         [pid, name, family, given, email or None, orcid or None,
          (row.get("openalex_id") or "").strip() or None,
@@ -137,7 +137,7 @@ def upsert_role(conn, pid: str, fid: str, row: dict) -> None:
             person_id, facility_id, role, title, is_key_personnel,
             source, source_url, retrieved_at, confidence, notes
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, current_date, ?, ?)
         ON CONFLICT (person_id, facility_id, role) DO UPDATE SET
             title            = excluded.title,
             is_key_personnel = excluded.is_key_personnel,

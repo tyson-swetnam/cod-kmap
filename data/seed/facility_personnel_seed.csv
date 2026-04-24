@@ -1,22 +1,53 @@
 facility_acronym,facility_name_like,person_name,role,title,is_key_personnel,orcid,openalex_id,email,homepage_url,source,source_url,confidence
-# Template / seed file for key personnel. One row per (facility, person, role).
+# Seed file for key personnel at top cod-kmap facilities.
+# Populated from public web sources (institutional pages, agency
+# press releases, NSF Award Search, BCO-DMO project metadata) on
+# 2026-04-24. Re-verify before publishing downstream — leadership
+# rotates.
 #
-# Required columns: facility_acronym OR facility_name_like (fuzzy match against
-#                   facilities.canonical_name), person_name, role
-# Optional:         title, is_key_personnel (true|false), orcid, openalex_id,
-#                   email, homepage_url, source, source_url, confidence
+# Columns:
+#   facility_acronym    exact match on facilities.acronym (preferred)
+#   facility_name_like  ILIKE %…% fallback when acronym is ambiguous
+#                       (all LTER sites share acronym "LTER")
+#   person_name         as shown on the institutional bio page
+#   role                Director | Lead PI | Dean | President & CEO | ...
+#   title               free-text position title
+#   is_key_personnel    true = shown in v_facility_key_personnel
+#   orcid,openalex_id   leave blank — enrich_people_openalex.py fills
+#   email, homepage_url when known from the institution's bio page
+#   source              'facility-webpage' | 'wikipedia' | 'press-release'
+#   source_url          direct URL for verification
+#   confidence          high | medium | low
 #
-# `role` should be one of: Director, Deputy Director, Associate Director,
-#                          Chief Scientist, Principal Investigator,
-#                          Program Manager, Head Administrator, Professor,
-#                          Research Scientist, Postdoc, Graduate Student,
-#                          Technician, Staff, Emeritus
-# `is_key_personnel` defaults to true for Director / Deputy Director /
-# Chief Scientist / Head Administrator. Override per-row as needed.
+# Large US marine research institutions ────────────────────────────────
+WHOI,,Peter de Menocal,President & Director,Eleventh President & Director,true,,,,https://www.whoi.edu/know-your-ocean/explorers/peter-de-menocal/,press-release,https://www.whoi.edu/press-room/news-release/woods-hole-oceanographic-institution-names-new-president-and-director/,high
+SIO,,Meenakshi Wadhwa,Director,"Director, Vice Chancellor for Marine Sciences, Dean of the School of Marine, Earth, and Atmospheric Sciences",true,,,,https://scripps.ucsd.edu/about/leadership,facility-webpage,https://today.ucsd.edu/story/meet-the-new-director-of-scripps-institution-of-oceanography,high
+RSMAES,,Roni Avissar,Dean,Dean of the Rosenstiel School of Marine Atmospheric and Earth Science,true,,,,https://www.earth.miami.edu/,facility-webpage,https://en.wikipedia.org/wiki/Rosenstiel_School_of_Marine,_Atmospheric,_and_Earth_Science,high
+VIMS,,Derek Aday,Dean & Director,Dean and Director of the Virginia Institute of Marine Science,true,,,,https://www.vims.edu/about/leadership_admin/dean/,facility-webpage,https://www.vims.edu/about/leadership_admin/dean/,high
 #
-# Rows beginning with '#' are comments and skipped by the loader.
+# NOAA laboratories ────────────────────────────────────────────────────
+PMEL,,Michelle McClure,Director,Director of NOAA Pacific Marine Environmental Laboratory,true,,,,https://www.pmel.noaa.gov/about-pmel/organization,facility-webpage,https://www.pmel.noaa.gov/about-pmel/organization,high
+NCEI,,Deke Arndt,Director,Director of NOAA National Centers for Environmental Information,true,,,,https://www.ncei.noaa.gov/about-us,facility-webpage,https://www.ncei.noaa.gov/about-us,high
 #
-# === EXAMPLES — remove or replace before running a real import ===
-# SBC LTER,Santa Barbara Coastal LTER,,Director,Lead PI,true,,,,,manual,,high
-# MBARI,Monterey Bay Aquarium Research Institute,,Executive Director,President & CEO,true,,,,,manual,,high
-# WHOI,Woods Hole Oceanographic Institution,,President & Director,,true,,,,,manual,,high
+# University marine laboratories ───────────────────────────────────────
+BML,,Andrea C. Alfaro,Director,"Director of the UC Davis Coastal and Marine Sciences Institute (oversees Bodega Marine Laboratory)",true,,,,https://marinescience.ucdavis.edu/bml/about,press-release,https://research.ucdavis.edu/andrea-c-alfaro-appointed-director-of-the-uc-davis-coastal-and-marine-sciences-institute/,high
+FHL,,Megan Dethier,Director,Director of Friday Harbor Laboratories,true,,,,https://fhl.uw.edu/about/people/,facility-webpage,https://environment.uw.edu/faculty/megan-dethier/,high
+HMSC,,Bob Cowen,Director,"Director of Hatfield Marine Science Center; Associate Vice President for Marine Research & Operations",true,,,,https://hmsc.oregonstate.edu/,facility-webpage,https://hmsc.oregonstate.edu/,high
+SkIO,,Clark Alexander,Director,Director of the UGA Skidaway Institute of Oceanography,true,,,,https://www.skio.uga.edu/,facility-webpage,https://www.marsci.uga.edu/directory/skidaway-faculty,high
+#
+# Nonprofit / museum-research hybrids ──────────────────────────────────
+SERC,,William Monty Graham,Director,"Director of the Smithsonian Environmental Research Center (W. M. ""Monty"" Graham)",true,,,,https://serc.si.edu/about-us/staff,press-release,https://www.si.edu/newsdesk/releases/william-monty-graham-named-director-smithsonian-environmental-research-center,high
+Mote,,Michael P. Crosby,President & CEO,President & CEO of Mote Marine Laboratory & Aquarium,true,,,,https://mote.org/about/leadership/,facility-webpage,https://mote.org/about/leadership/,high
+#
+# LTER sites (share acronym "LTER" in DB — use facility_name_like) ─────
+,Santa Barbara Coastal LTER,Bob Miller,Lead PI,Lead Principal Investigator (UCSB Marine Science Institute),true,,,,https://sbclter.msi.ucsb.edu/about/people/,facility-webpage,https://sbclter.msi.ucsb.edu/,high
+,Plum Island LTER,Anne Giblin,Lead PI,"Lead Principal Investigator (MBL Ecosystems Center); Senior Scientist",true,,,,https://pie-lter.mbl.edu/people/anne-giblin/,facility-webpage,https://pie-lter.mbl.edu/people/anne-giblin/,high
+,Georgia Coast LTER,Merryl Alber,Lead PI,Lead Principal Investigator (UGA Department of Marine Sciences),true,,,,https://gce-lter.marsci.uga.edu/public/app/personnel_bios.asp?id=malber,facility-webpage,https://gce-lter.marsci.uga.edu/public/app/personnel_bios.asp?id=malber,high
+,Georgia Coast LTER,Steven Pennings,Co-Lead PI,Co-Lead Principal Investigator (University of Houston),true,,,,,facility-webpage,https://www.bco-dmo.org/project/550511,high
+,Virginia Coast LTER,Karen McGlathery,Lead PI,"Lead Investigator VCR LTER; Sherrell J. Aston Professor of Environmental Sciences; Director of UVA Environmental Institute",true,,,,https://www.vcrlter.virginia.edu/home2/?page_id=324,facility-webpage,https://www.vcrlter.virginia.edu/home2/?page_id=324,high
+,California Current LTER,Katherine Barbeau,Lead PI,Lead Principal Investigator (UCSD Scripps Institution of Oceanography),true,,,,https://ccelter.ucsd.edu/,facility-webpage,https://www.bco-dmo.org/project/2086,high
+,Florida Coast LTER,John Kominoski,Lead PI,Lead Principal Investigator (FIU Institute of Environment),true,,,,https://fcelter.fiu.edu/about/people/index.html,facility-webpage,https://news.fiu.edu/2025/fiu-gets-6.375-million-renewal-from-nsf-for-everglades-research,high
+,Beaufort Lagoon LTER,Ken Dunton,Lead PI,Lead Principal Investigator (UT Austin Marine Science Institute),true,,,,https://ble.lternet.edu/people.html,facility-webpage,https://ble.lternet.edu/about.html,high
+,Beaufort Lagoon LTER,James McClelland,Co-PI,Co-Principal Investigator,true,,,,https://ble.lternet.edu/people.html,facility-webpage,https://ble.lternet.edu/about.html,high
+,Northern Gulf of Alaska LTER,Russ Hopcroft,Lead PI,Lead Principal Investigator (University of Alaska Fairbanks),true,,,,https://nga.lternet.edu/about-us/personnel/,facility-webpage,https://nga.lternet.edu/about-us/personnel/,high
+,Northern Gulf of Alaska LTER,Seth Danielson,Co-PI,Co-Principal Investigator (University of Alaska Fairbanks),true,,,,https://nga.lternet.edu/about-us/personnel/,facility-webpage,https://nga.lternet.edu/about-us/personnel/,high
