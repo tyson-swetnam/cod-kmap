@@ -546,7 +546,11 @@ footer a:hover { color: var(--c-primary); }
 }
 
 /* ── Browse view ────────────────────────────────────────────────── */
-#view-browse { overflow: hidden; display: flex; flex-direction: column; }
+/* display defaults to none (from .view) and flips to flex when .active.
+ * Previously the base rule was `display: flex`, which won the specificity
+ * fight against `.view { display: none }` — so the facilities table leaked
+ * through on every other tab (Network, Stats, Docs). */
+#view-browse { overflow: hidden; flex-direction: column; }
 #view-browse.active { display: flex; }
 .browse-header {
   padding: 12px 20px;
