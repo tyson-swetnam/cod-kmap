@@ -374,3 +374,166 @@ SELECT
 FROM v_facility_funding_by_year v
 LEFT JOIN cpi_index_us cpi_yr     ON cpi_yr.year     = v.fiscal_year
 LEFT JOIN cpi_index_us cpi_anchor ON cpi_anchor.year = 2024;
+
+-------------------------------------------------------------------------------
+-- People (staff, administrators, scientists) at facilities
+-------------------------------------------------------------------------------
+--
+-- Keeps everything in one DuckDB file so JOIN-heavy queries across
+-- facilities ↔ people ↔ publications ↔ research_areas stay cheap. The
+-- shape is adapted from UNM's knowledge-map schema (github.com/…/unm_kmap)
+-- but adds a facility_personnel table because cod-kmap tracks _which_
+-- role a person holds at _which_ facility (and when), which UNM's
+-- single-institution model didn't need.
+
+CREATE OR REPLACE TABLE people (
+    person_id           VARCHAR PRIMARY KEY,       -- hash(lower(name)+orcid_or_email_or_idx)
+    name                VARCHAR NOT NULL,          -- "First Middle Last", display form
+    name_family         VARCHAR,                   -- last name (sort key)
+    name_given          VARCHAR,                   -- first + middle
+    email               VARCHAR,
+    orcid               VARCHAR,                   -- 0000-0002-xxxx-xxxx
+    openalex_id         VARCHAR,                   -- Axxxxxxxxxx
+    scopus_author_id    VARCHAR,
+    wos_researcher_id   VARCHAR,
+    google_scholar_id   VARCHAR,
+    homepage_url        VARCHAR,                   -- personal or institutional bio page
+    photo_url           VARCHAR,
+    research_interests  VARCHAR,                   -- free-text keywords, comma-separated
+    bio                 VARCHAR,                   -- short narrative bio
+    status              VARCHAR,                   -- active | emeritus | former | unknown
+    notes               VARCHAR,
+    created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Role a person plays at a facility. A single person can hold multiple
+-- roles across multiple facilities over time (professor AND LTER
+-- director, or past-director AND current-emeritus). The grain is
+-- (person, facility, role) so (Jane Doe, SBC LTER, Director) is
+-- distinct from (Jane Doe, UCSB, Professor).
+CREATE OR REPLACE TABLE facility_personnel (
+    person_id           VARCHAR NOT NULL REFERENCES people(person_id),
+    facility_id         VARCHAR NOT NULL REFERENCES facilities(facility_id),
+    role                VARCHAR NOT NULL,          -- Director | Deputy Director | Associate Director |
+                                                   -- Chief Scientist | Principal Investigator |
+                                                   -- Program Manager | Head Administrator |
+                                                   -- Professor | Research Scientist | Postdoc |
+                                                   -- Graduate Student | Technician | Staff | Emeritus
+    title               VARCHAR,                   -- free-text (e.g. "Professor of Marine Biology")
+    is_key_personnel    BOOLEAN DEFAULT false,     -- flag for Director / Chief Scientist / Head Admin
+    start_date          DATE,
+    end_date            DATE,                      -- NULL = currently serving
+    source              VARCHAR,                   -- 'facility-webpage' | 'manual' | 'orcid' | 'openalex'
+    source_url          VARCHAR,
+    retrieved_at        DATE,
+    confidence          VARCHAR,                   -- high | medium | low
+    notes               VARCHAR,
+    PRIMARY KEY (person_id, facility_id, role)
+);
+
+CREATE OR REPLACE TABLE publications (
+    publication_id      VARCHAR PRIMARY KEY,       -- hash(doi) or openalex_id or scopus_eid
+    doi                 VARCHAR UNIQUE,
+    title               VARCHAR,
+    abstract            VARCHAR,
+    pub_year            INTEGER,
+    pub_type            VARCHAR,                   -- journal-article | conference-paper | book-chapter | preprint | report
+    journal             VARCHAR,
+    venue               VARCHAR,                   -- conference or book
+    cited_by_count      INTEGER DEFAULT 0,
+    openalex_id         VARCHAR,
+    scopus_eid          VARCHAR,
+    wos_uid             VARCHAR,
+    url                 VARCHAR,
+    source              VARCHAR,                   -- 'openalex' | 'scopus' | 'wos' | 'gscholar' | 'manual'
+    retrieved_at        DATE,
+    created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE OR REPLACE TABLE authorship (
+    person_id           VARCHAR NOT NULL REFERENCES people(person_id),
+    publication_id      VARCHAR NOT NULL REFERENCES publications(publication_id),
+    author_position     INTEGER,                   -- 1 = first author, NULL unknown
+    is_corresponding    BOOLEAN DEFAULT false,
+    raw_name            VARCHAR,                   -- as printed on the paper
+    PRIMARY KEY (person_id, publication_id)
+);
+
+-- Person ↔ research_area (re-uses the existing research_areas vocab).
+CREATE OR REPLACE TABLE person_areas (
+    person_id           VARCHAR NOT NULL REFERENCES people(person_id),
+    area_id             VARCHAR NOT NULL REFERENCES research_areas(area_id),
+    weight              DOUBLE DEFAULT 1.0,        -- usually n-of-publications-on-topic / n-total
+    source              VARCHAR,                   -- 'openalex-topic' | 'gscholar-interest' | 'manual'
+    PRIMARY KEY (person_id, area_id)
+);
+
+-- Co-authorship graph between people in the dataset. Store with
+-- person_a_id < person_b_id so each pair has one canonical row.
+CREATE OR REPLACE TABLE collaborations (
+    person_a_id         VARCHAR NOT NULL REFERENCES people(person_id),
+    person_b_id         VARCHAR NOT NULL REFERENCES people(person_id),
+    co_pub_count        INTEGER DEFAULT 0,
+    first_year          INTEGER,
+    last_year           INTEGER,
+    strength            DOUBLE DEFAULT 0.0,        -- normalised 0..1
+    PRIMARY KEY (person_a_id, person_b_id)
+);
+
+-------------------------------------------------------------------------------
+-- People helper views
+-------------------------------------------------------------------------------
+
+-- Current, key personnel only — driven by the facility_personnel
+-- is_key_personnel flag and a NULL end_date. Perfect for a "who runs
+-- the site today?" directory.
+CREATE OR REPLACE VIEW v_facility_key_personnel AS
+SELECT
+    f.facility_id,
+    f.canonical_name        AS facility,
+    f.acronym               AS facility_acronym,
+    p.person_id,
+    p.name,
+    fp.role,
+    fp.title,
+    p.orcid,
+    p.openalex_id,
+    p.email,
+    p.homepage_url,
+    fp.start_date,
+    fp.source_url
+FROM facility_personnel fp
+JOIN people     p ON p.person_id   = fp.person_id
+JOIN facilities f ON f.facility_id = fp.facility_id
+WHERE fp.is_key_personnel = true
+  AND (fp.end_date IS NULL OR fp.end_date > CURRENT_DATE);
+
+-- Person-rollup: every person with list-aggregated facilities, roles,
+-- research areas, and publication count. Powers a "staff search" view
+-- in the web app.
+CREATE OR REPLACE VIEW v_person_enriched AS
+SELECT
+    p.person_id,
+    p.name,
+    p.name_family,
+    p.orcid,
+    p.openalex_id,
+    p.email,
+    p.homepage_url,
+    p.research_interests,
+    p.status,
+    list(DISTINCT f.canonical_name)  AS facilities,
+    list(DISTINCT fp.role)           AS roles,
+    list(DISTINCT ra.label)          AS research_areas,
+    COUNT(DISTINCT a.publication_id) AS n_publications,
+    MAX(pub.pub_year)                AS latest_pub_year
+FROM people p
+LEFT JOIN facility_personnel fp ON fp.person_id   = p.person_id
+LEFT JOIN facilities         f  ON f.facility_id  = fp.facility_id
+LEFT JOIN person_areas       pa ON pa.person_id   = p.person_id
+LEFT JOIN research_areas     ra ON ra.area_id     = pa.area_id
+LEFT JOIN authorship         a  ON a.person_id    = p.person_id
+LEFT JOIN publications       pub ON pub.publication_id = a.publication_id
+GROUP BY p.person_id, p.name, p.name_family, p.orcid, p.openalex_id,
+         p.email, p.homepage_url, p.research_interests, p.status;

@@ -153,6 +153,26 @@ SELECT funder,
 FROM   v_funder_funding_by_year
 ORDER  BY fiscal_year DESC, total_usd_nominal DESC;`,
   },
+  {
+    id: 'key-personnel',
+    title: 'Current key personnel (Directors, Chief Scientists...)',
+    description:
+      'Today\u2019s Directors, Deputy Directors, Chief Scientists, and Head ' +
+      'Administrators across the facility network. Populated from the ' +
+      'facility_personnel table — empty until you run load_facility_personnel.py ' +
+      'with a seed CSV or enrich_people_openalex.py against the API.',
+    sql: `-- Current key personnel (is_key_personnel=true, end_date NULL or future)
+SELECT facility_acronym,
+       facility,
+       name,
+       role,
+       title,
+       orcid,
+       homepage_url,
+       email
+FROM   v_facility_key_personnel
+ORDER  BY facility, role, name;`,
+  },
 ];
 
 // ── State ───────────────────────────────────────────────────────────

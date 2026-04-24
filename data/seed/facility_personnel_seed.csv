@@ -1,0 +1,22 @@
+facility_acronym,facility_name_like,person_name,role,title,is_key_personnel,orcid,openalex_id,email,homepage_url,source,source_url,confidence
+# Template / seed file for key personnel. One row per (facility, person, role).
+#
+# Required columns: facility_acronym OR facility_name_like (fuzzy match against
+#                   facilities.canonical_name), person_name, role
+# Optional:         title, is_key_personnel (true|false), orcid, openalex_id,
+#                   email, homepage_url, source, source_url, confidence
+#
+# `role` should be one of: Director, Deputy Director, Associate Director,
+#                          Chief Scientist, Principal Investigator,
+#                          Program Manager, Head Administrator, Professor,
+#                          Research Scientist, Postdoc, Graduate Student,
+#                          Technician, Staff, Emeritus
+# `is_key_personnel` defaults to true for Director / Deputy Director /
+# Chief Scientist / Head Administrator. Override per-row as needed.
+#
+# Rows beginning with '#' are comments and skipped by the loader.
+#
+# === EXAMPLES — remove or replace before running a real import ===
+# SBC LTER,Santa Barbara Coastal LTER,,Director,Lead PI,true,,,,,manual,,high
+# MBARI,Monterey Bay Aquarium Research Institute,,Executive Director,President & CEO,true,,,,,manual,,high
+# WHOI,Woods Hole Oceanographic Institution,,President & Director,,true,,,,,manual,,high
