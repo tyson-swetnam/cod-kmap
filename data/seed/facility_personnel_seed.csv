@@ -65,3 +65,41 @@ PIFSC,,Christofer Boggs,Division Director,"Fisheries Research and Monitoring Div
 # Other major facilities
 HIMB,,Megan Donahue,Director,Director of the Hawaiʻi Institute of Marine Biology,true,,,,https://www.himb.hawaii.edu/who-we-are/about/,facility-webpage,https://www.himb.hawaii.edu/who-we-are/about/,high
 OFI,,Erin Bertrand,Acting Director,"Acting Scientific Director and CEO, Dalhousie Ocean Frontier Institute",true,,,,https://www.ofi.ca/about/team,press-release,https://www.dal.ca/news/2026/03/13/canada-foundation-innovation-funding-announcement-infrastructure-systems-climate-ocean-digital-water.html,medium
+#
+# === Third pass (2026-04-24): scraper wins + WebSearch for 0-hit facilities ===
+#
+# IOOS Regional Associations (from scraper review)
+AOOS,,Sheyna Wisdom,Executive Director,"Executive Director, Alaska Ocean Observing System",true,,,,https://aoos.org/,facility-webpage,https://aoos.org/,high
+CARICOOS,,Julio M. Morell,Executive Director,"Executive Director & Principal Investigator, CARICOOS",true,,,,https://caricoos.org/,facility-webpage,https://caricoos.org/,high
+CARICOOS,,Patricia Chardón-Maldonado,Deputy Director,"Deputy and Technical Director; Co-Principal Investigator",true,,,,https://caricoos.org/,facility-webpage,https://caricoos.org/,high
+MARACOOS,,Gerhard F. Kuska,Executive Director,"Executive Director, Mid-Atlantic Regional Association Coastal Ocean Observing System",true,,,,https://maracoos.org/,facility-webpage,https://maracoos.org/,high
+MARACOOS,,Mary Ford,Deputy Director,"Deputy Director, MARACOOS",true,,,,https://maracoos.org/,facility-webpage,https://maracoos.org/,high
+MARACOOS,,Mike Crowley,Technical Director,"Technical Director, MARACOOS",false,,,,https://maracoos.org/,facility-webpage,https://maracoos.org/,medium
+SCCOOS,,Clarissa Anderson,Director,"Director, Southern California Coastal Ocean Observing System; Director, CIMEAS",true,,,,https://sccoos.org/,facility-webpage,https://sccoos.org/,high
+SCCOOS,,Megan Medina,Deputy Director,"Deputy Director, SCCOOS",true,,,,https://sccoos.org/,facility-webpage,https://sccoos.org/,high
+SECOORA,,Debra Hernandez,Executive Director,"Executive Director, Southeast Coastal Ocean Observing Regional Association",true,,,,https://secoora.org/,facility-webpage,https://secoora.org/,high
+SECOORA,,Jennifer Dorton,Deputy Director,"Deputy Director, SECOORA",true,,,,https://secoora.org/,facility-webpage,https://secoora.org/,high
+CeNCOOS,,Alex Harper,Deputy Director,"Deputy Director, Central and Northern California Ocean Observing System",true,,,,https://cencoos.org/,facility-webpage,https://cencoos.org/,high
+PacIOOS,,Melissa Iwamoto,Executive Director,"Director, Pacific Islands Ocean Observing System",true,,,,https://www.pacioos.hawaii.edu/about/,facility-webpage,https://www.pacioos.hawaii.edu/about/,high
+NANOOS,,Jan Newton,Executive Director,"Executive Director, NANOOS; Senior Principal Oceanographer",true,,,,https://www.nanoos.org/about_nanoos/people.php,facility-webpage,https://www.nanoos.org/about_nanoos/people.php,high
+IOOS,,Krisa Arzayus,Acting Director,"Acting Director (Federal), U.S. IOOS Program Office",true,,,,https://ioos.noaa.gov/about/meet-the-ioos-program-office/,press-release,https://ioos.noaa.gov/about/meet-the-ioos-program-office/,high
+#
+# Major research institutes (from scraper + WebSearch)
+SOI,,Jyotika Virmani,Executive Director,"Executive Director, Schmidt Ocean Institute",true,,,,https://schmidtocean.org/person/jyotika-virmani/,facility-webpage,https://schmidtocean.org/,high
+OOI,,Deb Kelley,Director,"Regional Cabled Array Director, Ocean Observatories Initiative",true,,,,https://oceanobservatories.org/,press-release,https://oceanobservatories.org/,high
+HMS,,Fiorenza Micheli,Co-Director,"Co-Director, Hopkins Marine Station",true,,,,https://hopkinsmarinestation.stanford.edu/people,press-release,https://hopkinsmarinestation.stanford.edu/news/fiorenza-micheli-and-jeremy-goldbogen-appointed-co-directors-hopkins-marine-station,medium
+HMS,,Jeremy Goldbogen,Co-Director,"Co-Director, Hopkins Marine Station",true,,,,https://hopkinsmarinestation.stanford.edu/people,press-release,https://hopkinsmarinestation.stanford.edu/news/fiorenza-micheli-and-jeremy-goldbogen-appointed-co-directors-hopkins-marine-station,medium
+MI,,Paul Brett,Interim Director,"Interim Deputy Provost (Marine Institute) and Executive Director (Professional and Continuing Education), Memorial University",true,,,,https://www.mi.mun.ca/,press-release,https://gazette.mun.ca/campus-and-community/leadership-updates-2/,high
+SMSFP,,Valerie Paul,Director,"Director, Smithsonian Marine Station at Fort Pierce",true,,,,https://naturalhistory.si.edu/research/smithsonian-marine-station/staff,facility-webpage,https://naturalhistory.si.edu/research/smithsonian-marine-station,high
+UVI-CMES,,Tyler Smith,Interim Director,"Interim Director, Center for Marine and Environmental Studies, University of the Virgin Islands",true,,,,https://www.uvi.edu/research/center-for-marine-environmental-studies/,press-release,https://www.uvi.edu/news/2026/26_015_noaa_visits_uvi_center_for_marine_environmental_studies.html,high
+#
+# Latin American / Caribbean marine institutes
+IMARPE,,Jorge Manuel Paz Acosta,Executive President,"Executive President (e), Instituto del Mar del Perú",true,,,,https://www.gob.pe/imarpe,facility-webpage,https://www.transparencia.gob.pe/enlaces/pte_transparencia_enlaces.aspx?id_entidad=103,high
+INVEMAR,,Francisco Armando Arias Isaza,Director General,"Director General, INVEMAR; President of POGO 2024-2026",true,,,,https://www.invemar.org.co/,facility-webpage,https://portal.invemar.org.co/test/-/asset_publisher/9Bj14Jg23vnS/content/director-general-de-invemar-nuevo-presidente-del-partnership-of-observation-of-the-global-ocean-pogo,high
+UPRM-DMS,,Ernesto Otero,Director,"Director, UPR-Mayagüez Department of Marine Sciences",true,,,,https://www.uprm.edu/cima/faculty/,facility-webpage,https://www.uprm.edu/cima/,medium
+#
+# Other institutions
+GRC,,Troy A. Dexter,Executive Director,"Executive Director, Gerace Research Centre",true,,,,https://geraceresearchcentre.com/,facility-webpage,https://geraceresearchcentre.com/,high
+WFF,,David Pierce,Director,"Director, NASA Wallops Flight Facility",true,,,,https://www.nasa.gov/wallops,facility-webpage,https://www.nasa.gov/wallops,high
+BML,,Suzanne Olyarnik,Reserve Director,"Director, Bodega Marine Reserve",false,,,,https://marinescience.ucdavis.edu/bml/about,facility-webpage,https://marinescience.ucdavis.edu/bml/about,high
+ERDC-CHL,,Ty V. Wamsley,Director,"Director, USACE ERDC Coastal and Hydraulics Laboratory",true,,,,https://www.erdc.usace.army.mil/Locations/CHL/Leadership/,facility-webpage,https://www.erdc.usace.army.mil/About/Leadership/Bio-Article-View/Article/1756561/dr-ty-v-wamsley-ses/,medium
