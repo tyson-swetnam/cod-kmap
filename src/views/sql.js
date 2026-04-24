@@ -121,6 +121,38 @@ GROUP  BY fu.name, fu.type
 ORDER  BY facilities DESC, funder
 LIMIT  20;`,
   },
+  {
+    id: 'funding-by-year',
+    title: 'Facility funding by year',
+    description:
+      'Nominal USD per facility per fiscal year, pulled from the time-series ' +
+      'funding_events table. Only facilities with at least one dollar amount ' +
+      'recorded show up; empty cells mean we haven\u2019t ingested that year yet.',
+    sql: `-- Facility × fiscal_year totals (nominal USD)
+SELECT facility,
+       fiscal_year,
+       total_usd_nominal,
+       n_awards,
+       funders
+FROM   v_facility_funding_by_year
+ORDER  BY facility, fiscal_year;`,
+  },
+  {
+    id: 'funder-year-rollup',
+    title: 'Funder totals by year',
+    description:
+      'How much each funder allocated across the tracked facilities, per fiscal ' +
+      'year. Answers "how much NSF money flowed through this dataset in 2021?"',
+    sql: `-- Funder × fiscal_year rollup
+SELECT funder,
+       funder_type,
+       fiscal_year,
+       total_usd_nominal,
+       n_awards,
+       n_facilities
+FROM   v_funder_funding_by_year
+ORDER  BY fiscal_year DESC, total_usd_nominal DESC;`,
+  },
 ];
 
 // ── State ───────────────────────────────────────────────────────────

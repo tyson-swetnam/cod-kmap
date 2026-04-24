@@ -63,7 +63,7 @@ export async function initDB() {
 
   const tables = [
     'facilities', 'facility_types', 'locations',
-    'funders', 'funding_links',
+    'funders', 'funding_links', 'funding_events',
     'research_areas', 'area_links', 'networks', 'network_membership',
     // Region-side (polygons as first-class rows + spatial containment edges).
     'regions', 'region_area_links', 'facility_regions',
