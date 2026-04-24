@@ -128,14 +128,29 @@ def upsert_publication(conn, work: dict) -> str | None:
     pub_id = (oa.split("/")[-1] if oa else (doi or ""))
     if not pub_id:
         return None
-    # Older DuckDB builds (0.9.x) segfault on GREATEST(...) inside an
-    # ON CONFLICT DO UPDATE clause and are picky about CURRENT_DATE as a
-    # bare identifier. Portable path: try a SELECT first, then branch
-    # between INSERT and UPDATE. Works on every DuckDB ≥ 0.9.
-    existing = conn.execute(
-        "SELECT cited_by_count FROM publications WHERE publication_id = ?",
-        [pub_id],
-    ).fetchone()
+    # Look up an existing row by *either* publication_id OR doi. OpenAlex
+    # regularly assigns two distinct Work ids to the same DOI (e.g. a
+    # preprint and its peer-reviewed version, or two database snapshots
+    # of the same paper). We use the first row we find and reuse its
+    # publication_id for the authorship link so the second insert
+    # doesn't trip publications.doi UNIQUE and crash the whole author's
+    # enrichment run.
+    if doi:
+        hit = conn.execute(
+            "SELECT publication_id, cited_by_count "
+            "FROM publications WHERE publication_id = ? OR doi = ? LIMIT 1",
+            [pub_id, doi],
+        ).fetchone()
+    else:
+        hit = conn.execute(
+            "SELECT publication_id, cited_by_count "
+            "FROM publications WHERE publication_id = ? LIMIT 1",
+            [pub_id],
+        ).fetchone()
+    if hit and hit[0] != pub_id:
+        # Existing row found via DOI; reuse its id for authorship.
+        return hit[0]
+    existing = (hit[1],) if hit else None
     title    = work.get("title")
     year     = work.get("publication_year")
     pub_type = work.get("type")

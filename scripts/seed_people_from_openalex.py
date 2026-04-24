@@ -121,6 +121,25 @@ def normalise_url(u: str | None) -> str | None:
     return u.rstrip("/")
 
 
+def _root_domain(url: str) -> str | None:
+    """Return the 'apex' domain of a URL, stripping subdomains above the
+    last two labels for common TLDs. Examples::
+
+        https://sbclter.msi.ucsb.edu/…   -> ucsb.edu
+        https://pie-lter.mbl.edu/        -> mbl.edu
+        https://hmsc.oregonstate.edu     -> oregonstate.edu
+        https://mote.org                 -> mote.org
+    """
+    if not url:
+        return None
+    m = re.sub(r"^https?://", "", url.strip().lower())
+    m = m.split("/")[0]          # drop path
+    parts = m.split(".")
+    if len(parts) < 2:
+        return m
+    return ".".join(parts[-2:])
+
+
 def resolve_institution(sess: requests.Session, facility: dict,
                         overrides: dict[str, str]) -> str | None:
     """Return an OpenAlex institution id like 'I123…' or None."""
@@ -134,7 +153,7 @@ def resolve_institution(sess: requests.Session, facility: dict,
         if key and key in overrides:
             return overrides[key]
 
-    # 2. URL filter — OpenAlex indexes homepage_url
+    # 2. URL filter — OpenAlex indexes homepage_url as the facility's exact URL
     if url:
         try:
             j = polite_get(sess, "/institutions",
@@ -146,9 +165,25 @@ def resolve_institution(sess: requests.Session, facility: dict,
         except requests.HTTPError:
             pass
 
-    # 3. Name search
+    # 3. Apex-domain search — many LTER sites, NERRs and small programs run
+    # on a subdomain of their host university (e.g. `sbclter.msi.ucsb.edu`
+    # lives under `ucsb.edu`). Searching OpenAlex for the apex domain
+    # often lands on the correct parent institution.
+    root = _root_domain(url or "")
+    if root:
+        try:
+            j = polite_get(sess, "/institutions",
+                           search=root, per_page=3)
+            for hit in j.get("results", []):
+                hu = (hit.get("homepage_url") or "").lower()
+                if root in hu:
+                    return hit["id"].split("/")[-1]
+        except requests.HTTPError:
+            pass
+
+    # 4. Name search with the relaxed fuzzy matcher
     try:
-        j = polite_get(sess, "/institutions", search=name, per_page=3)
+        j = polite_get(sess, "/institutions", search=name, per_page=5)
         for hit in j.get("results", []):
             dn = (hit.get("display_name") or "").lower()
             if _name_matches(dn, name.lower()):
@@ -160,17 +195,39 @@ def resolve_institution(sess: requests.Session, facility: dict,
 
 
 def _name_matches(candidate: str, target: str) -> bool:
-    """Loose-enough matcher: require 60% word overlap ignoring stopwords."""
-    stop = {"the", "of", "for", "at", "and", "school", "institute", "national",
-            "us", "u.s.", "usa", "laboratory", "laboratories", "centers",
-            "center", "program", "programs"}
+    """Relaxed token-overlap matcher. Strips a lot of noise words that
+    common marine/coastal facility names carry (institute, laboratory,
+    estuarine, reserve, …) and accepts 50% overlap on the remaining
+    distinctive tokens. Lower than 0.5 risks cross-matching unrelated
+    sites (a "Marine Laboratory" vs another "Marine Laboratory")."""
+    stop = {
+        "the", "of", "for", "at", "and", "on", "in", "to",
+        "school", "institute", "institutes", "institution", "institutions",
+        "laboratory", "laboratories", "lab", "labs",
+        "center", "centers", "centre", "centres",
+        "program", "programs", "programme",
+        "national", "regional", "state",
+        "us", "usa", "united", "states",
+        "coastal", "marine", "ocean", "oceanic", "oceanography",
+        "research", "science", "sciences", "scientific",
+        "department", "office",
+        "estuary", "estuarine", "reserve", "reserves",
+        "sanctuary", "sanctuaries", "monument", "monuments",
+        "partnership", "partnerships",
+        "network", "networks", "consortium",
+        "association", "associations", "system", "systems",
+    }
     def tokenize(s: str) -> set[str]:
-        return {w for w in re.findall(r"\w+", s.lower()) if w not in stop and len(w) > 2}
+        return {w for w in re.findall(r"\w+", s.lower())
+                if w not in stop and len(w) > 2}
     a, b = tokenize(candidate), tokenize(target)
     if not a or not b:
         return False
-    overlap = len(a & b) / max(len(a), len(b))
-    return overlap >= 0.6
+    inter = a & b
+    if not inter:
+        return False
+    overlap = len(inter) / min(len(a), len(b))
+    return overlap >= 0.5
 
 
 # ── Top authors pull ───────────────────────────────────────────────
