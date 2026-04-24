@@ -16,7 +16,7 @@
 // are structural (region → network, area taxonomy) don't need the
 // facility join — they're built directly from the link tables.
 
-import { getConn } from '../db.js';
+import { getConn, whenReady } from '../db.js';
 
 let _container = null;
 let _graphData = null;
@@ -52,6 +52,11 @@ function loadD3() {
 
 // ── Data assembly ───────────────────────────────────────────────────
 async function buildGraphFromDuckDB() {
+  // Wait until every parquet view is registered. Without this, clicking
+  // the Network tab during the initial bootstrap window hits a partially
+  // initialised connection where some tables (e.g. `networks`) don't
+  // yet exist, and the first query fails with a Catalog Error.
+  await whenReady();
   const conn = getConn();
   if (!conn) throw new Error('DuckDB connection not ready');
 
