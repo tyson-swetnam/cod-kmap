@@ -174,3 +174,31 @@ WHCMSC,,Brita J. Jessen,Director,"Center Director, USGS Woods Hole Coastal and M
 ,Elkhorn Slough NERR,Kerstin Wasson,Research Coordinator,"Research Coordinator, Elkhorn Slough NERR; Adjunct Faculty UC Santa Cruz",false,,,,https://wasson.eeb.ucsc.edu/people/kerstin-wasson/,facility-webpage,https://news.ucsc.edu/2018/05/kerstin-wasson-award.html,high
 ,Kachemak Bay NERR,Katherine Schake,Reserve Manager,"Reserve Manager, Kachemak Bay NERR (UAA Alaska Center for Conservation Science) since 2023",true,,,,https://kachemakbayreserve.org/about/kachemak-bay-reserve/,facility-webpage,https://www.homernews.com/news/proposed-funding-cuts-threaten-research-reserve/,high
 ,Rookery Bay NERR,Keith Laakkonen,Director,"Director, Rookery Bay Research Reserve (Florida DEP); Past President NERRA",true,,,,https://rookerybay.org/who-we-are/staff-directory/,facility-webpage,https://rookerybay.org/rookery-bay-news/rookery-bays-keith-laakkonen-selected-as-new-president-of-national-reserve-association/,high
+#
+# Canadian DFO stations + international
+,St. Andrews Biological,Thomas W. Sephton,Director,"Director, St. Andrews Biological Station (DFO Maritimes Region)",true,,,,https://www.mar.dfo-mpo.gc.ca/en/st-andrews-biological-station,facility-webpage,https://www.mar.dfo-mpo.gc.ca/en/st-andrews-biological-station,high
+IFOP,,Gonzalo Pereira Puchy,Executive Director,"Director Ejecutivo, Instituto de Fomento Pesquero (IFOP Chile)",true,,,,https://www.ifop.cl/en/quienes-somos/nuestra-organizacion/,facility-webpage,https://www.canal2linares.cl/2026/03/ifop-y-el-instituto-del-mar-de-flandes.html,high
+#
+# NOAA program offices (continued)
+NDBC,,William Burnett,Director,"Director, NOAA National Data Buoy Center (since Jan 2021)",true,,,,https://www.ndbc.noaa.gov/director.shtml,facility-webpage,https://www.weather.gov/news/ndbc-burnett-012121,high
+CO-OPS,,Marian Westley,Director,"Director, NOAA Center for Operational Oceanographic Products and Services",true,,,,https://tidesandcurrents.noaa.gov/director-coops.html,facility-webpage,https://tidesandcurrents.noaa.gov/director-coops.html,high
+OCM,,Jeffrey Payne,Director,"Senior Executive Service Director, NOAA Office for Coastal Management",true,,,,https://coast.noaa.gov/about/director/,facility-webpage,https://coast.noaa.gov/about/director/,high
+#
+# Research institutions + foundations
+ECOSUR,,Antonio Saldívar Moreno,Director General,"Director General, El Colegio de la Frontera Sur (term 2023-2026)",true,,,,https://www.ecosur.mx/organigrama/,press-release,https://www.ecosur.mx/asume-antonio-saldivar-moreno-la-direccion-general-del-colegio-de-la-frontera-sur/,high
+STRI,,Joshua Tewksbury,Director,"Director, Smithsonian Tropical Research Institute",true,,,,https://stri.si.edu/about-us,facility-webpage,https://stri.si.edu/story/stri-special-events-march-2026,high
+Packard,,Nancy Lindborg,President & CEO,"President & CEO, The David and Lucile Packard Foundation (since Aug 2020)",true,,,,https://www.packard.org/about/our-people/,press-release,https://www.alliancemagazine.org/blog/packard-foundation-announce-nancy-lindborg-as-president-and-ceo/,high
+Moore,,Aileen S. Lee,President,"President, Gordon and Betty Moore Foundation (effective Jan 1 2026)",true,,,,https://www.moore.org/people,press-release,https://www.businesswire.com/news/home/20251209300260/en/Aileen-S-Lee-Named-President-of-the-Gordon-and-Betty-Moore-Foundation,high
+MBL,,Nipam Patel,Director,"Director, Marine Biological Laboratory (since 2018)",true,,,,https://www.mbl.edu/about/leadership/nipam-patel-director,facility-webpage,https://www.mbl.edu/about/leadership/nipam-patel-director,high
+#
+# Marine Sanctuaries (more)
+,Gray's Reef Marine Sanctuary,Stan Rogers,Superintendent,"Superintendent, Gray's Reef National Marine Sanctuary (since 2019)",true,,,,https://graysreef.noaa.gov/about/staff.html,facility-webpage,https://graysreef.noaa.gov/about/staff.html,high
+#
+# Major nonprofits / aquariums / research labs
+,Surfrider,Chad Nelsen,CEO,"CEO, Surfrider Foundation (since 2014)",true,,,,https://www.surfrider.org/our-team/staff/chad-nelsen,facility-webpage,https://www.surfrider.org/our-team/staff/chad-nelsen,high
+,The Nature Conservancy,Lizzie McLeod,Global Ocean Director,"Global Ocean Director, The Nature Conservancy",true,,,,https://www.nature.org/en-us/about-us/who-we-are/our-people/lizzie-mcleod/,facility-webpage,https://www.nature.org/en-us/about-us/who-we-are/our-people/lizzie-mcleod/,high
+,Environmental Defense Fund,Eric Schwaab,Senior VP,"Senior Vice President, Oceans, Environmental Defense Fund",true,,,,https://www.edf.org/people/sustainable-fishing-experts,facility-webpage,https://www.seafoodsource.com/news/premium/environmental-defense-fund-picks-eric-schwaab-to-lead-oceans-program,high
+ONC,,Kate Moran,President & CEO,"President & CEO, Ocean Networks Canada (UVic, since 2012); Officer of the Order of Canada",true,,,,https://www.oceannetworks.ca/about-onc/our-people/leadership/,facility-webpage,https://www.oceannetworks.ca/news-and-stories/stories/onc-president-and-ceo-appointed-as-officer-of-the-order-of-canada/,high
+NEAq,,Vikki N. Spruill,President & CEO,"President & CEO, New England Aquarium",true,,,,https://www.neaq.org/about-us/leadership/,facility-webpage,https://www.neaq.org/person/vikki-n-spruill/,high
+,Bigelow Laboratory for Ocean Sciences,Deborah Bronk,President & CEO,"President & CEO, Bigelow Laboratory for Ocean Sciences (since Feb 2018)",true,,,,https://www.bigelow.org/about/people/,facility-webpage,https://www.bigelow.org/about/governance/,high
+DISL,,John Valentine,Executive Director,"Executive Director, Dauphin Island Sea Lab (since Jun 2011)",true,,,,https://www.disl.edu/who-we-are/,facility-webpage,https://www.disl.edu/about/,high
