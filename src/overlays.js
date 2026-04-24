@@ -235,15 +235,42 @@ export function activeOverlays() {
 function overlayPopup(id, p) {
   const meta = _manifest[id] || {};
   const rows = [];
-  if (p.name) rows.push(`<div class="popup-name">${esc(p.name)}</div>`);
+
+  // Title line: use the full name, turn it into a link if we have a URL.
+  if (p.name) {
+    const inner = p.url
+      ? `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.name)}</a>`
+      : esc(p.name);
+    const acr = p.acronym ? ` <span class="popup-acr">(${esc(p.acronym)})</span>` : '';
+    rows.push(`<div class="popup-name">${inner}${acr}</div>`);
+  }
+
+  // Category badge (color + network label) — unchanged.
   rows.push(`<div class="popup-meta"><span class="type-badge" style="background:${meta.color}">${esc(meta.label || id)}</span></div>`);
-  if (p.year) rows.push(`<div class="popup-row"><em>Designated:</em> ${esc(p.year)}</div>`);
-  if (p.epa_region) rows.push(`<div class="popup-row"><em>EPA Region:</em> ${esc(p.epa_region)}</div>`);
-  if (p.area_sqmi) rows.push(`<div class="popup-row"><em>Area:</em> ${esc(Number(p.area_sqmi).toLocaleString())} sq mi</div>`);
-  if (p.state) rows.push(`<div class="popup-row"><em>State:</em> ${esc(p.state)}</div>`);
-  if (p.management) rows.push(`<div class="popup-row"><em>Management:</em> ${esc(p.management)}</div>`);
-  if (p.protection_level) rows.push(`<div class="popup-row"><em>Protection:</em> ${esc(p.protection_level)}</div>`);
-  if (p.domain_id) rows.push(`<div class="popup-row"><em>NEON domain:</em> ${esc(p.domain_id)}</div>`);
+
+  // Designation / proclamation year (support both field names so we don't
+  // break the legacy NEP `year` string).
+  const designated = p.year_designated ?? p.year;
+  if (designated) rows.push(`<div class="popup-row"><em>Designated:</em> ${esc(designated)}</div>`);
+
+  if (p.state)             rows.push(`<div class="popup-row"><em>State:</em> ${esc(p.state)}</div>`);
+  if (p.states)            rows.push(`<div class="popup-row"><em>States:</em> ${esc(p.states)}</div>`);
+  if (p.hq)                rows.push(`<div class="popup-row"><em>HQ:</em> ${esc(p.hq)}</div>`);
+  if (p.epa_region)        rows.push(`<div class="popup-row"><em>EPA Region:</em> ${esc(p.epa_region)}</div>`);
+  if (p.area_sqmi)         rows.push(`<div class="popup-row"><em>Area:</em> ${esc(Number(p.area_sqmi).toLocaleString())} sq mi</div>`);
+  if (p.manager)           rows.push(`<div class="popup-row"><em>Manager:</em> ${esc(p.manager)}</div>`);
+  if (p.management)        rows.push(`<div class="popup-row"><em>Management:</em> ${esc(p.management)}</div>`);
+  if (p.protection_level)  rows.push(`<div class="popup-row"><em>Protection:</em> ${esc(p.protection_level)}</div>`);
+  if (p.domain_id)         rows.push(`<div class="popup-row"><em>NEON domain:</em> D${String(p.domain_id).padStart(2, '0')}</div>`);
+
+  if (p.description) {
+    rows.push(`<div class="popup-row popup-desc">${esc(p.description)}</div>`);
+  }
+
+  if (p.url) {
+    rows.push(`<a class="popup-source" href="${esc(p.url)}" target="_blank" rel="noopener">Visit website</a>`);
+  }
+
   return `<div class="popup">${rows.join('')}</div>`;
 }
 
