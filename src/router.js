@@ -19,7 +19,8 @@ function navigate(path) {
   });
 
   // Hide/show sidebar for views that don't need it
-  const noSidebar = (path === '/docs' || path === '/stats' || path === '/network');
+  const noSidebar = (path === '/docs' || path === '/stats'
+                  || path === '/network' || path === '/sql');
   document.body.classList.toggle('no-sidebar', noSidebar);
 
   // Call route handler

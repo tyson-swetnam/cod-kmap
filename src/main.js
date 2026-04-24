@@ -14,6 +14,7 @@ import { initListView, renderList } from './views/list.js';
 import { initStatsView, renderStats } from './views/stats.js';
 import { initDocsView } from './views/docs.js';
 import { initNetworkView, renderNetworkView } from './views/network.js';
+import { initSqlView, renderSqlView } from './views/sql.js';
 import { initRouter, currentPath } from './router.js';
 
 const state = {
@@ -53,6 +54,7 @@ registerLegendOverlayProvider(activeOverlays);
 initListView(document.getElementById('browse'));
 initStatsView(document.getElementById('stats'));
 initNetworkView(document.getElementById('network'));
+initSqlView(document.getElementById('sql'));
 
 // ── Debounced search + clear button ────────────────────────────────
 const qEl = document.getElementById('q');
@@ -193,6 +195,7 @@ const views = {
   '/':        document.getElementById('view-map'),
   '/browse':  document.getElementById('view-browse'),
   '/network': document.getElementById('view-network'),
+  '/sql':     document.getElementById('view-sql'),
   '/stats':   document.getElementById('view-stats'),
   '/docs':    document.getElementById('view-docs'),
 };
@@ -222,6 +225,12 @@ initRouter({
     // Network view uses DuckDB directly; kick the render (it's idempotent
     // and caches the graph so subsequent visits are fast).
     renderNetworkView();
+  },
+  '/sql': () => {
+    showView('/sql');
+    document.body.classList.add('no-sidebar');
+    setDrawer(false);
+    renderSqlView();
   },
   '/stats': () => {
     showView('/stats');

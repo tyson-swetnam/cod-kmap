@@ -39,9 +39,10 @@ const KIND_LABELS = {
   region:   'Region (overlay)',
   funder:   'Funder',
 };
-// Default view: the three top-level category layers (concise & readable).
-// Regions and funders add ~150 and ~70 extra nodes — opt-in via toggle.
-const DEFAULT_KINDS = new Set(['network', 'area', 'type']);
+// Default view: just networks + research areas. Keeps first paint
+// fast and readable (~65 nodes); users can toggle facility types,
+// regions (~150), and funders (~70) back in via the legend.
+const DEFAULT_KINDS = new Set(['network', 'area']);
 
 // ── d3 loader ───────────────────────────────────────────────────────
 function loadD3() {
