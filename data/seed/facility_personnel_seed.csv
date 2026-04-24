@@ -51,3 +51,17 @@ Mote,,Michael P. Crosby,President & CEO,President & CEO of Mote Marine Laborator
 ,Beaufort Lagoon LTER,James McClelland,Co-PI,Co-Principal Investigator,true,,,,https://ble.lternet.edu/people.html,facility-webpage,https://ble.lternet.edu/about.html,high
 ,Northern Gulf of Alaska LTER,Russ Hopcroft,Lead PI,Lead Principal Investigator (University of Alaska Fairbanks),true,,,,https://nga.lternet.edu/about-us/personnel/,facility-webpage,https://nga.lternet.edu/about-us/personnel/,high
 ,Northern Gulf of Alaska LTER,Seth Danielson,Co-PI,Co-Principal Investigator (University of Alaska Fairbanks),true,,,,https://nga.lternet.edu/about-us/personnel/,facility-webpage,https://nga.lternet.edu/about-us/personnel/,high
+#
+# === Second pass (2026-04-24): NOAA Fisheries Science Centers + other high-value facilities ===
+#
+# NOAA Fisheries Science Centers — Directors / Deputies where confirmable
+AFSC,,Robert Foy,Director,"Science and Research Director, Alaska Fisheries Science Center",true,,,,https://www.fisheries.noaa.gov/about/alaska-fisheries-science-center,press-release,https://www.fisheries.noaa.gov/feature-story/noaa-appoints-dr-robert-foy-new-alaska-fisheries-science-center-director,high
+NWFSC,,Jeremy Rusin,Director,"Science Director, Northwest Fisheries Science Center",true,,,,https://www.nwfsc.noaa.gov/about/director.cfm,facility-webpage,https://www.nwfsc.noaa.gov/about/directors_bio.cfm,high
+NEFSC,,Nicole Cabana,Deputy Director,"Deputy Director, Northeast Fisheries Science Center",true,,,,https://www.fisheries.noaa.gov/contact/contact-information-northeast-fisheries-science-center,facility-webpage,https://www.fisheries.noaa.gov/contact/contact-information-northeast-fisheries-science-center,medium
+SWFSC,,John Crofts,Deputy Director,"Deputy Director, Southwest Fisheries Science Center",true,,,,https://www.fisheries.noaa.gov/about/southwest-fisheries-science-center,facility-webpage,https://www.fisheries.noaa.gov/about/southwest-fisheries-science-center,medium
+PIFSC,,Frank Parrish,Division Director,"Ecosystem Sciences Division Director, PIFSC",false,,,,https://origin-apps-pifsc.fisheries.noaa.gov/organization_chart.php,facility-webpage,https://origin-apps-pifsc.fisheries.noaa.gov/organization_chart.php,medium
+PIFSC,,Christofer Boggs,Division Director,"Fisheries Research and Monitoring Division Director, PIFSC",false,,,,https://origin-apps-pifsc.fisheries.noaa.gov/organization_chart.php,facility-webpage,https://origin-apps-pifsc.fisheries.noaa.gov/organization_chart.php,medium
+#
+# Other major facilities
+HIMB,,Megan Donahue,Director,Director of the Hawaiʻi Institute of Marine Biology,true,,,,https://www.himb.hawaii.edu/who-we-are/about/,facility-webpage,https://www.himb.hawaii.edu/who-we-are/about/,high
+OFI,,Erin Bertrand,Acting Director,"Acting Scientific Director and CEO, Dalhousie Ocean Frontier Institute",true,,,,https://www.ofi.ca/about/team,press-release,https://www.dal.ca/news/2026/03/13/canada-foundation-innovation-funding-announcement-infrastructure-systems-climate-ocean-digital-water.html,medium
