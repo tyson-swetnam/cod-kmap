@@ -440,11 +440,22 @@ async function render() {
     .style('pointer-events', 'none');
 
   // Neighbourhood highlight on hover.
+  //
+  // By this point d3.forceLink has already called its initialize pass
+  // and replaced every edge.source/target string ID with a reference
+  // to the matching node object. So we normalise both to .id before
+  // using them as Map keys (adj is keyed by string IDs). Before the
+  // normalisation this threw "Cannot read properties of undefined
+  // (reading 'add')" on the first iteration.
   const adj = new Map();
   for (const n of nodes) adj.set(n.id, new Set());
   for (const e of edges) {
-    adj.get(e.source).add(e.target);
-    adj.get(e.target).add(e.source);
+    const sid = typeof e.source === 'object' ? e.source.id : e.source;
+    const tid = typeof e.target === 'object' ? e.target.id : e.target;
+    const s = adj.get(sid);
+    const t = adj.get(tid);
+    if (s) s.add(tid);
+    if (t) t.add(sid);
   }
 
   function showTip(ev, d) {
