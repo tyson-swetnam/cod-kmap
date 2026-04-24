@@ -44,7 +44,18 @@ export async function initDB() {
     new Blob([`importScripts("${bundle.mainWorker}");`], { type: 'text/javascript' }),
   );
   const worker = new Worker(workerUrl);
-  const logger = new duckdb.ConsoleLogger();
+  // Silent logger — the default ConsoleLogger streams every query-plan,
+  // worker message, and parquet fetch event to the browser console at
+  // INFO level, which quickly buries real warnings under hundreds of
+  // {level:2, origin:4, …} entries per page load. Swap in a no-op logger
+  // that only surfaces ERROR level events if DuckDB ever reports one.
+  const logger = {
+    log: (entry) => {
+      if (entry && entry.level && entry.level <= 1) {
+        console.error('[duckdb]', entry);
+      }
+    },
+  };
   db = new duckdb.AsyncDuckDB(logger, worker);
   await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
   URL.revokeObjectURL(workerUrl);
