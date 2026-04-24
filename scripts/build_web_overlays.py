@@ -1,7 +1,7 @@
 """Bundle polygon overlay layers from network_synth_spatial_analysis/ into
 web-ready GeoJSON for the map UI.
 
-Outputs land in web/public/overlays/:
+Outputs land in public/overlays/:
 
   nerr-reserves.geojson       one polygon per NERR reserve (latest year file)
   marine-sanctuaries.geojson  every NMS boundary polygon
@@ -25,11 +25,12 @@ import json
 import re
 from pathlib import Path
 
-from shapely.geometry import shape, mapping
+from shapely.geometry import shape, mapping, Polygon, MultiPolygon, box
+from shapely.ops import transform as shp_transform
 
 ROOT = Path(__file__).resolve().parent.parent
 SPATIAL = ROOT / "network_synth_spatial_analysis"
-OUT = ROOT / "web" / "public" / "overlays"
+OUT = ROOT / "public" / "overlays"
 
 SOURCE = "COMPASS-DOE/synthesis-networks"
 
@@ -53,16 +54,110 @@ def _round_coords(obj, ndigits):
     return obj
 
 
-def simplify_geom(geom: dict, tolerance: float) -> dict:
-    """Simplify a GeoJSON geometry and return a coordinate-rounded version."""
+def _flatten_geometry(geom: dict) -> list[dict]:
+    """Return a list of Polygon/MultiPolygon geometries. Drops non-polygon
+    parts of GeometryCollection (e.g. stray LineStrings) and any nested
+    weirdness that confuses shapely."""
+    if geom is None:
+        return []
+    t = geom.get("type")
+    if t in ("Polygon", "MultiPolygon"):
+        return [geom]
+    if t == "GeometryCollection":
+        out = []
+        for sub in geom.get("geometries", []):
+            out.extend(_flatten_geometry(sub))
+        return out
+    return []  # LineString, Point, etc. are dropped for polygon overlays
+
+
+def _has_antimeridian_jump(ring: list) -> bool:
+    return any(abs(ring[i + 1][0] - ring[i][0]) > 180 for i in range(len(ring) - 1))
+
+
+def _needs_antimeridian_split(geom: dict) -> bool:
+    if geom["type"] == "Polygon":
+        return any(_has_antimeridian_jump(r) for r in geom["coordinates"])
+    if geom["type"] == "MultiPolygon":
+        for poly in geom["coordinates"]:
+            if any(_has_antimeridian_jump(r) for r in poly):
+                return True
+    return False
+
+
+def _split_polygon_at_antimeridian(coords: list) -> list[Polygon]:
+    """coords is a list of rings (first exterior, rest holes). The polygon
+    is assumed to cross the antimeridian — shift negative longitudes by +360
+    so the ring is contiguous in [0, 360], then clip at 180 and shift the
+    east piece back to [-180, 0]."""
+    shifted = [[[c[0] + 360 if c[0] < 0 else c[0], c[1]] for c in ring] for ring in coords]
     try:
-        g = shape(geom)
-        if not g.is_valid:
-            g = g.buffer(0)
-        g = g.simplify(tolerance, preserve_topology=True)
-        out = mapping(g)
+        p = Polygon(shifted[0], shifted[1:])
+        if not p.is_valid:
+            p = p.buffer(0)
     except Exception:
-        out = geom
+        return []
+
+    def geoms(g):
+        if g.is_empty:
+            return []
+        if isinstance(g, MultiPolygon):
+            return [gg for gg in g.geoms if not gg.is_empty and gg.area > 0]
+        if isinstance(g, Polygon):
+            return [g] if not g.is_empty and g.area > 0 else []
+        return []
+
+    out: list[Polygon] = []
+    west = p.intersection(box(0, -90, 180, 90))      # positive-lng side (Eastern hemi)
+    east = p.intersection(box(180, -90, 360, 90))    # shifted Western hemi
+    for g in geoms(west):
+        out.append(g)
+    for g in geoms(east):
+        out.append(shp_transform(lambda x, y, z=None: (x - 360, y), g))
+    return out
+
+
+def simplify_geom(geom: dict, tolerance: float) -> dict | None:
+    """Simplify a GeoJSON geometry, split any antimeridian crossing into two
+    polygons, and round coordinates. Returns a polygon or multipolygon geom,
+    or None if the input has no polygon content."""
+    pieces: list[Polygon] = []
+    for sub in _flatten_geometry(geom):
+        if _needs_antimeridian_split(sub):
+            # Work on raw coords (pre-simplify) so the split is exact, then
+            # simplify each piece.
+            if sub["type"] == "Polygon":
+                parts = _split_polygon_at_antimeridian(sub["coordinates"])
+            else:
+                parts = []
+                for poly in sub["coordinates"]:
+                    parts.extend(_split_polygon_at_antimeridian(poly))
+            for p in parts:
+                p = p.simplify(tolerance, preserve_topology=True)
+                if not p.is_empty and p.area > 0:
+                    pieces.append(p)
+        else:
+            try:
+                g = shape(sub)
+                if not g.is_valid:
+                    g = g.buffer(0)
+                g = g.simplify(tolerance, preserve_topology=True)
+            except Exception:
+                continue
+            if isinstance(g, Polygon):
+                if not g.is_empty and g.area > 0:
+                    pieces.append(g)
+            elif isinstance(g, MultiPolygon):
+                for gg in g.geoms:
+                    if not gg.is_empty and gg.area > 0:
+                        pieces.append(gg)
+
+    if not pieces:
+        return None
+    if len(pieces) == 1:
+        out = mapping(pieces[0])
+    else:
+        out = mapping(MultiPolygon(pieces))
     out["coordinates"] = _round_coords(out.get("coordinates"), PRECISION)
     return out
 
@@ -124,6 +219,17 @@ NERR_NAMES = {
 }
 
 
+def _emit(features: list[dict], properties: dict, raw_geom: dict, tolerance: float) -> None:
+    """Simplify + antimeridian-split + round, then append one feature if
+    there is polygon content left. Skips features whose geometry reduces to
+    nothing (e.g. a GeometryCollection of only a LineString)."""
+    geom = simplify_geom(raw_geom, tolerance)
+    if geom is None:
+        print(f"    skip '{properties.get('name')}': no polygon content after cleanup")
+        return
+    features.append({"type": "Feature", "properties": properties, "geometry": geom})
+
+
 def bundle_nerrs() -> None:
     features = []
     for path in latest_nerr_boundary_per_reserve():
@@ -137,11 +243,7 @@ def bundle_nerrs() -> None:
                 "network": "NERRS",
                 "source": SOURCE,
             }
-            features.append({
-                "type": "Feature",
-                "properties": props,
-                "geometry": simplify_geom(f["geometry"], SIMPLIFY_FINE),
-            })
+            _emit(features, props, f["geometry"], SIMPLIFY_FINE)
     write_fc(OUT / "nerr-reserves.geojson", features)
 
 
@@ -161,16 +263,13 @@ def bundle_sanctuaries() -> None:
                 p.get("SANCTUARY") or p.get("Sanctuary") or p.get("Name")
                 or p.get("AREA_NAME") or path.parent.name.upper()
             )
-            features.append({
-                "type": "Feature",
-                "properties": {
-                    "name": f"{name} National Marine Sanctuary" if "Sanctuary" not in str(name)
-                            and "NMS" not in str(name) else str(name),
-                    "network": "NMS",
-                    "source": SOURCE,
-                },
-                "geometry": simplify_geom(f["geometry"], SIMPLIFY_MEDIUM),
-            })
+            props = {
+                "name": f"{name} National Marine Sanctuary" if "Sanctuary" not in str(name)
+                        and "NMS" not in str(name) else str(name),
+                "network": "NMS",
+                "source": SOURCE,
+            }
+            _emit(features, props, f["geometry"], SIMPLIFY_MEDIUM)
     write_fc(OUT / "marine-sanctuaries.geojson", features)
 
 
@@ -183,16 +282,13 @@ def bundle_monuments() -> None:
     features = []
     for f in data["features"]:
         p = f["properties"]
-        features.append({
-            "type": "Feature",
-            "properties": {
-                "name": p.get("Site_Name", "Marine National Monument"),
-                "state": p.get("State"),
-                "network": "Marine-Monument",
-                "source": SOURCE,
-            },
-            "geometry": simplify_geom(f["geometry"], SIMPLIFY_COARSE),
-        })
+        props = {
+            "name": p.get("Site_Name", "Marine National Monument"),
+            "state": p.get("State"),
+            "network": "Marine-Monument",
+            "source": SOURCE,
+        }
+        _emit(features, props, f["geometry"], SIMPLIFY_COARSE)
     write_fc(OUT / "marine-monuments.geojson", features)
 
 
@@ -203,18 +299,15 @@ def bundle_nps_coastal() -> None:
     features = []
     for f in data["features"]:
         p = f["properties"]
-        features.append({
-            "type": "Feature",
-            "properties": {
-                "name": p.get("Site_Name") or "NPS Unit",
-                "state": p.get("State"),
-                "management": p.get("NS_Full"),
-                "protection_level": p.get("Prot_Lvl"),
-                "network": "NPS-Coastal",
-                "source": SOURCE,
-            },
-            "geometry": simplify_geom(f["geometry"], SIMPLIFY_MEDIUM),
-        })
+        props = {
+            "name": p.get("Site_Name") or "NPS Unit",
+            "state": p.get("State"),
+            "management": p.get("NS_Full"),
+            "protection_level": p.get("Prot_Lvl"),
+            "network": "NPS-Coastal",
+            "source": SOURCE,
+        }
+        _emit(features, props, f["geometry"], SIMPLIFY_MEDIUM)
     write_fc(OUT / "nps-coastal.geojson", features)
 
 
@@ -225,19 +318,16 @@ def bundle_nep() -> None:
     features = []
     for f in data["features"]:
         p = f["properties"]
-        features.append({
-            "type": "Feature",
-            "properties": {
-                "name": (p.get("NEP_NAME") or "").strip(),
-                "short": p.get("NEP_SHORT"),
-                "year": p.get("YEAR_DESIG"),
-                "epa_region": p.get("EPA_REGION"),
-                "area_sqmi": p.get("AREA_SQMI"),
-                "network": "NEP",
-                "source": SOURCE,
-            },
-            "geometry": simplify_geom(f["geometry"], SIMPLIFY_FINE),
-        })
+        props = {
+            "name": (p.get("NEP_NAME") or "").strip(),
+            "short": p.get("NEP_SHORT"),
+            "year": p.get("YEAR_DESIG"),
+            "epa_region": p.get("EPA_REGION"),
+            "area_sqmi": p.get("AREA_SQMI"),
+            "network": "NEP",
+            "source": SOURCE,
+        }
+        _emit(features, props, f["geometry"], SIMPLIFY_FINE)
     write_fc(OUT / "nep-programs.geojson", features)
 
 
@@ -248,16 +338,13 @@ def bundle_neon_domains() -> None:
     features = []
     for f in data["features"]:
         p = f["properties"]
-        features.append({
-            "type": "Feature",
-            "properties": {
-                "name": (p.get("DomainName") or "").strip(),
-                "domain_id": p.get("DomainID"),
-                "network": "NEON",
-                "source": SOURCE,
-            },
-            "geometry": simplify_geom(f["geometry"], SIMPLIFY_COARSE),
-        })
+        props = {
+            "name": (p.get("DomainName") or "").strip(),
+            "domain_id": p.get("DomainID"),
+            "network": "NEON",
+            "source": SOURCE,
+        }
+        _emit(features, props, f["geometry"], SIMPLIFY_COARSE)
     write_fc(OUT / "neon-domains.geojson", features)
 
 
@@ -268,16 +355,13 @@ def bundle_epa_regions() -> None:
     features = []
     for f in data["features"]:
         p = f["properties"]
-        features.append({
-            "type": "Feature",
-            "properties": {
-                "name": f"EPA Region {p.get('EPAREGION')}",
-                "region": p.get("EPAREGION"),
-                "network": "EPA-Region",
-                "source": SOURCE,
-            },
-            "geometry": simplify_geom(f["geometry"], SIMPLIFY_COARSE),
-        })
+        props = {
+            "name": f"EPA Region {p.get('EPAREGION')}",
+            "region": p.get("EPAREGION"),
+            "network": "EPA-Region",
+            "source": SOURCE,
+        }
+        _emit(features, props, f["geometry"], SIMPLIFY_COARSE)
     write_fc(OUT / "epa-regions.geojson", features)
 
 

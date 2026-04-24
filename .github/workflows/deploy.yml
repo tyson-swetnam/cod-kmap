@@ -20,19 +20,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # The site runs as plain static files — index.html uses an importmap to
-      # load maplibre-gl and @duckdb/duckdb-wasm from esm.sh at runtime, so
-      # there is no bundle step. Stage a site directory that mirrors what
-      # Vite would produce (public/ flattened to root, src/ kept as-is).
+      # The site runs as plain static files at the repo root — index.html
+      # uses an importmap to load maplibre-gl and @duckdb/duckdb-wasm from
+      # esm.sh at runtime, so there is no bundle step. Stage just the
+      # front-end assets so we don't ship the data pipeline / agent specs
+      # as part of the live site.
       - name: Stage static site
         run: |
           set -eu
           mkdir -p _site
-          cp -R web/public/. _site/
-          cp web/index.html _site/
-          cp -R web/src _site/src
-          echo "Staged files:"
-          find _site -maxdepth 2 -type f | sort
+          cp index.html _site/
+          cp -R src _site/src
+          cp -R public _site/public
 
       - uses: actions/upload-pages-artifact@v3
         with:

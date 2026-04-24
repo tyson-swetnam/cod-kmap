@@ -106,9 +106,31 @@ function whenStyleReady() {
   });
 }
 
+// The facility point/cluster layers are added in map.js's 'load' handler.
+// Wait until they actually exist before we reference them for z-ordering —
+// isStyleLoaded() can return true before user 'load' handlers have run.
+async function whenFacilityLayersReady() {
+  const want = ['clusters', 'cluster-count', 'unclustered-point', 'unclustered-point-hover'];
+  for (let i = 0; i < 50; i++) {
+    if (want.every((id) => _map.getLayer(id))) return;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+}
+
+// Force the facility layers to sit above any overlays. MapLibre's moveLayer
+// (with no beforeId) pushes a layer to the top of the stack — do this for
+// every point/cluster layer so the ordering is correct regardless of how the
+// overlay was inserted.
+function raiseFacilityLayers() {
+  for (const id of ['clusters', 'cluster-count', 'unclustered-point', 'unclustered-point-hover']) {
+    if (_map.getLayer(id)) _map.moveLayer(id);
+  }
+}
+
 async function ensureLoaded(id) {
   if (_loaded.has(id)) return;
   await whenStyleReady();
+  await whenFacilityLayersReady();
   const meta = _manifest[id];
   const url = `${DATA_BASE}overlays/${id}.geojson`;
   _map.addSource(`ov-${id}`, { type: 'geojson', data: url });
@@ -139,6 +161,10 @@ async function ensureLoaded(id) {
     },
   }, beforeLayer);
 
+  // Belt-and-braces: force the facility/cluster layers back to the top in
+  // case any ordering slipped.
+  raiseFacilityLayers();
+
   // Click handler for polygon popups
   _map.on('click', `ov-${id}-fill`, (e) => {
     const f = e.features?.[0];
@@ -159,6 +185,9 @@ async function showOverlay(id) {
   await ensureLoaded(id);
   _map.setLayoutProperty(`ov-${id}-fill`, 'visibility', 'visible');
   _map.setLayoutProperty(`ov-${id}-outline`, 'visibility', 'visible');
+  // Re-raise after any visibility flip — clicks can land while the map is
+  // still reconciling layer order.
+  raiseFacilityLayers();
   _active.add(id);
 }
 

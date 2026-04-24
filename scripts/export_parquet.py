@@ -2,8 +2,8 @@
 
 Produces:
   db/parquet/<table>.parquet
-  web/public/parquet/<table>.parquet  (symlinked copy for Vite bundling)
-  web/public/facilities.geojson       (lightweight first-paint fallback)
+  public/<table>.parquet            (copy that the static site serves)
+  public/facilities.geojson         (lightweight first-paint fallback)
 """
 
 from __future__ import annotations
@@ -17,8 +17,8 @@ import duckdb
 ROOT = Path(__file__).resolve().parent.parent
 DB_PATH = ROOT / "db" / "cod_kmap.duckdb"
 OUT_DB = ROOT / "db" / "parquet"
-OUT_WEB = ROOT / "web" / "public" / "parquet"
-GEOJSON_OUT = ROOT / "web" / "public" / "facilities.geojson"
+OUT_WEB = ROOT / "public" / "parquet"
+GEOJSON_OUT = ROOT / "public" / "facilities.geojson"
 
 TABLES = [
     "facilities",

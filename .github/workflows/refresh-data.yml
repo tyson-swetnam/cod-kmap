@@ -36,6 +36,6 @@ jobs:
             Review Parquet and GeoJSON diffs before merging.
           add-paths: |
             db/parquet/*.parquet
-            web/public/parquet/*.parquet
-            web/public/facilities.geojson
+            public/parquet/*.parquet
+            public/facilities.geojson
           labels: data-refresh

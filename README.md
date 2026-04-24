@@ -16,9 +16,9 @@ northern Caribbean, published as an interactive Leaflet map on GitHub Pages.
 | `data/raw/R*/` | Raw JSON produced by each research subagent (gitignored except `.gitkeep`). |
 | `data/raw/synthesis-networks/` | Verbatim import of the COMPASS-DOE/synthesis-networks dataset (MIT). |
 | `network_synth_spatial_analysis/` | GeoJSON point and polygon layers for the R10 ingest and map overlays (LTER, LTREB, MarineGEO, Sentinel, NERR, NEP, NMS, NPS, EPA, NEON, CCAP). |
-| `web/public/overlays/` | Simplified polygon overlays the map UI can toggle on demand (NERR reserves, NEP programs, Marine Sanctuaries, Marine Monuments, NPS coastal, NEON domains, EPA regions). |
+| `index.html`, `src/` | MapLibre GL + `@duckdb/duckdb-wasm` static site (ES modules + CDN importmap — no build step). |
+| `public/` | Static data the site fetches at runtime: `facilities.geojson`, Parquet tables under `parquet/`, vocab CSVs under `vocab/`, polygon overlays under `overlays/`. |
 | `db/` | Built `cod_kmap.duckdb` and Parquet exports (gitignored). |
-| `web/` | MapLibre GL + `@duckdb/duckdb-wasm` static site (ES modules + CDN importmap — no build step). |
 | `.github/workflows/` | GitHub Pages deploy + weekly data-refresh workflows. |
 
 ## Subagent pipeline
@@ -44,22 +44,23 @@ outputs, method, and known-landmark checks used by QA.
 # Python pipeline
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python scripts/ingest.py          # loads data/raw/R*/*.json into db/cod_kmap.duckdb
-python scripts/qa.py              # runs data-quality assertions
-python scripts/export_parquet.py  # writes db/parquet and web/public/parquet
+python scripts/ingest.py            # loads data/raw/R*/*.json into db/cod_kmap.duckdb
+python scripts/qa.py                # runs data-quality assertions
+python scripts/export_parquet.py    # writes db/parquet and public/parquet
+python scripts/build_web_overlays.py  # bundles polygon overlays into public/overlays
 
-# Web UI
-cd web && npm install && npm run dev
+# Web UI — no build needed. Serve the repo root with any static server:
+python -m http.server 5173
+# then open http://localhost:5173/
 ```
 
 ## Deployment
 
-Push to `main`; `.github/workflows/deploy.yml` stages `web/` (flattens
-`web/public/` into the site root, keeps `web/index.html` and `web/src/`) and
-publishes it to GitHub Pages. There is no Node build step — the site runs
-plain ES modules with a CDN importmap for MapLibre GL and DuckDB-Wasm.
-The weekly `refresh-data.yml` workflow re-runs the ingest pipeline and opens
-a PR with refreshed Parquet + GeoJSON artifacts.
+Push to `main`; `.github/workflows/deploy.yml` stages `index.html`, `src/`,
+and `public/` and publishes them to GitHub Pages. There is no Node build
+step — the site runs plain ES modules with a CDN importmap for MapLibre GL
+and DuckDB-Wasm. The weekly `refresh-data.yml` workflow re-runs the ingest
+pipeline and opens a PR with refreshed Parquet + GeoJSON artifacts.
 
 ## External datasets
 
