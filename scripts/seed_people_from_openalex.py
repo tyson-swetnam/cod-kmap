@@ -140,20 +140,35 @@ def _root_domain(url: str) -> str | None:
     return ".".join(parts[-2:])
 
 
-def resolve_institution(sess: requests.Session, facility: dict,
-                        overrides: dict[str, str]) -> str | None:
-    """Return an OpenAlex institution id like 'I123…' or None."""
+def resolve_institution_candidates(sess: requests.Session, facility: dict,
+                                   overrides: dict[str, str]) -> list[str]:
+    """Return a list of OpenAlex institution ids to try, highest priority
+    first. The main loop walks this list and picks the first that
+    yields at least one top_author — this is how we bypass OpenAlex
+    "stub" institution records (LTER sites, IOOS regional associations,
+    some small sub-labs) that exist in the catalogue but have no
+    indexed publications."""
     fid = facility["facility_id"]
     acr = facility.get("acronym") or ""
     name = facility["canonical_name"]
     url = facility.get("url")
+    out: list[str] = []
+    seen: set[str] = set()
 
-    # 1. manual override
+    def add(cid: str) -> None:
+        if cid and cid not in seen:
+            seen.add(cid)
+            out.append(cid)
+
+    # 1. manual override always wins — user took the time to set it
     for key in (acr, fid):
         if key and key in overrides:
-            return overrides[key]
+            add(overrides[key])
 
-    # 2. URL filter — OpenAlex indexes homepage_url as the facility's exact URL
+    # 2. URL filter — OpenAlex indexes the facility's exact homepage_url.
+    # Often a stub for sub-labs (e.g. sbclter.msi.ucsb.edu -> SBC LTER
+    # stub with 0 authors), so we keep it as a candidate but also
+    # record more fallbacks below.
     if url:
         try:
             j = polite_get(sess, "/institutions",
@@ -161,14 +176,12 @@ def resolve_institution(sess: requests.Session, facility: dict,
                            per_page=1)
             hits = j.get("results", [])
             if hits:
-                return hits[0]["id"].split("/")[-1]
+                add(hits[0]["id"].split("/")[-1])
         except requests.HTTPError:
             pass
 
-    # 3. Apex-domain search — many LTER sites, NERRs and small programs run
-    # on a subdomain of their host university (e.g. `sbclter.msi.ucsb.edu`
-    # lives under `ucsb.edu`). Searching OpenAlex for the apex domain
-    # often lands on the correct parent institution.
+    # 3. Apex-domain search — sub-labs on .edu subdomains roll up to
+    # the parent institution (sbclter.msi.ucsb.edu -> ucsb.edu -> UCSB).
     root = _root_domain(url or "")
     if root:
         try:
@@ -177,21 +190,28 @@ def resolve_institution(sess: requests.Session, facility: dict,
             for hit in j.get("results", []):
                 hu = (hit.get("homepage_url") or "").lower()
                 if root in hu:
-                    return hit["id"].split("/")[-1]
+                    add(hit["id"].split("/")[-1])
         except requests.HTTPError:
             pass
 
-    # 4. Name search with the relaxed fuzzy matcher
+    # 4. Name search with the relaxed fuzzy matcher.
     try:
         j = polite_get(sess, "/institutions", search=name, per_page=5)
         for hit in j.get("results", []):
             dn = (hit.get("display_name") or "").lower()
             if _name_matches(dn, name.lower()):
-                return hit["id"].split("/")[-1]
+                add(hit["id"].split("/")[-1])
     except requests.HTTPError:
         pass
 
-    return None
+    return out
+
+
+# Back-compat single-result wrapper.
+def resolve_institution(sess: requests.Session, facility: dict,
+                        overrides: dict[str, str]) -> str | None:
+    cands = resolve_institution_candidates(sess, facility, overrides)
+    return cands[0] if cands else None
 
 
 def _name_matches(candidate: str, target: str) -> bool:
@@ -396,44 +416,65 @@ def main() -> int:
             continue
 
         try:
-            inst = resolve_institution(sess, f, overrides)
+            cands = resolve_institution_candidates(sess, f, overrides)
         except Exception as e:
             print(f"  [{i}/{len(facilities)}] {f['canonical_name'][:46]:<46} "
                   f"RESOLVE-ERR: {e}")
             progress[fid] = {"status": "error", "err": str(e)[:200]}
             continue
 
-        if not inst:
+        if not cands:
             print(f"  [{i}/{len(facilities)}] {f['canonical_name'][:46]:<46} "
                   f"[no OpenAlex institution]")
             totals["unresolved"] += 1
             progress[fid] = {"status": "unresolved"}
             continue
 
-        totals["resolved"] += 1
-        try:
-            authors = top_authors(sess, inst, args.top_authors)
-        except Exception as e:
+        # Walk candidates; first one with at least one top author wins.
+        # This is how LTER sites / IOOS RIs / other OpenAlex "stub"
+        # institutions (catalogued but 0 authors) fall through to their
+        # host university instead of silently producing no rows.
+        chosen = None
+        authors: list[dict] = []
+        stub_skipped: list[str] = []
+        for inst in cands:
+            try:
+                cand_authors = top_authors(sess, inst, args.top_authors)
+            except Exception as e:
+                print(f"    [{inst}] AUTHORS-ERR: {e}")
+                continue
+            if cand_authors:
+                chosen = inst
+                authors = cand_authors
+                break
+            stub_skipped.append(inst)
+
+        if not chosen:
+            tail = f"  (tried {', '.join(cands)}; all 0 authors)" if cands else ""
             print(f"  [{i}/{len(facilities)}] {f['canonical_name'][:46]:<46} "
-                  f"[inst={inst}] AUTHORS-ERR: {e}")
-            progress[fid] = {"status": "error", "openalex_id": inst,
-                             "err": str(e)[:200]}
+                  f"[no authors at any candidate]{tail}")
+            totals["unresolved"] += 1
+            progress[fid] = {"status": "stub-only",
+                             "candidates": cands}
             continue
 
+        totals["resolved"] += 1
         n = 0
         for a in authors:
             if args.dry_run:
                 continue
             try:
                 pid = upsert_person(conn, a)
-                upsert_personnel(conn, pid, fid, a, inst)
+                upsert_personnel(conn, pid, fid, a, chosen)
                 n += 1
             except Exception as e:
                 print(f"    author write error for {a.get('display_name')}: {e}")
         totals["authors"] += n
+        note = f"  (skipped stubs: {','.join(stub_skipped)})" if stub_skipped else ""
         print(f"  [{i}/{len(facilities)}] {f['canonical_name'][:46]:<46} "
-              f"inst={inst}  authors={len(authors)}  wrote={n}")
-        progress[fid] = {"status": "done", "openalex_id": inst,
+              f"inst={chosen}  authors={len(authors)}  wrote={n}{note}")
+        progress[fid] = {"status": "done", "openalex_id": chosen,
+                         "stub_skipped": stub_skipped,
                          "authors_found": len(authors),
                          "authors_written": n}
         if i % 10 == 0:

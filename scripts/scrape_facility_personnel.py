@@ -243,7 +243,14 @@ def main() -> int:
         print(f"[error] db not found: {args.db}", file=sys.stderr)
         return 2
 
-    conn = duckdb.connect(str(args.db))
+    # read_only=True avoids taking the exclusive lock so the scraper
+    # can run alongside an in-flight enrichment or seed pass. If an
+    # older DuckDB still complains about the flag, fall back to the
+    # regular connect() after catching the error.
+    try:
+        conn = duckdb.connect(str(args.db), read_only=True)
+    except (TypeError, duckdb.Error):
+        conn = duckdb.connect(str(args.db))
     facilities = conn.execute("""
         SELECT f.facility_id, f.canonical_name, f.acronym, f.url,
                (SELECT COUNT(*) FROM facility_personnel fp
