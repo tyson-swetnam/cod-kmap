@@ -1,19 +1,32 @@
 // overlays.js — Map overlay layer manager.
 //
-// Loads web/public/overlays/manifest.json on startup and exposes:
+// Loads public/overlays/manifest.json on startup and exposes:
 //   - initOverlays(map, sidebarContainer, onChange)
-//       builds the sidebar section and wires fetch-on-demand toggles
+//       builds the sidebar section, wires fetch-on-demand toggles, and
+//       auto-enables the default-on overlays (everything except EPA /
+//       NEON context layers).
 //   - activeOverlays() → Array<{id, label, color}> for the legend control
 //
 // Overlays are fetched lazily the first time they are toggled on. Each
 // overlay registers a single GeoJSON source and two MapLibre layers (fill +
-// outline) and a label layer. Polygons sit under the clustered facility
-// points so the points stay on top.
+// outline). Polygons sit beneath the facility cluster/point layers so the
+// points stay clearly visible.
 
 import maplibregl from 'maplibre-gl';
 import { DATA_BASE } from './config.js';
 
 const MANIFEST_URL = `${DATA_BASE}overlays/manifest.json`;
+
+// Overlays that should NOT render on first paint. Context layers for the
+// US are less useful by default than the coastal + marine boundaries.
+const DEFAULT_OFF = new Set(['epa-regions', 'neon-domains']);
+
+const FACILITY_LAYERS = [
+  'clusters',
+  'cluster-count',
+  'unclustered-point',
+  'unclustered-point-hover',
+];
 
 let _map = null;
 let _manifest = {};
@@ -71,10 +84,11 @@ export async function initOverlays(map, container, onChange) {
     const label = CATEGORY_LABELS[cat] || cat;
     group.innerHTML = `<div class="overlay-group-label">${label}</div>`;
     for (const o of byCat[cat]) {
+      const defaultOn = !DEFAULT_OFF.has(o.id);
       const row = document.createElement('label');
       row.className = 'overlay-row';
       row.innerHTML = `
-        <input type="checkbox" data-overlay="${o.id}" />
+        <input type="checkbox" data-overlay="${o.id}"${defaultOn ? ' checked' : ''} />
         <span class="overlay-swatch" style="background:${o.color}"></span>
         <span class="overlay-label">${o.label}</span>
       `;
@@ -97,6 +111,13 @@ export async function initOverlays(map, container, onChange) {
     }
     _onChange();
   });
+
+  // Kick off the default-on overlays. showOverlay waits internally for the
+  // map style + facility layers to be ready, so these are safe to fire now.
+  const bootTargets = Object.keys(_manifest).filter((id) => !DEFAULT_OFF.has(id));
+  Promise.allSettled(bootTargets.map((id) => showOverlay(id)))
+    .then(() => _onChange())
+    .catch((e) => console.warn('overlays: default-on boot failed', e));
 }
 
 function whenStyleReady() {
@@ -106,23 +127,29 @@ function whenStyleReady() {
   });
 }
 
-// The facility point/cluster layers are added in map.js's 'load' handler.
-// Wait until they actually exist before we reference them for z-ordering —
-// isStyleLoaded() can return true before user 'load' handlers have run.
-async function whenFacilityLayersReady() {
-  const want = ['clusters', 'cluster-count', 'unclustered-point', 'unclustered-point-hover'];
-  for (let i = 0; i < 50; i++) {
-    if (want.every((id) => _map.getLayer(id))) return;
-    await new Promise((r) => setTimeout(r, 50));
-  }
+// Wait until every facility/cluster layer actually exists. isStyleLoaded()
+// and the 'load' event can fire before map.js's user 'load' handler runs,
+// so poll styledata and also fall back to a timed check.
+function whenFacilityLayersReady() {
+  const ready = () => FACILITY_LAYERS.every((id) => _map.getLayer(id));
+  if (ready()) return Promise.resolve();
+  return new Promise((resolve) => {
+    let poll;
+    const done = () => {
+      if (!ready()) return;
+      _map.off('styledata', done);
+      if (poll) clearInterval(poll);
+      resolve();
+    };
+    _map.on('styledata', done);
+    poll = setInterval(done, 100);
+  });
 }
 
 // Force the facility layers to sit above any overlays. MapLibre's moveLayer
-// (with no beforeId) pushes a layer to the top of the stack — do this for
-// every point/cluster layer so the ordering is correct regardless of how the
-// overlay was inserted.
+// (with no beforeId) pushes a layer to the top of the stack.
 function raiseFacilityLayers() {
-  for (const id of ['clusters', 'cluster-count', 'unclustered-point', 'unclustered-point-hover']) {
+  for (const id of FACILITY_LAYERS) {
     if (_map.getLayer(id)) _map.moveLayer(id);
   }
 }
@@ -135,8 +162,8 @@ async function ensureLoaded(id) {
   const url = `${DATA_BASE}overlays/${id}.geojson`;
   _map.addSource(`ov-${id}`, { type: 'geojson', data: url });
 
-  // Insert beneath the facility cluster layers so points stay on top.
-  const beforeLayer = _map.getLayer('clusters') ? 'clusters' : undefined;
+  // Insert beneath the first facility layer so points stay on top.
+  const beforeLayer = FACILITY_LAYERS.find((id) => _map.getLayer(id));
 
   _map.addLayer({
     id: `ov-${id}-fill`,
@@ -145,7 +172,7 @@ async function ensureLoaded(id) {
     layout: { visibility: 'none' },
     paint: {
       'fill-color': meta.color,
-      'fill-opacity': 0.18,
+      'fill-opacity': 0.16,
     },
   }, beforeLayer);
 
@@ -161,11 +188,10 @@ async function ensureLoaded(id) {
     },
   }, beforeLayer);
 
-  // Belt-and-braces: force the facility/cluster layers back to the top in
-  // case any ordering slipped.
+  // Belt-and-braces: force every facility/cluster layer back to the top in
+  // case an insertion race left one beneath an overlay.
   raiseFacilityLayers();
 
-  // Click handler for polygon popups
   _map.on('click', `ov-${id}-fill`, (e) => {
     const f = e.features?.[0];
     if (!f) return;
@@ -185,8 +211,6 @@ async function showOverlay(id) {
   await ensureLoaded(id);
   _map.setLayoutProperty(`ov-${id}-fill`, 'visibility', 'visible');
   _map.setLayoutProperty(`ov-${id}-outline`, 'visibility', 'visible');
-  // Re-raise after any visibility flip — clicks can land while the map is
-  // still reconciling layer order.
   raiseFacilityLayers();
   _active.add(id);
 }
@@ -195,6 +219,7 @@ function hideOverlay(id) {
   if (!_loaded.has(id)) { _active.delete(id); return; }
   _map.setLayoutProperty(`ov-${id}-fill`, 'visibility', 'none');
   _map.setLayoutProperty(`ov-${id}-outline`, 'visibility', 'none');
+  raiseFacilityLayers();
   _active.delete(id);
 }
 
