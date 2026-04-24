@@ -128,28 +128,47 @@ def upsert_publication(conn, work: dict) -> str | None:
     pub_id = (oa.split("/")[-1] if oa else (doi or ""))
     if not pub_id:
         return None
-    conn.execute(
-        """
-        INSERT INTO publications (
-            publication_id, doi, title, pub_year, pub_type,
-            journal, cited_by_count, openalex_id, url, source, retrieved_at
+    # Older DuckDB builds (0.9.x) segfault on GREATEST(...) inside an
+    # ON CONFLICT DO UPDATE clause and are picky about CURRENT_DATE as a
+    # bare identifier. Portable path: try a SELECT first, then branch
+    # between INSERT and UPDATE. Works on every DuckDB ≥ 0.9.
+    existing = conn.execute(
+        "SELECT cited_by_count FROM publications WHERE publication_id = ?",
+        [pub_id],
+    ).fetchone()
+    title    = work.get("title")
+    year     = work.get("publication_year")
+    pub_type = work.get("type")
+    journal  = ((work.get("primary_location") or {}).get("source") or {}).get("display_name")
+    cbc      = work.get("cited_by_count") or 0
+    url      = (work.get("primary_location") or {}).get("landing_page_url")
+    if existing is None:
+        conn.execute(
+            """
+            INSERT INTO publications (
+                publication_id, doi, title, pub_year, pub_type,
+                journal, cited_by_count, openalex_id, url, source, retrieved_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, current_date)
+            """,
+            [pub_id, doi, title, year, pub_type, journal, cbc,
+             oa or None, url, "openalex"],
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_DATE)
-        ON CONFLICT (publication_id) DO UPDATE SET
-            doi            = COALESCE(excluded.doi, publications.doi),
-            title          = COALESCE(excluded.title, publications.title),
-            cited_by_count = GREATEST(COALESCE(excluded.cited_by_count, 0),
-                                      COALESCE(publications.cited_by_count, 0)),
-            retrieved_at   = CURRENT_DATE
-        """,
-        [pub_id, doi, work.get("title"), work.get("publication_year"),
-         work.get("type"),
-         (work.get("primary_location") or {}).get("source", {}).get("display_name"),
-         work.get("cited_by_count") or 0,
-         oa or None,
-         (work.get("primary_location") or {}).get("landing_page_url"),
-         "openalex"],
-    )
+    else:
+        # Keep the higher cited_by_count; fill any NULLs from the new data.
+        prev_cbc = int(existing[0] or 0)
+        new_cbc = max(prev_cbc, cbc or 0)
+        conn.execute(
+            """
+            UPDATE publications SET
+                doi            = COALESCE(?, doi),
+                title          = COALESCE(?, title),
+                cited_by_count = ?,
+                retrieved_at   = current_date
+            WHERE publication_id = ?
+            """,
+            [doi, title, new_cbc, pub_id],
+        )
     return pub_id
 
 
@@ -168,7 +187,7 @@ def enrich_person(conn, sess: requests.Session, person: dict,
         conn.execute(
             "UPDATE people SET openalex_id = ?, research_interests = "
             "COALESCE(NULLIF(?, ''), research_interests), "
-            "updated_at = CURRENT_TIMESTAMP WHERE person_id = ?",
+            "updated_at = now() WHERE person_id = ?",
             [author_oa_short, interests, person["person_id"]],
         )
 
@@ -209,9 +228,16 @@ def main() -> int:
     conn = duckdb.connect(str(args.db))
     sess = session()
 
-    people = conn.execute(
+    # .fetchall() + manual dict build is more portable across DuckDB
+    # versions than .fetchdf() (pandas bridge varies) and avoids a
+    # hard pandas dependency on the user's machine.
+    rows = conn.execute(
         "SELECT person_id, name, orcid, openalex_id FROM people ORDER BY name"
-    ).fetchdf().to_dict("records")
+    ).fetchall()
+    people = [
+        {"person_id": r[0], "name": r[1], "orcid": r[2], "openalex_id": r[3]}
+        for r in rows
+    ]
     if args.limit:
         people = people[: args.limit]
     print(f"[enrich] processing {len(people)} people"
