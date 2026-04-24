@@ -246,6 +246,22 @@ CICY-UCIA,,Manuel Luis Robert Díaz,Director General,"Director General, Centro d
 # Massachusetts CZM
 ,Massachusetts Office of Coastal Zone Management,Alison Brizius,Director,"Assistant Secretary & Director, Massachusetts CZM (Healey-Driscoll admin)",true,,,,https://www.mass.gov/info-details/czm-staff-directory,press-release,https://www.mass.gov/news/healey-driscoll-administration-names-alison-brizius-new-coastal-zone-management-director,high
 #
+# More state agencies
+,Maryland Department of Natural Resources,Natalie Snider,Director,"Director, Chesapeake and Coastal Service, Maryland DNR",true,,,,https://dnr.maryland.gov/ccs/pages/aboutus.aspx,facility-webpage,https://www.jobapscloud.com/MD/sup/bulpreview.asp?R1=24&R2=005483&R3=0022,high
+,Florida Department of Environmental Protection,Alex Reed,Director,"Director, Office of Resilience and Coastal Protection, Florida DEP (since Nov 2019)",true,,,,https://floridadep.gov/rcp,facility-webpage,https://floridadep.gov/rcp,high
+,California Ocean Protection Council,Jenn Eckerle,Executive Director,"Executive Director, California Ocean Protection Council; Deputy Secretary for Oceans and Coastal Policy",true,,,,https://opc.ca.gov/leadership-and-staff/,facility-webpage,https://resources.ca.gov/About-Us/Who-We-Are/Deputy-Secretary-for-Oceans-and-Coastal-Policy-and-Director-of-the-Ocean-Protection-Council,high
+,Texas General Land Office,Dawn Buckingham,Commissioner,"Texas Land Commissioner (oversees GLO Coastal Management Program)",true,,,,https://www.glo.texas.gov/about-glo/about-the-commissioner,facility-webpage,https://www.glo.texas.gov/about-glo/about-the-commissioner,high
+,Chesapeake Bay Maryland NERR,Kyle Derby,Research Coordinator,"Research Coordinator, Chesapeake Bay NERR-MD (Maryland DNR)",false,,,kyle.derby@maryland.gov,https://dnr.maryland.gov/waters/cbnerr/Pages/default.aspx,facility-webpage,https://dnr.maryland.gov/waters/cbnerr/Pages/default.aspx,high
+#
+# Final international batch
+SHOA,,Carlos Zúñiga,Director,"Director, Servicio Hidrográfico y Oceanográfico de la Armada (Chile); VP IOC-UNESCO 2025-2027",true,,,,https://www.shoa.cl/,facility-webpage,https://www.chile.gob.cl/unesco/noticias/director-del-servicio-hidrografico-y-oceanografico-de-la-armada-shoa,high
+CESIMAR,,Augusto César Crespi Abril,Director,"Director, Centro para el Estudio de Sistemas Marinos (CESIMAR-CENPAT CONICET)",true,,,,https://cenpat.conicet.gov.ar/cesimar/,facility-webpage,https://bicyt.conicet.gov.ar/fichas/u/cesimar-cenpat,high
+,Instituto de Oceanografia da Universidade Federal,Osmar Olinto Möller Jr.,Director,"Director, Instituto de Oceanografia FURG",true,,,,https://www.furg.br/,facility-webpage,https://www.furg.br/noticias/noticias-arquivo/furg-28786,medium
+,University of Belize Environmental Research Institute,Jake Snaddon,Director,"Director, University of Belize Environmental Research Institute (UB-ERI)",true,,,,https://www.uberibz.org/about-us,facility-webpage,https://www.uberibz.org/about-us,high
+,UWI Discovery Bay Marine Laboratory,Dale Webber,Director,"Director, Centre for Marine Sciences (UWI Mona); oversees Discovery Bay Marine Lab",true,,,,https://www.mona.uwi.edu/cms/dbml.htm,facility-webpage,https://jamaica-gleaner.com/article/news/20260319/uwi-discovery-bay-lab-launches-marine-attraction,high
+ARAP,,Gerardo Irimia Arosemena,Administrator General,"Administrador General, Autoridad de los Recursos Acuáticos de Panamá (since Oct 2025)",true,,,,https://arap.gob.pa/,facility-webpage,https://vlex.com.pa/source/gaceta-oficial-panama-2011/issue/2025/10/20,high
+,Centro de Investigaciones de Biología Marina,Gladys Rosado Jiménez,Director,"Director, Centro de Investigaciones de Biología Marina (CIBIMA-UASD)",true,,,biologia@uasd.edu.do,https://uasd.edu.do/facultad-ciencias/institutos/investigacion-de-biologia-marina-cibima/,facility-webpage,https://uasd.edu.do/reconocido-internacionalmente-cibima-busca-insignia-en-biologia-marina/,medium
+#
 # Additional USGS / MBARI / Monterey Bay Aquarium / IOCARIBE
 PCMSC,,Guy Gelfenbaum,Director,"Director, USGS Pacific Coastal and Marine Science Center (since Jan 2017)",true,,,,https://www.usgs.gov/centers/pcmsc/about,facility-webpage,https://www.usgs.gov/programs/cmhrp/news/new-director-pacific-coastal-and-marine-science-center,high
 ,Monterey Bay Aquarium Research Institute,Antje Boetius,President & CEO,"President & CEO, Monterey Bay Aquarium Research Institute (MBARI)",true,,,,https://www.mbari.org/about/leadership-staff/,facility-webpage,https://en.wikipedia.org/wiki/Monterey_Bay_Aquarium_Research_Institute,high
