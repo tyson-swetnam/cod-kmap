@@ -74,7 +74,21 @@ export async function query(filterState) {
   `;
   const prepared = await conn.prepare(sql);
   const result = await prepared.query(...params);
-  return result.toArray().map((row) => row.toJSON());
+
+  // Emit the same GeoJSON Feature shape loadFallback() returns, so the map
+  // source always sees real Features (with a geometry). If we pass raw rows
+  // into a FeatureCollection, MapLibre silently drops every point because
+  // the members have no `geometry`.
+  return result.toArray().map((row) => {
+    const o = row.toJSON();
+    return {
+      type: 'Feature',
+      geometry: (o.lat != null && o.lng != null)
+        ? { type: 'Point', coordinates: [o.lng, o.lat] }
+        : null,
+      properties: o,
+    };
+  }).filter((f) => f.geometry);
 }
 
 function filterFallback(filterState) {
