@@ -103,3 +103,22 @@ GRC,,Troy A. Dexter,Executive Director,"Executive Director, Gerace Research Cent
 WFF,,David Pierce,Director,"Director, NASA Wallops Flight Facility",true,,,,https://www.nasa.gov/wallops,facility-webpage,https://www.nasa.gov/wallops,high
 BML,,Suzanne Olyarnik,Reserve Director,"Director, Bodega Marine Reserve",false,,,,https://marinescience.ucdavis.edu/bml/about,facility-webpage,https://marinescience.ucdavis.edu/bml/about,high
 ERDC-CHL,,Ty V. Wamsley,Director,"Director, USACE ERDC Coastal and Hydraulics Laboratory",true,,,,https://www.erdc.usace.army.mil/Locations/CHL/Leadership/,facility-webpage,https://www.erdc.usace.army.mil/About/Leadership/Bio-Article-View/Article/1756561/dr-ty-v-wamsley-ses/,medium
+#
+# === Round 4 batch 1 (2026-04-24): additional LTER sites + first NERR ===
+#
+# LTER sites — remaining Lead PIs
+,North Temperate Lakes LTER,Emily Stanley,Lead PI,"Lead Principal Investigator, NTL LTER (UW-Madison Center for Limnology)",true,,,,https://lter.limnology.wisc.edu/people,facility-webpage,https://lter.limnology.wisc.edu/,high
+,Northeast US Margin LTER,Heidi M. Sosik,Lead PI,"Lead Principal Investigator, NES LTER (Woods Hole Oceanographic Institution)",true,,,,https://nes-lter.whoi.edu/about/,facility-webpage,https://nes-lter.whoi.edu/,high
+#
+# NERR Reserves — Reserve Managers
+,Grand Bay NERR,Ayesha Gray,Reserve Manager,"Reserve Manager, Grand Bay National Estuarine Research Reserve (Mississippi DMR)",true,,,,https://grandbaynerr.org/,facility-webpage,https://dmr.ms.gov/grand-bay-nerr/,high
+,Great Bay NERR,Cory Riley,Reserve Manager,"Reserve Manager, Great Bay NERR (NH Fish and Game Dept)",true,,,,https://greatbay.org/,facility-webpage,https://www.wildlife.nh.gov/sites/g/files/ehbemt746/files/inline-images/great-bay-mgt-plan.pdf,high
+,Jacques Cousteau NERR,Mike De Luca,Executive Director,"Provides executive management & leadership for integrated programs including JC NERR (Rutgers)",true,,,,https://jcnerr.org/who-we-are/our-team/,facility-webpage,https://jcnerr.org/who-we-are/our-team/,high
+,Jacques Cousteau NERR,Andrea Habeck,Assistant Manager,"Assistant Manager, Jacques Cousteau NERR (Rutgers University)",false,,,,https://jcnerr.org/who-we-are/our-team/,facility-webpage,https://jcnerr.org/who-we-are/our-team/,high
+,Jobos Bay NERR,Aitza Pabón Valentin,Director,"Director, Jobos Bay NERR (Puerto Rico DRNA); 9+ years in role",true,,,apabon@drna.pr.gov,https://www.drna.pr.gov/jbnerr/,facility-webpage,https://www.drna.pr.gov/jbnerr/,high
+,Lake Superior NERR,Ralph Garono,Reserve Manager,"Reserve Manager, Lake Superior NERR (UW-Extension)",true,,,,https://lakesuperiornerr.org/,facility-webpage,https://www.superiortelegram.com/news/garono-has-big-plans-for-lake-superior-nerr,medium
+,Narragansett Bay NERR,Caitlin Chaffee,Reserve Manager,"Chief, Narragansett Bay NERR (RI DEM)",true,,,,http://nbnerr.org/about/,facility-webpage,https://www.nbep.org/steering-committee,high
+,Old Woman Creek NERR,Janice Kerns,Reserve Manager,"Reserve Manager, Old Woman Creek NERR (Ohio DNR)",true,,,,https://coast.noaa.gov/nerrs/reserves/old-woman-creek.html,facility-webpage,https://www.nerra.org/doing-more-with-less-in-ohio/,high
+,Padilla Bay NERR,Jude Apple,Reserve Manager,"Project/Reserve Manager, Padilla Bay NERR (WA Dept of Ecology)",true,,,japple@padillabay.gov,https://ecology.wa.gov/water-shorelines/shoreline-coastal-management/padilla-bay-reserve,facility-webpage,https://ecology.wa.gov/water-shorelines/shoreline-coastal-management/padilla-bay-reserve,medium
+,Sapelo Island NERR,Fred Hay,Reserve Manager,"Island Manager, Sapelo Island NERR (Georgia DNR)",true,,,,https://sapelonerr.org/about-us/reserve-staff/,facility-webpage,https://sapelonerr.org/about-us/staff/,high
+,South Slough NERR,Patricia Fox,Reserve Manager,"Reserve Manager, South Slough NERR (Oregon DSL)",true,,,Patricia.Fox@dsl.oregon.gov,https://www.oregon.gov/dsl/ss/pages/staff.aspx,facility-webpage,https://www.oregon.gov/dsl/ss/pages/staff.aspx,high
