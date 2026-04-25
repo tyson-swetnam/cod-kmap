@@ -37,6 +37,21 @@ let _delaunayPromise = null;
 let _polygonClippingPromise = null;
 let _showFacility = true;
 let _showPerson = true;
+// d3.zoom behavior + svg selection + d3 module captured during render
+// so the TOC sidebar (and polygon clicks) can call zoom.transform
+// programmatically using d3.zoomIdentity.
+let _zoomBehavior = null;
+let _zoomSvg = null;
+let _d3Mod = null;
+let _colorOf = null;
+// Last zoom level seen — used by the label-visibility logic. Default
+// to 1 so the initial paint shows labels at constant size.
+let _zoomK = 1;
+// Reference to the labels/dots selections so onZoom can resize them
+// without a full re-render.
+let _labelSel = null;
+let _dotPersonSel = null;
+let _dotFacSel = null;
 
 // 33-step palette for area polygons. Tuned for distinguishability
 // against a parchment background with low-alpha fills.
@@ -313,6 +328,27 @@ async function layoutSupergraph(d3, sg, w, h) {
     .stop();
   for (let i = 0; i < SUPERGRAPH_TICKS; i++) sim.tick();
 
+  // After force-sim, the cluster of squares may have drifted away
+  // from the stage centre. Recenter so the whole layout sits in the
+  // middle of the viewport — otherwise the SVG viewBox (computed
+  // from node positions later) ends up offset and the map renders
+  // partly above the visible area on first paint.
+  function recenter() {
+    let mnX = Infinity, mnY = Infinity, mxX = -Infinity, mxY = -Infinity;
+    for (const n of sg.nodes) {
+      const half = n.side * 0.71;
+      if (n.x - half < mnX) mnX = n.x - half;
+      if (n.y - half < mnY) mnY = n.y - half;
+      if (n.x + half > mxX) mxX = n.x + half;
+      if (n.y + half > mxY) mxY = n.y + half;
+    }
+    const ccx = (mnX + mxX) / 2, ccy = (mnY + mxY) / 2;
+    const dx = cx - ccx, dy = cy - ccy;
+    if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+    for (const n of sg.nodes) { n.x += dx; n.y += dy; }
+  }
+  recenter();
+
   // Resolve any remaining overlap with a deterministic relax pass.
   for (let r = 0; r < 60; r++) {
     let moved = false;
@@ -333,6 +369,9 @@ async function layoutSupergraph(d3, sg, w, h) {
     }
     if (!moved) break;
   }
+
+  // One more recenter after the relax pass.
+  recenter();
 
   return new Map(sg.nodes.map((n) => [n.id, n]));
 }
@@ -809,6 +848,7 @@ async function render() {
     const { w, h } = await waitForStage(stage);
     statusEl.textContent = 'Loading data…';
     const d3 = await loadD3();
+    _d3Mod = d3;
     if (!_layout) {
       const data = await fetchData();
       statusEl.textContent = 'Computing knowledge map (this takes 5-10 s)…';
@@ -817,22 +857,46 @@ async function render() {
     statusEl.innerHTML = `<strong>${_layout.areas.length}</strong> research-area polygons, <strong>${_layout.nodes.length}</strong> nodes, <strong>${_layout.crossEdges.length}</strong> cross-area edges`;
 
     stage.innerHTML = '';
-    const { x: bx, y: by, w: bw, h: bh } = _layout.bbox;
+    // viewBox uses the layout bbox, but we tighten the box around the
+    // ACTUAL visible content (polygons + decorators) so the SVG is
+    // properly centered on first paint regardless of where the
+    // supergraph drifted to during force simulation.
+    let bx, by, bw, bh;
+    {
+      let mnX = Infinity, mnY = Infinity, mxX = -Infinity, mxY = -Infinity;
+      for (const ring of _layout.polygons.values()) {
+        for (const [x, y] of ring) {
+          if (x < mnX) mnX = x; if (y < mnY) mnY = y;
+          if (x > mxX) mxX = x; if (y > mxY) mxY = y;
+        }
+      }
+      const padW = (mxX - mnX) * 0.05;
+      const padH = (mxY - mnY) * 0.05;
+      bx = mnX - padW; by = mnY - padH;
+      bw = (mxX - mnX) + 2 * padW;
+      bh = (mxY - mnY) + 2 * padH;
+    }
     const svg = d3.select(stage).append('svg')
       .attr('viewBox', `${bx} ${by} ${bw} ${bh}`)
       .attr('preserveAspectRatio', 'xMidYMid meet')
       .attr('class', 'mvg-svg');
     const root = svg.append('g').attr('class', 'mvg-root');
 
-    svg.call(d3.zoom().scaleExtent([0.4, 8]).on('zoom', (ev) => {
+    // d3.zoom — captured so the TOC + polygon clicks can call it.
+    const zoom = d3.zoom().scaleExtent([0.4, 12]).on('zoom', (ev) => {
       root.attr('transform', ev.transform);
-    }));
+      onZoom(ev.transform.k);
+    });
+    svg.call(zoom);
+    _zoomBehavior = zoom;
+    _zoomSvg = svg;
 
     const tip = ensureTooltip();
 
     // Layer 1: polygons
     const areaList = _layout.areas;
     const colorOf = new Map(areaList.map((a, i) => [a.id, AREA_PALETTE[i % AREA_PALETTE.length]]));
+    _colorOf = colorOf;
     const polyG = root.append('g').attr('class', 'mvg-polys');
     polyG.selectAll('path').data(areaList).enter().append('path')
       .attr('d', (a) => {
@@ -848,12 +912,13 @@ async function render() {
       .on('mouseenter', function (ev, a) {
         d3.select(this).attr('fill-opacity', 0.32);
         const lab = _layout.labels.get(a.id);
-        if (lab) showTip(tip, ev, `<strong>${escapeHtml(a.name)}</strong><br><small>${a.weight} facilities</small>`);
+        if (lab) showTip(tip, ev, `<strong>${escapeHtml(a.name)}</strong><br><small>${a.weight} facilities — click to zoom</small>`);
       })
       .on('mouseleave', function () {
         d3.select(this).attr('fill-opacity', 0.18);
         hideTip(tip);
-      });
+      })
+      .on('click', (ev, a) => zoomToArea(a.id));
 
     // Layer 1.5: facility sub-circles inside each area polygon.
     // Renders as translucent rings so users see the institution
@@ -953,7 +1018,7 @@ async function render() {
     }
 
     if (_showFacility) {
-      root.append('g').attr('class', 'mvg-fac-dots')
+      _dotFacSel = root.append('g').attr('class', 'mvg-fac-dots')
         .selectAll('circle').data(facNodes).enter().append('circle')
         .attr('cx', (d) => d.x).attr('cy', (d) => d.y)
         .attr('r', NODE_RADIUS.facility || 3)
@@ -967,12 +1032,14 @@ async function render() {
           const url = d.url || d.homepage_url;
           if (url) window.open(url, '_blank', 'noopener');
         });
+    } else {
+      _dotFacSel = null;
     }
 
     if (_showPerson) {
       // Small dots for non-labelled people.
       const dotPeople = perNodes.filter((p) => !labelledIds.has(p.id));
-      root.append('g').attr('class', 'mvg-per-dots')
+      _dotPersonSel = root.append('g').attr('class', 'mvg-per-dots')
         .selectAll('circle').data(dotPeople).enter().append('circle')
         .attr('cx', (d) => d.x).attr('cy', (d) => d.y)
         .attr('r', 2.4)
@@ -985,18 +1052,19 @@ async function render() {
         .on('mouseleave', () => hideTip(tip))
         .on('click', (ev, d) => onPersonClick(d));
 
-      // Name labels for the top N per area.
+      // Name labels for the top N per area. We store the BASE font
+      // size on the datum so onZoom() can rescale relative to it.
       const labelPeople = perNodes.filter((p) => labelledIds.has(p.id));
-      const personFontSize = (d) => {
+      const personBaseFont = (d) => {
         const w = d.importance || 0;
         return Math.max(8, Math.min(15, 8 + Math.sqrt(w) * 1.1));
       };
-      root.append('g').attr('class', 'mvg-per-labels')
+      _labelSel = root.append('g').attr('class', 'mvg-per-labels')
         .attr('text-anchor', 'middle')
         .attr('font-family', 'system-ui, sans-serif')
         .selectAll('text').data(labelPeople).enter().append('text')
         .attr('x', (d) => d.x).attr('y', (d) => d.y)
-        .attr('font-size', personFontSize)
+        .attr('font-size', personBaseFont)
         .attr('font-weight', 500)
         .attr('fill', '#0c4a6e')
         .attr('stroke', '#fff')
@@ -1008,7 +1076,17 @@ async function render() {
         .on('mouseenter', (ev, d) => showTip(tip, ev, nodeTipHtml(d)))
         .on('mouseleave', () => hideTip(tip))
         .on('click', (ev, d) => onPersonClick(d));
+      // Tag each label with its base font so onZoom can rescale.
+      _labelSel.each(function (d) { d.__baseFont = personBaseFont(d); });
+    } else {
+      _labelSel = null;
+      _dotPersonSel = null;
     }
+    // Initial label-visibility/scaling pass so the very-first paint
+    // matches whatever zoom level we're starting at.
+    onZoom(_zoomK);
+    // Populate the left-hand TOC of research areas (clickable to zoom).
+    populateToc();
 
     // Layer 4: polygon labels
     const labelG = root.append('g').attr('class', 'mvg-labels')
@@ -1132,6 +1210,69 @@ function onPersonClick(d) {
   location.hash = `#/people/${encodeURIComponent(d.id)}`;
 }
 
+// Show / hide / rescale researcher labels in response to zoom level.
+// At low zoom (k < 1) labels would overlap heavily, so we hide them.
+// At medium zoom (1 ≤ k < 2.5) we show them, counter-scaling so font
+// size stays roughly constant in screen-space. At high zoom (k ≥ 2.5)
+// we let them grow slightly so deep dives feel like deep dives.
+function onZoom(k) {
+  _zoomK = k || 1;
+  if (_labelSel) {
+    if (_zoomK < 0.95) {
+      _labelSel.style('display', 'none');
+    } else {
+      _labelSel.style('display', null);
+      // Counter-scale: divide base font by k so text stays readable
+      // (slightly grows past zoom 2.5 for emphasis).
+      const factor = _zoomK >= 2.5
+        ? 1 / 2.5 + (1 - 1 / 2.5) * Math.min(1, (_zoomK - 2.5) / 4)
+        : 1 / _zoomK;
+      _labelSel.attr('font-size', (d) => (d.__baseFont || 11) * factor);
+      _labelSel.attr('stroke-width', 2.4 * factor);
+    }
+  }
+  if (_dotPersonSel) {
+    _dotPersonSel.attr('r', 2.4 / Math.max(_zoomK, 1));
+  }
+  if (_dotFacSel) {
+    _dotFacSel.attr('r', (NODE_RADIUS.facility || 3) / Math.max(_zoomK, 1));
+  }
+}
+
+// Programmatic zoom-to-polygon. Computes the polygon's bounding box,
+// then animates a d3.zoom transform that fits it (with margin) into
+// the SVG viewport.
+function zoomToArea(areaId) {
+  if (!_zoomBehavior || !_zoomSvg || !_layout) return;
+  const ring = _layout.polygons.get(areaId);
+  if (!ring) return;
+  let mnX = Infinity, mnY = Infinity, mxX = -Infinity, mxY = -Infinity;
+  for (const [x, y] of ring) {
+    if (x < mnX) mnX = x; if (y < mnY) mnY = y;
+    if (x > mxX) mxX = x; if (y > mxY) mxY = y;
+  }
+  const cx = (mnX + mxX) / 2, cy = (mnY + mxY) / 2;
+  const polyW = mxX - mnX, polyH = mxY - mnY;
+  // SVG viewBox dimensions (read from attribute).
+  const vb = (_zoomSvg.attr('viewBox') || '').split(/\s+/).map(Number);
+  if (vb.length !== 4) return;
+  const [vbx, vby, vbw, vbh] = vb;
+  const margin = 1.2;  // 20% breathing room
+  const scaleX = vbw / (polyW * margin);
+  const scaleY = vbh / (polyH * margin);
+  const k = Math.max(0.6, Math.min(8, Math.min(scaleX, scaleY)));
+  // d3.zoom transform composes as: screen = T + k * world.
+  // We want world point (cx, cy) to map to viewBox center (vbx + vbw/2,
+  // vby + vbh/2). So tx = vbx + vbw/2 - k * cx, similarly for ty.
+  const tx = (vbx + vbw / 2) - k * cx;
+  const ty = (vby + vbh / 2) - k * cy;
+  if (!_d3Mod || !_d3Mod.zoomIdentity) return;
+  // Build the d3 transform: identity → translate → scale composes
+  // such that screen = T + k * world. We computed tx/ty above for k.
+  const zoomT = _d3Mod.zoomIdentity.translate(tx, ty).scale(k);
+  _zoomSvg.transition().duration(650).call(_zoomBehavior.transform, zoomT);
+}
+
 
 // ── Public API ──────────────────────────────────────────────────────
 export function initNetworkView(container) {
@@ -1169,7 +1310,14 @@ export function initNetworkView(container) {
         </div>
       </header>
       <div id="net-status" class="network-status">Loading…</div>
-      <div id="net-stage" class="network-stage"></div>
+      <div class="mvg-shell">
+        <aside id="net-toc" class="mvg-toc" aria-label="Research areas">
+          <h3>Research areas</h3>
+          <ol id="net-toc-list" class="mvg-toc-list"><li class="mvg-toc-empty">Loading…</li></ol>
+          <button id="net-toc-reset" class="btn-ghost" type="button">Reset zoom</button>
+        </aside>
+        <div id="net-stage" class="network-stage"></div>
+      </div>
     </div>`;
 
   _container.querySelectorAll('.net-toggle input').forEach((el) => {
@@ -1184,6 +1332,35 @@ export function initNetworkView(container) {
   _container.querySelector('#net-restart').addEventListener('click', () => {
     _layout = null;
     render().catch((err) => console.error(err));
+  });
+  _container.querySelector('#net-toc-reset').addEventListener('click', () => {
+    if (_zoomBehavior && _zoomSvg && _d3Mod && _d3Mod.zoomIdentity) {
+      _zoomSvg.transition().duration(450)
+        .call(_zoomBehavior.transform, _d3Mod.zoomIdentity);
+    }
+  });
+}
+
+// Populate the TOC sidebar with one row per active research area,
+// sorted by facility count desc. Click → zoomToArea.
+function populateToc() {
+  if (!_layout || !_container || !_colorOf) return;
+  const list = _container.querySelector('#net-toc-list');
+  if (!list) return;
+  const sorted = [..._layout.areas].sort(
+    (a, b) => (b.weight || 0) - (a.weight || 0));
+  list.innerHTML = sorted.map((a) => `
+    <li>
+      <button type="button" data-area="${escapeHtml(a.id)}" class="mvg-toc-row">
+        <span class="mvg-toc-swatch" style="background:${_colorOf.get(a.id) || '#94a3b8'}"></span>
+        <span class="mvg-toc-label">${escapeHtml(a.name)}</span>
+        <span class="mvg-toc-count">${a.weight || 0}</span>
+      </button>
+    </li>`).join('');
+  list.querySelectorAll('.mvg-toc-row').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      zoomToArea(btn.dataset.area);
+    });
   });
 }
 

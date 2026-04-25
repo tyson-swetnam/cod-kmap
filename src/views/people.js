@@ -53,6 +53,10 @@ async function fetchPeople() {
   if (!conn) throw new Error('DuckDB connection not ready');
 
   // Per-person aggregate row + list of affiliations + list of areas.
+  // Cleaned-up version (DuckDB-Wasm is stricter than CLI DuckDB about
+  // join-alias-shadowing-CTE-name and untyped empty-list literals):
+  // separate area-list CTE, no correlated subqueries inside aggregate
+  // arguments, no `COALESCE(x, [])` coercion games.
   const sql = `
     WITH per_pa AS (
       SELECT person_id,
@@ -60,17 +64,22 @@ async function fetchPeople() {
              SUM(total_citations) AS total_citations,
              MAX(h_index)         AS h_index,
              SUM(n_co_authors)    AS n_coauth,
-             SUM(composite_z)     AS composite_z,
-             list(struct_pack(
-               area_id  := area_id,
-               area     := (SELECT label FROM research_areas
-                             WHERE area_id = pam.area_id),
-               n_pubs   := n_publications,
-               citations:= total_citations,
-               h        := h_index
-             ) ORDER BY composite_z DESC)        AS areas
-      FROM person_area_metrics pam
+             SUM(composite_z)     AS composite_z
+      FROM person_area_metrics
       GROUP BY person_id
+    ),
+    per_pa_areas AS (
+      SELECT pam.person_id,
+             list(struct_pack(
+               area_id   := pam.area_id,
+               area      := ra.label,
+               n_pubs    := pam.n_publications,
+               citations := pam.total_citations,
+               h         := pam.h_index
+             ) ORDER BY pam.composite_z DESC) AS areas
+      FROM person_area_metrics pam
+      LEFT JOIN research_areas ra ON ra.area_id = pam.area_id
+      GROUP BY pam.person_id
     ),
     per_fund AS (
       SELECT fp.person_id,
@@ -82,20 +91,20 @@ async function fetchPeople() {
     per_aff AS (
       SELECT fp.person_id,
              list(struct_pack(
-               role     := fp.role,
-               title    := fp.title,
-               facility := COALESCE(f.acronym || ' — ' || f.canonical_name,
-                                    f.canonical_name),
+               role        := fp.role,
+               title       := fp.title,
+               facility    := COALESCE(f.acronym || ' — ' || f.canonical_name,
+                                       f.canonical_name),
                facility_id := f.facility_id,
-               url      := f.url,
-               country  := f.country,
-               is_key   := fp.is_key_personnel
+               url         := f.url,
+               country     := f.country,
+               is_key      := fp.is_key_personnel
              ) ORDER BY fp.is_key_personnel DESC, fp.role) AS affiliations
       FROM facility_personnel fp
       JOIN facilities f ON f.facility_id = fp.facility_id
       GROUP BY fp.person_id
     )
-    SELECT p.person_id   AS id,
+    SELECT p.person_id  AS id,
            p.name,
            p.orcid,
            p.openalex_id,
@@ -103,22 +112,22 @@ async function fetchPeople() {
            p.research_interests,
            p.bio,
            g.primary_area_id,
-           (SELECT label FROM research_areas
-              WHERE area_id = g.primary_area_id) AS primary_area_label,
+           ra.label                            AS primary_area_label,
            COALESCE(pa.n_pubs, 0)              AS n_pubs,
            COALESCE(pa.total_citations, 0)     AS total_citations,
            COALESCE(pa.h_index, 0)             AS h_index,
            COALESCE(pa.n_coauth, 0)            AS n_coauth,
            COALESCE(pa.composite_z, 0)         AS composite_z,
            COALESCE(pf.facility_funding_usd, 0) AS facility_funding_usd,
-           COALESCE(pa.areas, [])              AS areas,
-           COALESCE(pf2.affiliations, [])      AS affiliations
+           paa.areas                           AS areas,
+           pa2.affiliations                    AS affiliations
     FROM   people p
-    LEFT JOIN person_primary_groups g ON g.person_id = p.person_id
-    LEFT JOIN per_pa  pa  ON pa.person_id  = p.person_id
-    LEFT JOIN per_fund pf ON pf.person_id  = p.person_id
-    LEFT JOIN per_aff per_aff ON per_aff.person_id = p.person_id
-    LEFT JOIN per_aff pf2 ON pf2.person_id = p.person_id
+    LEFT JOIN person_primary_groups g  ON g.person_id  = p.person_id
+    LEFT JOIN research_areas       ra  ON ra.area_id   = g.primary_area_id
+    LEFT JOIN per_pa               pa  ON pa.person_id = p.person_id
+    LEFT JOIN per_pa_areas         paa ON paa.person_id = p.person_id
+    LEFT JOIN per_fund             pf  ON pf.person_id = p.person_id
+    LEFT JOIN per_aff              pa2 ON pa2.person_id = p.person_id
   `;
   const r = await conn.query(sql);
   return r.toArray().map((row) => numify(row.toJSON()));
@@ -131,16 +140,20 @@ function cardHtml(p) {
   if (p.orcid)        urls.push(`<a href="https://orcid.org/${esc(p.orcid)}" target="_blank" rel="noopener">ORCID</a>`);
   if (p.openalex_id)  urls.push(`<a href="https://openalex.org/${esc(p.openalex_id)}" target="_blank" rel="noopener">OpenAlex</a>`);
 
-  const aff = (p.affiliations || []).slice(0, 4).map((a) => `
+  // affiliations / areas may come back as null when a person has no
+  // facility_personnel or no person_area_metrics rows.
+  const affRaw = Array.isArray(p.affiliations) ? p.affiliations : [];
+  const areaRaw = Array.isArray(p.areas) ? p.areas : [];
+  const aff = affRaw.slice(0, 4).map((a) => `
     <li>
       <strong>${esc(a.role || '—')}</strong>
       ${a.title ? ` · ${esc(a.title)}` : ''}
       <br><small>${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.facility)}</a>` : esc(a.facility)}${a.country ? ` <span class="ppl-flag">${esc(a.country)}</span>` : ''}</small>
     </li>`).join('');
-  const moreAff = (p.affiliations || []).length > 4
-    ? `<li class="ppl-more">+${p.affiliations.length - 4} more</li>` : '';
+  const moreAff = affRaw.length > 4
+    ? `<li class="ppl-more">+${affRaw.length - 4} more</li>` : '';
 
-  const areas = (p.areas || []).slice(0, 6).map((a) => `
+  const areas = areaRaw.slice(0, 6).map((a) => `
     <li>
       <span class="ppl-area-label">${esc(a.area || a.area_id)}</span>
       <small>${fmtInt(a.n_pubs)} pubs · ${fmtInt(a.citations)} citations · h ${fmtInt(a.h)}</small>
@@ -186,10 +199,11 @@ function applyFilterSort(people) {
   const q = _qFilter.trim().toLowerCase();
   let rows = q
     ? people.filter((p) => {
+        const aff = Array.isArray(p.affiliations) ? p.affiliations : [];
         const hay = [
           p.name, p.primary_area_label,
-          ...(p.affiliations || []).map((a) => a.facility || ''),
-          ...(p.affiliations || []).map((a) => a.role || ''),
+          ...aff.map((a) => a.facility || ''),
+          ...aff.map((a) => a.role || ''),
         ].join(' ').toLowerCase();
         return hay.includes(q);
       })
