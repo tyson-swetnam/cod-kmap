@@ -78,6 +78,101 @@ export async function initDB() {
     await newConn.query(`CREATE OR REPLACE VIEW ${t} AS SELECT * FROM read_parquet('${url}')`);
   }
 
+  // Helper views the SQL tab + future visualisations rely on. These
+  // are defined in schema/schema.sql for the canonical DuckDB but
+  // they don't survive a parquet round-trip (you can't COPY a view to
+  // parquet without materialising it; we keep them computed). Recreate
+  // them in DuckDB-Wasm so the app's SQL canned queries work.
+  const helperViews = [
+    `CREATE OR REPLACE VIEW v_facility_funding_by_year AS
+       SELECT f.facility_id,
+              f.canonical_name              AS facility,
+              f.acronym,
+              fe.fiscal_year,
+              SUM(fe.amount_usd)            AS total_usd_nominal,
+              COUNT(*)                      AS n_awards,
+              list(DISTINCT fu.name)        AS funders
+       FROM facilities       f
+       JOIN funding_events   fe ON fe.facility_id = f.facility_id
+       JOIN funders          fu ON fu.funder_id   = fe.funder_id
+       WHERE fe.fiscal_year IS NOT NULL AND fe.amount_usd IS NOT NULL
+       GROUP BY f.facility_id, f.canonical_name, f.acronym, fe.fiscal_year`,
+
+    `CREATE OR REPLACE VIEW v_funder_funding_by_year AS
+       SELECT fu.funder_id,
+              fu.name                       AS funder,
+              fu.type                       AS funder_type,
+              fe.fiscal_year,
+              SUM(fe.amount_usd)            AS total_usd_nominal,
+              COUNT(*)                      AS n_awards,
+              COUNT(DISTINCT fe.facility_id) AS n_facilities
+       FROM funders         fu
+       JOIN funding_events  fe ON fe.funder_id = fu.funder_id
+       WHERE fe.fiscal_year IS NOT NULL AND fe.amount_usd IS NOT NULL
+       GROUP BY fu.funder_id, fu.name, fu.type, fe.fiscal_year`,
+
+    `CREATE OR REPLACE VIEW v_facility_key_personnel AS
+       SELECT f.facility_id,
+              f.canonical_name         AS facility,
+              f.acronym                AS facility_acronym,
+              p.person_id,
+              p.name,
+              fp.role,
+              fp.title,
+              p.orcid,
+              p.openalex_id,
+              p.email,
+              p.homepage_url,
+              fp.start_date,
+              fp.source_url
+       FROM facility_personnel fp
+       JOIN people     p ON p.person_id   = fp.person_id
+       JOIN facilities f ON f.facility_id = fp.facility_id
+       WHERE fp.is_key_personnel = true
+         AND (fp.end_date IS NULL OR fp.end_date > CURRENT_DATE)`,
+
+    `CREATE OR REPLACE VIEW v_funding_ledger AS
+       SELECT fe.event_id, fe.fiscal_year, fe.period_start, fe.period_end,
+              fu.name AS funder, fu.type AS funder_type,
+              f.canonical_name AS facility, f.acronym AS facility_acronym,
+              f.facility_type  AS facility_kind, f.country,
+              fe.amount_usd    AS amount_usd_nominal, fe.amount_currency,
+              fe.award_id, fe.award_title, fe.program, fe.relation,
+              fe.source, fe.source_url, fe.retrieved_at, fe.confidence, fe.notes
+       FROM funding_events fe
+       JOIN funders    fu ON fu.funder_id  = fe.funder_id
+       JOIN facilities f  ON f.facility_id = fe.facility_id`,
+
+    `CREATE OR REPLACE VIEW v_person_enriched AS
+       SELECT p.person_id,
+              p.name,
+              p.name_family,
+              p.orcid,
+              p.openalex_id,
+              p.email,
+              p.homepage_url,
+              p.research_interests,
+              p.status,
+              list(DISTINCT f.canonical_name)  AS facilities,
+              list(DISTINCT fp.role)           AS roles,
+              list(DISTINCT ra.label)          AS research_areas,
+              COUNT(DISTINCT a.publication_id) AS n_publications,
+              MAX(pub.pub_year)                AS latest_pub_year
+       FROM people p
+       LEFT JOIN facility_personnel fp ON fp.person_id   = p.person_id
+       LEFT JOIN facilities         f  ON f.facility_id  = fp.facility_id
+       LEFT JOIN person_areas       pa ON pa.person_id   = p.person_id
+       LEFT JOIN research_areas     ra ON ra.area_id     = pa.area_id
+       LEFT JOIN authorship         a  ON a.person_id    = p.person_id
+       LEFT JOIN publications       pub ON pub.publication_id = a.publication_id
+       GROUP BY p.person_id, p.name, p.name_family, p.orcid, p.openalex_id,
+                p.email, p.homepage_url, p.research_interests, p.status`,
+  ];
+  for (const sql of helperViews) {
+    try { await newConn.query(sql); }
+    catch (err) { console.warn('[db] helper view create failed:', err.message); }
+  }
+
   // Only now — after every view is live — publish the connection to the
   // rest of the app and flip the readiness flag. This closes a race where
   // early readers (e.g. the Network tab loaded before initDB finishes)
