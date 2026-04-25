@@ -78,6 +78,10 @@ export async function initDB() {
     // its post-collapse status. Drives src/views/network.js.
     'facility_primary_groups', 'person_primary_groups',
     'research_areas_active',
+    // Per-area dashboard metrics — written by
+    // scripts/compute_area_metrics.py. Drives src/views/stats.js.
+    'person_area_metrics', 'facility_area_funding',
+    'funder_area_funding', 'area_coverage_matrix',
   ];
   for (const t of tables) {
     const url = `${PARQUET_BASE}${t}.parquet`;
