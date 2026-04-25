@@ -37,7 +37,6 @@ let _delaunayPromise = null;
 let _polygonClippingPromise = null;
 let _showFacility = true;
 let _showPerson = true;
-let _showCrossEdges = true;
 
 // 33-step palette for area polygons. Tuned for distinguishability
 // against a parchment background with low-alpha fills.
@@ -180,6 +179,39 @@ async function fetchData() {
       FROM   facility_personnel
       GROUP  BY facility_id, person_id`,
 
+    // Per-person role/title/institution lookup for tooltips. A person
+    // can hold roles at multiple facilities — we list-aggregate so the
+    // tooltip can show each affiliation. Prefer key-personnel rows so
+    // 'Director' / 'Principal Investigator' surfaces above 'Staff'.
+    person_affiliations: `
+      SELECT fp.person_id,
+             list(struct_pack(
+               role        := fp.role,
+               title       := fp.title,
+               facility_id := f.facility_id,
+               facility    := COALESCE(f.acronym || ' — ' || f.canonical_name,
+                                       f.canonical_name),
+               is_key      := fp.is_key_personnel
+             ) ORDER BY fp.is_key_personnel DESC, fp.role) AS roles
+      FROM facility_personnel fp
+      JOIN facilities f ON f.facility_id = fp.facility_id
+      GROUP BY fp.person_id`,
+
+    // Person → primary facility for the hierarchy layout. A person
+    // might work at >1 facility; we pick their first key-personnel
+    // row, falling back to alphabetic role if no key-flag set.
+    person_primary_facility: `
+      WITH ranked AS (
+        SELECT person_id, facility_id,
+               ROW_NUMBER() OVER (
+                 PARTITION BY person_id
+                 ORDER BY is_key_personnel DESC, role, facility_id
+               ) AS rk
+        FROM facility_personnel
+      )
+      SELECT person_id, facility_id
+      FROM ranked WHERE rk = 1`,
+
     // Person ↔ person via co-authorship.
     coauthors: `
       SELECT person_a_id AS source, person_b_id AS target,
@@ -197,6 +229,16 @@ async function fetchData() {
   for (const a of out.areas) a.weight = Number(a.weight) || 0;
   for (const e of out.fac_pers) e.w = Number(e.w) || 1;
   for (const e of out.coauthors) e.w = Number(e.w) || 1;
+
+  // Build lookup tables for hierarchy + tooltip enrichment.
+  const affilsBy = new Map(out.person_affiliations.map(
+    (r) => [r.person_id, r.roles || []]));
+  const primaryFacBy = new Map(out.person_primary_facility.map(
+    (r) => [r.person_id, r.facility_id]));
+  for (const p of out.people) {
+    p.affiliations = affilsBy.get(p.id) || [];
+    p.primary_facility_id = primaryFacBy.get(p.id) || null;
+  }
   return out;
 }
 
@@ -378,62 +420,146 @@ function decorationAnchors(square, areaId) {
   return out;
 }
 
-async function layoutAndFit(d3, members, edges, square) {
-  // Even an empty area gets decoration anchors so its polygon still
-  // appears (sized to the square). Real members are simulated via
-  // d3-force, then scale-fit into the square; decorators are added
-  // afterwards on a jittered grid so they don't get pulled around.
+// Pack facility sub-circles inside an area's square, then scatter
+// each facility's people inside the corresponding circle. Returns a
+// flat list of (facility nodes + person nodes + decoration anchors)
+// that the Voronoi step consumes. A side-effect map tracks each
+// facility's circle position + radius so the renderer can draw the
+// translucent sub-polygon ring per institution.
+async function layoutAndFit(d3, members, edges, square, facCircles) {
+  // Even an empty area gets decoration anchors so its polygon
+  // still appears at the right cartogram size.
   if (!members.length) {
     return decorationAnchors(square, square.id);
   }
 
-  // Initial seed inside square so simulation converges fast.
   const cx = square.x, cy = square.y;
-  const r0 = square.side * 0.3;
-  members.forEach((m, i) => {
-    const a = (i / members.length) * 2 * Math.PI;
-    m.x = cx + r0 * Math.cos(a);
-    m.y = cy + r0 * Math.sin(a);
-  });
+  const facs = members.filter((m) => m.kind === 'facility');
+  const peo  = members.filter((m) => m.kind === 'person');
 
-  const sim = d3.forceSimulation(members)
-    .alphaDecay(0.06)
-    .force('link', d3.forceLink(edges)
-      .id((d) => d.id)
-      .distance(Math.max(12, square.side * 0.08)).strength(0.6))
-    .force('charge', d3.forceManyBody()
-      .strength(-Math.max(20, square.side * 0.18)))
-    .force('collide', d3.forceCollide()
-      .radius(Math.max(5, square.side * 0.025)).strength(0.9))
-    .force('x', d3.forceX(cx).strength(0.04))
-    .force('y', d3.forceY(cy).strength(0.04))
+  // ── 1. Pack facility sub-circles inside the square ──────────────
+  // Each facility's "weight" = 1 (itself) + n_personnel-at-facility,
+  // so an institution with many researchers gets a larger sub-circle.
+  // Radius ∝ sqrt(weight) to make AREA ∝ weight.
+  const peopleAt = new Map();
+  for (const p of peo) {
+    if (!p.primary_facility_id) continue;
+    peopleAt.set(p.primary_facility_id,
+      (peopleAt.get(p.primary_facility_id) || 0) + 1);
+  }
+
+  // If facility-list is empty (rare; can happen if all primary_area
+  // facilities have no personnel listed), invent a single phantom
+  // circle covering the whole square so people still get placed.
+  const bubbles = facs.length
+    ? facs.map((f) => ({
+        id: f.id, name: f.name, acronym: f.acronym, country: f.country,
+        f_type: f.f_type, url: f.url, area_id: f.area_id,
+        weight: 1 + (peopleAt.get(f.id) || 0),
+        kind: 'facility',
+      }))
+    : [{ id: `__phantom_${square.id}`, name: '', kind: 'facility',
+         area_id: square.id, weight: 1 }];
+
+  const totalWeight = bubbles.reduce((s, b) => s + Math.sqrt(b.weight), 0);
+  const innerR = (square.side / 2) * 0.84;  // 16% inset from square edge
+  // Per-bubble radius. Min 5 px so single-person facilities are visible;
+  // max ~innerR so a giant institution can't dwarf the whole area.
+  const RFAC = 0.62 * innerR / Math.max(totalWeight, 1);
+  for (const b of bubbles) {
+    b.r = Math.min(innerR * 0.65, Math.max(5, RFAC * Math.sqrt(b.weight) * 1.5));
+    // Seed at a random point inside the inner circle.
+    const a = Math.random() * 2 * Math.PI;
+    const r = Math.random() * (innerR - b.r);
+    b.x = cx + r * Math.cos(a);
+    b.y = cy + r * Math.sin(a);
+  }
+  const bubSim = d3.forceSimulation(bubbles)
+    .alphaDecay(0.05)
+    .force('center', d3.forceCenter(cx, cy).strength(0.08))
+    .force('charge', d3.forceManyBody().strength(-12))
+    .force('collide',
+      d3.forceCollide().radius((d) => d.r + 1.6).strength(1).iterations(2))
     .stop();
-  for (let i = 0; i < SUBGRAPH_TICKS; i++) sim.tick();
+  for (let i = 0; i < 220; i++) bubSim.tick();
 
-  // Scale-and-fit real members into a sub-region of the square. We
-  // leave a wider margin than before because decoration anchors fill
-  // the perimeter — this keeps real nodes visually inside the
-  // polygon's "core" rather than hugging its border.
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const n of members) {
-    if (n.x < minX) minX = n.x;
-    if (n.y < minY) minY = n.y;
-    if (n.x > maxX) maxX = n.x;
-    if (n.y > maxY) maxY = n.y;
+  // Clamp every bubble back inside the inner circle (the simulation
+  // doesn't enforce containment); push toward center if it's drifted
+  // outside. A few iterations because pushing one bubble can shove
+  // its neighbour out.
+  for (let pass = 0; pass < 30; pass++) {
+    let moved = false;
+    for (const b of bubbles) {
+      const dx = b.x - cx, dy = b.y - cy;
+      const d = Math.hypot(dx, dy) || 1e-6;
+      const overshoot = d + b.r - innerR;
+      if (overshoot > 0) {
+        const k = (innerR - b.r) / d;
+        b.x = cx + dx * k;
+        b.y = cy + dy * k;
+        moved = true;
+      }
+    }
+    // Also re-resolve overlap via simple push.
+    for (let i = 0; i < bubbles.length; i++) {
+      for (let j = i + 1; j < bubbles.length; j++) {
+        const a = bubbles[i], b = bubbles[j];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const minD = a.r + b.r + 1.6;
+        const d = Math.hypot(dx, dy) || 1e-6;
+        if (d < minD) {
+          const push = (minD - d) / 2;
+          const nx = dx / d, ny = dy / d;
+          a.x -= nx * push; a.y -= ny * push;
+          b.x += nx * push; b.y += ny * push;
+          moved = true;
+        }
+      }
+    }
+    if (!moved) break;
   }
-  const pad = Math.max(16, square.side * 0.18);
-  const targetW = square.side - 2 * pad;
-  const spanX = Math.max(maxX - minX, 1);
-  const spanY = Math.max(maxY - minY, 1);
-  const s = Math.min(targetW / spanX, targetW / spanY);
-  const tx = cx - (minX + spanX / 2) * s;
-  const ty = cy - (minY + spanY / 2) * s;
-  for (const n of members) {
-    n.x = n.x * s + tx;
-    n.y = n.y * s + ty;
+
+  // Record the bubble layout in the side-effect map for the renderer.
+  for (const b of bubbles) {
+    facCircles.set(b.id, { x: b.x, y: b.y, r: b.r,
+                            area_id: square.id,
+                            name: b.name, acronym: b.acronym,
+                            country: b.country, f_type: b.f_type,
+                            url: b.url,
+                            n_people: peopleAt.get(b.id) || 0 });
   }
-  // Append decoration anchors so Voronoi tiles the full square.
-  return [...members, ...decorationAnchors(square, square.id)];
+
+  // ── 2. Place each facility node at its bubble center; people inside ──
+  for (const f of facs) {
+    const b = facCircles.get(f.id);
+    if (b) { f.x = b.x; f.y = b.y; }
+  }
+  // People scattered inside their primary facility's circle. Use a
+  // golden-angle spiral so positions are deterministic and even.
+  const PHI = Math.PI * (3 - Math.sqrt(5));   // golden angle
+  const peoPerFac = new Map();
+  for (const p of peo) {
+    const fid = p.primary_facility_id;
+    const b = (fid && facCircles.get(fid)) || facCircles.get(bubbles[0].id);
+    if (!b) continue;
+    const k = peoPerFac.get(b) || 0;
+    peoPerFac.set(b, k + 1);
+    const n = (peopleAt.get(fid) || 1);
+    // Deterministic spiral inside the bubble's inner 70%.
+    const t = (k + 0.5) / Math.max(n, 1);
+    const r = b.r * 0.62 * Math.sqrt(t);
+    const a = (k + 1) * PHI;
+    p.x = b.x + r * Math.cos(a);
+    p.y = b.y + r * Math.sin(a);
+  }
+
+  // ── 3. Append decoration anchors so Voronoi tiles the area square ──
+  // Anchors live in the gap between facility bubbles + the square
+  // perimeter. They share the area_id so the outer polygon stretches
+  // to the full square; they do NOT carry a facility_id, so they
+  // don't end up inside any facility's sub-polygon should we ever
+  // compute one.
+  return [...facs, ...peo, ...decorationAnchors(square, square.id)];
 }
 
 
@@ -572,14 +698,18 @@ async function buildLayout(data, w, h) {
   const sg = buildSupergraph(data);
   const squares = await layoutSupergraph(d3, sg, w, h);
 
-  // Per-area subgraph layout, scaled to fit each square.
+  // Per-area subgraph layout. Now hierarchical — facilities are
+  // packed as sub-circles inside each area's square, and people sit
+  // inside their primary facility's circle. The facCircles map is
+  // populated as a side-effect for the renderer.
+  const facCircles = new Map();
   const allNodes = [];
   for (const a of data.areas) {
     const square = squares.get(a.id);
     if (!square) continue;
     const members = membersOfArea(a.id, data);
     const edges = intraEdgesOfArea(members, data);
-    const placed = await layoutAndFit(d3, members, edges, square);
+    const placed = await layoutAndFit(d3, members, edges, square, facCircles);
     allNodes.push(...placed);
   }
 
@@ -619,6 +749,7 @@ async function buildLayout(data, w, h) {
     crossEdges,
     labels,
     areas: data.areas,
+    facCircles,
   };
 }
 
@@ -678,24 +809,57 @@ async function render() {
         hideTip(tip);
       });
 
-    // Layer 2: cross-area edges. Two layers so person↔person and
-    // person↔facility cross-edges (the interdisciplinary signal the
-    // user wants to surface) sit on top of facility↔facility edges
-    // and use a brighter person-color stroke at higher opacity.
-    if (_showCrossEdges) {
-      const nodeIdx = new Map(_layout.nodes.map((n) => [n.id, n]));
-      const isPersonEdge = (e) => {
-        const a = nodeIdx.get(e.source); const b = nodeIdx.get(e.target);
-        return (a && a.kind === 'person') || (b && b.kind === 'person');
-      };
-      const edges = _layout.crossEdges;
-      const facEdges = edges.filter((e) => !isPersonEdge(e));
-      const perEdges = edges.filter(isPersonEdge);
+    // Layer 1.5: facility sub-circles inside each area polygon.
+    // Renders as translucent rings so users see the institution
+    // hierarchy without obscuring the people inside. Drawn only when
+    // the Facilities toggle is on.
+    if (_showFacility && _layout.facCircles && _layout.facCircles.size) {
+      const circleData = [..._layout.facCircles.entries()]
+        .filter(([, c]) => !String(c.area_id).startsWith('__phantom_'))
+        .map(([id, c]) => ({ id, ...c }));
+      root.append('g').attr('class', 'mvg-facircles')
+        .selectAll('circle').data(circleData).enter().append('circle')
+        .attr('cx', (d) => d.x).attr('cy', (d) => d.y)
+        .attr('r', (d) => d.r)
+        .attr('fill', (d) => colorOf.get(d.area_id) || '#94a3b8')
+        .attr('fill-opacity', 0.10)
+        .attr('stroke', (d) => colorOf.get(d.area_id) || '#64748b')
+        .attr('stroke-opacity', 0.55)
+        .attr('stroke-width', 1)
+        .attr('stroke-dasharray', '2,2')
+        .style('cursor', 'pointer')
+        .on('mouseenter', function (ev, d) {
+          d3.select(this).attr('fill-opacity', 0.22);
+          showTip(tip, ev, facilityCircleTipHtml(d));
+        })
+        .on('mouseleave', function () {
+          d3.select(this).attr('fill-opacity', 0.10);
+          hideTip(tip);
+        })
+        .on('click', (ev, d) => {
+          if (d.url) window.open(d.url, '_blank', 'noopener');
+        });
+    }
 
-      // Background layer: facility↔facility cross edges.
+    // Layer 2: cross-area edges. Visibility tied to the same
+    // Facilities / People toggles that control node visibility:
+    //   - Facility ↔ facility edges shown when Facilities is on
+    //   - Person-bridging edges (person↔person + person↔facility)
+    //     shown when People is on
+    // Person-bridging layer is drawn ON TOP in sky-blue so the
+    // interdisciplinary collaboration signal pops.
+    const nodeIdx = new Map(_layout.nodes.map((n) => [n.id, n]));
+    const isPersonEdge = (e) => {
+      const a = nodeIdx.get(e.source); const b = nodeIdx.get(e.target);
+      return (a && a.kind === 'person') || (b && b.kind === 'person');
+    };
+    const facEdges = _layout.crossEdges.filter((e) => !isPersonEdge(e));
+    const perEdges = _layout.crossEdges.filter(isPersonEdge);
+
+    if (_showFacility && facEdges.length) {
       root.append('g').attr('class', 'mvg-edges-fac')
         .attr('stroke', '#94a3b8')
-        .attr('stroke-opacity', 0.16)
+        .attr('stroke-opacity', 0.18)
         .attr('fill', 'none')
         .selectAll('line').data(facEdges).enter().append('line')
         .attr('x1', (e) => (nodeIdx.get(e.source) || {}).x)
@@ -703,10 +867,8 @@ async function render() {
         .attr('x2', (e) => (nodeIdx.get(e.target) || {}).x)
         .attr('y2', (e) => (nodeIdx.get(e.target) || {}).y)
         .attr('stroke-width', (e) => 0.35 + Math.log(1 + e.w) * 0.3);
-
-      // Foreground layer: person-bridging edges, colored sky-blue and
-      // higher-opacity so the inter/transdisciplinary connections are
-      // visually obvious.
+    }
+    if (_showPerson && perEdges.length) {
       root.append('g').attr('class', 'mvg-edges-per')
         .attr('stroke', '#0ea5e9')
         .attr('stroke-opacity', 0.55)
@@ -805,10 +967,26 @@ function nodeTipHtml(d) {
       (sub ? `<br><small>${escapeHtml(sub)}</small>` : '') +
       (d.url ? '<br><small style="color:#7dd3fc">click to open website</small>' : '');
   }
-  const sub = [d.orcid && `ORCID ${d.orcid}`, d.openalex_id]
-    .filter(Boolean).join(' · ');
-  // Show the metrics that drove this researcher's node size so users
-  // can see why it's prominent (or not).
+  // Person tooltip: name + role(s) + institution(s), then the
+  // metrics that drove their node size. We deliberately omit
+  // person_id / openalex_id / orcid from the visible chrome — those
+  // are used only for the click-through link below.
+  const lines = [`<strong>${escapeHtml(d.name)}</strong>`];
+
+  const affils = Array.isArray(d.affiliations) ? d.affiliations : [];
+  if (affils.length) {
+    // Show up to 2 affiliations; collapse the rest into "+N more".
+    const shown = affils.slice(0, 2);
+    for (const a of shown) {
+      const role = a.title || a.role || '';
+      const fac  = a.facility || '';
+      lines.push(`<small>${escapeHtml(role)}${role && fac ? '<br>' : ''}${escapeHtml(fac)}</small>`);
+    }
+    if (affils.length > shown.length) {
+      lines.push(`<small style="color:#94a3b8">+${affils.length - shown.length} more affiliation${affils.length - shown.length === 1 ? '' : 's'}</small>`);
+    }
+  }
+
   const metrics = [];
   if (d.n_pubs)   metrics.push(`${d.n_pubs} pubs`);
   if (d.n_coauth) metrics.push(`${d.n_coauth} co-authors`);
@@ -816,9 +994,22 @@ function nodeTipHtml(d) {
     const m = d.facility_funding_usd / 1e6;
     metrics.push(`$${m >= 100 ? Math.round(m) : m.toFixed(1)}M facility funding`);
   }
-  return `<strong>${escapeHtml(d.name)}</strong>` +
+  if (metrics.length) {
+    lines.push(`<small style="color:#7dd3fc">${metrics.join(' · ')}</small>`);
+  }
+  return lines.join('<br>');
+}
+
+function facilityCircleTipHtml(c) {
+  const sub = [c.acronym, c.country, (c.f_type || '').replace(/-/g, ' ')]
+    .filter(Boolean).join(' · ');
+  const peopleLine = c.n_people
+    ? `<br><small style="color:#7dd3fc">${c.n_people} researcher${c.n_people === 1 ? '' : 's'} mapped here</small>`
+    : '';
+  return `<strong>${escapeHtml(c.name || c.id)}</strong>` +
     (sub ? `<br><small>${escapeHtml(sub)}</small>` : '') +
-    (metrics.length ? `<br><small style="color:#7dd3fc">${metrics.join(' · ')}</small>` : '');
+    peopleLine +
+    (c.url ? '<br><small style="color:#7dd3fc">click to open website</small>' : '');
 }
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"]/g, (c) =>
@@ -834,13 +1025,18 @@ export function initNetworkView(container) {
       <header class="network-header">
         <div>
           <h2>Knowledge map</h2>
-          <p class="network-sub">Country-like map of cod-kmap. Each polygon is one
-          research area (parent-collapsed when &lt; 3 facilities); polygon size
-          is proportional to facility count. Inside each polygon: facilities
-          (teal) and personnel (sky blue). Light gray lines are cross-area
-          edges from facility-personnel + co-author relationships, revealing
-          interdisciplinary collaboration. Hover for details, click a node to
-          open its homepage. Algorithm: KMap from Hossain et al. GI&nbsp;'25.</p>
+          <p class="network-sub">Country-like map of cod-kmap. Each outer
+          polygon is one research area (parent-collapsed when &lt; 3 facilities);
+          polygon area is proportional to facility count. Inside each area,
+          dashed sub-circles are individual institutions sized by their
+          personnel count; researchers (sky-blue dots, sized by funding +
+          collaborators + publications) sit inside their primary institution.
+          Toggling Facilities or People also toggles their cross-area edges:
+          gray lines = facility-facility shared programs, sky-blue lines =
+          researchers bridging two areas (interdisciplinary potential).
+          Hover for details, click to open homepage / ORCID. Algorithm:
+          KMap from Hossain et al. GI&nbsp;'25 with hierarchical institution
+          sub-polygons.</p>
         </div>
         <div class="network-actions">
           <label class="net-toggle">
@@ -852,10 +1048,6 @@ export function initNetworkView(container) {
             <input type="checkbox" data-toggle="person" checked>
             <span class="net-swatch" style="background:${NODE_COLORS.person}"></span>
             People
-          </label>
-          <label class="net-toggle">
-            <input type="checkbox" data-toggle="cross-edges" checked>
-            Cross-area edges
           </label>
           <button id="net-restart" class="btn-ghost" title="Recompute layout from scratch">Recompute layout</button>
         </div>
@@ -869,7 +1061,6 @@ export function initNetworkView(container) {
       const k = el.dataset.toggle;
       if (k === 'facility') _showFacility = el.checked;
       else if (k === 'person') _showPerson = el.checked;
-      else if (k === 'cross-edges') _showCrossEdges = el.checked;
       // Toggle changes don't need a re-layout — just re-render.
       render().catch((err) => console.error(err));
     });
