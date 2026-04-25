@@ -199,6 +199,27 @@ ORDER  BY facility, n_pubs DESC, researcher
 LIMIT  500;`,
   },
   {
+    id: 'person-research-areas',
+    title: 'Person research areas (by publication topics)',
+    description:
+      'Each researcher mapped to cod-kmap research areas via the OpenAlex topics ' +
+      'on their publications. `weight` is the average per-publication match score ' +
+      '(0..1) and `evidence_count` is how many of their papers landed in that area. ' +
+      'Populated by scripts/compute_person_areas.py.',
+    sql: `-- Person × research_area derived from publication topics
+SELECT p.name                        AS researcher,
+       ra.label                      AS research_area,
+       ROUND(pa.weight, 3)           AS weight,
+       pa.evidence_count             AS evidence_pubs,
+       pa.source
+FROM   person_areas pa
+JOIN   people         p  ON p.person_id = pa.person_id
+JOIN   research_areas ra ON ra.area_id  = pa.area_id
+WHERE  pa.evidence_count >= 2
+ORDER  BY weight DESC, researcher, research_area
+LIMIT  500;`,
+  },
+  {
     id: 'top-collaborations',
     title: 'Top co-authorship pairs',
     description:

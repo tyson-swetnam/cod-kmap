@@ -110,8 +110,24 @@ CREATE TABLE IF NOT EXISTS person_areas (
     person_id           VARCHAR NOT NULL,
     area_id             VARCHAR NOT NULL,
     weight              DOUBLE DEFAULT 1.0,
+    evidence_count      INTEGER DEFAULT 0,
     source              VARCHAR,
     PRIMARY KEY (person_id, area_id)
+);
+
+-- Per-publication OpenAlex topics / concepts / keywords. See
+-- schema/schema.sql for the design rationale; in short, we store
+-- all three OpenAlex ontologies so the crosswalk can match against
+-- whichever best identifies a research area.
+CREATE TABLE IF NOT EXISTS publication_topics (
+    publication_id      VARCHAR NOT NULL,
+    concept_id          VARCHAR NOT NULL,
+    concept_name        VARCHAR NOT NULL,
+    score               DOUBLE,
+    level               INTEGER,
+    kind                VARCHAR DEFAULT 'concept',
+    source              VARCHAR DEFAULT 'openalex',
+    PRIMARY KEY (publication_id, concept_id)
 );
 
 CREATE TABLE IF NOT EXISTS collaborations (
@@ -125,7 +141,27 @@ CREATE TABLE IF NOT EXISTS collaborations (
 );
 """
 
+# Migration: older databases were created before evidence_count was
+# added to person_areas. ALTER TABLE is idempotent here (DuckDB ≥0.10
+# accepts IF NOT EXISTS on ADD COLUMN).
+PERSON_AREAS_MIGRATION = """
+ALTER TABLE person_areas ADD COLUMN IF NOT EXISTS evidence_count INTEGER DEFAULT 0;
+"""
+
 PEOPLE_VIEWS_DDL = r"""
+CREATE OR REPLACE VIEW v_person_areas_enriched AS
+SELECT
+    p.person_id,
+    p.name                       AS person,
+    ra.area_id,
+    ra.label                     AS area,
+    pa.weight,
+    pa.evidence_count,
+    pa.source
+FROM person_areas pa
+JOIN people         p  ON p.person_id  = pa.person_id
+JOIN research_areas ra ON ra.area_id   = pa.area_id;
+
 CREATE OR REPLACE VIEW v_facility_key_personnel AS
 SELECT
     f.facility_id,
@@ -177,13 +213,33 @@ GROUP BY p.person_id, p.name, p.name_family, p.orcid, p.openalex_id,
 
 def apply(conn: duckdb.DuckDBPyConnection) -> None:
     conn.execute(PEOPLE_TABLES_DDL)
+    # Migration: older DBs created before evidence_count was added.
+    # ALTER TABLE ADD COLUMN IF NOT EXISTS is a no-op on fresh DBs.
+    try:
+        conn.execute(PERSON_AREAS_MIGRATION)
+    except Exception as e:
+        # Some older DuckDB versions don't accept IF NOT EXISTS on
+        # ADD COLUMN; fall back to a probe-then-add pattern.
+        try:
+            cols = [r[0] for r in conn.execute(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = 'person_areas'"
+            ).fetchall()]
+            if "evidence_count" not in cols:
+                conn.execute(
+                    "ALTER TABLE person_areas "
+                    "ADD COLUMN evidence_count INTEGER DEFAULT 0"
+                )
+        except Exception as e2:
+            print(f"[warn] person_areas migration: {e2}")
     conn.execute(PEOPLE_VIEWS_DDL)
     print("[people] tables + views applied")
 
 
 def export_parquet(conn: duckdb.DuckDBPyConnection) -> None:
     tables = ["people", "facility_personnel", "publications",
-              "authorship", "person_areas", "collaborations"]
+              "authorship", "person_areas", "publication_topics",
+              "collaborations"]
     for base in PARQUET_OUT:
         base.mkdir(parents=True, exist_ok=True)
         for t in tables:

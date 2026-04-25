@@ -122,6 +122,78 @@ def fetch_works(sess: requests.Session, author_oa_id: str,
     return out[:max_records]
 
 
+def _short_concept_id(raw: str) -> str | None:
+    """OpenAlex returns full URLs (https://openalex.org/T10102) for ids.
+    We strip the prefix so the same identifier is reusable in joins
+    against the OpenAlex API and against analyst-edited crosswalk
+    CSVs (which write the bare id, not the URL)."""
+    if not raw:
+        return None
+    raw = str(raw)
+    # Topics:   https://openalex.org/T10102           -> T10102
+    # Concepts: https://openalex.org/C2778805511      -> C2778805511
+    # Keywords: https://openalex.org/keywords/citation -> keywords/citation
+    if "/" in raw:
+        # take the last 1 or 2 segments; topics/concepts last 1, keywords last 2
+        parts = raw.rstrip("/").split("/")
+        if "keywords" in parts:
+            i = parts.index("keywords")
+            return "/".join(parts[i:i + 2])
+        return parts[-1]
+    return raw
+
+
+def upsert_publication_topics(conn, pub_id: str, work: dict) -> int:
+    """Write OpenAlex concepts + topics + keywords for a publication.
+    Idempotent: ON CONFLICT DO NOTHING so re-runs are cheap. Returns
+    the number of rows actually inserted."""
+    rows: list[tuple] = []
+    for c in (work.get("concepts") or []):
+        cid = _short_concept_id(c.get("id"))
+        name = c.get("display_name")
+        if not (cid and name):
+            continue
+        rows.append((pub_id, cid, name, c.get("score"), c.get("level"),
+                     "concept", "openalex"))
+    for t in (work.get("topics") or []):
+        tid = _short_concept_id(t.get("id"))
+        name = t.get("display_name")
+        if not (tid and name):
+            continue
+        rows.append((pub_id, tid, name, t.get("score"), None,
+                     "topic", "openalex"))
+    for k in (work.get("keywords") or []):
+        kid = _short_concept_id(k.get("id"))
+        name = k.get("display_name")
+        if not (kid and name):
+            continue
+        rows.append((pub_id, kid, name, k.get("score"), None,
+                     "keyword", "openalex"))
+    if not rows:
+        return 0
+    written = 0
+    for r in rows:
+        try:
+            conn.execute(
+                """
+                INSERT INTO publication_topics (
+                    publication_id, concept_id, concept_name,
+                    score, level, kind, source
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (publication_id, concept_id) DO NOTHING
+                """,
+                list(r),
+            )
+            written += 1
+        except Exception as e:
+            # Most likely an FK violation if pub_id was somehow stale,
+            # or a transient conflict on a concurrent write. Log + skip
+            # so one bad row doesn't kill the rest of the publication.
+            print(f"[topics] skip {pub_id}/{r[1]}: {e}")
+    return written
+
+
 def upsert_publication(conn, work: dict) -> str | None:
     oa = work.get("id", "")
     doi = (work.get("doi") or "").replace("https://doi.org/", "").strip() or None
@@ -210,6 +282,7 @@ def enrich_person(conn, sess: requests.Session, person: dict,
 
     works = fetch_works(sess, author_oa, max_pubs)
     result["works_found"] = len(works)
+    result["topics_written"] = 0
     if dry:
         return result
     for w in works:
@@ -224,6 +297,12 @@ def enrich_person(conn, sess: requests.Session, person: dict,
             """,
             [person["person_id"], pid, person["name"]],
         )
+        # Write OpenAlex topics/concepts/keywords for this work. We do
+        # this *every* time we see the publication (not just on first
+        # insert) because OpenAlex topic scores update over time and
+        # we'd rather refresh than miss the new ones; ON CONFLICT DO
+        # NOTHING keeps re-runs cheap when nothing has changed.
+        result["topics_written"] += upsert_publication_topics(conn, pid, w)
         result["upserted"] += 1
     return result
 
@@ -260,22 +339,25 @@ def main() -> int:
     print(f"[enrich] processing {len(people)} people"
           f"{'  (dry-run)' if args.dry_run else ''}")
 
-    totals = {"works_found": 0, "upserted": 0, "skipped": 0}
+    totals = {"works_found": 0, "upserted": 0, "topics": 0, "skipped": 0}
     for i, p in enumerate(people, 1):
         try:
             r = enrich_person(conn, sess, p, args.max_pubs, args.dry_run)
             totals["works_found"] += r["works_found"]
             totals["upserted"] += r["upserted"]
+            totals["topics"] += r.get("topics_written", 0)
             if not r["works_found"]:
                 totals["skipped"] += 1
             print(f"  [{i}/{len(people)}] {p['name']}  "
-                  f"works={r['works_found']}  wrote={r['upserted']}")
+                  f"works={r['works_found']}  wrote={r['upserted']}  "
+                  f"topics+={r.get('topics_written', 0)}")
         except Exception as e:
             print(f"  [{i}/{len(people)}] {p['name']}  ERROR: {e}")
             totals["skipped"] += 1
 
     print(f"[done] works_found={totals['works_found']}  "
-          f"upserted={totals['upserted']}  skipped={totals['skipped']}")
+          f"upserted={totals['upserted']}  topics={totals['topics']}  "
+          f"skipped={totals['skipped']}")
     conn.close()
     return 0
 

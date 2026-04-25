@@ -465,8 +465,36 @@ CREATE OR REPLACE TABLE person_areas (
     person_id           VARCHAR NOT NULL REFERENCES people(person_id),
     area_id             VARCHAR NOT NULL REFERENCES research_areas(area_id),
     weight              DOUBLE DEFAULT 1.0,        -- usually n-of-publications-on-topic / n-total
+    evidence_count      INTEGER DEFAULT 0,         -- how many of this person's pubs contributed
     source              VARCHAR,                   -- 'openalex-topic' | 'gscholar-interest' | 'manual'
     PRIMARY KEY (person_id, area_id)
+);
+
+-- Per-publication OpenAlex topics / concepts / keywords. Captured at
+-- enrichment time so we can later derive *fine-grained* person→area
+-- weights without re-fetching every Work. OpenAlex returns three
+-- parallel ontologies on each Work payload:
+--
+--   * concepts  — legacy 6-level (0..5) Wikidata-derived concepts (~65k)
+--   * topics    — newer ~4500-leaf hierarchy (domain → field → subfield → topic)
+--   * keywords  — free-text-ish keyword annotations
+--
+-- We store all three rather than picking one, because the marine /
+-- coastal crosswalk (data/vocab_crosswalk/openalex_to_area.csv) is
+-- easier to maintain when it can match against whichever ontology
+-- best disambiguates a research_area slug. Topic IDs (T10102) and
+-- concept IDs (C2778805511) live in the same column because they
+-- share no prefix collision; `kind` flags which ontology the row
+-- came from.
+CREATE OR REPLACE TABLE publication_topics (
+    publication_id      VARCHAR NOT NULL REFERENCES publications(publication_id),
+    concept_id          VARCHAR NOT NULL,          -- 'C2778805511' | 'T10102' | 'keywords/citation'
+    concept_name        VARCHAR NOT NULL,
+    score               DOUBLE,                    -- 0..1 confidence reported by OpenAlex
+    level               INTEGER,                   -- concept level (0..5); NULL for topics/keywords
+    kind                VARCHAR DEFAULT 'concept', -- 'concept' | 'topic' | 'keyword'
+    source              VARCHAR DEFAULT 'openalex',
+    PRIMARY KEY (publication_id, concept_id)
 );
 
 -- Co-authorship graph between people in the dataset. Store with
@@ -537,3 +565,27 @@ LEFT JOIN authorship         a  ON a.person_id    = p.person_id
 LEFT JOIN publications       pub ON pub.publication_id = a.publication_id
 GROUP BY p.person_id, p.name, p.name_family, p.orcid, p.openalex_id,
          p.email, p.homepage_url, p.research_interests, p.status;
+
+-- person × research_area enriched with the actual evidence count and
+-- the top topics (drawn from publication_topics) that pushed the
+-- person into that area. Powers the SQL canned query "Person research
+-- areas (by publication topics)".
+CREATE OR REPLACE VIEW v_person_areas_enriched AS
+SELECT
+    p.person_id,
+    p.name                       AS person,
+    ra.area_id,
+    ra.label                     AS area,
+    pa.weight,
+    pa.evidence_count,
+    pa.source,
+    f0.facilities                AS facilities
+FROM person_areas pa
+JOIN people         p  ON p.person_id  = pa.person_id
+JOIN research_areas ra ON ra.area_id   = pa.area_id
+LEFT JOIN (
+    SELECT fp.person_id, list(DISTINCT f.canonical_name) AS facilities
+    FROM facility_personnel fp
+    JOIN facilities f ON f.facility_id = fp.facility_id
+    GROUP BY fp.person_id
+) f0 ON f0.person_id = p.person_id;

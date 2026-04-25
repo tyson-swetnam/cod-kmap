@@ -318,8 +318,16 @@ function assembleGraph(e, l) {
     pushEdge(`facility:${x.facility_id}`, `area:${x.area_id}`, 'facility-area', x.w);
   for (const x of (l.facility_region || []))
     pushEdge(`facility:${x.facility_id}`, `region:${x.region_id}`, 'facility-region', x.w);
+  // Real person↔area edges from `person_areas` (derived by
+  // compute_person_areas.py from publication topics). We MULTIPLY
+  // their weight by 1000 here so the dedupe below — which keeps the
+  // higher-weight edge for any duplicated (source, target, relation)
+  // key — always prefers the topic-derived edge over the transitive
+  // person_area_via_facility fallback. The display does not show raw
+  // weights so the inflation is invisible to the user.
   for (const x of (l.person_area || []))
-    pushEdge(`person:${x.person_id}`, `area:${x.area_id}`, 'person-area', x.w);
+    pushEdge(`person:${x.person_id}`, `area:${x.area_id}`,
+             'person-area', (Number(x.w) || 1) * 1000);
   for (const x of (l.person_person || []))
     pushEdge(`person:${x.person_a_id}`, `person:${x.person_b_id}`, 'co-author', x.w);
 

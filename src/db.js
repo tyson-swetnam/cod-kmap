@@ -71,7 +71,7 @@ export async function initDB() {
     // co-authorship graph). Empty tables are served as zero-row parquet
     // until the enrichment scripts populate them.
     'people', 'facility_personnel', 'publications', 'authorship',
-    'person_areas', 'collaborations',
+    'person_areas', 'collaborations', 'publication_topics',
   ];
   for (const t of tables) {
     const url = `${PARQUET_BASE}${t}.parquet`;
