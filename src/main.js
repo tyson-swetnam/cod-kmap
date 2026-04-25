@@ -14,6 +14,7 @@ import { initListView, renderList } from './views/list.js';
 import { initStatsView, renderStats } from './views/stats.js';
 import { initDocsView } from './views/docs.js';
 import { initNetworkView, renderNetworkView } from './views/network.js';
+import { initPeopleView, renderPeopleView } from './views/people.js';
 import { initSqlView, renderSqlView } from './views/sql.js';
 import { initRouter, currentPath } from './router.js';
 
@@ -54,6 +55,7 @@ registerLegendOverlayProvider(activeOverlays);
 initListView(document.getElementById('browse'));
 initStatsView(document.getElementById('stats'));
 initNetworkView(document.getElementById('network'));
+initPeopleView(document.getElementById('people'));
 initSqlView(document.getElementById('sql'));
 
 // ── Debounced search + clear button ────────────────────────────────
@@ -195,13 +197,17 @@ const views = {
   '/':        document.getElementById('view-map'),
   '/browse':  document.getElementById('view-browse'),
   '/network': document.getElementById('view-network'),
+  '/people':  document.getElementById('view-people'),
   '/sql':     document.getElementById('view-sql'),
   '/stats':   document.getElementById('view-stats'),
   '/docs':    document.getElementById('view-docs'),
 };
 function showView(path) {
+  // Sub-routes like '/people/<id>' need to highlight their parent
+  // (/people) — strip the trailing segment when looking up the view.
+  const rootSeg = '/' + (path.split('/')[1] || '');
   Object.entries(views).forEach(([p, el]) => {
-    el.classList.toggle('active', p === path);
+    el.classList.toggle('active', p === rootSeg);
   });
 }
 
@@ -225,6 +231,14 @@ initRouter({
     // Network view uses DuckDB directly; kick the render (it's idempotent
     // and caches the graph so subsequent visits are fast).
     renderNetworkView();
+  },
+  '/people': (path) => {
+    showView('/people');
+    document.body.classList.add('no-sidebar');
+    setDrawer(false);
+    // /people/<person_id> jumps + highlights that researcher's card.
+    const m = path.match(/^\/people\/(.+)$/);
+    renderPeopleView(m ? decodeURIComponent(m[1]) : null);
   },
   '/sql': () => {
     showView('/sql');

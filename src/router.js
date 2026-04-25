@@ -27,18 +27,26 @@ function navigate(path) {
   if (path === _currentPath) return;
   _currentPath = path;
 
-  // Update active tab styling
+  // Top-level segment for tab highlighting + sidebar / handler lookup.
+  // 'top' is a reserved global in browser context, so call it 'rootSeg'.
+  const rootSeg = '/' + (path.split('/')[1] || '');
+
+  // Update active tab styling. Sub-routes like '/people/<id>' light
+  // up the parent tab '/people'.
   document.querySelectorAll('.tabs a[data-view]').forEach((a) => {
-    a.classList.toggle('active', a.dataset.view === path);
+    a.classList.toggle('active', a.dataset.view === rootSeg);
   });
 
-  // Hide/show sidebar for views that don't need it
-  const noSidebar = (path === '/docs' || path === '/stats'
-                  || path === '/network' || path === '/sql');
+  // Hide/show sidebar for views that don't need it.
+  const noSidebar = (rootSeg === '/docs' || rootSeg === '/stats'
+                  || rootSeg === '/network' || rootSeg === '/sql'
+                  || rootSeg === '/people');
   document.body.classList.toggle('no-sidebar', noSidebar);
 
-  // Call route handler
-  const handler = _routes[path] || _routes['/'];
+  // Call route handler. Try exact match first; if the path has
+  // sub-segments (e.g. '/people/<id>'), fall back to the top-level
+  // handler which is responsible for parsing its own sub-routes.
+  const handler = _routes[path] || _routes[rootSeg] || _routes['/'];
   if (handler) handler(path);
 }
 

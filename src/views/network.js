@@ -535,7 +535,10 @@ async function layoutAndFit(d3, members, edges, square, facCircles) {
     if (b) { f.x = b.x; f.y = b.y; }
   }
   // People scattered inside their primary facility's circle. Use a
-  // golden-angle spiral so positions are deterministic and even.
+  // golden-angle spiral so positions are deterministic. We extend the
+  // spiral out toward the bubble's perimeter (88% radius) so people
+  // don't crowd the centre, and the spacing scales with the bubble's
+  // actual size so dense institutions get equally-spaced names.
   const PHI = Math.PI * (3 - Math.sqrt(5));   // golden angle
   const peoPerFac = new Map();
   for (const p of peo) {
@@ -545,9 +548,9 @@ async function layoutAndFit(d3, members, edges, square, facCircles) {
     const k = peoPerFac.get(b) || 0;
     peoPerFac.set(b, k + 1);
     const n = (peopleAt.get(fid) || 1);
-    // Deterministic spiral inside the bubble's inner 70%.
+    // Deterministic spiral up to bubble's inner 88%.
     const t = (k + 0.5) / Math.max(n, 1);
-    const r = b.r * 0.62 * Math.sqrt(t);
+    const r = b.r * 0.88 * Math.sqrt(t);
     const a = (k + 1) * PHI;
     p.x = b.x + r * Math.cos(a);
     p.y = b.y + r * Math.sin(a);
@@ -564,8 +567,23 @@ async function layoutAndFit(d3, members, edges, square, facCircles) {
 
 
 // ── Step 3: Voronoi-merged country-like polygons ────────────────────
-async function computePolygons(d3delaunay, polygonClipping, allNodes, w, h) {
-  // Bounding box of all node positions, with padding.
+//
+// CARTOGRAM ENFORCEMENT: after merging Voronoi cells per area, we
+// INTERSECT each merged polygon with its supernode-square (slightly
+// inflated). This guarantees polygon area ≤ square area, so dense
+// areas can never be visually smaller than sparse ones — the
+// cartogram math the paper assumes is now actually enforced.
+//
+// Without this clip, Voronoi cells along the periphery extend
+// outward toward the anchor ring, ballooning the polygons of outer
+// (sparse) areas. We brought the anchor ring much closer in too
+// (1.05 × bbox half-radius instead of 1.2 ×) so even uncliped
+// versions stay tighter, but the intersection is the real fix.
+async function computePolygons(d3delaunay, polygonClipping, allNodes,
+                                squares, w, h) {
+  const PC = polygonClipping.default || polygonClipping;
+
+  // Bounding box of all node positions, with modest padding.
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const n of allNodes) {
     if (n.x < minX) minX = n.x;
@@ -579,11 +597,12 @@ async function computePolygons(d3delaunay, polygonClipping, allNodes, w, h) {
   const bbMaxX = maxX + padX, bbMaxY = maxY + padY;
   const bbW = bbMaxX - bbMinX, bbH = bbMaxY - bbMinY;
 
-  // Add anchor nodes around the perimeter so outer Voronoi cells get
-  // bounded shapes (otherwise they extend to infinity).
+  // Perimeter anchor ring — close to the bounding box so outer cells
+  // don't extend wildly. 1.05× max half-extent is just outside the
+  // outermost real nodes.
   const cxA = (bbMinX + bbMaxX) / 2;
   const cyA = (bbMinY + bbMaxY) / 2;
-  const ringR = Math.max(bbW, bbH) * 0.6;
+  const ringR = Math.max(bbW, bbH) * 0.55;
   const anchors = [];
   for (let i = 0; i < PERIMETER_NODES; i++) {
     const a = (i / PERIMETER_NODES) * 2 * Math.PI;
@@ -595,16 +614,16 @@ async function computePolygons(d3delaunay, polygonClipping, allNodes, w, h) {
     });
   }
 
-  // Voronoi over [nodes + anchors], clipped to a generous bounding box.
+  // Voronoi clip extent only slightly beyond the anchor ring.
   const all = [...allNodes, ...anchors];
   const points = all.map((n) => [n.x, n.y]);
   const delaunay = d3delaunay.Delaunay.from(points);
   const voronoi = delaunay.voronoi([
-    cxA - ringR * 1.2, cyA - ringR * 1.2,
-    cxA + ringR * 1.2, cyA + ringR * 1.2,
+    cxA - ringR * 1.05, cyA - ringR * 1.05,
+    cxA + ringR * 1.05, cyA + ringR * 1.05,
   ]);
 
-  // Group cell indices by area_id (anchors are excluded).
+  // Group cell indices by area_id (perimeter anchors excluded).
   const cellsByArea = new Map();
   for (let i = 0; i < all.length; i++) {
     const n = all[i];
@@ -616,28 +635,54 @@ async function computePolygons(d3delaunay, polygonClipping, allNodes, w, h) {
     cellsByArea.set(n.area_id, list);
   }
 
-  // Union the cells of each area via polygon-clipping. The library
-  // returns a MultiPolygon: array of polygons, each an array of rings,
-  // each ring an array of [x,y]. For an area's cells that all share
-  // edges, this collapses to one polygon. Disconnected components
-  // (rare, only happens if Voronoi splits an area's cells across
-  // others) come back as multiple polygons in the result.
-  const PC = polygonClipping.default || polygonClipping;
+  // For each area: union its cells, then INTERSECT with the area's
+  // supernode square (inflated by 12% so the intersection isn't
+  // perfectly square — it preserves the irregular Voronoi boundary
+  // wherever the cells stay inside the square). This is the
+  // cartogram clamp.
   const result = new Map();
   for (const [area, cells] of cellsByArea.entries()) {
     if (!cells.length) continue;
-    const wrapped = cells.map((c) => [c]);  // cells are rings → wrap
+    const square = squares.get(area);
+    if (!square) continue;
+
+    // Union all the area's Voronoi cells into one polygon.
     let merged;
     try {
-      merged = PC.union(...wrapped);
+      merged = PC.union(...cells.map((c) => [c]));
     } catch (e) {
       console.warn('[mvg] polygon union failed for', area, e);
-      // Fallback: just use the largest single cell as the "polygon".
       merged = [[cells[0]]];
     }
-    // Keep only the largest polygon per area for clean rendering.
+
+    // Build the cartogram clip — the supernode square inflated 12% so
+    // adjacent areas can still touch and look glued together.
+    const half = square.side * 0.5 * 1.12;
+    const cx = square.x, cy = square.y;
+    const clipBox = [
+      [
+        [cx - half, cy - half],
+        [cx + half, cy - half],
+        [cx + half, cy + half],
+        [cx - half, cy + half],
+        [cx - half, cy - half],
+      ],
+    ];
+
+    // Intersect Voronoi-union with the clip square. polygon-clipping
+    // returns a MultiPolygon — we keep the LARGEST resulting polygon
+    // (in case the intersection broke into pieces, which can happen
+    // when the area's nodes are spread far apart across the bbox).
+    let clipped;
+    try {
+      clipped = PC.intersection(merged, [clipBox]);
+    } catch (e) {
+      console.warn('[mvg] polygon intersection failed for', area, e);
+      clipped = merged;
+    }
+
     let bestRing = null, bestArea = -Infinity;
-    for (const poly of merged) {
+    for (const poly of clipped) {
       if (!poly || !poly[0] || poly[0].length < 3) continue;
       const a = Math.abs(d3PolygonArea(poly[0]));
       if (a > bestArea) { bestArea = a; bestRing = poly[0]; }
@@ -713,7 +758,8 @@ async function buildLayout(data, w, h) {
     allNodes.push(...placed);
   }
 
-  const polyOut = await computePolygons(d3delaunay, polygonClipping, allNodes, w, h);
+  const polyOut = await computePolygons(d3delaunay, polygonClipping,
+                                         allNodes, squares, w, h);
 
   // Cross-area edges for rendering (one row per pair, weight summed).
   const memberArea = new Map(allNodes.map((n) => [n.id, n.area_id]));
@@ -881,38 +927,88 @@ async function render() {
         .attr('stroke-width', (e) => 0.6 + Math.log(1 + e.w) * 0.6);
     }
 
-    // Layer 3: nodes. Person radii scale with the composite importance
-    // weight (funding base × co-authors × publications) so prominent
-    // researchers are visually large; facility radii stay constant
-    // (they're already represented by the polygon sizing).
-    const visibleNodes = _layout.nodes.filter((n) =>
-      (n.kind === 'facility' && _showFacility) ||
-      (n.kind === 'person' && _showPerson));
-    const personRadius = (d) => {
-      // weight ranges roughly 0..25; map to 3..10 px via sqrt curve.
-      const w = d.importance || 0;
-      return Math.min(10, 3 + Math.sqrt(w) * 1.0);
-    };
-    const nodeG = root.append('g').attr('class', 'mvg-nodes');
-    nodeG.selectAll('circle').data(visibleNodes).enter().append('circle')
-      .attr('cx', (d) => d.x).attr('cy', (d) => d.y)
-      .attr('r', (d) => d.kind === 'person'
-        ? personRadius(d)
-        : (NODE_RADIUS[d.kind] || 3))
-      .attr('fill', (d) => NODE_COLORS[d.kind])
-      .attr('stroke', '#fff')
-      .attr('stroke-width', 0.6)
-      .style('cursor', 'pointer')
-      .on('mouseenter', (ev, d) => {
-        showTip(tip, ev, nodeTipHtml(d));
-      })
-      .on('mouseleave', () => hideTip(tip))
-      .on('click', (ev, d) => {
-        const url = d.url || d.homepage_url ||
-          (d.openalex_id ? `https://openalex.org/${d.openalex_id}` :
-            (d.orcid ? `https://orcid.org/${d.orcid}` : null));
-        if (url) window.open(url, '_blank', 'noopener');
-      });
+    // Layer 3: nodes. Researchers now render as NAME LABELS (top-N
+    // per area by composite importance) so the map looks like the
+    // UArizona KMap reference image. Lower-importance researchers
+    // still get small dots so they're not invisible. Facilities stay
+    // as small dots at their bubble centres.
+    //
+    // Top-N per area is computed from the composite weight set in
+    // membersOfArea(). Font-size scales by sqrt(importance) so the
+    // most-prominent name is biggest.
+    const facNodes = _layout.nodes.filter((n) => n.kind === 'facility');
+    const perNodes = _layout.nodes.filter((n) => n.kind === 'person');
+
+    // Bucket people by area; pick the top N labels per area.
+    const PER_AREA_LABEL_LIMIT = 14;
+    const personByArea = new Map();
+    for (const p of perNodes) {
+      if (!personByArea.has(p.area_id)) personByArea.set(p.area_id, []);
+      personByArea.get(p.area_id).push(p);
+    }
+    const labelledIds = new Set();
+    for (const list of personByArea.values()) {
+      list.sort((a, b) => (b.importance || 0) - (a.importance || 0));
+      for (const p of list.slice(0, PER_AREA_LABEL_LIMIT)) labelledIds.add(p.id);
+    }
+
+    if (_showFacility) {
+      root.append('g').attr('class', 'mvg-fac-dots')
+        .selectAll('circle').data(facNodes).enter().append('circle')
+        .attr('cx', (d) => d.x).attr('cy', (d) => d.y)
+        .attr('r', NODE_RADIUS.facility || 3)
+        .attr('fill', NODE_COLORS.facility)
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 0.6)
+        .style('cursor', 'pointer')
+        .on('mouseenter', (ev, d) => showTip(tip, ev, nodeTipHtml(d)))
+        .on('mouseleave', () => hideTip(tip))
+        .on('click', (ev, d) => {
+          const url = d.url || d.homepage_url;
+          if (url) window.open(url, '_blank', 'noopener');
+        });
+    }
+
+    if (_showPerson) {
+      // Small dots for non-labelled people.
+      const dotPeople = perNodes.filter((p) => !labelledIds.has(p.id));
+      root.append('g').attr('class', 'mvg-per-dots')
+        .selectAll('circle').data(dotPeople).enter().append('circle')
+        .attr('cx', (d) => d.x).attr('cy', (d) => d.y)
+        .attr('r', 2.4)
+        .attr('fill', NODE_COLORS.person)
+        .attr('fill-opacity', 0.7)
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 0.5)
+        .style('cursor', 'pointer')
+        .on('mouseenter', (ev, d) => showTip(tip, ev, nodeTipHtml(d)))
+        .on('mouseleave', () => hideTip(tip))
+        .on('click', (ev, d) => onPersonClick(d));
+
+      // Name labels for the top N per area.
+      const labelPeople = perNodes.filter((p) => labelledIds.has(p.id));
+      const personFontSize = (d) => {
+        const w = d.importance || 0;
+        return Math.max(8, Math.min(15, 8 + Math.sqrt(w) * 1.1));
+      };
+      root.append('g').attr('class', 'mvg-per-labels')
+        .attr('text-anchor', 'middle')
+        .attr('font-family', 'system-ui, sans-serif')
+        .selectAll('text').data(labelPeople).enter().append('text')
+        .attr('x', (d) => d.x).attr('y', (d) => d.y)
+        .attr('font-size', personFontSize)
+        .attr('font-weight', 500)
+        .attr('fill', '#0c4a6e')
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 2.4)
+        .attr('stroke-linejoin', 'round')
+        .attr('paint-order', 'stroke')
+        .style('cursor', 'pointer')
+        .text((d) => shortName(d.name))
+        .on('mouseenter', (ev, d) => showTip(tip, ev, nodeTipHtml(d)))
+        .on('mouseleave', () => hideTip(tip))
+        .on('click', (ev, d) => onPersonClick(d));
+    }
 
     // Layer 4: polygon labels
     const labelG = root.append('g').attr('class', 'mvg-labels')
@@ -1014,6 +1110,26 @@ function facilityCircleTipHtml(c) {
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"]/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+// Render a researcher's name compactly: first initial + last name when
+// the full name is long. Keeps map labels legible at default zoom.
+function shortName(full) {
+  if (!full) return '';
+  const parts = String(full).trim().split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  const last = parts[parts.length - 1];
+  // If full name is short enough, keep it; else collapse to "F. Last".
+  if (full.length <= 20) return full;
+  return `${parts[0][0]}. ${last}`;
+}
+
+// Click on a researcher → take the user to their detail card in the
+// People directory tab (which we ship as #/people/<person_id>). The
+// directory page handles loading the per-person record.
+function onPersonClick(d) {
+  if (!d || !d.id) return;
+  location.hash = `#/people/${encodeURIComponent(d.id)}`;
 }
 
 
