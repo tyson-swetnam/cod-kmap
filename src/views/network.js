@@ -31,6 +31,8 @@ const KIND_COLORS = {
   type:          '#e0651f',   // burnt orange
   region:        '#16a34a',   // green
   funder:        '#dc2626',   // red
+  facility:      '#0d6e6e',   // teal — site-of-work
+  person:        '#0ea5e9',   // sky blue — researchers/admins/staff
 };
 const KIND_LABELS = {
   network:  'Network',
@@ -38,10 +40,15 @@ const KIND_LABELS = {
   type:     'Facility type',
   region:   'Region (overlay)',
   funder:   'Funder',
+  facility: 'Facility',
+  person:   'Person (researcher / staff)',
 };
 // Default view: just networks + research areas. Keeps first paint
 // fast and readable (~65 nodes); users can toggle facility types,
-// regions (~150), and funders (~70) back in via the legend.
+// regions (~150), funders (~70), facilities (~210), and people
+// (~620) back in via the legend. People + facility together produce
+// the "researchers and where they work" projection — useful but
+// dense (~830 nodes), so opt-in.
 const DEFAULT_KINDS = new Set(['network', 'area']);
 
 // ── d3 loader ───────────────────────────────────────────────────────
@@ -69,6 +76,15 @@ async function buildGraphFromDuckDB() {
     regions:        `SELECT region_id AS id, name, acronym, kind, network_id, url
                        FROM regions`,
     funders:        `SELECT funder_id AS id, name, type, country FROM funders`,
+    // Facilities + people are first-class node kinds when their toggles
+    // are on. The 210 facilities give site-of-work anchors; the ~620
+    // people add researchers/admins/staff who hold roles at facilities.
+    facilities:     `SELECT facility_id AS id, canonical_name AS name,
+                            acronym, country, facility_type AS f_type, url
+                       FROM facilities`,
+    people:         `SELECT person_id AS id, name, orcid, openalex_id,
+                            email, homepage_url, research_interests
+                       FROM people`,
   };
 
   // Co-occurrence edges across facilities. We only keep category ↔ category
@@ -161,6 +177,35 @@ async function buildGraphFromDuckDB() {
       SELECT region_id, network_id FROM regions WHERE network_id IS NOT NULL`,
     region_area_direct: `
       SELECT region_id, area_id FROM region_area_links`,
+
+    // ── People-side edges ────────────────────────────────────────────
+    // facility ↔ person: every facility_personnel row. Weight = 1 by
+    // default, bumped to 3 for is_key_personnel=true so Directors and
+    // Chief Scientists draw thicker lines than the OpenAlex-seeded
+    // top-publishing researchers.
+    facility_person: `
+      SELECT facility_id, person_id,
+             CASE WHEN is_key_personnel THEN 3 ELSE 1 END AS w
+      FROM facility_personnel`,
+
+    // facility ↔ network / area / region projected through facility
+    // (already represented by aggregate edges above; we add the direct
+    // facility-as-node links so the facility node anchors visually).
+    facility_network: `
+      SELECT facility_id, network_id, 1 AS w FROM network_membership`,
+    facility_area: `
+      SELECT facility_id, area_id, 1 AS w FROM area_links`,
+    facility_region: `
+      SELECT facility_id, region_id, 1 AS w FROM facility_regions`,
+
+    // person ↔ research_area weighting (from publication topics).
+    person_area: `
+      SELECT person_id, area_id, weight AS w FROM person_areas`,
+
+    // person ↔ person co-authorship (already pairwise A<B in the table).
+    person_person: `
+      SELECT person_a_id, person_b_id, co_pub_count AS w
+      FROM collaborations`,
   };
 
   // Kick everything off in parallel.
@@ -199,6 +244,8 @@ function assembleGraph(e, l) {
   for (const ra of e.research_areas)    push('area',    ra.id, { name: ra.name, parent_id: ra.parent_id });
   for (const r  of e.regions)           push('region',  r.id,  { name: r.name, acronym: r.acronym, kind_label: r.kind, network_id: r.network_id, url: r.url });
   for (const fu of e.funders)           push('funder',  fu.id, { name: fu.name, type: fu.type, country: fu.country });
+  for (const f  of (e.facilities || []))push('facility', f.id, { name: f.name, acronym: f.acronym, country: f.country, f_type: f.f_type, url: f.url });
+  for (const p  of (e.people || []))    push('person',   p.id, { name: p.name, orcid: p.orcid, openalex_id: p.openalex_id, email: p.email, url: p.homepage_url, research_interests: p.research_interests });
 
   const edges = [];
   function pushEdge(src, tgt, relation, weight = 1) {
@@ -223,6 +270,21 @@ function assembleGraph(e, l) {
   // Same-kind edges.
   for (const x of l.network_network) pushEdge(`network:${x.a_id}`,       `network:${x.b_id}`,        'network-network', x.w);
   for (const x of l.area_area_parent) pushEdge(`area:${x.area_id}`,      `area:${x.parent_id}`,      'sub-area', 2);
+
+  // People-side edges. Only added when both endpoints are present in
+  // the visible-kind set (filterGraph drops dangling ones cheaply).
+  for (const x of (l.facility_person || []))
+    pushEdge(`facility:${x.facility_id}`, `person:${x.person_id}`, 'works-at', x.w);
+  for (const x of (l.facility_network || []))
+    pushEdge(`facility:${x.facility_id}`, `network:${x.network_id}`, 'facility-network', x.w);
+  for (const x of (l.facility_area || []))
+    pushEdge(`facility:${x.facility_id}`, `area:${x.area_id}`, 'facility-area', x.w);
+  for (const x of (l.facility_region || []))
+    pushEdge(`facility:${x.facility_id}`, `region:${x.region_id}`, 'facility-region', x.w);
+  for (const x of (l.person_area || []))
+    pushEdge(`person:${x.person_id}`, `area:${x.area_id}`, 'person-area', x.w);
+  for (const x of (l.person_person || []))
+    pushEdge(`person:${x.person_a_id}`, `person:${x.person_b_id}`, 'co-author', x.w);
 
   // Structural (unweighted) region ↔ network and region ↔ area come from
   // the schema itself. Dedupe against the facility-derived edges by using
@@ -404,6 +466,10 @@ async function render() {
       if (d.relation === 'sub-area')       return '#fde68a';
       if (d.relation === 'region-network') return '#c4b5fd';
       if (d.relation === 'area-region')    return '#86efac';
+      if (d.relation === 'works-at')       return '#0ea5e9';   // person ↔ facility
+      if (d.relation === 'co-author')      return '#38bdf8';   // person ↔ person
+      if (d.relation === 'person-area')    return '#7dd3fc';   // person ↔ research_area
+      if (d.relation.startsWith('facility-')) return '#0d6e6e';
       if (d.relation.startsWith('type-'))  return '#fbbf24';
       if (d.relation.includes('funder'))   return '#fca5a5';
       if (d.relation === 'network-network')return '#a78bfa';
