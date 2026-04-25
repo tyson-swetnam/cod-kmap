@@ -878,13 +878,19 @@ footer a:hover { color: var(--c-primary); }
   background:
     radial-gradient(circle at 50% 50%, #fff 0%, #f3f1ec 60%, #e8e4dc 100%);
 }
-.network-svg {
+.network-svg, .mvg-svg {
   width: 100%;
   height: 100%;
   display: block;
   cursor: grab;
 }
-.network-svg:active { cursor: grabbing; }
+.network-svg:active, .mvg-svg:active { cursor: grabbing; }
+/* MVG / KMap polygon view: subtle styling so polygon fills don't fight node legibility. */
+.mvg-polys path { transition: fill-opacity 120ms ease; }
+.mvg-nodes circle { transition: r 100ms ease; }
+.mvg-nodes circle:hover { r: 6; }
+.mvg-edges line { stroke-linecap: round; }
+.mvg-labels text { user-select: none; }
 
 /* Per-element styling set by d3 on attributes, so we only decorate the
  * wrapper types here (selection highlight comes from d3 opacity changes). */

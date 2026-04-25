@@ -72,6 +72,12 @@ export async function initDB() {
     // until the enrichment scripts populate them.
     'people', 'facility_personnel', 'publications', 'authorship',
     'person_areas', 'collaborations', 'publication_topics',
+    // MVG (knowledge-map) precomputed groupings — written by
+    // scripts/compute_primary_groups.py. One row per facility/person
+    // assigning a single primary research area; one row per area with
+    // its post-collapse status. Drives src/views/network.js.
+    'facility_primary_groups', 'person_primary_groups',
+    'research_areas_active',
   ];
   for (const t of tables) {
     const url = `${PARQUET_BASE}${t}.parquet`;

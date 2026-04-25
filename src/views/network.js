@@ -1,713 +1,721 @@
-// network.js — Network view: D3 force-directed knowledge graph.
+// network.js — Knowledge map (MVG, Map Visualization with Group restriction).
 //
-// Nodes are the _categorical_ entities in the cod-kmap schema:
+// Replaces the previous force-directed knowledge graph with a country-like
+// map where each polygon is one research area (parent-collapsed when small),
+// polygon area is proportional to the number of facilities in that area,
+// and facilities + people sit inside their polygon. Cross-area edges
+// reveal interdisciplinary collaboration.
 //
-//   - network           (IOOS regional associations, LTER, NERRS, etc.)
-//   - research_area     (GCMD-style topics: coastal processes, etc.)
-//   - facility_type     (federal, university-marine-lab, network, …)
-//   - region            (individual overlay polygons: sanctuaries, NERRs, …)
-//   - funder            (federal / foundation / state agencies)
+// Implements the KMap algorithm from Hossain, Moradi, Mondal & Kobourov,
+// "Map Visualizations for Graphs with Group Restrictions" (Graphics
+// Interface 2025, DOI 10.1145/3769872.3769900). Three steps:
 //
-// Facilities are NOT drawn as nodes — they act as the "connective tissue"
-// that turns each shared facility between two category nodes into an edge
-// of weight N. So "IOOS × coastal-processes" is one edge weighted by the
-// number of facilities that are IOOS members AND tagged to coastal
-// processes, rather than dozens of individual facility rays. Edges that
-// are structural (region → network, area taxonomy) don't need the
-// facility join — they're built directly from the link tables.
+//   1. Supergraph: one supernode per active research area, weight = facility
+//      count, edges = cross-area facility-personnel + co-author counts.
+//      Embed with d3-force using square collision so each area gets a
+//      non-overlapping square sized by sqrt(weight).
+//
+//   2. Subgraph layout: for each area, run a small d3-force layout on its
+//      facility + person nodes, then scale to fit inside its square.
+//
+//   3. Voronoi-merged polygons: compute Voronoi over all node positions
+//      plus a ring of perimeter "anchor" points; for each area, union the
+//      cells of its members via polygon-clipping. Smooth boundaries via
+//      one Chaikin pass to soften the polygon outlines.
+//
+// Phase 3 (PCL refinement, custom force terms) and Phase 5 (canvas
+// rendering + Web Worker) are documented in docs/map_visualization_plan.md
+// and will land as follow-up commits.
 
 import { getConn, whenReady } from '../db.js';
 
+// ── Module state ────────────────────────────────────────────────────
 let _container = null;
-let _graphData = null;
+let _layout = null;
 let _d3Promise = null;
-let _activeKinds = null;
-let _sim = null;
-let _minWeight = 1;
+let _delaunayPromise = null;
+let _polygonClippingPromise = null;
+let _showFacility = true;
+let _showPerson = true;
+let _showCrossEdges = true;
 
-const KIND_COLORS = {
-  network:       '#7c3aed',   // purple
-  area:          '#d4a017',   // gold
-  type:          '#e0651f',   // burnt orange
-  region:        '#16a34a',   // green
-  funder:        '#dc2626',   // red
-  facility:      '#0d6e6e',   // teal — site-of-work
-  person:        '#0ea5e9',   // sky blue — researchers/admins/staff
-};
-const KIND_LABELS = {
-  network:  'Network',
-  area:     'Research area',
-  type:     'Facility type',
-  region:   'Region (overlay)',
-  funder:   'Funder',
-  facility: 'Facility',
-  person:   'Person (researcher / staff)',
-};
-// Default view: just networks + research areas. Keeps first paint
-// fast and readable (~65 nodes); users can toggle facility types,
-// regions (~150), funders (~70), facilities (~210), and people
-// (~620) back in via the legend. People + facility together produce
-// the "researchers and where they work" projection — useful but
-// dense (~830 nodes), so opt-in.
-const DEFAULT_KINDS = new Set(['network', 'area']);
+// 33-step palette for area polygons. Tuned for distinguishability
+// against a parchment background with low-alpha fills.
+const AREA_PALETTE = [
+  '#7c3aed', '#0d9488', '#d97706', '#dc2626', '#2563eb',
+  '#059669', '#a16207', '#9333ea', '#0891b2', '#65a30d',
+  '#e11d48', '#0284c7', '#ca8a04', '#7e22ce', '#16a34a',
+  '#b45309', '#1d4ed8', '#15803d', '#a21caf', '#be123c',
+  '#0369a1', '#4d7c0f', '#be185d', '#1e40af', '#166534',
+  '#86198f', '#1e3a8a', '#854d0e', '#5b21b6', '#0c4a6e',
+  '#365314', '#3f6212', '#172554',
+];
 
-// ── d3 loader ───────────────────────────────────────────────────────
+const NODE_COLORS = {
+  facility: '#0d6e6e',
+  person:   '#0ea5e9',
+};
+const NODE_RADIUS = { facility: 4, person: 3 };
+
+// Layout tuning
+const SUPERGRAPH_TICKS = 400;
+const SUBGRAPH_TICKS   = 120;
+const SUPER_PADDING    = 18;     // px gap between adjacent squares
+const PERIMETER_PAD    = 0.18;   // anchor ring at 1+pad of layout bbox half-width
+const PERIMETER_NODES  = 24;     // anchors around the layout
+const SUPERNODE_SCALE  = 9;      // side = scale * sqrt(weight)
+
+
+// ── Async-import helpers ────────────────────────────────────────────
 function loadD3() {
   if (_d3Promise) return _d3Promise;
   _d3Promise = import('https://esm.sh/d3@7');
   return _d3Promise;
 }
+function loadDelaunay() {
+  if (_delaunayPromise) return _delaunayPromise;
+  _delaunayPromise = import('https://esm.sh/d3-delaunay@6');
+  return _delaunayPromise;
+}
+function loadPolygonClipping() {
+  if (_polygonClippingPromise) return _polygonClippingPromise;
+  _polygonClippingPromise = import('https://esm.sh/polygon-clipping@0.15.7');
+  return _polygonClippingPromise;
+}
 
-// ── Data assembly ───────────────────────────────────────────────────
-async function buildGraphFromDuckDB() {
-  // Wait until every parquet view is registered. Without this, clicking
-  // the Network tab during the initial bootstrap window hits a partially
-  // initialised connection where some tables (e.g. `networks`) don't
-  // yet exist, and the first query fails with a Catalog Error.
+
+// ── Data fetch ──────────────────────────────────────────────────────
+async function fetchData() {
   await whenReady();
   const conn = getConn();
   if (!conn) throw new Error('DuckDB connection not ready');
 
-  // Categorical entities (→ nodes).
-  const entitySqls = {
-    facility_types: `SELECT slug AS id, label AS name FROM facility_types`,
-    networks:       `SELECT network_id AS id, label AS name, level, url FROM networks`,
-    research_areas: `SELECT area_id AS id, label AS name, parent_id FROM research_areas`,
-    regions:        `SELECT region_id AS id, name, acronym, kind, network_id, url
-                       FROM regions`,
-    funders:        `SELECT funder_id AS id, name, type, country FROM funders`,
-    // Facilities + people are first-class node kinds when their toggles
-    // are on. The 210 facilities give site-of-work anchors; the ~620
-    // people add researchers/admins/staff who hold roles at facilities.
-    facilities:     `SELECT facility_id AS id, canonical_name AS name,
-                            acronym, country, facility_type AS f_type, url
-                       FROM facilities`,
-    people:         `SELECT person_id AS id, name, orcid, openalex_id,
-                            email, homepage_url, research_interests
-                       FROM people`,
+  const queries = {
+    // ACTIVE areas only — collapsed_into IS NULL means this area is its
+    // own polygon. Collapsed areas are absorbed into their parent in the
+    // facility/person primary tables already.
+    areas: `
+      SELECT area_id AS id, label AS name, n_facilities AS weight
+      FROM   research_areas_active
+      WHERE  collapsed_into IS NULL
+      ORDER  BY area_id`,
+
+    // One row per facility with its primary area + display fields.
+    facilities: `
+      SELECT f.facility_id AS id,
+             f.canonical_name AS name,
+             f.acronym,
+             f.country,
+             f.facility_type AS f_type,
+             f.url,
+             g.primary_area_id AS area_id
+      FROM   facilities f
+      JOIN   facility_primary_groups g ON g.facility_id = f.facility_id
+      WHERE  g.primary_area_id IS NOT NULL`,
+
+    // One row per person with primary area; only people who have ≥1
+    // facility role appear so the map stays in sync with what we know.
+    people: `
+      SELECT p.person_id AS id,
+             p.name,
+             p.orcid,
+             p.openalex_id,
+             p.homepage_url,
+             g.primary_area_id AS area_id
+      FROM   people p
+      JOIN   person_primary_groups g ON g.person_id = p.person_id
+      WHERE  g.primary_area_id IS NOT NULL`,
+
+    // Facility ↔ person via facility_personnel (intra+inter polygon).
+    fac_pers: `
+      SELECT facility_id AS source, person_id AS target,
+             COUNT(*) AS w
+      FROM   facility_personnel
+      GROUP  BY facility_id, person_id`,
+
+    // Person ↔ person via co-authorship.
+    coauthors: `
+      SELECT person_a_id AS source, person_b_id AS target,
+             co_pub_count AS w
+      FROM   collaborations
+      WHERE  co_pub_count >= 2`,
   };
 
-  // Co-occurrence edges across facilities. We only keep category ↔ category
-  // (not facility ↔ category) and attach the count of shared facilities
-  // so the renderer can weight / scale edges.
-  //
-  // Helper SQL: derive per-facility sets first, then cartesian-join them
-  // inside DuckDB using the link tables. Everything is read-only against
-  // the parquet views wired up by db.js.
-  const edgeSqls = {
-    // Every facility already has a facility_type (the column); count how
-    // many facilities of each type are members of each network / area /
-    // region / funder.
-    type_network: `
-      SELECT f.facility_type AS type_id, nm.network_id AS network_id,
-             COUNT(DISTINCT f.facility_id) AS w
-      FROM facilities f
-      JOIN network_membership nm ON nm.facility_id = f.facility_id
-      GROUP BY 1, 2`,
-    type_area: `
-      SELECT f.facility_type AS type_id, al.area_id AS area_id,
-             COUNT(DISTINCT f.facility_id) AS w
-      FROM facilities f
-      JOIN area_links al ON al.facility_id = f.facility_id
-      GROUP BY 1, 2`,
-    type_funder: `
-      SELECT f.facility_type AS type_id, fl.funder_id AS funder_id,
-             COUNT(DISTINCT f.facility_id) AS w
-      FROM facilities f
-      JOIN funding_links fl ON fl.facility_id = f.facility_id
-      GROUP BY 1, 2`,
-    type_region: `
-      SELECT f.facility_type AS type_id, fr.region_id AS region_id,
-             COUNT(DISTINCT f.facility_id) AS w
-      FROM facilities f
-      JOIN facility_regions fr ON fr.facility_id = f.facility_id
-      GROUP BY 1, 2`,
-    network_area: `
-      SELECT nm.network_id, al.area_id,
-             COUNT(DISTINCT nm.facility_id) AS w
-      FROM network_membership nm
-      JOIN area_links al ON al.facility_id = nm.facility_id
-      GROUP BY 1, 2`,
-    network_funder: `
-      SELECT nm.network_id, fl.funder_id,
-             COUNT(DISTINCT nm.facility_id) AS w
-      FROM network_membership nm
-      JOIN funding_links fl ON fl.facility_id = nm.facility_id
-      GROUP BY 1, 2`,
-    network_region_facility: `
-      SELECT nm.network_id, fr.region_id,
-             COUNT(DISTINCT nm.facility_id) AS w
-      FROM network_membership nm
-      JOIN facility_regions fr ON fr.facility_id = nm.facility_id
-      GROUP BY 1, 2`,
-    area_region: `
-      SELECT al.area_id, fr.region_id,
-             COUNT(DISTINCT al.facility_id) AS w
-      FROM area_links al
-      JOIN facility_regions fr ON fr.facility_id = al.facility_id
-      GROUP BY 1, 2`,
-    area_funder: `
-      SELECT al.area_id, fl.funder_id,
-             COUNT(DISTINCT al.facility_id) AS w
-      FROM area_links al
-      JOIN funding_links fl ON fl.facility_id = al.facility_id
-      GROUP BY 1, 2`,
-    region_funder: `
-      SELECT fr.region_id, fl.funder_id,
-             COUNT(DISTINCT fr.facility_id) AS w
-      FROM facility_regions fr
-      JOIN funding_links fl ON fl.facility_id = fr.facility_id
-      GROUP BY 1, 2`,
-
-    // Same-kind edges: area ↔ area taxonomy, network ↔ network
-    // (via facilities holding dual membership), region ↔ region
-    // (via shared facility containment).
-    area_area_parent: `
-      SELECT area_id, parent_id FROM research_areas WHERE parent_id IS NOT NULL`,
-    network_network: `
-      SELECT a.network_id AS a_id, b.network_id AS b_id,
-             COUNT(DISTINCT a.facility_id) AS w
-      FROM network_membership a
-      JOIN network_membership b ON a.facility_id = b.facility_id
-                               AND a.network_id  < b.network_id
-      GROUP BY 1, 2`,
-
-    // Structural edges from the regions table itself.
-    region_network_direct: `
-      SELECT region_id, network_id FROM regions WHERE network_id IS NOT NULL`,
-    region_area_direct: `
-      SELECT region_id, area_id FROM region_area_links`,
-
-    // ── People-side edges ────────────────────────────────────────────
-    // facility ↔ person: every facility_personnel row. Weight = 1 by
-    // default, bumped to 3 for is_key_personnel=true so Directors and
-    // Chief Scientists draw thicker lines than the OpenAlex-seeded
-    // top-publishing researchers.
-    facility_person: `
-      SELECT facility_id, person_id,
-             CASE WHEN is_key_personnel THEN 3 ELSE 1 END AS w
-      FROM facility_personnel`,
-
-    // facility ↔ network / area / region projected through facility
-    // (already represented by aggregate edges above; we add the direct
-    // facility-as-node links so the facility node anchors visually).
-    facility_network: `
-      SELECT facility_id, network_id, 1 AS w FROM network_membership`,
-    facility_area: `
-      SELECT facility_id, area_id, 1 AS w FROM area_links`,
-    facility_region: `
-      SELECT facility_id, region_id, 1 AS w FROM facility_regions`,
-
-    // person ↔ research_area weighting (from publication topics).
-    person_area: `
-      SELECT person_id, area_id, weight AS w FROM person_areas`,
-
-    // person ↔ person co-authorship (already pairwise A<B in the table).
-    person_person: `
-      SELECT person_a_id, person_b_id, co_pub_count AS w
-      FROM collaborations`,
-
-    // ── Transitive person edges (person → category via the facilities
-    // they work at). Without these the Person toggle shows person nodes
-    // connected only to facilities, never to networks/areas/regions/
-    // types/funders. Each row is COUNT(DISTINCT facility_id) so a
-    // researcher who appears at multiple facilities sharing a network
-    // gets a thicker edge to that network. ────────────────────────────
-    person_network_via_facility: `
-      SELECT fp.person_id, nm.network_id,
-             COUNT(DISTINCT fp.facility_id) AS w
-      FROM facility_personnel fp
-      JOIN network_membership nm ON nm.facility_id = fp.facility_id
-      GROUP BY fp.person_id, nm.network_id`,
-    person_area_via_facility: `
-      SELECT fp.person_id, al.area_id,
-             COUNT(DISTINCT fp.facility_id) AS w
-      FROM facility_personnel fp
-      JOIN area_links al ON al.facility_id = fp.facility_id
-      GROUP BY fp.person_id, al.area_id`,
-    person_region_via_facility: `
-      SELECT fp.person_id, fr.region_id,
-             COUNT(DISTINCT fp.facility_id) AS w
-      FROM facility_personnel fp
-      JOIN facility_regions fr ON fr.facility_id = fp.facility_id
-      GROUP BY fp.person_id, fr.region_id`,
-    person_type_via_facility: `
-      SELECT fp.person_id, f.facility_type AS type_id,
-             COUNT(DISTINCT fp.facility_id) AS w
-      FROM facility_personnel fp
-      JOIN facilities f ON f.facility_id = fp.facility_id
-      GROUP BY fp.person_id, f.facility_type`,
-    person_funder_via_facility: `
-      SELECT fp.person_id, fl.funder_id,
-             COUNT(DISTINCT fp.facility_id) AS w
-      FROM facility_personnel fp
-      JOIN funding_links fl ON fl.facility_id = fp.facility_id
-      GROUP BY fp.person_id, fl.funder_id`,
-  };
-
-  // Kick everything off in parallel.
-  const [entities, edges] = await Promise.all([
-    fetchAll(conn, entitySqls),
-    fetchAll(conn, edgeSqls),
-  ]);
-
-  return assembleGraph(entities, edges);
-}
-
-async function fetchAll(conn, sqls) {
   const out = {};
-  const pairs = Object.entries(sqls);
-  await Promise.all(pairs.map(async ([k, sql]) => {
+  for (const [k, sql] of Object.entries(queries)) {
     const r = await conn.query(sql);
     out[k] = r.toArray().map((row) => row.toJSON());
-  }));
+  }
+  // Coerce BigInt counts to Number.
+  for (const a of out.areas) a.weight = Number(a.weight) || 0;
+  for (const e of out.fac_pers) e.w = Number(e.w) || 1;
+  for (const e of out.coauthors) e.w = Number(e.w) || 1;
   return out;
 }
 
-function assembleGraph(e, l) {
-  const nodes = [];
-  const seen = new Set();
 
-  function push(kind, id, props = {}) {
-    if (!id) return;
-    const nid = `${kind}:${id}`;
-    if (seen.has(nid)) return;
-    seen.add(nid);
-    nodes.push({ id: nid, kind, raw_id: id, ...props });
+// ── Step 1: supergraph layout (squares packed by area weight) ───────
+function buildSupergraph(data) {
+  const areaIds = new Set(data.areas.map((a) => a.id));
+  const facById = new Map(data.facilities.map((f) => [f.id, f]));
+  const perById = new Map(data.people.map((p) => [p.id, p]));
+
+  // Cross-area edge weights from facility-person + co-author edges.
+  const edgeW = new Map();
+  function bump(a, b, w) {
+    if (!a || !b || a === b) return;
+    if (!areaIds.has(a) || !areaIds.has(b)) return;
+    const k = a < b ? `${a}|${b}` : `${b}|${a}`;
+    edgeW.set(k, (edgeW.get(k) || 0) + w);
+  }
+  for (const e of data.fac_pers) {
+    const f = facById.get(e.source); const p = perById.get(e.target);
+    if (f && p) bump(f.area_id, p.area_id, e.w);
+  }
+  for (const e of data.coauthors) {
+    const a = perById.get(e.source); const b = perById.get(e.target);
+    if (a && b) bump(a.area_id, b.area_id, e.w);
   }
 
-  for (const ft of e.facility_types)   push('type',    ft.id, { name: ft.name });
-  for (const n  of e.networks)          push('network', n.id,  { name: n.name, level: n.level, url: n.url });
-  for (const ra of e.research_areas)    push('area',    ra.id, { name: ra.name, parent_id: ra.parent_id });
-  for (const r  of e.regions)           push('region',  r.id,  { name: r.name, acronym: r.acronym, kind_label: r.kind, network_id: r.network_id, url: r.url });
-  for (const fu of e.funders)           push('funder',  fu.id, { name: fu.name, type: fu.type, country: fu.country });
-  for (const f  of (e.facilities || []))push('facility', f.id, { name: f.name, acronym: f.acronym, country: f.country, f_type: f.f_type, url: f.url });
-  for (const p  of (e.people || []))    push('person',   p.id, { name: p.name, orcid: p.orcid, openalex_id: p.openalex_id, email: p.email, url: p.homepage_url, research_interests: p.research_interests });
+  return {
+    nodes: data.areas.map((a) => ({
+      id: a.id, name: a.name, weight: a.weight,
+      side: Math.max(50, SUPERNODE_SCALE * Math.sqrt(a.weight)),
+    })),
+    edges: [...edgeW.entries()].map(([k, w]) => {
+      const [s, t] = k.split('|');
+      return { source: s, target: t, w };
+    }),
+  };
+}
 
+async function layoutSupergraph(d3, sg, w, h) {
+  const cx = w / 2, cy = h / 2;
+  // Seed positions on a ring proportional to weight so the simulation
+  // converges quickly and large groups end up roughly central.
+  const sorted = [...sg.nodes].sort((a, b) => b.weight - a.weight);
+  const maxR = Math.min(w, h) * 0.36;
+  sorted.forEach((n, i) => {
+    const t = i / Math.max(sorted.length - 1, 1);
+    const r = t * maxR * 0.85 + 0.05 * maxR;
+    const a = i * (2 * Math.PI / Math.max(sorted.length, 6)) + 0.1 * i;
+    n.x = cx + r * Math.cos(a);
+    n.y = cy + r * Math.sin(a);
+  });
+
+  // Square-collision: forceCollide treats each node as a circle of
+  // radius r; we set r = side/sqrt(2) + padding/2 so square bounding
+  // boxes don't quite touch. Approximation but visually adequate.
+  const sim = d3.forceSimulation(sg.nodes)
+    .alphaDecay(0.04)
+    .force('link', d3.forceLink(sg.edges)
+      .id((d) => d.id)
+      .distance((d) => 30 + Math.sqrt(d.w) * 8)
+      .strength(0.4))
+    .force('charge', d3.forceManyBody()
+      .strength((d) => -120 - d.weight * 4))
+    .force('collide', d3.forceCollide()
+      .radius((d) => d.side * 0.71 + SUPER_PADDING)
+      .strength(1)
+      .iterations(2))
+    .force('center', d3.forceCenter(cx, cy).strength(0.05))
+    .stop();
+  for (let i = 0; i < SUPERGRAPH_TICKS; i++) sim.tick();
+
+  // Resolve any remaining overlap with a deterministic relax pass.
+  for (let r = 0; r < 60; r++) {
+    let moved = false;
+    for (let i = 0; i < sg.nodes.length; i++) {
+      for (let j = i + 1; j < sg.nodes.length; j++) {
+        const a = sg.nodes[i], b = sg.nodes[j];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const minD = (a.side + b.side) * 0.5 + SUPER_PADDING;
+        const dist = Math.hypot(dx, dy) || 1e-6;
+        if (dist < minD) {
+          const push = (minD - dist) / 2;
+          const nx = dx / dist, ny = dy / dist;
+          a.x -= nx * push; a.y -= ny * push;
+          b.x += nx * push; b.y += ny * push;
+          moved = true;
+        }
+      }
+    }
+    if (!moved) break;
+  }
+
+  return new Map(sg.nodes.map((n) => [n.id, n]));
+}
+
+
+// ── Step 2: per-group subgraph layout, scale to fit ─────────────────
+function membersOfArea(areaId, data) {
+  const facs = data.facilities.filter((f) => f.area_id === areaId)
+    .map((f) => ({ id: f.id, name: f.name, kind: 'facility',
+                   acronym: f.acronym, country: f.country, url: f.url,
+                   f_type: f.f_type, area_id: areaId }));
+  const peo = data.people.filter((p) => p.area_id === areaId)
+    .map((p) => ({ id: p.id, name: p.name, kind: 'person',
+                   orcid: p.orcid, openalex_id: p.openalex_id,
+                   homepage_url: p.homepage_url, area_id: areaId }));
+  return [...facs, ...peo];
+}
+
+function intraEdgesOfArea(members, data) {
+  const ids = new Set(members.map((m) => m.id));
   const edges = [];
-  function pushEdge(src, tgt, relation, weight = 1) {
-    if (!src || !tgt || src === tgt) return;
-    if (!seen.has(src) || !seen.has(tgt)) return;
-    edges.push({ source: src, target: tgt, relation, weight: Number(weight) || 1 });
+  for (const e of data.fac_pers) {
+    if (ids.has(e.source) && ids.has(e.target)) {
+      edges.push({ source: e.source, target: e.target, w: e.w });
+    }
   }
-
-  // Weighted co-occurrence edges.
-  for (const x of l.type_network)    pushEdge(`type:${x.type_id}`,       `network:${x.network_id}`, 'type-network', x.w);
-  for (const x of l.type_area)       pushEdge(`type:${x.type_id}`,       `area:${x.area_id}`,        'type-area', x.w);
-  for (const x of l.type_funder)     pushEdge(`type:${x.type_id}`,       `funder:${x.funder_id}`,    'type-funder', x.w);
-  for (const x of l.type_region)     pushEdge(`type:${x.type_id}`,       `region:${x.region_id}`,    'type-region', x.w);
-  for (const x of l.network_area)    pushEdge(`network:${x.network_id}`, `area:${x.area_id}`,        'network-area', x.w);
-  for (const x of l.network_funder)  pushEdge(`network:${x.network_id}`, `funder:${x.funder_id}`,    'network-funder', x.w);
-  for (const x of l.network_region_facility)
-                                     pushEdge(`network:${x.network_id}`, `region:${x.region_id}`,    'network-region', x.w);
-  for (const x of l.area_region)     pushEdge(`area:${x.area_id}`,       `region:${x.region_id}`,    'area-region', x.w);
-  for (const x of l.area_funder)     pushEdge(`area:${x.area_id}`,       `funder:${x.funder_id}`,    'area-funder', x.w);
-  for (const x of l.region_funder)   pushEdge(`region:${x.region_id}`,   `funder:${x.funder_id}`,    'region-funder', x.w);
-
-  // Same-kind edges.
-  for (const x of l.network_network) pushEdge(`network:${x.a_id}`,       `network:${x.b_id}`,        'network-network', x.w);
-  for (const x of l.area_area_parent) pushEdge(`area:${x.area_id}`,      `area:${x.parent_id}`,      'sub-area', 2);
-
-  // People-side edges. Only added when both endpoints are present in
-  // the visible-kind set (filterGraph drops dangling ones cheaply).
-  for (const x of (l.facility_person || []))
-    pushEdge(`facility:${x.facility_id}`, `person:${x.person_id}`, 'works-at', x.w);
-  for (const x of (l.facility_network || []))
-    pushEdge(`facility:${x.facility_id}`, `network:${x.network_id}`, 'facility-network', x.w);
-  for (const x of (l.facility_area || []))
-    pushEdge(`facility:${x.facility_id}`, `area:${x.area_id}`, 'facility-area', x.w);
-  for (const x of (l.facility_region || []))
-    pushEdge(`facility:${x.facility_id}`, `region:${x.region_id}`, 'facility-region', x.w);
-  // Real person↔area edges from `person_areas` (derived by
-  // compute_person_areas.py from publication topics). We MULTIPLY
-  // their weight by 1000 here so the dedupe below — which keeps the
-  // higher-weight edge for any duplicated (source, target, relation)
-  // key — always prefers the topic-derived edge over the transitive
-  // person_area_via_facility fallback. The display does not show raw
-  // weights so the inflation is invisible to the user.
-  for (const x of (l.person_area || []))
-    pushEdge(`person:${x.person_id}`, `area:${x.area_id}`,
-             'person-area', (Number(x.w) || 1) * 1000);
-  for (const x of (l.person_person || []))
-    pushEdge(`person:${x.person_a_id}`, `person:${x.person_b_id}`, 'co-author', x.w);
-
-  // Transitive person→category edges. Same pushEdge pattern; the
-  // edgeMap dedupe below keeps the higher-weight version when the
-  // same (person, area) pair is also produced by person_areas above.
-  for (const x of (l.person_network_via_facility || []))
-    pushEdge(`person:${x.person_id}`, `network:${x.network_id}`, 'person-network', x.w);
-  for (const x of (l.person_area_via_facility || []))
-    pushEdge(`person:${x.person_id}`, `area:${x.area_id}`, 'person-area', x.w);
-  for (const x of (l.person_region_via_facility || []))
-    pushEdge(`person:${x.person_id}`, `region:${x.region_id}`, 'person-region', x.w);
-  for (const x of (l.person_type_via_facility || []))
-    pushEdge(`person:${x.person_id}`, `type:${x.type_id}`, 'person-type', x.w);
-  for (const x of (l.person_funder_via_facility || []))
-    pushEdge(`person:${x.person_id}`, `funder:${x.funder_id}`, 'person-funder', x.w);
-
-  // Structural (unweighted) region ↔ network and region ↔ area come from
-  // the schema itself. Dedupe against the facility-derived edges by using
-  // Map[key] max weight.
-  const edgeMap = new Map();
-  for (const ed of edges) {
-    const key = [ed.source, ed.target, ed.relation].sort().join('|');
-    const prev = edgeMap.get(key);
-    if (!prev || prev.weight < ed.weight) edgeMap.set(key, ed);
+  for (const e of data.coauthors) {
+    if (ids.has(e.source) && ids.has(e.target)) {
+      edges.push({ source: e.source, target: e.target, w: e.w });
+    }
   }
-  for (const x of l.region_network_direct) {
-    const e1 = `region:${x.region_id}`, e2 = `network:${x.network_id}`;
-    const key = [e1, e2, 'region-network'].sort().join('|');
-    if (!edgeMap.has(key)) edgeMap.set(key, { source: e1, target: e2, relation: 'region-network', weight: 1 });
-  }
-  for (const x of l.region_area_direct) {
-    const e1 = `region:${x.region_id}`, e2 = `area:${x.area_id}`;
-    const key = [e1, e2, 'area-region'].sort().join('|');
-    if (!edgeMap.has(key)) edgeMap.set(key, { source: e1, target: e2, relation: 'area-region', weight: 1 });
-  }
-
-  return { nodes, edges: [...edgeMap.values()] };
+  return edges;
 }
 
-// ── Render ──────────────────────────────────────────────────────────
-async function ensureData() {
-  if (_graphData) return _graphData;
-  _container.querySelector('#net-status').textContent =
-    'Querying DuckDB and assembling graph…';
-  try {
-    _graphData = await buildGraphFromDuckDB();
-  } catch (err) {
-    _container.querySelector('#net-status').textContent =
-      `Network unavailable: ${err.message}`;
-    throw err;
+async function layoutAndFit(d3, members, edges, square) {
+  if (!members.length) return [];
+
+  // Initial seed inside square so simulation converges fast.
+  const cx = square.x, cy = square.y;
+  const r0 = square.side * 0.3;
+  members.forEach((m, i) => {
+    const a = (i / members.length) * 2 * Math.PI;
+    m.x = cx + r0 * Math.cos(a);
+    m.y = cy + r0 * Math.sin(a);
+  });
+
+  const sim = d3.forceSimulation(members)
+    .alphaDecay(0.06)
+    .force('link', d3.forceLink(edges)
+      .id((d) => d.id)
+      .distance(18).strength(0.6))
+    .force('charge', d3.forceManyBody().strength(-30))
+    .force('collide', d3.forceCollide().radius(7).strength(0.9))
+    .force('x', d3.forceX(cx).strength(0.04))
+    .force('y', d3.forceY(cy).strength(0.04))
+    .stop();
+  for (let i = 0; i < SUBGRAPH_TICKS; i++) sim.tick();
+
+  // Scale-and-fit into the square.
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const n of members) {
+    if (n.x < minX) minX = n.x;
+    if (n.y < minY) minY = n.y;
+    if (n.x > maxX) maxX = n.x;
+    if (n.y > maxY) maxY = n.y;
   }
-  return _graphData;
+  const pad = 12;  // breathing room inside the polygon edge
+  const targetW = square.side - 2 * pad;
+  const spanX = Math.max(maxX - minX, 1);
+  const spanY = Math.max(maxY - minY, 1);
+  const s = Math.min(targetW / spanX, targetW / spanY);
+  const tx = cx - (minX + spanX / 2) * s;
+  const ty = cy - (minY + spanY / 2) * s;
+  for (const n of members) {
+    n.x = n.x * s + tx;
+    n.y = n.y * s + ty;
+  }
+  return members;
 }
 
-function filterGraph(graph, activeKinds, minWeight) {
-  const nodes = graph.nodes.filter((n) => activeKinds.has(n.kind));
-  const ids = new Set(nodes.map((n) => n.id));
-  const edges = graph.edges
-    .filter((e) => {
-      const s = typeof e.source === 'object' ? e.source.id : e.source;
-      const t = typeof e.target === 'object' ? e.target.id : e.target;
-      if (!ids.has(s) || !ids.has(t)) return false;
-      if ((e.weight || 1) < minWeight && e.relation !== 'sub-area'
-          && e.relation !== 'region-network') return false;
-      return true;
-    })
-    .map((e) => ({
-      source: typeof e.source === 'object' ? e.source.id : e.source,
-      target: typeof e.target === 'object' ? e.target.id : e.target,
-      relation: e.relation,
-      weight: e.weight ?? 1,
-    }));
-  return { nodes: nodes.map((n) => ({ ...n })), edges };
+
+// ── Step 3: Voronoi-merged country-like polygons ────────────────────
+async function computePolygons(d3delaunay, polygonClipping, allNodes, w, h) {
+  // Bounding box of all node positions, with padding.
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const n of allNodes) {
+    if (n.x < minX) minX = n.x;
+    if (n.y < minY) minY = n.y;
+    if (n.x > maxX) maxX = n.x;
+    if (n.y > maxY) maxY = n.y;
+  }
+  const padX = (maxX - minX) * PERIMETER_PAD + 30;
+  const padY = (maxY - minY) * PERIMETER_PAD + 30;
+  const bbMinX = minX - padX, bbMinY = minY - padY;
+  const bbMaxX = maxX + padX, bbMaxY = maxY + padY;
+  const bbW = bbMaxX - bbMinX, bbH = bbMaxY - bbMinY;
+
+  // Add anchor nodes around the perimeter so outer Voronoi cells get
+  // bounded shapes (otherwise they extend to infinity).
+  const cxA = (bbMinX + bbMaxX) / 2;
+  const cyA = (bbMinY + bbMaxY) / 2;
+  const ringR = Math.max(bbW, bbH) * 0.6;
+  const anchors = [];
+  for (let i = 0; i < PERIMETER_NODES; i++) {
+    const a = (i / PERIMETER_NODES) * 2 * Math.PI;
+    anchors.push({
+      id: `__anchor_${i}`,
+      kind: '__anchor',
+      x: cxA + ringR * Math.cos(a),
+      y: cyA + ringR * Math.sin(a),
+    });
+  }
+
+  // Voronoi over [nodes + anchors], clipped to a generous bounding box.
+  const all = [...allNodes, ...anchors];
+  const points = all.map((n) => [n.x, n.y]);
+  const delaunay = d3delaunay.Delaunay.from(points);
+  const voronoi = delaunay.voronoi([
+    cxA - ringR * 1.2, cyA - ringR * 1.2,
+    cxA + ringR * 1.2, cyA + ringR * 1.2,
+  ]);
+
+  // Group cell indices by area_id (anchors are excluded).
+  const cellsByArea = new Map();
+  for (let i = 0; i < all.length; i++) {
+    const n = all[i];
+    if (n.kind === '__anchor') continue;
+    const cell = voronoi.cellPolygon(i);
+    if (!cell) continue;
+    const list = cellsByArea.get(n.area_id) || [];
+    list.push(cell);
+    cellsByArea.set(n.area_id, list);
+  }
+
+  // Union the cells of each area via polygon-clipping. The library
+  // returns a MultiPolygon: array of polygons, each an array of rings,
+  // each ring an array of [x,y]. For an area's cells that all share
+  // edges, this collapses to one polygon. Disconnected components
+  // (rare, only happens if Voronoi splits an area's cells across
+  // others) come back as multiple polygons in the result.
+  const PC = polygonClipping.default || polygonClipping;
+  const result = new Map();
+  for (const [area, cells] of cellsByArea.entries()) {
+    if (!cells.length) continue;
+    const wrapped = cells.map((c) => [c]);  // cells are rings → wrap
+    let merged;
+    try {
+      merged = PC.union(...wrapped);
+    } catch (e) {
+      console.warn('[mvg] polygon union failed for', area, e);
+      // Fallback: just use the largest single cell as the "polygon".
+      merged = [[cells[0]]];
+    }
+    // Keep only the largest polygon per area for clean rendering.
+    let bestRing = null, bestArea = -Infinity;
+    for (const poly of merged) {
+      if (!poly || !poly[0] || poly[0].length < 3) continue;
+      const a = Math.abs(d3PolygonArea(poly[0]));
+      if (a > bestArea) { bestArea = a; bestRing = poly[0]; }
+    }
+    if (bestRing) result.set(area, chaikin(bestRing, 1));
+  }
+  return { polygons: result, bbox: { x: bbMinX, y: bbMinY, w: bbW, h: bbH } };
 }
 
-// Wait until the stage has a real size. When the user clicks the
-// Network tab the section transitions from display:none → block, but
-// the browser hasn't necessarily laid out yet, so stage.clientWidth
-// can be 0 on the very first read. Polling a couple of rAFs with a
-// fallback protects us from centering every node at origin.
-async function waitForStageSize(stage) {
+// Shoelace area (positive only used for picking largest ring).
+function d3PolygonArea(ring) {
+  let a = 0;
+  for (let i = 0, n = ring.length, j = n - 1; i < n; j = i++) {
+    a += ring[j][0] * ring[i][1] - ring[i][0] * ring[j][1];
+  }
+  return a / 2;
+}
+
+// One pass of Chaikin's corner-cutting smoothing. Each edge contributes
+// two new vertices at 1/4 and 3/4 along it. Closes the ring naturally.
+function chaikin(ring, passes = 1) {
+  let pts = ring;
+  if (pts[0][0] === pts[pts.length - 1][0] && pts[0][1] === pts[pts.length - 1][1]) {
+    pts = pts.slice(0, -1);
+  }
+  for (let p = 0; p < passes; p++) {
+    const out = [];
+    const n = pts.length;
+    for (let i = 0; i < n; i++) {
+      const a = pts[i], b = pts[(i + 1) % n];
+      out.push([0.75 * a[0] + 0.25 * b[0], 0.75 * a[1] + 0.25 * b[1]]);
+      out.push([0.25 * a[0] + 0.75 * b[0], 0.25 * a[1] + 0.75 * b[1]]);
+    }
+    pts = out;
+  }
+  pts.push(pts[0]);  // close the ring
+  return pts;
+}
+
+
+// ── Wait for the stage to have a real size ──────────────────────────
+async function waitForStage(stage) {
   for (let i = 0; i < 20; i++) {
-    const w = stage.clientWidth;
-    const h = stage.clientHeight;
+    const w = stage.clientWidth, h = stage.clientHeight;
     if (w > 0 && h > 0) return { w, h };
     await new Promise((r) => requestAnimationFrame(r));
   }
   return { w: stage.clientWidth || 1000, h: stage.clientHeight || 700 };
 }
 
+
+// ── Top-level layout ────────────────────────────────────────────────
+async function buildLayout(data, w, h) {
+  const d3 = await loadD3();
+  const d3delaunay = await loadDelaunay();
+  const polygonClipping = await loadPolygonClipping();
+
+  const sg = buildSupergraph(data);
+  const squares = await layoutSupergraph(d3, sg, w, h);
+
+  // Per-area subgraph layout, scaled to fit each square.
+  const allNodes = [];
+  for (const a of data.areas) {
+    const square = squares.get(a.id);
+    if (!square) continue;
+    const members = membersOfArea(a.id, data);
+    const edges = intraEdgesOfArea(members, data);
+    const placed = await layoutAndFit(d3, members, edges, square);
+    allNodes.push(...placed);
+  }
+
+  const polyOut = await computePolygons(d3delaunay, polygonClipping, allNodes, w, h);
+
+  // Cross-area edges for rendering (one row per pair, weight summed).
+  const memberArea = new Map(allNodes.map((n) => [n.id, n.area_id]));
+  const crossW = new Map();
+  function edgeKey(s, t) { return s < t ? `${s}|${t}` : `${t}|${s}`; }
+  function addCross(s, t, w) {
+    if (!memberArea.has(s) || !memberArea.has(t)) return;
+    if (memberArea.get(s) === memberArea.get(t)) return;
+    const k = edgeKey(s, t);
+    crossW.set(k, (crossW.get(k) || 0) + w);
+  }
+  for (const e of data.fac_pers) addCross(e.source, e.target, e.w);
+  for (const e of data.coauthors) addCross(e.source, e.target, e.w);
+  const crossEdges = [...crossW.entries()].map(([k, w]) => {
+    const [s, t] = k.split('|');
+    return { source: s, target: t, w };
+  });
+
+  // Polygon centroids for label placement.
+  const labels = new Map();
+  for (const a of data.areas) {
+    const ring = polyOut.polygons.get(a.id);
+    if (!ring) continue;
+    let cx = 0, cy = 0, n = 0;
+    for (let i = 0; i < ring.length - 1; i++) { cx += ring[i][0]; cy += ring[i][1]; n++; }
+    if (n) labels.set(a.id, { x: cx / n, y: cy / n, name: a.name, weight: a.weight });
+  }
+
+  return {
+    polygons: polyOut.polygons,
+    bbox: polyOut.bbox,
+    nodes: allNodes,
+    crossEdges,
+    labels,
+    areas: data.areas,
+  };
+}
+
+
+// ── Render ─────────────────────────────────────────────────────────
 async function render() {
   const statusEl = _container.querySelector('#net-status');
+  const stage = _container.querySelector('#net-stage');
+  if (!stage) return;
   try {
+    const { w, h } = await waitForStage(stage);
+    statusEl.textContent = 'Loading data…';
     const d3 = await loadD3();
-    const graph = await ensureData();
-    const { nodes, edges } = filterGraph(graph, _activeKinds, _minWeight);
-    if (!nodes.length) {
-      statusEl.textContent = 'No nodes to display — enable at least one layer.';
-      const stage0 = _container.querySelector('#net-stage');
-      if (stage0) stage0.innerHTML = '';
-      return;
+    if (!_layout) {
+      const data = await fetchData();
+      statusEl.textContent = 'Computing knowledge map (this takes 5-10 s)…';
+      _layout = await buildLayout(data, w, h);
     }
+    statusEl.innerHTML = `<strong>${_layout.areas.length}</strong> research-area polygons, <strong>${_layout.nodes.length}</strong> nodes, <strong>${_layout.crossEdges.length}</strong> cross-area edges`;
 
-    const degree = new Map();
-    const weightedDegree = new Map();
-    for (const e of edges) {
-      degree.set(e.source, (degree.get(e.source) || 0) + 1);
-      degree.set(e.target, (degree.get(e.target) || 0) + 1);
-      weightedDegree.set(e.source, (weightedDegree.get(e.source) || 0) + e.weight);
-      weightedDegree.set(e.target, (weightedDegree.get(e.target) || 0) + e.weight);
-    }
-    for (const n of nodes) {
-      n.degree = degree.get(n.id) || 0;
-      n.wdegree = weightedDegree.get(n.id) || 0;
-    }
-
-    const stage = _container.querySelector('#net-stage');
     stage.innerHTML = '';
-    const { w, h } = await waitForStageSize(stage);
+    const { x: bx, y: by, w: bw, h: bh } = _layout.bbox;
+    const svg = d3.select(stage).append('svg')
+      .attr('viewBox', `${bx} ${by} ${bw} ${bh}`)
+      .attr('preserveAspectRatio', 'xMidYMid meet')
+      .attr('class', 'mvg-svg');
+    const root = svg.append('g').attr('class', 'mvg-root');
 
-  const svg = d3.select(stage).append('svg')
-    .attr('viewBox', `0 0 ${w} ${h}`)
-    .attr('preserveAspectRatio', 'xMidYMid meet')
-    .attr('class', 'network-svg');
-  const g = svg.append('g');
+    svg.call(d3.zoom().scaleExtent([0.4, 8]).on('zoom', (ev) => {
+      root.attr('transform', ev.transform);
+    }));
 
-  svg.call(d3.zoom().scaleExtent([0.15, 6]).on('zoom', (ev) => {
-    g.attr('transform', ev.transform);
-  }));
+    const tip = ensureTooltip();
 
-  let tip = _container.querySelector('.network-tooltip');
-  if (!tip) {
-    tip = document.createElement('div');
-    tip.className = 'network-tooltip';
-    tip.style.display = 'none';
-    _container.appendChild(tip);
-  }
-
-  if (_sim) _sim.stop();
-
-  // Layout: arrange the visible kinds on a ring, pull each kind's nodes
-  // toward its home position. Gives the user a predictable "galaxy of
-  // topics" shape instead of a hairball.
-  const cx = w / 2, cy = h / 2;
-  const ringR = Math.min(w, h) * 0.34;
-  const visibleKinds = [...new Set(nodes.map((n) => n.kind))];
-  const kindAngle = {};
-  visibleKinds.forEach((k, i) => {
-    kindAngle[k] = (i / Math.max(1, visibleKinds.length)) * Math.PI * 2 - Math.PI / 2;
-  });
-  const homeX = (d) => cx + Math.cos(kindAngle[d.kind] || 0) * ringR;
-  const homeY = (d) => cy + Math.sin(kindAngle[d.kind] || 0) * ringR;
-
-  const maxWeight = Math.max(1, ...edges.map((e) => e.weight));
-
-  const nodeRadius = (d) => {
-    const base = 6 + Math.sqrt(d.wdegree || d.degree || 1) * 1.1;
-    return Math.max(5, Math.min(30, base));
-  };
-  const nodeColor = (d) => KIND_COLORS[d.kind] || '#64748b';
-
-  // Seed node positions at their "home" plus a little jitter so the
-  // initial frame (before the first tick) doesn't show every node piled
-  // at origin, and the simulation has a good starting condition.
-  for (const n of nodes) {
-    n.x = homeX(n) + (Math.random() - 0.5) * 80;
-    n.y = homeY(n) + (Math.random() - 0.5) * 80;
-  }
-
-  _sim = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(edges)
-      .id((d) => d.id)
-      .distance((d) => {
-        const norm = (d.weight || 1) / maxWeight;
-        // Stronger relation => shorter link. Clamp.
-        return 170 - norm * 110;
+    // Layer 1: polygons
+    const areaList = _layout.areas;
+    const colorOf = new Map(areaList.map((a, i) => [a.id, AREA_PALETTE[i % AREA_PALETTE.length]]));
+    const polyG = root.append('g').attr('class', 'mvg-polys');
+    polyG.selectAll('path').data(areaList).enter().append('path')
+      .attr('d', (a) => {
+        const ring = _layout.polygons.get(a.id);
+        return ring ? `M${ring.map((p) => p.join(',')).join('L')}Z` : '';
       })
-      .strength((d) => {
-        const norm = (d.weight || 1) / maxWeight;
-        if (d.relation === 'sub-area') return 0.8;
-        return 0.08 + norm * 0.6;
-      }))
-    .force('charge', d3.forceManyBody().strength(-320))
-    .force('collision', d3.forceCollide().radius((d) => nodeRadius(d) + 4))
-    .force('center', d3.forceCenter(cx, cy).strength(0.05))
-    .force('x', d3.forceX(homeX).strength(0.12))
-    .force('y', d3.forceY(homeY).strength(0.12));
-  // Reheat so the seeded positions relax into a stable layout.
-  _sim.alpha(1).restart();
-
-  const link = g.append('g').attr('class', 'net-links')
-    .selectAll('line').data(edges).join('line')
-    .attr('stroke', (d) => {
-      if (d.relation === 'sub-area')       return '#fde68a';
-      if (d.relation === 'region-network') return '#c4b5fd';
-      if (d.relation === 'area-region')    return '#86efac';
-      if (d.relation === 'works-at')       return '#0ea5e9';   // person ↔ facility
-      if (d.relation === 'co-author')      return '#38bdf8';   // person ↔ person
-      if (d.relation === 'person-area')    return '#7dd3fc';   // person ↔ research_area
-      if (d.relation.startsWith('person-')) return '#7dd3fc';  // person ↔ {network,region,type,funder}
-      if (d.relation.startsWith('facility-')) return '#0d6e6e';
-      if (d.relation.startsWith('type-'))  return '#fbbf24';
-      if (d.relation.includes('funder'))   return '#fca5a5';
-      if (d.relation === 'network-network')return '#a78bfa';
-      return '#94a3b8';
-    })
-    .attr('stroke-opacity', (d) => 0.25 + 0.45 * Math.min(1, d.weight / maxWeight))
-    .attr('stroke-width',   (d) => 0.6 + 3.5 * Math.min(1, d.weight / maxWeight));
-
-  const node = g.append('g').attr('class', 'net-nodes')
-    .selectAll('circle').data(nodes).join('circle')
-    .attr('r', nodeRadius)
-    .attr('fill', nodeColor)
-    .attr('stroke', '#fff')
-    .attr('stroke-width', 1.6)
-    .attr('opacity', 0.95)
-    .style('cursor', 'pointer')
-    .call(d3.drag()
-      .on('start', (e, d) => { if (!e.active) _sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-      .on('drag',  (e, d) => { d.fx = e.x; d.fy = e.y; })
-      .on('end',   (e, d) => { if (!e.active) _sim.alphaTarget(0); d.fx = null; d.fy = null; }));
-
-  const labels = g.append('g').attr('class', 'net-labels')
-    .selectAll('text').data(nodes).join('text')
-    .text((d) => d.name)
-    .attr('font-size', (d) => {
-      const base = 10 + Math.sqrt(d.wdegree || d.degree || 1) * 0.2;
-      return Math.max(10, Math.min(15, base));
-    })
-    .attr('text-anchor', 'middle')
-    .attr('dy', (d) => -nodeRadius(d) - 4)
-    .attr('paint-order', 'stroke')
-    .attr('stroke', 'rgba(255,255,255,0.92)')
-    .attr('stroke-width', 3.5)
-    .attr('fill', '#0f172a')
-    .style('pointer-events', 'none');
-
-  // Neighbourhood highlight on hover.
-  //
-  // By this point d3.forceLink has already called its initialize pass
-  // and replaced every edge.source/target string ID with a reference
-  // to the matching node object. So we normalise both to .id before
-  // using them as Map keys (adj is keyed by string IDs). Before the
-  // normalisation this threw "Cannot read properties of undefined
-  // (reading 'add')" on the first iteration.
-  const adj = new Map();
-  for (const n of nodes) adj.set(n.id, new Set());
-  for (const e of edges) {
-    const sid = typeof e.source === 'object' ? e.source.id : e.source;
-    const tid = typeof e.target === 'object' ? e.target.id : e.target;
-    const s = adj.get(sid);
-    const t = adj.get(tid);
-    if (s) s.add(tid);
-    if (t) t.add(sid);
-  }
-
-  function showTip(ev, d) {
-    const neighbours = adj.get(d.id) || new Set();
-    const kindLabel = KIND_LABELS[d.kind] || d.kind;
-    const sub = [
-      d.acronym ? `<code>${esc(d.acronym)}</code>` : '',
-      d.country ? esc(d.country) : '',
-      d.level ? esc(d.level) : '',
-      d.kind_label ? esc(d.kind_label) : '',
-    ].filter(Boolean).join(' · ');
-    tip.innerHTML = `
-      <div class="tt-kind" style="color:${nodeColor(d)}">${esc(kindLabel)}</div>
-      <div class="tt-name">${esc(d.name)}</div>
-      ${sub ? `<div class="tt-sub">${sub}</div>` : ''}
-      <div class="tt-meta">${neighbours.size} connection${neighbours.size === 1 ? '' : 's'} · weighted deg ${d.wdegree}</div>
-      ${d.url ? `<div class="tt-url"><a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.url.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</a></div>` : ''}`;
-    tip.style.display = 'block';
-    const rect = stage.getBoundingClientRect();
-    tip.style.left = (ev.clientX - rect.left + 14) + 'px';
-    tip.style.top  = (ev.clientY - rect.top + 14) + 'px';
-
-    node.attr('opacity', (n) => (n.id === d.id || neighbours.has(n.id)) ? 1 : 0.12);
-    link.attr('stroke-opacity', (l) => {
-      const s = typeof l.source === 'object' ? l.source.id : l.source;
-      const t = typeof l.target === 'object' ? l.target.id : l.target;
-      return (s === d.id || t === d.id) ? 0.9 : 0.04;
-    });
-    labels.attr('opacity', (n) => (n.id === d.id || neighbours.has(n.id)) ? 1 : 0.15);
-  }
-  function hideTip() {
-    tip.style.display = 'none';
-    node.attr('opacity', 0.95);
-    link.attr('stroke-opacity', (d) => 0.25 + 0.45 * Math.min(1, d.weight / maxWeight));
-    labels.attr('opacity', 1);
-  }
-  node.on('mouseover', showTip).on('mousemove', showTip).on('mouseout', hideTip);
-
-  _sim.on('tick', () => {
-    link
-      .attr('x1', (d) => d.source.x).attr('y1', (d) => d.source.y)
-      .attr('x2', (d) => d.target.x).attr('y2', (d) => d.target.y);
-    node.attr('cx', (d) => d.x).attr('cy', (d) => d.y);
-    labels.attr('x', (d) => d.x).attr('y', (d) => d.y);
-  });
-
-    statusEl.innerHTML =
-      `<strong>${nodes.length.toLocaleString()}</strong> nodes · ` +
-      `<strong>${edges.length.toLocaleString()}</strong> edges · ` +
-      `drag to pin · scroll to zoom · hover to highlight`;
-
-    // Keep the SVG viewBox in sync if the stage is resized (sidebar toggle,
-    // browser resize). Without this the graph becomes cramped when the
-    // window grows.
-    if (!_container._netResizeObserver && typeof ResizeObserver !== 'undefined') {
-      const ro = new ResizeObserver(() => {
-        const cur = _container.querySelector('#net-stage svg');
-        if (!cur) return;
-        const nw = stage.clientWidth, nh = stage.clientHeight;
-        if (nw > 0 && nh > 0) cur.setAttribute('viewBox', `0 0 ${nw} ${nh}`);
+      .attr('fill', (a) => colorOf.get(a.id))
+      .attr('fill-opacity', 0.18)
+      .attr('stroke', (a) => colorOf.get(a.id))
+      .attr('stroke-opacity', 0.9)
+      .attr('stroke-width', 1.4)
+      .style('cursor', 'pointer')
+      .on('mouseenter', function (ev, a) {
+        d3.select(this).attr('fill-opacity', 0.32);
+        const lab = _layout.labels.get(a.id);
+        if (lab) showTip(tip, ev, `<strong>${escapeHtml(a.name)}</strong><br><small>${a.weight} facilities</small>`);
+      })
+      .on('mouseleave', function () {
+        d3.select(this).attr('fill-opacity', 0.18);
+        hideTip(tip);
       });
-      ro.observe(stage);
-      _container._netResizeObserver = ro;
+
+    // Layer 2: cross-area edges (light gray)
+    if (_showCrossEdges) {
+      const nodeIdx = new Map(_layout.nodes.map((n) => [n.id, n]));
+      const edgeG = root.append('g').attr('class', 'mvg-edges')
+        .attr('stroke', '#94a3b8')
+        .attr('stroke-opacity', 0.18)
+        .attr('fill', 'none');
+      edgeG.selectAll('line').data(_layout.crossEdges).enter().append('line')
+        .attr('x1', (e) => (nodeIdx.get(e.source) || {}).x)
+        .attr('y1', (e) => (nodeIdx.get(e.source) || {}).y)
+        .attr('x2', (e) => (nodeIdx.get(e.target) || {}).x)
+        .attr('y2', (e) => (nodeIdx.get(e.target) || {}).y)
+        .attr('stroke-width', (e) => 0.4 + Math.log(1 + e.w) * 0.4);
+    }
+
+    // Layer 3: nodes
+    const visibleNodes = _layout.nodes.filter((n) =>
+      (n.kind === 'facility' && _showFacility) ||
+      (n.kind === 'person' && _showPerson));
+    const nodeG = root.append('g').attr('class', 'mvg-nodes');
+    nodeG.selectAll('circle').data(visibleNodes).enter().append('circle')
+      .attr('cx', (d) => d.x).attr('cy', (d) => d.y)
+      .attr('r', (d) => NODE_RADIUS[d.kind] || 3)
+      .attr('fill', (d) => NODE_COLORS[d.kind])
+      .attr('stroke', '#fff')
+      .attr('stroke-width', 0.6)
+      .style('cursor', 'pointer')
+      .on('mouseenter', (ev, d) => {
+        showTip(tip, ev, nodeTipHtml(d));
+      })
+      .on('mouseleave', () => hideTip(tip))
+      .on('click', (ev, d) => {
+        const url = d.url || d.homepage_url ||
+          (d.openalex_id ? `https://openalex.org/${d.openalex_id}` :
+            (d.orcid ? `https://orcid.org/${d.orcid}` : null));
+        if (url) window.open(url, '_blank', 'noopener');
+      });
+
+    // Layer 4: polygon labels
+    const labelG = root.append('g').attr('class', 'mvg-labels')
+      .attr('text-anchor', 'middle')
+      .attr('font-family', 'system-ui, sans-serif')
+      .attr('pointer-events', 'none');
+    for (const a of areaList) {
+      const lab = _layout.labels.get(a.id);
+      if (!lab) continue;
+      const sz = Math.max(11, Math.min(20, 7 + Math.sqrt(a.weight) * 1.6));
+      labelG.append('text')
+        .attr('x', lab.x).attr('y', lab.y)
+        .attr('font-size', sz)
+        .attr('font-weight', 600)
+        .attr('fill', '#1f2937')
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 3)
+        .attr('paint-order', 'stroke')
+        .text(lab.name);
     }
   } catch (err) {
-    console.error('Network render failed:', err);
-    statusEl.textContent = `Network render failed: ${err.message}`;
+    console.error('[mvg] render failed', err);
+    if (statusEl) statusEl.textContent = `Knowledge map render failed: ${err.message}`;
   }
 }
 
-function esc(s) {
+
+// ── Tooltip helpers ─────────────────────────────────────────────────
+function ensureTooltip() {
+  let t = _container.querySelector('.network-tooltip');
+  if (!t) {
+    t = document.createElement('div');
+    t.className = 'network-tooltip';
+    t.style.display = 'none';
+    _container.appendChild(t);
+  }
+  return t;
+}
+function showTip(t, ev, html) {
+  t.innerHTML = html;
+  t.style.display = 'block';
+  t.style.left = `${ev.clientX + 14}px`;
+  t.style.top  = `${ev.clientY + 14}px`;
+}
+function hideTip(t) { t.style.display = 'none'; }
+
+function nodeTipHtml(d) {
+  if (d.kind === 'facility') {
+    const sub = [d.acronym, d.country, (d.f_type || '').replace(/-/g, ' ')]
+      .filter(Boolean).join(' · ');
+    return `<strong>${escapeHtml(d.name)}</strong>` +
+      (sub ? `<br><small>${escapeHtml(sub)}</small>` : '') +
+      (d.url ? '<br><small style="color:#7dd3fc">click to open website</small>' : '');
+  }
+  const sub = [d.orcid && `ORCID ${d.orcid}`, d.openalex_id]
+    .filter(Boolean).join(' · ');
+  return `<strong>${escapeHtml(d.name)}</strong>` +
+    (sub ? `<br><small>${escapeHtml(sub)}</small>` : '');
+}
+function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"]/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
+
 // ── Public API ──────────────────────────────────────────────────────
 export function initNetworkView(container) {
   _container = container;
-  _activeKinds = new Set(DEFAULT_KINDS);
-
-  const legendRows = Object.keys(KIND_COLORS).map((k) => `
-    <label class="net-toggle">
-      <input type="checkbox" data-kind="${k}" ${_activeKinds.has(k) ? 'checked' : ''}>
-      <span class="net-swatch" style="background:${KIND_COLORS[k]}"></span>
-      ${KIND_LABELS[k]}
-    </label>`).join('');
-
   _container.innerHTML = `
     <div class="network-view">
       <header class="network-header">
         <div>
-          <h2>Knowledge graph</h2>
-          <p class="network-sub">Networks, research areas, facility types, regions and funders.
-          Edges are weighted by the number of facilities they share — thicker lines mean stronger
-          category overlap. Toggle layers below; hover a node to spotlight its neighbourhood.</p>
+          <h2>Knowledge map</h2>
+          <p class="network-sub">Country-like map of cod-kmap. Each polygon is one
+          research area (parent-collapsed when &lt; 3 facilities); polygon size
+          is proportional to facility count. Inside each polygon: facilities
+          (teal) and personnel (sky blue). Light gray lines are cross-area
+          edges from facility-personnel + co-author relationships, revealing
+          interdisciplinary collaboration. Hover for details, click a node to
+          open its homepage. Algorithm: KMap from Hossain et al. GI&nbsp;'25.</p>
         </div>
         <div class="network-actions">
-          <label class="network-weight">
-            Min&nbsp;edge&nbsp;weight:
-            <input id="net-min-weight" type="number" min="1" step="1" value="1">
+          <label class="net-toggle">
+            <input type="checkbox" data-toggle="facility" checked>
+            <span class="net-swatch" style="background:${NODE_COLORS.facility}"></span>
+            Facilities
           </label>
-          <button id="net-restart" class="btn-ghost" title="Restart layout">Restart layout</button>
+          <label class="net-toggle">
+            <input type="checkbox" data-toggle="person" checked>
+            <span class="net-swatch" style="background:${NODE_COLORS.person}"></span>
+            People
+          </label>
+          <label class="net-toggle">
+            <input type="checkbox" data-toggle="cross-edges" checked>
+            Cross-area edges
+          </label>
+          <button id="net-restart" class="btn-ghost" title="Recompute layout from scratch">Recompute layout</button>
         </div>
       </header>
-      <div class="network-controls">
-        <div class="network-legend">${legendRows}</div>
-        <div id="net-status" class="network-status">Loading…</div>
-      </div>
+      <div id="net-status" class="network-status">Loading…</div>
       <div id="net-stage" class="network-stage"></div>
     </div>`;
 
   _container.querySelectorAll('.net-toggle input').forEach((el) => {
     el.addEventListener('change', () => {
-      const k = el.dataset.kind;
-      if (el.checked) _activeKinds.add(k); else _activeKinds.delete(k);
+      const k = el.dataset.toggle;
+      if (k === 'facility') _showFacility = el.checked;
+      else if (k === 'person') _showPerson = el.checked;
+      else if (k === 'cross-edges') _showCrossEdges = el.checked;
+      // Toggle changes don't need a re-layout — just re-render.
       render().catch((err) => console.error(err));
     });
   });
   _container.querySelector('#net-restart').addEventListener('click', () => {
-    if (_sim) _sim.alpha(1).restart();
-  });
-  _container.querySelector('#net-min-weight').addEventListener('change', (ev) => {
-    const v = Math.max(1, parseInt(ev.target.value, 10) || 1);
-    ev.target.value = String(v);
-    _minWeight = v;
+    _layout = null;
     render().catch((err) => console.error(err));
   });
 }
@@ -717,10 +725,10 @@ export async function renderNetworkView() {
   try {
     await render();
   } catch (e) {
-    console.error('network render failed', e);
+    console.error('knowledge map render failed', e);
   }
 }
 
 export function invalidateNetworkData() {
-  _graphData = null;
+  _layout = null;
 }
