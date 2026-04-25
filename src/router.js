@@ -1,12 +1,26 @@
-// router.js — Hash-based router for the multi-view SPA
+// router.js — Hash-based router for the multi-view SPA.
+//
+// Routes always begin with "#/" (e.g. "#/stats", "#/network"). Anything
+// else in `location.hash` — most importantly "#area-xxxx" anchors used
+// by the per-research-area TOC inside the Stats view — is an
+// **in-page fragment** and must NOT trigger navigation. Without this
+// guard, clicking a TOC entry would route to the unknown path
+// "area-xxxx", fall through to the default '/' handler, and dump the
+// user onto the Map tab.
 
 let _routes = {};
 let _currentPath = null;
 
+function isRouteHash(h) {
+  return typeof h === 'string' && h.startsWith('#/');
+}
+
 function getHash() {
   const h = location.hash || '#/';
-  // Expect format: #/path
-  return h.startsWith('#') ? h.slice(1) : '/';
+  // Only "#/path" is a route. In-page fragments stay on whatever
+  // route we're already on.
+  if (!isRouteHash(h)) return _currentPath || '/';
+  return h.slice(1);
 }
 
 function navigate(path) {
@@ -32,6 +46,10 @@ export function initRouter(routes) {
   _routes = routes;
 
   window.addEventListener('hashchange', () => {
+    // Ignore in-page anchor changes — the browser already scrolled
+    // the document to the target element; we don't need to (and
+    // mustn't) re-route.
+    if (!isRouteHash(location.hash)) return;
     navigate(getHash());
   });
 
