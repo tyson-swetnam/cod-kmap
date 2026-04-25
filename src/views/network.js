@@ -206,6 +206,43 @@ async function buildGraphFromDuckDB() {
     person_person: `
       SELECT person_a_id, person_b_id, co_pub_count AS w
       FROM collaborations`,
+
+    // ── Transitive person edges (person → category via the facilities
+    // they work at). Without these the Person toggle shows person nodes
+    // connected only to facilities, never to networks/areas/regions/
+    // types/funders. Each row is COUNT(DISTINCT facility_id) so a
+    // researcher who appears at multiple facilities sharing a network
+    // gets a thicker edge to that network. ────────────────────────────
+    person_network_via_facility: `
+      SELECT fp.person_id, nm.network_id,
+             COUNT(DISTINCT fp.facility_id) AS w
+      FROM facility_personnel fp
+      JOIN network_membership nm ON nm.facility_id = fp.facility_id
+      GROUP BY fp.person_id, nm.network_id`,
+    person_area_via_facility: `
+      SELECT fp.person_id, al.area_id,
+             COUNT(DISTINCT fp.facility_id) AS w
+      FROM facility_personnel fp
+      JOIN area_links al ON al.facility_id = fp.facility_id
+      GROUP BY fp.person_id, al.area_id`,
+    person_region_via_facility: `
+      SELECT fp.person_id, fr.region_id,
+             COUNT(DISTINCT fp.facility_id) AS w
+      FROM facility_personnel fp
+      JOIN facility_regions fr ON fr.facility_id = fp.facility_id
+      GROUP BY fp.person_id, fr.region_id`,
+    person_type_via_facility: `
+      SELECT fp.person_id, f.facility_type AS type_id,
+             COUNT(DISTINCT fp.facility_id) AS w
+      FROM facility_personnel fp
+      JOIN facilities f ON f.facility_id = fp.facility_id
+      GROUP BY fp.person_id, f.facility_type`,
+    person_funder_via_facility: `
+      SELECT fp.person_id, fl.funder_id,
+             COUNT(DISTINCT fp.facility_id) AS w
+      FROM facility_personnel fp
+      JOIN funding_links fl ON fl.facility_id = fp.facility_id
+      GROUP BY fp.person_id, fl.funder_id`,
   };
 
   // Kick everything off in parallel.
@@ -285,6 +322,20 @@ function assembleGraph(e, l) {
     pushEdge(`person:${x.person_id}`, `area:${x.area_id}`, 'person-area', x.w);
   for (const x of (l.person_person || []))
     pushEdge(`person:${x.person_a_id}`, `person:${x.person_b_id}`, 'co-author', x.w);
+
+  // Transitive person→category edges. Same pushEdge pattern; the
+  // edgeMap dedupe below keeps the higher-weight version when the
+  // same (person, area) pair is also produced by person_areas above.
+  for (const x of (l.person_network_via_facility || []))
+    pushEdge(`person:${x.person_id}`, `network:${x.network_id}`, 'person-network', x.w);
+  for (const x of (l.person_area_via_facility || []))
+    pushEdge(`person:${x.person_id}`, `area:${x.area_id}`, 'person-area', x.w);
+  for (const x of (l.person_region_via_facility || []))
+    pushEdge(`person:${x.person_id}`, `region:${x.region_id}`, 'person-region', x.w);
+  for (const x of (l.person_type_via_facility || []))
+    pushEdge(`person:${x.person_id}`, `type:${x.type_id}`, 'person-type', x.w);
+  for (const x of (l.person_funder_via_facility || []))
+    pushEdge(`person:${x.person_id}`, `funder:${x.funder_id}`, 'person-funder', x.w);
 
   // Structural (unweighted) region ↔ network and region ↔ area come from
   // the schema itself. Dedupe against the facility-derived edges by using
@@ -469,6 +520,7 @@ async function render() {
       if (d.relation === 'works-at')       return '#0ea5e9';   // person ↔ facility
       if (d.relation === 'co-author')      return '#38bdf8';   // person ↔ person
       if (d.relation === 'person-area')    return '#7dd3fc';   // person ↔ research_area
+      if (d.relation.startsWith('person-')) return '#7dd3fc';  // person ↔ {network,region,type,funder}
       if (d.relation.startsWith('facility-')) return '#0d6e6e';
       if (d.relation.startsWith('type-'))  return '#fbbf24';
       if (d.relation.includes('funder'))   return '#fca5a5';
