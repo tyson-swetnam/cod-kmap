@@ -57,13 +57,28 @@ const NODE_COLORS = {
 };
 const NODE_RADIUS = { facility: 4, person: 3 };
 
-// Layout tuning
+// Layout tuning. Polygon area must be roughly proportional to area
+// weight (n_facilities), so we size the supernode squares as
+// side = SUPERNODE_SCALE * sqrt(weight) — a true cartogram.
+//
+// CRITICAL: with the previous (small) SUPERNODE_SCALE + a 50 px floor,
+// dense areas (coastal-processes 70 facilities packed tightly) ended
+// up with TINY Voronoi cells while sparse areas (great-lakes 2
+// facilities far apart) got HUGE cells — visually inverted from the
+// cartogram metric. Boosted scale to 24 and dropped the floor; we
+// now also pepper interior 'decoration anchor' points inside every
+// area's square so Voronoi cells tile the full square area, not just
+// the immediate neighbourhood of real nodes. Result: polygon area
+// closely tracks sqrt(weight)² = weight, as the paper intends.
 const SUPERGRAPH_TICKS = 400;
 const SUBGRAPH_TICKS   = 120;
-const SUPER_PADDING    = 18;     // px gap between adjacent squares
+const SUPER_PADDING    = 14;     // px gap between adjacent squares
 const PERIMETER_PAD    = 0.18;   // anchor ring at 1+pad of layout bbox half-width
-const PERIMETER_NODES  = 24;     // anchors around the layout
-const SUPERNODE_SCALE  = 9;      // side = scale * sqrt(weight)
+const PERIMETER_NODES  = 18;     // outer anchors around the entire layout
+const SUPERNODE_SCALE  = 24;     // side = scale * sqrt(weight)
+const SUPERNODE_MIN    = 28;     // minimum side so 1-facility areas remain visible
+const DECOR_GRID       = 5;      // 5×5 = 25 decoration anchors per area square
+const DECOR_JITTER     = 0.18;   // ±18% random jitter so cell boundaries aren't gridlike
 
 
 // ── Async-import helpers ────────────────────────────────────────────
@@ -113,17 +128,49 @@ async function fetchData() {
       JOIN   facility_primary_groups g ON g.facility_id = f.facility_id
       WHERE  g.primary_area_id IS NOT NULL`,
 
-    // One row per person with primary area; only people who have ≥1
-    // facility role appear so the map stays in sync with what we know.
+    // One row per person with primary area + their importance metrics.
+    // Importance combines:
+    //   - n_pubs      : SUM(n_publications) across all areas the person
+    //                   has work in (from person_area_metrics)
+    //   - n_coauth    : SUM(n_co_authors)  across all areas
+    //   - facility_funding_usd
+    //                 : SUM(facility_area_funding.total_usd_nominal)
+    //                   across every facility the person works at —
+    //                   their "associated funding base" (a person at
+    //                   WHOI gets WHOI's $1.5B, a person at a small
+    //                   NEP gets ~$5M).
+    // Used downstream for node-radius scaling so prolific +
+    // well-funded researchers are visually larger.
     people: `
+      WITH per_pa AS (
+        SELECT person_id,
+               SUM(n_publications)     AS n_pubs,
+               SUM(n_co_authors)       AS n_coauth,
+               SUM(total_citations)    AS total_citations
+        FROM person_area_metrics
+        GROUP BY person_id
+      ),
+      per_fund AS (
+        SELECT fp.person_id,
+               SUM(faf.total_usd_nominal) AS facility_funding_usd
+        FROM facility_personnel fp
+        JOIN facility_area_funding faf ON faf.facility_id = fp.facility_id
+        GROUP BY fp.person_id
+      )
       SELECT p.person_id AS id,
              p.name,
              p.orcid,
              p.openalex_id,
              p.homepage_url,
-             g.primary_area_id AS area_id
+             g.primary_area_id        AS area_id,
+             COALESCE(pa.n_pubs, 0)   AS n_pubs,
+             COALESCE(pa.n_coauth, 0) AS n_coauth,
+             COALESCE(pa.total_citations, 0) AS total_citations,
+             COALESCE(pf.facility_funding_usd, 0) AS facility_funding_usd
       FROM   people p
       JOIN   person_primary_groups g ON g.person_id = p.person_id
+      LEFT  JOIN per_pa  pa ON pa.person_id = p.person_id
+      LEFT  JOIN per_fund pf ON pf.person_id = p.person_id
       WHERE  g.primary_area_id IS NOT NULL`,
 
     // Facility ↔ person via facility_personnel (intra+inter polygon).
@@ -180,7 +227,9 @@ function buildSupergraph(data) {
   return {
     nodes: data.areas.map((a) => ({
       id: a.id, name: a.name, weight: a.weight,
-      side: Math.max(50, SUPERNODE_SCALE * Math.sqrt(a.weight)),
+      // True cartogram: side ∝ sqrt(weight) so AREA ∝ weight.
+      // Min side just keeps 1-facility areas visible at all zoom levels.
+      side: Math.max(SUPERNODE_MIN, SUPERNODE_SCALE * Math.sqrt(a.weight)),
     })),
     edges: [...edgeW.entries()].map(([k, w]) => {
       const [s, t] = k.split('|');
@@ -254,9 +303,27 @@ function membersOfArea(areaId, data) {
                    acronym: f.acronym, country: f.country, url: f.url,
                    f_type: f.f_type, area_id: areaId }));
   const peo = data.people.filter((p) => p.area_id === areaId)
-    .map((p) => ({ id: p.id, name: p.name, kind: 'person',
-                   orcid: p.orcid, openalex_id: p.openalex_id,
-                   homepage_url: p.homepage_url, area_id: areaId }));
+    .map((p) => {
+      // Composite "importance" weight per the user's request:
+      // prioritize funding + collaborators, then publications.
+      // Coefficients chosen so a well-funded heavy collaborator (~$50M
+      // facility, 30 co-authors, 50 pubs) lands around weight ≈ 18,
+      // while a junior researcher (no funding, 0 co-authors, 5 pubs)
+      // lands at ≈ 2.2 — both visible, but very different sizes.
+      const fundM = (p.facility_funding_usd || 0) / 1e6;
+      const w = 0.6 * Math.sqrt(p.n_pubs || 0)
+              + 1.2 * Math.sqrt(p.n_coauth || 0)
+              + 0.7 * Math.sqrt(fundM);
+      return {
+        id: p.id, name: p.name, kind: 'person',
+        orcid: p.orcid, openalex_id: p.openalex_id,
+        homepage_url: p.homepage_url, area_id: areaId,
+        n_pubs: p.n_pubs, n_coauth: p.n_coauth,
+        total_citations: p.total_citations,
+        facility_funding_usd: p.facility_funding_usd,
+        importance: w,
+      };
+    });
   return [...facs, ...peo];
 }
 
@@ -276,8 +343,49 @@ function intraEdgesOfArea(members, data) {
   return edges;
 }
 
+// Decoration anchors per area: invisible nodes that own Voronoi cells
+// inside the area's square, ensuring the resulting merged polygon
+// closely matches the square's area (cartogram-correct sizing) instead
+// of letting cells leak into sparse neighbours. Tagged with the area
+// id so polygon-clipping rolls them up; tagged kind='__decor' so the
+// renderer skips them.
+function decorationAnchors(square, areaId) {
+  const cx = square.x, cy = square.y;
+  const half = square.side / 2;
+  const out = [];
+  const N = DECOR_GRID;
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      // Cell-center (i+0.5)/N spans 0..1; map to ±half.
+      const fx = (i + 0.5) / N - 0.5;
+      const fy = (j + 0.5) / N - 0.5;
+      // Random jitter so the resulting cell boundaries are irregular,
+      // not a visible grid pattern. PRNG seeded by (area,i,j) so the
+      // layout is reproducible across re-renders.
+      const seed = (areaId.charCodeAt(0) || 0) * 31 + i * 7 + j * 13;
+      const jx = (((seed * 9301 + 49297) % 233280) / 233280 - 0.5) * 2;
+      const jy = (((seed * 4391 + 12347) % 233280) / 233280 - 0.5) * 2;
+      const x = cx + (fx + jx * DECOR_JITTER) * 2 * half;
+      const y = cy + (fy + jy * DECOR_JITTER) * 2 * half;
+      out.push({
+        id: `__decor_${areaId}_${i}_${j}`,
+        kind: '__decor',
+        area_id: areaId,
+        x, y,
+      });
+    }
+  }
+  return out;
+}
+
 async function layoutAndFit(d3, members, edges, square) {
-  if (!members.length) return [];
+  // Even an empty area gets decoration anchors so its polygon still
+  // appears (sized to the square). Real members are simulated via
+  // d3-force, then scale-fit into the square; decorators are added
+  // afterwards on a jittered grid so they don't get pulled around.
+  if (!members.length) {
+    return decorationAnchors(square, square.id);
+  }
 
   // Initial seed inside square so simulation converges fast.
   const cx = square.x, cy = square.y;
@@ -292,15 +400,20 @@ async function layoutAndFit(d3, members, edges, square) {
     .alphaDecay(0.06)
     .force('link', d3.forceLink(edges)
       .id((d) => d.id)
-      .distance(18).strength(0.6))
-    .force('charge', d3.forceManyBody().strength(-30))
-    .force('collide', d3.forceCollide().radius(7).strength(0.9))
+      .distance(Math.max(12, square.side * 0.08)).strength(0.6))
+    .force('charge', d3.forceManyBody()
+      .strength(-Math.max(20, square.side * 0.18)))
+    .force('collide', d3.forceCollide()
+      .radius(Math.max(5, square.side * 0.025)).strength(0.9))
     .force('x', d3.forceX(cx).strength(0.04))
     .force('y', d3.forceY(cy).strength(0.04))
     .stop();
   for (let i = 0; i < SUBGRAPH_TICKS; i++) sim.tick();
 
-  // Scale-and-fit into the square.
+  // Scale-and-fit real members into a sub-region of the square. We
+  // leave a wider margin than before because decoration anchors fill
+  // the perimeter — this keeps real nodes visually inside the
+  // polygon's "core" rather than hugging its border.
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const n of members) {
     if (n.x < minX) minX = n.x;
@@ -308,7 +421,7 @@ async function layoutAndFit(d3, members, edges, square) {
     if (n.x > maxX) maxX = n.x;
     if (n.y > maxY) maxY = n.y;
   }
-  const pad = 12;  // breathing room inside the polygon edge
+  const pad = Math.max(16, square.side * 0.18);
   const targetW = square.side - 2 * pad;
   const spanX = Math.max(maxX - minX, 1);
   const spanY = Math.max(maxY - minY, 1);
@@ -319,7 +432,8 @@ async function layoutAndFit(d3, members, edges, square) {
     n.x = n.x * s + tx;
     n.y = n.y * s + ty;
   }
-  return members;
+  // Append decoration anchors so Voronoi tiles the full square.
+  return [...members, ...decorationAnchors(square, square.id)];
 }
 
 
@@ -564,29 +678,65 @@ async function render() {
         hideTip(tip);
       });
 
-    // Layer 2: cross-area edges (light gray)
+    // Layer 2: cross-area edges. Two layers so person↔person and
+    // person↔facility cross-edges (the interdisciplinary signal the
+    // user wants to surface) sit on top of facility↔facility edges
+    // and use a brighter person-color stroke at higher opacity.
     if (_showCrossEdges) {
       const nodeIdx = new Map(_layout.nodes.map((n) => [n.id, n]));
-      const edgeG = root.append('g').attr('class', 'mvg-edges')
+      const isPersonEdge = (e) => {
+        const a = nodeIdx.get(e.source); const b = nodeIdx.get(e.target);
+        return (a && a.kind === 'person') || (b && b.kind === 'person');
+      };
+      const edges = _layout.crossEdges;
+      const facEdges = edges.filter((e) => !isPersonEdge(e));
+      const perEdges = edges.filter(isPersonEdge);
+
+      // Background layer: facility↔facility cross edges.
+      root.append('g').attr('class', 'mvg-edges-fac')
         .attr('stroke', '#94a3b8')
-        .attr('stroke-opacity', 0.18)
-        .attr('fill', 'none');
-      edgeG.selectAll('line').data(_layout.crossEdges).enter().append('line')
+        .attr('stroke-opacity', 0.16)
+        .attr('fill', 'none')
+        .selectAll('line').data(facEdges).enter().append('line')
         .attr('x1', (e) => (nodeIdx.get(e.source) || {}).x)
         .attr('y1', (e) => (nodeIdx.get(e.source) || {}).y)
         .attr('x2', (e) => (nodeIdx.get(e.target) || {}).x)
         .attr('y2', (e) => (nodeIdx.get(e.target) || {}).y)
-        .attr('stroke-width', (e) => 0.4 + Math.log(1 + e.w) * 0.4);
+        .attr('stroke-width', (e) => 0.35 + Math.log(1 + e.w) * 0.3);
+
+      // Foreground layer: person-bridging edges, colored sky-blue and
+      // higher-opacity so the inter/transdisciplinary connections are
+      // visually obvious.
+      root.append('g').attr('class', 'mvg-edges-per')
+        .attr('stroke', '#0ea5e9')
+        .attr('stroke-opacity', 0.55)
+        .attr('fill', 'none')
+        .selectAll('line').data(perEdges).enter().append('line')
+        .attr('x1', (e) => (nodeIdx.get(e.source) || {}).x)
+        .attr('y1', (e) => (nodeIdx.get(e.source) || {}).y)
+        .attr('x2', (e) => (nodeIdx.get(e.target) || {}).x)
+        .attr('y2', (e) => (nodeIdx.get(e.target) || {}).y)
+        .attr('stroke-width', (e) => 0.6 + Math.log(1 + e.w) * 0.6);
     }
 
-    // Layer 3: nodes
+    // Layer 3: nodes. Person radii scale with the composite importance
+    // weight (funding base × co-authors × publications) so prominent
+    // researchers are visually large; facility radii stay constant
+    // (they're already represented by the polygon sizing).
     const visibleNodes = _layout.nodes.filter((n) =>
       (n.kind === 'facility' && _showFacility) ||
       (n.kind === 'person' && _showPerson));
+    const personRadius = (d) => {
+      // weight ranges roughly 0..25; map to 3..10 px via sqrt curve.
+      const w = d.importance || 0;
+      return Math.min(10, 3 + Math.sqrt(w) * 1.0);
+    };
     const nodeG = root.append('g').attr('class', 'mvg-nodes');
     nodeG.selectAll('circle').data(visibleNodes).enter().append('circle')
       .attr('cx', (d) => d.x).attr('cy', (d) => d.y)
-      .attr('r', (d) => NODE_RADIUS[d.kind] || 3)
+      .attr('r', (d) => d.kind === 'person'
+        ? personRadius(d)
+        : (NODE_RADIUS[d.kind] || 3))
       .attr('fill', (d) => NODE_COLORS[d.kind])
       .attr('stroke', '#fff')
       .attr('stroke-width', 0.6)
@@ -657,8 +807,18 @@ function nodeTipHtml(d) {
   }
   const sub = [d.orcid && `ORCID ${d.orcid}`, d.openalex_id]
     .filter(Boolean).join(' · ');
+  // Show the metrics that drove this researcher's node size so users
+  // can see why it's prominent (or not).
+  const metrics = [];
+  if (d.n_pubs)   metrics.push(`${d.n_pubs} pubs`);
+  if (d.n_coauth) metrics.push(`${d.n_coauth} co-authors`);
+  if (d.facility_funding_usd) {
+    const m = d.facility_funding_usd / 1e6;
+    metrics.push(`$${m >= 100 ? Math.round(m) : m.toFixed(1)}M facility funding`);
+  }
   return `<strong>${escapeHtml(d.name)}</strong>` +
-    (sub ? `<br><small>${escapeHtml(sub)}</small>` : '');
+    (sub ? `<br><small>${escapeHtml(sub)}</small>` : '') +
+    (metrics.length ? `<br><small style="color:#7dd3fc">${metrics.join(' · ')}</small>` : '');
 }
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"]/g, (c) =>
