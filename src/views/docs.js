@@ -101,6 +101,16 @@ function escHtml(s) {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
+// Pages rendered in the in-app Docs tab. Order matters — the COD
+// purpose / MSI handout content goes first since it explains WHY the
+// app exists; METHODS describes HOW the data was assembled.
+const DOC_PAGES = [
+  { title: 'Coastal Observatory Design — purpose & MSI handout',
+    path: 'docs/cod_purpose_and_msi_handout.md' },
+  { title: 'Methods',
+    path: 'METHODS.md' },
+];
+
 export async function initDocsView(container) {
   _container = container;
   if (_cachedHtml) {
@@ -109,12 +119,21 @@ export async function initDocsView(container) {
   }
   _container.innerHTML = '<p style="padding:24px;color:var(--c-muted)">Loading documentation…</p>';
   try {
-    const res = await fetch(`${BASE}METHODS.md`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const md = await res.text();
-    _cachedHtml = `<div class="docs-body">${mdToHtml(md)}</div>`;
+    const sections = await Promise.all(DOC_PAGES.map(async (p) => {
+      try {
+        const r = await fetch(`${BASE}${p.path}`);
+        if (!r.ok) return `<section class="docs-section"><h1>${escHtml(p.title)}</h1>` +
+          `<p style="color:#c00">Failed to load ${escHtml(p.path)}: HTTP ${r.status}</p></section>`;
+        const md = await r.text();
+        return `<section class="docs-section">${mdToHtml(md)}</section>`;
+      } catch (e) {
+        return `<section class="docs-section"><h1>${escHtml(p.title)}</h1>` +
+          `<p style="color:#c00">Failed to load ${escHtml(p.path)}: ${escHtml(e.message)}</p></section>`;
+      }
+    }));
+    _cachedHtml = `<div class="docs-body">${sections.join('\n<hr class="docs-sep">\n')}</div>`;
     _container.innerHTML = _cachedHtml;
   } catch (e) {
-    _container.innerHTML = `<p style="padding:24px;color:#c00">Failed to load METHODS.md: ${escHtml(e.message)}</p>`;
+    _container.innerHTML = `<p style="padding:24px;color:#c00">Failed to load docs: ${escHtml(e.message)}</p>`;
   }
 }

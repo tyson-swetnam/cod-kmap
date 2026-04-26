@@ -80,30 +80,53 @@ def name_similarity(a: str, b: str) -> float:
 
 def search_orcid(sess: requests.Session, given: str, family: str
                  ) -> list[dict]:
-    """Returns up to 10 candidate ORCID profiles for the (given, family)
-    pair. ORCID search query language uses Lucene-ish syntax."""
+    """Returns up to 25 candidate ORCID profiles. Tries TWO queries
+    and merges results — Lucene-style fielded search is very strict
+    in expanded-search and frequently returns 0 hits even when an
+    obvious profile exists. The fallback uses the open-text 'q'
+    parameter which behaves like the orcid.org website search."""
     if not family:
         return []
-    q_parts = [f'family-name:"{family}"']
+    seen_orcids: set[str] = set()
+    out: list[dict] = []
+
+    def _push(rows):
+        for c in rows:
+            oid = c.get("orcid-id") or ""
+            if oid and oid not in seen_orcids:
+                seen_orcids.add(oid)
+                out.append(c)
+
+    queries = []
+    # Q1: fielded — strict but exact.
     if given:
-        # Use only the FIRST given name to be tolerant of middle names
-        # / initials.
         first = given.split()[0]
-        if first:
-            q_parts.append(f'given-names:{first}*')
-    q = " AND ".join(q_parts)
-    try:
-        r = sess.get(API_SEARCH, params={"q": q, "rows": 10}, timeout=20)
-    except Exception as e:
-        print(f"[warn] orcid search failed for {given} {family}: {e}")
-        return []
-    if r.status_code == 429:
-        time.sleep(2)
-        return search_orcid(sess, given, family)
-    if not r.ok:
-        return []
-    j = r.json()
-    return j.get("expanded-result", []) or []
+        queries.append(f'family-name:"{family}" AND given-names:{first}*')
+    else:
+        queries.append(f'family-name:"{family}"')
+    # Q2: open-text — much more permissive, mirrors website behavior.
+    queries.append(f'"{given} {family}"'.strip())
+    # Q3: bare last-name only — last resort for unusual given-name spellings.
+    queries.append(f'family-name:"{family}"')
+
+    for q in queries:
+        try:
+            r = sess.get(API_SEARCH, params={"q": q, "rows": 25}, timeout=20)
+        except Exception as e:
+            print(f"[warn] orcid search failed for {q}: {e}")
+            continue
+        if r.status_code == 429:
+            time.sleep(2)
+            continue
+        if not r.ok:
+            continue
+        try:
+            _push(r.json().get("expanded-result", []) or [])
+        except Exception:
+            continue
+        if len(out) >= 12:
+            break
+    return out
 
 
 def fetch_employments(sess: requests.Session, orcid: str) -> list[str]:
@@ -134,15 +157,79 @@ def fetch_employments(sess: requests.Session, orcid: str) -> list[str]:
     return out
 
 
+def normalize_facility_name(s: str) -> str:
+    """Aggressively normalize a facility name for fuzzy matching:
+       lowercase, drop common suffix words, expand the obvious acronyms,
+       collapse whitespace. So 'NERR — Apalachicola NERR' and
+       'Apalachicola National Estuarine Research Reserve' end up close.
+    """
+    if not s:
+        return ""
+    s = norm(s)
+    # Drop the acronym—long-name separator structure.
+    s = s.replace("—", " ").replace("–", " ").replace("-", " ")
+    # Expand abbreviations BEFORE stripping suffixes.
+    expansions = [
+        ("nerr",  "national estuarine research reserve"),
+        ("nms",   "national marine sanctuary"),
+        ("nep",   "national estuary program"),
+        ("ltreb", "long term research environmental biology"),
+        ("lter",  "long term ecological research"),
+        ("nps",   "national park service"),
+        ("noaa",  "national oceanic atmospheric administration"),
+        ("ucsb",  "university california santa barbara"),
+        ("usf",   "university south florida"),
+        ("ucsd",  "university california san diego"),
+        ("uw",    "university washington"),
+        ("dfo",   "fisheries oceans canada"),
+    ]
+    for short, long in expansions:
+        s = re.sub(rf'\b{short}\b', long, s)
+    # Drop common suffix / connector words.
+    drop = {'the', 'a', 'an', 'of', 'and', 'for', 'at', 'in', 'on',
+            'institute', 'foundation', 'incorporated', 'inc', 'llc',
+            'department', 'reserve', 'sanctuary'}
+    toks = [t for t in re.split(r'\s+', s) if t and t not in drop]
+    return ' '.join(toks)
+
+
+def token_overlap(a: str, b: str) -> float:
+    """Jaccard-like similarity over token sets after normalisation. More
+    forgiving than character-level SequenceMatcher when one string is
+    much longer than the other (e.g. ORCID employment org has the full
+    departmental name + city + country, our facility has just the lab
+    name)."""
+    ta = set(normalize_facility_name(a).split())
+    tb = set(normalize_facility_name(b).split())
+    if not ta or not tb:
+        return 0.0
+    inter = len(ta & tb)
+    if not inter:
+        return 0.0
+    # Recall-weighted: the shorter of the two should be mostly in the
+    # other for a strong match.
+    return inter / max(min(len(ta), len(tb)), 1)
+
+
 def best_facility_match(orgs: list[str], facilities: list[str],
                         min_conf: float) -> tuple[float, str, str]:
-    """Returns (best_score, matched_org, matched_facility) or (-1,'','')."""
+    """Returns (best_score, matched_org, matched_facility) or (-1,'','').
+
+    Combines two scores: character-level SequenceMatcher AND token
+    Jaccard. Either passing the threshold counts as a match — they
+    catch different patterns (SequenceMatcher rewards continuous
+    substrings, Jaccard rewards shared keywords)."""
     best = (-1.0, "", "")
     for org in orgs:
         for fac in facilities:
-            # Try the full facility string AND its acronym/long-name halves.
             for variant in [fac, *fac.split(" — ")]:
-                s = name_similarity(org, variant)
+                s_seq = SequenceMatcher(
+                    None,
+                    normalize_facility_name(org),
+                    normalize_facility_name(variant),
+                ).ratio()
+                s_tok = token_overlap(org, variant)
+                s = max(s_seq, s_tok)
                 if s > best[0]:
                     best = (s, org, variant)
     return best if best[0] >= min_conf else (-1.0, "", "")
@@ -215,7 +302,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", type=Path, default=DEFAULT_DB)
     ap.add_argument("--batch", type=int, default=50)
-    ap.add_argument("--min-conf", type=float, default=0.6)
+    ap.add_argument("--min-conf", type=float, default=0.45)
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--only-missing", action="store_true", default=True)
     ap.add_argument("--reverify", action="store_true",
