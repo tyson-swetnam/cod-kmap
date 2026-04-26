@@ -158,16 +158,32 @@ def main() -> int:
         total = conn.execute(
             "SELECT COUNT(*) FROM read_parquet(?)", [str(f)]
         ).fetchone()[0]
+        # BY NAME maps parquet columns -> table columns by name rather
+        # than by position. Without this, a parquet written under a
+        # slightly different schema version (e.g. person_areas with
+        # source/evidence_count swapped) raises "Could not convert
+        # string 'openalex_topics' to INT32" because INSERT SELECT *
+        # pushes the string source value into the integer evidence_count
+        # slot. BY NAME is immune to ordering drift.
         try:
             conn.execute(
-                f"INSERT INTO {table} "
+                f"INSERT INTO {table} BY NAME "
                 f"SELECT * FROM read_parquet(?) AS src{where_sql}",
                 [str(f)],
             )
         except duckdb.Error as e:
-            print(f"[error]  {table:<22} INSERT failed: {e}")
-            print(f"         continuing with remaining tables…")
-            continue
+            # Fallback: retry as a positional INSERT so genuine type
+            # mismatches surface with their original error message.
+            try:
+                conn.execute(
+                    f"INSERT INTO {table} "
+                    f"SELECT * FROM read_parquet(?) AS src{where_sql}",
+                    [str(f)],
+                )
+            except duckdb.Error as e2:
+                print(f"[error]  {table:<22} INSERT failed: {e2}")
+                print(f"         continuing with remaining tables…")
+                continue
         cnt = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
         dropped = total - cnt
         marker = f"  [DROPPED {dropped} fk-orphan rows]" if dropped else ""
