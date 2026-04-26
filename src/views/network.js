@@ -800,6 +800,17 @@ async function buildLayout(data, w, h) {
   const polyOut = await computePolygons(d3delaunay, polygonClipping,
                                          allNodes, squares, w, h);
 
+  // Sub-Voronoi: each facility gets its own polygon territory inside
+  // its area polygon. Replaces the dashed sub-circles. Computed by
+  // running a small Voronoi over (facility centers + perimeter
+  // anchors sampled along the area polygon edge), then clipping each
+  // facility's cell to the area polygon via polygon-clipping
+  // intersection so cells don't poke outside the country boundary.
+  const facPolygons = computeFacilitySubPolygons(
+    d3delaunay, polygonClipping,
+    data, facCircles, polyOut.polygons,
+  );
+
   // Cross-area edges for rendering (one row per pair, weight summed).
   const memberArea = new Map(allNodes.map((n) => [n.id, n.area_id]));
   const crossW = new Map();
@@ -835,7 +846,132 @@ async function buildLayout(data, w, h) {
     labels,
     areas: data.areas,
     facCircles,
+    facPolygons,
   };
+}
+
+
+// Sub-Voronoi: per area, partition the area's polygon into facility
+// territories. Returns Map(facility_id → {ring, area_id, name,
+// acronym, country, f_type, url, n_people}).
+function computeFacilitySubPolygons(d3delaunay, polygonClipping,
+                                     data, facCircles, areaRings) {
+  const PC = polygonClipping.default || polygonClipping;
+  const result = new Map();
+  // Group facilities by area_id.
+  const facsByArea = new Map();
+  for (const f of data.facilities) {
+    if (!facsByArea.has(f.area_id)) facsByArea.set(f.area_id, []);
+    facsByArea.get(f.area_id).push(f);
+  }
+  // For each area, run a small Voronoi over facility positions plus
+  // anchors sampled along the area polygon edge so cells stay bounded.
+  for (const [areaId, areaRing] of areaRings.entries()) {
+    const facs = facsByArea.get(areaId) || [];
+    if (!facs.length || !areaRing || areaRing.length < 4) continue;
+    // Bbox of the area polygon for the Voronoi clip extent.
+    let mnX = Infinity, mnY = Infinity, mxX = -Infinity, mxY = -Infinity;
+    for (const [x, y] of areaRing) {
+      if (x < mnX) mnX = x; if (y < mnY) mnY = y;
+      if (x > mxX) mxX = x; if (y > mxY) mxY = y;
+    }
+    const padW = (mxX - mnX) * 0.4 + 10;
+    const padH = (mxY - mnY) * 0.4 + 10;
+    // Collect facility seed points (their bubble centers).
+    const seeds = [];
+    const seedFids = [];
+    for (const f of facs) {
+      const c = facCircles.get(f.id);
+      if (!c) continue;
+      seeds.push([c.x, c.y]);
+      seedFids.push(f.id);
+    }
+    if (!seeds.length) continue;
+    // Sample 12-32 anchor points along the polygon perimeter to bound
+    // the Voronoi cells; spaced proportionally to perimeter length.
+    const peri = polygonPerimeter(areaRing);
+    const nAnchors = Math.max(12, Math.min(32, Math.round(peri / 28)));
+    const peripheryAnchors = samplePerimeter(areaRing, nAnchors);
+    // Push anchors slightly OUTWARD so seed cells own the inner area.
+    // (Compute centroid; nudge each anchor 6% further along the radius.)
+    let cgx = 0, cgy = 0;
+    for (const [x, y] of areaRing) { cgx += x; cgy += y; }
+    cgx /= areaRing.length; cgy /= areaRing.length;
+    for (const a of peripheryAnchors) {
+      const dx = a[0] - cgx, dy = a[1] - cgy;
+      a[0] = cgx + dx * 1.05;
+      a[1] = cgy + dy * 1.05;
+    }
+    const allPts = [...seeds, ...peripheryAnchors];
+    let voro;
+    try {
+      const dl = d3delaunay.Delaunay.from(allPts);
+      voro = dl.voronoi([
+        mnX - padW, mnY - padH, mxX + padW, mxY + padH,
+      ]);
+    } catch (e) {
+      console.warn('[mvg] sub-voronoi delaunay failed for area', areaId, e);
+      continue;
+    }
+    const areaPoly = [areaRing];   // polygon-clipping wants a Polygon (rings)
+    for (let i = 0; i < seeds.length; i++) {
+      const cell = voro.cellPolygon(i);
+      if (!cell) continue;
+      let clipped;
+      try {
+        clipped = PC.intersection([cell], [areaPoly]);
+      } catch (e) {
+        // If clipping fails, fall back to the unclipped cell.
+        clipped = [[cell]];
+      }
+      // Pick the largest sub-polygon.
+      let bestRing = null, bestArea = -Infinity;
+      for (const poly of clipped) {
+        if (!poly || !poly[0] || poly[0].length < 3) continue;
+        const ar = Math.abs(d3PolygonArea(poly[0]));
+        if (ar > bestArea) { bestArea = ar; bestRing = poly[0]; }
+      }
+      if (!bestRing) continue;
+      const fid = seedFids[i];
+      const meta = facCircles.get(fid) || {};
+      result.set(fid, {
+        ring: chaikin(bestRing, 1),
+        area_id: areaId,
+        name: meta.name, acronym: meta.acronym, country: meta.country,
+        f_type: meta.f_type, url: meta.url, n_people: meta.n_people || 0,
+      });
+    }
+  }
+  return result;
+}
+
+function polygonPerimeter(ring) {
+  let p = 0;
+  for (let i = 1; i < ring.length; i++) {
+    p += Math.hypot(ring[i][0] - ring[i - 1][0],
+                    ring[i][1] - ring[i - 1][1]);
+  }
+  return p;
+}
+
+function samplePerimeter(ring, n) {
+  const peri = polygonPerimeter(ring);
+  const step = peri / n;
+  const out = [];
+  let acc = 0;
+  let next = step / 2;
+  for (let i = 1; i < ring.length; i++) {
+    const ax = ring[i - 1][0], ay = ring[i - 1][1];
+    const bx = ring[i][0], by = ring[i][1];
+    const segLen = Math.hypot(bx - ax, by - ay) || 1e-6;
+    while (next <= acc + segLen) {
+      const t = (next - acc) / segLen;
+      out.push([ax + (bx - ax) * t, ay + (by - ay) * t]);
+      next += step;
+    }
+    acc += segLen;
+  }
+  return out;
 }
 
 
@@ -920,27 +1056,26 @@ async function render() {
       })
       .on('click', (ev, a) => zoomToArea(a.id));
 
-    // Layer 1.5: facility sub-circles inside each area polygon.
-    // Renders as translucent rings so users see the institution
-    // hierarchy without obscuring the people inside. Drawn only when
-    // the Facilities toggle is on.
-    if (_showFacility && _layout.facCircles && _layout.facCircles.size) {
-      const circleData = [..._layout.facCircles.entries()]
-        .filter(([, c]) => !String(c.area_id).startsWith('__phantom_'))
-        .map(([id, c]) => ({ id, ...c }));
-      root.append('g').attr('class', 'mvg-facircles')
-        .selectAll('circle').data(circleData).enter().append('circle')
-        .attr('cx', (d) => d.x).attr('cy', (d) => d.y)
-        .attr('r', (d) => d.r)
+    // Layer 1.5: facility SUB-POLYGONS inside each area polygon.
+    // Each institution gets its own Voronoi territory, clipped to its
+    // area polygon. Same area-color, slightly stronger fill alpha so
+    // the institution boundaries are visible inside the country.
+    if (_showFacility && _layout.facPolygons && _layout.facPolygons.size) {
+      const facData = [..._layout.facPolygons.entries()]
+        .map(([id, p]) => ({ id, ...p }));
+      root.append('g').attr('class', 'mvg-facpolys')
+        .selectAll('path').data(facData).enter().append('path')
+        .attr('d', (d) => d.ring
+          ? `M${d.ring.map((p) => p.join(',')).join('L')}Z`
+          : '')
         .attr('fill', (d) => colorOf.get(d.area_id) || '#94a3b8')
         .attr('fill-opacity', 0.10)
         .attr('stroke', (d) => colorOf.get(d.area_id) || '#64748b')
-        .attr('stroke-opacity', 0.55)
-        .attr('stroke-width', 1)
-        .attr('stroke-dasharray', '2,2')
+        .attr('stroke-opacity', 0.7)
+        .attr('stroke-width', 0.6)
         .style('cursor', 'pointer')
         .on('mouseenter', function (ev, d) {
-          d3.select(this).attr('fill-opacity', 0.22);
+          d3.select(this).attr('fill-opacity', 0.25);
           showTip(tip, ev, facilityCircleTipHtml(d));
         })
         .on('mouseleave', function () {
@@ -1211,31 +1346,70 @@ function onPersonClick(d) {
 }
 
 // Show / hide / rescale researcher labels in response to zoom level.
-// At low zoom (k < 1) labels would overlap heavily, so we hide them.
-// At medium zoom (1 ≤ k < 2.5) we show them, counter-scaling so font
-// size stays roughly constant in screen-space. At high zoom (k ≥ 2.5)
-// we let them grow slightly so deep dives feel like deep dives.
+//
+// FIXED PIXEL SIZE: labels use base_font_px / zoom_k as their SVG
+// font-size, so they stay constant size on the screen at every zoom
+// level. Hidden entirely below k = 0.5 (would be unreadable noise).
+//
+// COLLISION CULLING: after sizing, walk all visible labels in
+// importance order (largest base font first → top researcher per
+// area), measure each one's bounding box in WORLD coordinates, and
+// hide any label whose box overlaps an already-shown one. As the user
+// zooms in, more labels survive the cull because boxes shrink in
+// world coords while polygons stay the same size.
 function onZoom(k) {
   _zoomK = k || 1;
-  if (_labelSel) {
-    if (_zoomK < 0.95) {
-      _labelSel.style('display', 'none');
-    } else {
-      _labelSel.style('display', null);
-      // Counter-scale: divide base font by k so text stays readable
-      // (slightly grows past zoom 2.5 for emphasis).
-      const factor = _zoomK >= 2.5
-        ? 1 / 2.5 + (1 - 1 / 2.5) * Math.min(1, (_zoomK - 2.5) / 4)
-        : 1 / _zoomK;
-      _labelSel.attr('font-size', (d) => (d.__baseFont || 11) * factor);
-      _labelSel.attr('stroke-width', 2.4 * factor);
-    }
-  }
   if (_dotPersonSel) {
-    _dotPersonSel.attr('r', 2.4 / Math.max(_zoomK, 1));
+    _dotPersonSel.attr('r', 2.4 / Math.max(_zoomK, 0.6));
   }
   if (_dotFacSel) {
-    _dotFacSel.attr('r', (NODE_RADIUS.facility || 3) / Math.max(_zoomK, 1));
+    _dotFacSel.attr('r', (NODE_RADIUS.facility || 3) / Math.max(_zoomK, 0.6));
+  }
+  if (!_labelSel) return;
+  if (_zoomK < 0.5) {
+    _labelSel.style('display', 'none');
+    return;
+  }
+  // Uniform counter-scale → labels stay constant pixel size on screen.
+  const f = 1 / _zoomK;
+  _labelSel
+    .style('display', null)
+    .attr('font-size', (d) => (d.__baseFont || 11) * f)
+    .attr('stroke-width', 2.4 * f);
+  cullLabels();
+}
+
+// Hide labels whose world-space bounding boxes overlap higher-priority
+// labels. Higher priority = larger base font = more important
+// researcher. The bbox is measured AFTER the font-size attr update so
+// it reflects the current scale.
+function cullLabels() {
+  if (!_labelSel) return;
+  const nodes = _labelSel.nodes();
+  // Sort indices by priority desc.
+  const order = nodes.map((_, i) => i)
+    .sort((a, b) => (nodes[b].__data__.__baseFont || 0)
+                  - (nodes[a].__data__.__baseFont || 0));
+  const placed = [];
+  for (const i of order) {
+    const el = nodes[i];
+    el.style.display = '';
+    let bb;
+    try { bb = el.getBBox(); }
+    catch (_) { continue; }
+    // 2 px padding so adjacent labels don't kiss.
+    const r = { x: bb.x - 2, y: bb.y - 2,
+                w: bb.width + 4, h: bb.height + 4 };
+    let hit = false;
+    for (const p of placed) {
+      if (r.x < p.x + p.w && r.x + r.w > p.x
+       && r.y < p.y + p.h && r.y + r.h > p.y) { hit = true; break; }
+    }
+    if (hit) {
+      el.style.display = 'none';
+    } else {
+      placed.push(r);
+    }
   }
 }
 
