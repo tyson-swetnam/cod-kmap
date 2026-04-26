@@ -51,8 +51,13 @@ let _zoomK = 1;
 // without a full re-render.
 let _labelSel = null;
 let _areaLabelSel = null;
+let _facLabelSel = null;
 let _dotPersonSel = null;
 let _dotFacSel = null;
+// Selection for the facility sub-polygons themselves, captured so
+// hover/zoom logic can address them later (e.g. dim non-hovered
+// polygons in the same area to reveal a single institution).
+let _facPolySel = null;
 
 // 33-step palette for area polygons. Tuned for distinguishability
 // against a parchment background with low-alpha fills.
@@ -1119,33 +1124,55 @@ async function render() {
 
     // Layer 1.5: facility SUB-POLYGONS inside each area polygon.
     // Each institution gets its own Voronoi territory, clipped to its
-    // area polygon. Same area-color, slightly stronger fill alpha so
-    // the institution boundaries are visible inside the country.
+    // area polygon. Fill-opacity NOW VARIES BY PERSONNEL COUNT — the
+    // bigger the institution (more researchers mapped here), the
+    // stronger the fill — so adjacent sub-polygons are visually
+    // distinguishable instead of all reading as the same shade.
     if (_showFacility && _layout.facPolygons && _layout.facPolygons.size) {
       const facData = [..._layout.facPolygons.entries()]
         .map(([id, p]) => ({ id, ...p }));
-      root.append('g').attr('class', 'mvg-facpolys')
+      // Map n_people → fill-opacity. Range 0.06–0.24 so even tiny
+      // institutions register without large ones blasting saturation.
+      const maxPeople = Math.max(1, ...facData.map((d) => d.n_people || 0));
+      const baseOpacity = (d) => {
+        const t = Math.sqrt((d.n_people || 0) / maxPeople); // sqrt-damped
+        return 0.06 + t * 0.18;
+      };
+      _facPolySel = root.append('g').attr('class', 'mvg-facpolys')
         .selectAll('path').data(facData).enter().append('path')
         .attr('d', (d) => d.ring
           ? `M${d.ring.map((p) => p.join(',')).join('L')}Z`
           : '')
         .attr('fill', (d) => colorOf.get(d.area_id) || '#94a3b8')
-        .attr('fill-opacity', 0.10)
+        .attr('fill-opacity', baseOpacity)
         .attr('stroke', (d) => colorOf.get(d.area_id) || '#64748b')
         .attr('stroke-opacity', 0.7)
         .attr('stroke-width', 0.6)
-        .style('cursor', 'pointer')
+        .style('cursor', 'pointer');
+      _facPolySel.each(function (d) { d.__baseOpacity = baseOpacity(d); });
+      _facPolySel
         .on('mouseenter', function (ev, d) {
-          d3.select(this).attr('fill-opacity', 0.25);
+          // Bump THIS polygon, dim the others in the same area so the
+          // hovered institution + its people stand out within the
+          // country.
+          d3.select(this).attr('fill-opacity', Math.min(0.45, (d.__baseOpacity || 0.1) * 2.5));
+          if (_facPolySel) {
+            _facPolySel.filter((o) => o !== d && o.area_id === d.area_id)
+              .attr('fill-opacity', (o) => (o.__baseOpacity || 0.1) * 0.45);
+          }
           showTip(tip, ev, facilityCircleTipHtml(d));
         })
         .on('mouseleave', function () {
-          d3.select(this).attr('fill-opacity', 0.10);
+          if (_facPolySel) {
+            _facPolySel.attr('fill-opacity', (o) => o.__baseOpacity || 0.1);
+          }
           hideTip(tip);
         })
         .on('click', (ev, d) => {
           if (d.url) window.open(d.url, '_blank', 'noopener');
         });
+    } else {
+      _facPolySel = null;
     }
 
     // Layer 2: cross-area edges. THREE visibility buckets so edges
@@ -1170,12 +1197,74 @@ async function render() {
       const k = edgeKind(e);
       if (buckets[k]) buckets[k].push(e);
     }
-    const drawEdges = (cls, arr, stroke, opacity, baseW) => {
+    // Area-id → display name lookup for the edge tooltip.
+    const areaName = new Map(_layout.areas.map((a) => [a.id, a.name]));
+    // Tooltip HTML for an edge — describes the two endpoints, the
+    // research areas they bridge, and the underlying weight (the
+    // count of facility-personnel + co-author connections that
+    // collapsed into this single line).
+    const edgeTipHtml = (e, kind) => {
+      const a = nodeIdx.get(e.source) || {};
+      const b = nodeIdx.get(e.target) || {};
+      const aArea = areaName.get(a.area_id) || a.area_id || '';
+      const bArea = areaName.get(b.area_id) || b.area_id || '';
+      const labelKind = kind === 'pp' ? 'Co-authorship'
+                      : kind === 'pf' ? 'Researcher ↔ Facility'
+                      :                  'Facility ↔ Facility';
+      const aLine = `${escapeHtml(a.name || a.id || '?')} <small style="color:#64748b">(${a.kind || '?'}, ${escapeHtml(aArea)})</small>`;
+      const bLine = `${escapeHtml(b.name || b.id || '?')} <small style="color:#64748b">(${b.kind || '?'}, ${escapeHtml(bArea)})</small>`;
+      const wLabel = kind === 'pp' ? `${e.w} co-publication${e.w === 1 ? '' : 's'}`
+                   : kind === 'pf' ? `${e.w} shared author${e.w === 1 ? '' : 's'} / appointment${e.w === 1 ? '' : 's'}`
+                   :                  `${e.w} shared connection${e.w === 1 ? '' : 's'}`;
+      return `<strong>${labelKind}</strong>`
+           + `<br>${aLine}`
+           + `<br>${bLine}`
+           + `<br><small style="color:#0c4a6e">bridges <em>${escapeHtml(aArea)}</em> ↔ <em>${escapeHtml(bArea)}</em></small>`
+           + `<br><small>${wLabel}</small>`;
+    };
+    // Draws TWO line layers per bucket: an invisible wide "hit"
+    // line for hover precision (thin strokes are otherwise nearly
+    // impossible to hover with a mouse), and the visible coloured
+    // line on top. Hover handlers live on the hit line.
+    const drawEdges = (cls, arr, stroke, opacity, baseW, kind) => {
       if (!arr.length) return;
-      root.append('g').attr('class', cls)
+      const g = root.append('g').attr('class', cls).attr('fill', 'none');
+
+      // Invisible hit line — wide, transparent, clickable.
+      g.append('g').attr('class', `${cls}-hit`)
+        .attr('stroke', 'transparent')
+        .attr('stroke-width', 8)
+        .attr('stroke-linecap', 'round')
+        .style('pointer-events', 'stroke')
+        .style('cursor', 'help')
+        .selectAll('line').data(arr).enter().append('line')
+        .attr('x1', (e) => (nodeIdx.get(e.source) || {}).x)
+        .attr('y1', (e) => (nodeIdx.get(e.source) || {}).y)
+        .attr('x2', (e) => (nodeIdx.get(e.target) || {}).x)
+        .attr('y2', (e) => (nodeIdx.get(e.target) || {}).y)
+        .on('mouseenter', function (ev, e) {
+          showTip(tip, ev, edgeTipHtml(e, kind));
+          // Highlight the matching VISIBLE line so the user can see
+          // which one they're inspecting.
+          const idx = arr.indexOf(e);
+          d3.select(this.parentNode.parentNode)
+            .select(`g.${cls}-vis`).selectAll('line')
+            .attr('stroke-opacity', (_, i) => i === idx ? Math.min(1, opacity * 3) : opacity);
+        })
+        .on('mousemove', function (ev, e) { showTip(tip, ev, edgeTipHtml(e, kind)); })
+        .on('mouseleave', function () {
+          hideTip(tip);
+          d3.select(this.parentNode.parentNode)
+            .select(`g.${cls}-vis`).selectAll('line')
+            .attr('stroke-opacity', opacity);
+        });
+
+      // Visible coloured line — pointer-events none so the wide hit
+      // line below it owns the cursor interactions.
+      g.append('g').attr('class', `${cls}-vis`)
         .attr('stroke', stroke)
         .attr('stroke-opacity', opacity)
-        .attr('fill', 'none')
+        .style('pointer-events', 'none')
         .selectAll('line').data(arr).enter().append('line')
         .attr('x1', (e) => (nodeIdx.get(e.source) || {}).x)
         .attr('y1', (e) => (nodeIdx.get(e.source) || {}).y)
@@ -1183,9 +1272,9 @@ async function render() {
         .attr('y2', (e) => (nodeIdx.get(e.target) || {}).y)
         .attr('stroke-width', (e) => baseW + Math.log(1 + e.w) * 0.3);
     };
-    if (_showFacility) drawEdges('mvg-edges-ff', buckets.ff, '#94a3b8', 0.18, 0.35);
-    if (_showFacility && _showPerson) drawEdges('mvg-edges-pf', buckets.pf, '#7dd3fc', 0.30, 0.45);
-    if (_showPerson) drawEdges('mvg-edges-pp', buckets.pp, '#0ea5e9', 0.55, 0.6);
+    if (_showFacility) drawEdges('mvg-edges-ff', buckets.ff, '#94a3b8', 0.18, 0.35, 'ff');
+    if (_showFacility && _showPerson) drawEdges('mvg-edges-pf', buckets.pf, '#7dd3fc', 0.30, 0.45, 'pf');
+    if (_showPerson) drawEdges('mvg-edges-pp', buckets.pp, '#0ea5e9', 0.55, 0.6, 'pp');
 
     // Layer 3: nodes. Researchers now render as NAME LABELS (top-N
     // per area by composite importance) so the map looks like the
@@ -1305,6 +1394,54 @@ async function render() {
       _labelSel = null;
       _dotPersonSel = null;
     }
+
+    // Layer 3.5: FACILITY NAME LABELS. Same progressive-reveal +
+    // collision-culling logic as person labels — at the default zoom
+    // only the largest institutions' names are visible, and as the
+    // user zooms in more facility names appear because their world-
+    // space bbox shrinks. Placed at sub-polygon centroid, font sized
+    // by sqrt(n_people). Hidden entirely below k = 0.7 (would
+    // overcrowd the default frame).
+    if (_showFacility && _layout.facPolygons && _layout.facPolygons.size) {
+      const facLabData = [..._layout.facPolygons.entries()].map(([id, sp]) => {
+        const ring = sp.ring || [];
+        let cx = 0, cy = 0;
+        for (const [x, y] of ring) { cx += x; cy += y; }
+        if (ring.length) { cx /= ring.length; cy /= ring.length; }
+        const display = sp.acronym && sp.acronym.length <= 8
+          ? sp.acronym
+          : shortFacilityName(sp.name);
+        return {
+          id, x: cx, y: cy,
+          display, name: sp.name, acronym: sp.acronym,
+          country: sp.country, f_type: sp.f_type, url: sp.url,
+          n_people: sp.n_people || 0, area_id: sp.area_id,
+          // Tighter range than people (7–11 px). Acronyms are short
+          // so they sit comfortably inside small sub-polygons; full
+          // names get collision-culled until the user zooms in enough
+          // that they fit.
+          baseFont: Math.max(7, Math.min(11, 7 + Math.sqrt(sp.n_people || 0) * 0.7)),
+        };
+      });
+      _facLabelSel = root.append('g').attr('class', 'mvg-fac-labels')
+        .attr('text-anchor', 'middle')
+        .attr('font-family', 'system-ui, sans-serif')
+        .attr('pointer-events', 'none')
+        .selectAll('text').data(facLabData).enter().append('text')
+        .attr('x', (d) => d.x).attr('y', (d) => d.y)
+        .attr('font-size', (d) => d.baseFont)
+        .attr('font-weight', 600)
+        .attr('fill', '#0f172a')
+        .attr('stroke', '#fef9f0')
+        .attr('stroke-width', 1.8)
+        .attr('stroke-linejoin', 'round')
+        .attr('paint-order', 'stroke')
+        .text((d) => d.display);
+      _facLabelSel.each(function (d) { d.__baseFont = d.baseFont; });
+    } else {
+      _facLabelSel = null;
+    }
+
     // Initial label-visibility/scaling pass so the very-first paint
     // matches whatever zoom level we're starting at.
     onZoom(_zoomK);
@@ -1439,6 +1576,25 @@ function shortName(full) {
   return `${parts[0][0]}. ${last}`;
 }
 
+// Render a facility name compactly. Long institutional names ("Virginia
+// Institute of Marine Science") would never fit inside their sub-
+// polygon, so when the name is over ~22 chars and an acronym isn't
+// available we drop boilerplate (Institute / University / etc.) and
+// fall back to the first 18 chars.
+function shortFacilityName(full) {
+  if (!full) return '';
+  const s = String(full).trim();
+  if (s.length <= 22) return s;
+  // Strip common boilerplate words to shorten without disambiguation
+  // loss.
+  const slim = s
+    .replace(/\b(Institute|Institution|University|Department|Center|Centre|of|the|for|National|Marine|Coastal|Research|Laboratory|Lab)\b/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  if (slim && slim.length <= 22) return slim;
+  return s.slice(0, 18) + '…';
+}
+
 // Click on a researcher → take the user to their detail card in the
 // People directory tab (which we ship as #/people/<person_id>). The
 // directory page handles loading the per-person record.
@@ -1482,6 +1638,22 @@ function onZoom(k) {
       .attr('font-size', (d) => (d.__baseFont || 14) * labelScale)
       .attr('stroke-width', 2.2 * labelScale);
   }
+  // FACILITY labels — same progressive-reveal pattern as people.
+  // Hidden below k=0.7 (their target home is "you've zoomed in enough
+  // to see institutions"). Above that threshold they get the same
+  // counter-scale + collision-cull treatment as person labels.
+  if (_facLabelSel) {
+    if (_zoomK < 0.7) {
+      _facLabelSel.style('display', 'none');
+    } else {
+      _facLabelSel
+        .style('display', null)
+        .attr('font-size', (d) => (d.__baseFont || 8) * labelScale)
+        .attr('stroke-width', 1.8 * labelScale);
+      cullSelection(_facLabelSel);
+    }
+  }
+
   if (!_labelSel) return;
   if (_zoomK < 0.5) {
     _labelSel.style('display', 'none');
@@ -1491,17 +1663,18 @@ function onZoom(k) {
     .style('display', null)
     .attr('font-size', (d) => (d.__baseFont || 10) * labelScale)
     .attr('stroke-width', 2.0 * labelScale);
-  cullLabels();
+  cullSelection(_labelSel);
 }
 
 // Hide labels whose world-space bounding boxes overlap higher-priority
-// labels. Higher priority = larger base font = more important
-// researcher. The bbox is measured AFTER the font-size attr update so
-// it reflects the current scale.
-function cullLabels() {
-  if (!_labelSel) return;
-  const nodes = _labelSel.nodes();
-  // Sort indices by priority desc.
+// labels. Higher priority = larger base font. Generalised to take ANY
+// selection so person labels and facility labels share the same logic
+// while remaining INDEPENDENT (each cull pass operates on its own
+// bucket — facility labels overlapping person labels is fine because
+// they read as different colours / weights).
+function cullSelection(sel) {
+  if (!sel) return;
+  const nodes = sel.nodes();
   const order = nodes.map((_, i) => i)
     .sort((a, b) => (nodes[b].__data__.__baseFont || 0)
                   - (nodes[a].__data__.__baseFont || 0));
@@ -1512,7 +1685,6 @@ function cullLabels() {
     let bb;
     try { bb = el.getBBox(); }
     catch (_) { continue; }
-    // 2 px padding so adjacent labels don't kiss.
     const r = { x: bb.x - 2, y: bb.y - 2,
                 w: bb.width + 4, h: bb.height + 4 };
     let hit = false;
@@ -1520,11 +1692,8 @@ function cullLabels() {
       if (r.x < p.x + p.w && r.x + r.w > p.x
        && r.y < p.y + p.h && r.y + r.h > p.y) { hit = true; break; }
     }
-    if (hit) {
-      el.style.display = 'none';
-    } else {
-      placed.push(r);
-    }
+    if (hit) el.style.display = 'none';
+    else placed.push(r);
   }
 }
 
