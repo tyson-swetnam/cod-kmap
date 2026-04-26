@@ -105,6 +105,38 @@ def main() -> int:
     print("[schema] applying schema.sql")
     conn.execute(SCHEMA.read_text())
 
+    # Tables whose rows reference another table via foreign keys. If
+    # the parent has missing rows (e.g. networks.parquet shipped without
+    # the 'epa-region' row but network_membership.parquet has rows
+    # pointing at it — happens when intermediate exports diverge),
+    # straight INSERT crashes with a ConstraintException and aborts
+    # the whole rebuild before later tables have a chance to load.
+    # Defensively pre-filter on those rows so we DON'T leave the DB in
+    # a half-loaded state. We still report how many rows were dropped
+    # so the inconsistency is visible.
+    FK_FILTERS = {
+        # table       :  list of (column, parent_table, parent_column)
+        "network_membership":  [("network_id",   "networks",       "network_id"),
+                                ("facility_id",  "facilities",     "facility_id")],
+        "area_links":          [("area_id",      "research_areas", "area_id"),
+                                ("facility_id",  "facilities",     "facility_id")],
+        "facility_regions":    [("region_id",    "regions",        "region_id"),
+                                ("facility_id",  "facilities",     "facility_id")],
+        "region_area_links":   [("region_id",    "regions",        "region_id"),
+                                ("area_id",      "research_areas", "area_id")],
+        "regions":             [("network_id",   "networks",       "network_id")],
+        "funding_events":      [("facility_id",  "facilities",     "facility_id"),
+                                ("funder_id",    "funders",        "funder_id")],
+        "facility_personnel":  [("facility_id",  "facilities",     "facility_id"),
+                                ("person_id",    "people",         "person_id")],
+        "authorship":          [("publication_id","publications",  "publication_id"),
+                                ("person_id",    "people",         "person_id")],
+        "person_areas":        [("person_id",    "people",         "person_id"),
+                                ("area_id",      "research_areas", "area_id")],
+        "collaborations":      [("person_a_id",  "people",         "person_id"),
+                                ("person_b_id",  "people",         "person_id")],
+    }
+
     # Load each table from its parquet (skip ones without a file — they
     # may simply not exist yet in this tree).
     for table in LOAD_ORDER:
@@ -112,13 +144,34 @@ def main() -> int:
         if not f.exists():
             print(f"[skip]   {table:<22} (no {f.name})")
             continue
-        n = conn.execute(
-            f"INSERT INTO {table} SELECT * FROM read_parquet(?)",
-            [str(f)],
-        ).fetchone()
-        # INSERT returns affected rows via changes().
+        # Build the SELECT, applying FK filters when available so a
+        # bad row in the child can't blow up the load.
+        filters = FK_FILTERS.get(table, [])
+        where_clauses = []
+        for col, parent, pcol in filters:
+            where_clauses.append(
+                f"({col} IS NULL OR {col} IN (SELECT {pcol} FROM {parent}))"
+            )
+        where_sql = (" WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+        # Count what's in the parquet vs what survives the filter so we
+        # can warn on dropped rows.
+        total = conn.execute(
+            "SELECT COUNT(*) FROM read_parquet(?)", [str(f)]
+        ).fetchone()[0]
+        try:
+            conn.execute(
+                f"INSERT INTO {table} "
+                f"SELECT * FROM read_parquet(?) AS src{where_sql}",
+                [str(f)],
+            )
+        except duckdb.Error as e:
+            print(f"[error]  {table:<22} INSERT failed: {e}")
+            print(f"         continuing with remaining tables…")
+            continue
         cnt = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
-        print(f"[load]   {table:<22} {cnt:>6} rows  <- {f.name}")
+        dropped = total - cnt
+        marker = f"  [DROPPED {dropped} fk-orphan rows]" if dropped else ""
+        print(f"[load]   {table:<22} {cnt:>6} rows  <- {f.name}{marker}")
 
     # Summary.
     print("\n[summary]")
