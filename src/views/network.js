@@ -1148,45 +1148,44 @@ async function render() {
         });
     }
 
-    // Layer 2: cross-area edges. Visibility tied to the same
-    // Facilities / People toggles that control node visibility:
-    //   - Facility ↔ facility edges shown when Facilities is on
-    //   - Person-bridging edges (person↔person + person↔facility)
-    //     shown when People is on
-    // Person-bridging layer is drawn ON TOP in sky-blue so the
-    // interdisciplinary collaboration signal pops.
+    // Layer 2: cross-area edges. THREE visibility buckets so edges
+    // don't dangle into invisible nodes:
+    //   - facility ↔ facility       → Facilities ON
+    //   - person ↔ facility         → BOTH ON  (person-bridging that
+    //                                  terminates on a facility dot)
+    //   - person ↔ person           → People ON
+    // Previously a person↔facility edge was bucketed as "person" and
+    // kept showing after Facilities was toggled off, leaving ghost
+    // lines pointing at hidden facility dots.
     const nodeIdx = new Map(_layout.nodes.map((n) => [n.id, n]));
-    const isPersonEdge = (e) => {
+    const edgeKind = (e) => {
       const a = nodeIdx.get(e.source); const b = nodeIdx.get(e.target);
-      return (a && a.kind === 'person') || (b && b.kind === 'person');
+      const ak = a ? a.kind : null; const bk = b ? b.kind : null;
+      if (ak === 'person' && bk === 'person') return 'pp';
+      if (ak === 'person' || bk === 'person') return 'pf';
+      return 'ff';
     };
-    const facEdges = _layout.crossEdges.filter((e) => !isPersonEdge(e));
-    const perEdges = _layout.crossEdges.filter(isPersonEdge);
-
-    if (_showFacility && facEdges.length) {
-      root.append('g').attr('class', 'mvg-edges-fac')
-        .attr('stroke', '#94a3b8')
-        .attr('stroke-opacity', 0.18)
+    const buckets = { ff: [], pf: [], pp: [] };
+    for (const e of _layout.crossEdges) {
+      const k = edgeKind(e);
+      if (buckets[k]) buckets[k].push(e);
+    }
+    const drawEdges = (cls, arr, stroke, opacity, baseW) => {
+      if (!arr.length) return;
+      root.append('g').attr('class', cls)
+        .attr('stroke', stroke)
+        .attr('stroke-opacity', opacity)
         .attr('fill', 'none')
-        .selectAll('line').data(facEdges).enter().append('line')
+        .selectAll('line').data(arr).enter().append('line')
         .attr('x1', (e) => (nodeIdx.get(e.source) || {}).x)
         .attr('y1', (e) => (nodeIdx.get(e.source) || {}).y)
         .attr('x2', (e) => (nodeIdx.get(e.target) || {}).x)
         .attr('y2', (e) => (nodeIdx.get(e.target) || {}).y)
-        .attr('stroke-width', (e) => 0.35 + Math.log(1 + e.w) * 0.3);
-    }
-    if (_showPerson && perEdges.length) {
-      root.append('g').attr('class', 'mvg-edges-per')
-        .attr('stroke', '#0ea5e9')
-        .attr('stroke-opacity', 0.55)
-        .attr('fill', 'none')
-        .selectAll('line').data(perEdges).enter().append('line')
-        .attr('x1', (e) => (nodeIdx.get(e.source) || {}).x)
-        .attr('y1', (e) => (nodeIdx.get(e.source) || {}).y)
-        .attr('x2', (e) => (nodeIdx.get(e.target) || {}).x)
-        .attr('y2', (e) => (nodeIdx.get(e.target) || {}).y)
-        .attr('stroke-width', (e) => 0.6 + Math.log(1 + e.w) * 0.6);
-    }
+        .attr('stroke-width', (e) => baseW + Math.log(1 + e.w) * 0.3);
+    };
+    if (_showFacility) drawEdges('mvg-edges-ff', buckets.ff, '#94a3b8', 0.18, 0.35);
+    if (_showFacility && _showPerson) drawEdges('mvg-edges-pf', buckets.pf, '#7dd3fc', 0.30, 0.45);
+    if (_showPerson) drawEdges('mvg-edges-pp', buckets.pp, '#0ea5e9', 0.55, 0.6);
 
     // Layer 3: nodes. Researchers now render as NAME LABELS (top-N
     // per area by composite importance) so the map looks like the
@@ -1214,11 +1213,26 @@ async function render() {
     }
 
     if (_showFacility) {
+      // When facility sub-polygons exist, place each facility's dot at
+      // its sub-polygon centroid (the cleanest "this institution lives
+      // here" marker). When sub-polygons are absent (small or
+      // single-facility areas) fall back to the force-sim x,y. Either
+      // way, dots are intentionally smaller than the person dots so
+      // they read as "place markers" not data points.
+      const facCentroid = (d) => {
+        const sp = _layout.facPolygons && _layout.facPolygons.get(d.id);
+        if (!sp || !sp.ring || sp.ring.length === 0) return [d.x, d.y];
+        let cx = 0, cy = 0;
+        for (const [x, y] of sp.ring) { cx += x; cy += y; }
+        return [cx / sp.ring.length, cy / sp.ring.length];
+      };
       _dotFacSel = root.append('g').attr('class', 'mvg-fac-dots')
         .selectAll('circle').data(facNodes).enter().append('circle')
-        .attr('cx', (d) => d.x).attr('cy', (d) => d.y)
-        .attr('r', NODE_RADIUS.facility || 3)
+        .attr('cx', (d) => facCentroid(d)[0])
+        .attr('cy', (d) => facCentroid(d)[1])
+        .attr('r', 2.6)
         .attr('fill', NODE_COLORS.facility)
+        .attr('fill-opacity', 0.85)
         .attr('stroke', '#fff')
         .attr('stroke-width', 0.6)
         .style('cursor', 'pointer')
@@ -1233,27 +1247,40 @@ async function render() {
     }
 
     if (_showPerson) {
-      // Small dots for non-labelled people.
+      // Small dots for non-labelled people. Radius now scales with
+      // composite importance (sqrt-damped) so junior researchers stay
+      // readable at ~1.6 px while heavy-collab/well-funded researchers
+      // sit at ~3.5 px before their name kicks in. Stroke-width also
+      // scales so the white halo doesn't dominate the small dots.
       const dotPeople = perNodes.filter((p) => !labelledIds.has(p.id));
+      const dotRadius = (d) => {
+        const w = d.importance || 0;
+        return 1.6 + Math.min(2.2, Math.sqrt(w) * 0.55);
+      };
       _dotPersonSel = root.append('g').attr('class', 'mvg-per-dots')
         .selectAll('circle').data(dotPeople).enter().append('circle')
         .attr('cx', (d) => d.x).attr('cy', (d) => d.y)
-        .attr('r', 2.4)
+        .attr('r', dotRadius)
         .attr('fill', NODE_COLORS.person)
-        .attr('fill-opacity', 0.7)
+        .attr('fill-opacity', 0.75)
         .attr('stroke', '#fff')
         .attr('stroke-width', 0.5)
         .style('cursor', 'pointer')
         .on('mouseenter', (ev, d) => showTip(tip, ev, nodeTipHtml(d)))
         .on('mouseleave', () => hideTip(tip))
         .on('click', (ev, d) => onPersonClick(d));
+      // Tag base radius so onZoom can counter-scale per-dot.
+      _dotPersonSel.each(function (d) { d.__baseR = dotRadius(d); });
 
       // Name labels for the top N per area. We store the BASE font
       // size on the datum so onZoom() can rescale relative to it.
       const labelPeople = perNodes.filter((p) => labelledIds.has(p.id));
       const personBaseFont = (d) => {
+        // Tighter range (8–12 px) so label sizes don't visually
+        // compete with area names. Differentiation between top and
+        // mid-tier researchers comes from sqrt-importance scaling.
         const w = d.importance || 0;
-        return Math.max(8, Math.min(15, 8 + Math.sqrt(w) * 1.1));
+        return Math.max(8, Math.min(12, 8 + Math.sqrt(w) * 0.7));
       };
       _labelSel = root.append('g').attr('class', 'mvg-per-labels')
         .attr('text-anchor', 'middle')
@@ -1297,7 +1324,13 @@ async function render() {
         const lab = _layout.labels.get(a.id);
         return {
           id: a.id, name: lab.name, x: lab.x, y: lab.y,
-          baseFont: Math.max(11, Math.min(22, 7 + Math.sqrt(a.weight) * 1.8)),
+          // Tighter range (10–16 px) than before. The previous (11–22)
+          // scaled ALL labels up by 1/k when the user zoomed out at
+          // initial fit (k≈0.5), producing the giant 40+ px labels
+          // that overpowered the polygons. Combined with the onZoom()
+          // change that caps the counter-scale at 1.0, labels now
+          // stay legible without dominating the canvas.
+          baseFont: Math.max(10, Math.min(16, 8 + Math.sqrt(a.weight) * 1.2)),
         };
       });
     _areaLabelSel = labelG.selectAll('text').data(areaLabData).enter().append('text')
@@ -1306,7 +1339,7 @@ async function render() {
       .attr('font-weight', 600)
       .attr('fill', '#1f2937')
       .attr('stroke', '#fff')
-      .attr('stroke-width', 3)
+      .attr('stroke-width', 2.2)
       .attr('stroke-linejoin', 'round')
       .attr('paint-order', 'stroke')
       .text((d) => d.name);
@@ -1428,31 +1461,36 @@ function onPersonClick(d) {
 // world coords while polygons stay the same size.
 function onZoom(k) {
   _zoomK = k || 1;
+  // Cap the counter-scale at 1.0 — labels should NEVER grow above
+  // their base size when the user zooms out. The previous unbounded
+  // 1/k formula made a 22 px label balloon to 44 px at the initial
+  // fit zoom (k≈0.5), drowning the canvas. Below k=1 we leave fonts
+  // at base size; above k=1 we shrink them so they stay readable
+  // (constant screen size) as the user zooms in.
+  const labelScale = Math.min(1, 1 / Math.max(_zoomK, 0.5));
+  // Dot scale: similar logic — at k>=1 dots stay at base radius;
+  // when zoomed in they shrink so they don't bloat into giant blobs.
+  const dotScale = Math.min(1, 1 / Math.max(_zoomK, 0.5));
   if (_dotPersonSel) {
-    _dotPersonSel.attr('r', 2.4 / Math.max(_zoomK, 0.6));
+    _dotPersonSel.attr('r', (d) => (d.__baseR || 2.0) * dotScale);
   }
   if (_dotFacSel) {
-    _dotFacSel.attr('r', (NODE_RADIUS.facility || 3) / Math.max(_zoomK, 0.6));
+    _dotFacSel.attr('r', 2.6 * dotScale);
   }
-  // Area-name labels use the same uniform counter-scale so they
-  // shrink as you zoom out and stay readable as you zoom in.
   if (_areaLabelSel) {
-    const f = 1 / Math.max(_zoomK, 0.4);
     _areaLabelSel
-      .attr('font-size', (d) => (d.__baseFont || 14) * f)
-      .attr('stroke-width', 3 * f);
+      .attr('font-size', (d) => (d.__baseFont || 14) * labelScale)
+      .attr('stroke-width', 2.2 * labelScale);
   }
   if (!_labelSel) return;
   if (_zoomK < 0.5) {
     _labelSel.style('display', 'none');
     return;
   }
-  // Uniform counter-scale → person labels stay constant pixel size on screen.
-  const f = 1 / _zoomK;
   _labelSel
     .style('display', null)
-    .attr('font-size', (d) => (d.__baseFont || 11) * f)
-    .attr('stroke-width', 2.4 * f);
+    .attr('font-size', (d) => (d.__baseFont || 10) * labelScale)
+    .attr('stroke-width', 2.0 * labelScale);
   cullLabels();
 }
 
