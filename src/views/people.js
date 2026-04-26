@@ -108,6 +108,7 @@ async function fetchPeople() {
            p.name,
            p.orcid,
            p.openalex_id,
+           p.google_scholar_id,
            p.homepage_url,
            p.research_interests,
            p.bio,
@@ -139,6 +140,7 @@ function cardHtml(p) {
   if (p.homepage_url) urls.push(`<a href="${esc(p.homepage_url)}" target="_blank" rel="noopener">homepage</a>`);
   if (p.orcid)        urls.push(`<a href="https://orcid.org/${esc(p.orcid)}" target="_blank" rel="noopener">ORCID</a>`);
   if (p.openalex_id)  urls.push(`<a href="https://openalex.org/${esc(p.openalex_id)}" target="_blank" rel="noopener">OpenAlex</a>`);
+  if (p.google_scholar_id) urls.push(`<a href="https://scholar.google.com/citations?user=${esc(p.google_scholar_id)}" target="_blank" rel="noopener">Google&nbsp;Scholar</a>`);
 
   // affiliations / areas may come back as null when a person has no
   // facility_personnel or no person_area_metrics rows.

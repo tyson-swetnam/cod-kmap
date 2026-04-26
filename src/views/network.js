@@ -50,6 +50,7 @@ let _zoomK = 1;
 // Reference to the labels/dots selections so onZoom can resize them
 // without a full re-render.
 let _labelSel = null;
+let _areaLabelSel = null;
 let _dotPersonSel = null;
 let _dotFacSel = null;
 
@@ -1223,25 +1224,33 @@ async function render() {
     // Populate the left-hand TOC of research areas (clickable to zoom).
     populateToc();
 
-    // Layer 4: polygon labels
+    // Layer 4: polygon (research area) labels. Captured into _areaLabelSel
+    // so onZoom() can counter-scale them just like the person labels —
+    // otherwise the area names balloon at high zoom.
     const labelG = root.append('g').attr('class', 'mvg-labels')
       .attr('text-anchor', 'middle')
       .attr('font-family', 'system-ui, sans-serif')
       .attr('pointer-events', 'none');
-    for (const a of areaList) {
-      const lab = _layout.labels.get(a.id);
-      if (!lab) continue;
-      const sz = Math.max(11, Math.min(20, 7 + Math.sqrt(a.weight) * 1.6));
-      labelG.append('text')
-        .attr('x', lab.x).attr('y', lab.y)
-        .attr('font-size', sz)
-        .attr('font-weight', 600)
-        .attr('fill', '#1f2937')
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 3)
-        .attr('paint-order', 'stroke')
-        .text(lab.name);
-    }
+    const areaLabData = areaList
+      .filter((a) => _layout.labels.has(a.id))
+      .map((a) => {
+        const lab = _layout.labels.get(a.id);
+        return {
+          id: a.id, name: lab.name, x: lab.x, y: lab.y,
+          baseFont: Math.max(11, Math.min(22, 7 + Math.sqrt(a.weight) * 1.8)),
+        };
+      });
+    _areaLabelSel = labelG.selectAll('text').data(areaLabData).enter().append('text')
+      .attr('x', (d) => d.x).attr('y', (d) => d.y)
+      .attr('font-size', (d) => d.baseFont)
+      .attr('font-weight', 600)
+      .attr('fill', '#1f2937')
+      .attr('stroke', '#fff')
+      .attr('stroke-width', 3)
+      .attr('stroke-linejoin', 'round')
+      .attr('paint-order', 'stroke')
+      .text((d) => d.name);
+    _areaLabelSel.each(function (d) { d.__baseFont = d.baseFont; });
   } catch (err) {
     console.error('[mvg] render failed', err);
     if (statusEl) statusEl.textContent = `Knowledge map render failed: ${err.message}`;
@@ -1365,12 +1374,20 @@ function onZoom(k) {
   if (_dotFacSel) {
     _dotFacSel.attr('r', (NODE_RADIUS.facility || 3) / Math.max(_zoomK, 0.6));
   }
+  // Area-name labels use the same uniform counter-scale so they
+  // shrink as you zoom out and stay readable as you zoom in.
+  if (_areaLabelSel) {
+    const f = 1 / Math.max(_zoomK, 0.4);
+    _areaLabelSel
+      .attr('font-size', (d) => (d.__baseFont || 14) * f)
+      .attr('stroke-width', 3 * f);
+  }
   if (!_labelSel) return;
   if (_zoomK < 0.5) {
     _labelSel.style('display', 'none');
     return;
   }
-  // Uniform counter-scale → labels stay constant pixel size on screen.
+  // Uniform counter-scale → person labels stay constant pixel size on screen.
   const f = 1 / _zoomK;
   _labelSel
     .style('display', null)
