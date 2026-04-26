@@ -994,21 +994,81 @@ async function render() {
     statusEl.innerHTML = `<strong>${_layout.areas.length}</strong> research-area polygons, <strong>${_layout.nodes.length}</strong> nodes, <strong>${_layout.crossEdges.length}</strong> cross-area edges`;
 
     stage.innerHTML = '';
-    // viewBox uses the layout bbox, but we tighten the box around the
-    // ACTUAL visible content (polygons + decorators) so the SVG is
-    // properly centered on first paint regardless of where the
-    // supergraph drifted to during force simulation.
+    // viewBox is computed to focus on the WEIGHTED CORE of the map —
+    // not the bounding box of every polygon. The previous "tightest
+    // bbox of all rings" logic let one or two single-facility outlier
+    // polygons (which the force sim sometimes flings to the periphery)
+    // stretch the box, so the central dense cluster — coastal-processes,
+    // marine-ecosystems, biogeochemistry — ended up off-center and tiny
+    // while the user saw mostly empty parchment with an outlier in the
+    // top corner.
+    //
+    // Instead, we:
+    //   1. Compute the weighted centroid of all area polygons, weighted
+    //      by polygon weight (= n_facilities).
+    //   2. Rank polygons by distance from that centroid.
+    //   3. Walk the ranked list inward → outward, accumulating bbox AND
+    //      cumulative weight. Stop once cumulative weight covers
+    //      VIEWBOX_WEIGHT_FRAC of the total.
+    //
+    // Outlier polygons remain rendered (you can pan/zoom-out to see
+    // them), they just don't dictate the default frame. Tuned so the
+    // 4-5 biggest cartograms always land on screen at first paint.
+    const VIEWBOX_WEIGHT_FRAC = 0.80;
     let bx, by, bw, bh;
     {
+      // Polygon centroids + weights.
+      const cents = [];
+      for (const a of _layout.areas) {
+        const ring = _layout.polygons.get(a.id);
+        if (!ring || ring.length === 0) continue;
+        let cx = 0, cy = 0;
+        for (const [x, y] of ring) { cx += x; cy += y; }
+        cx /= ring.length; cy /= ring.length;
+        cents.push({ a, ring, cx, cy, w: a.weight || 1 });
+      }
+      const totalW = cents.reduce((s, c) => s + c.w, 0) || 1;
+
+      // Weighted centroid (importance-weighted "center of mass").
+      let sx = 0, sy = 0;
+      for (const c of cents) { sx += c.cx * c.w; sy += c.cy * c.w; }
+      const wcx = sx / totalW, wcy = sy / totalW;
+
+      // Sort by distance from weighted centroid; bigger polygons
+      // additionally win ties (and pull the inclusion threshold
+      // toward themselves) by penalising their distance with a
+      // sqrt-weight bonus.
+      cents.sort((p, q) => {
+        const dp = Math.hypot(p.cx - wcx, p.cy - wcy) / Math.sqrt(p.w);
+        const dq = Math.hypot(q.cx - wcx, q.cy - wcy) / Math.sqrt(q.w);
+        return dp - dq;
+      });
+
+      // Accumulate bbox until we cover VIEWBOX_WEIGHT_FRAC of weight.
       let mnX = Infinity, mnY = Infinity, mxX = -Infinity, mxY = -Infinity;
-      for (const ring of _layout.polygons.values()) {
+      let cumW = 0;
+      for (const { ring, w } of cents) {
         for (const [x, y] of ring) {
           if (x < mnX) mnX = x; if (y < mnY) mnY = y;
           if (x > mxX) mxX = x; if (y > mxY) mxY = y;
         }
+        cumW += w;
+        if (cumW / totalW >= VIEWBOX_WEIGHT_FRAC) break;
       }
-      const padW = (mxX - mnX) * 0.05;
-      const padH = (mxY - mnY) * 0.05;
+
+      // Fall-through guard if for any reason no polygons were captured.
+      if (mnX === Infinity) {
+        for (const ring of _layout.polygons.values()) {
+          for (const [x, y] of ring) {
+            if (x < mnX) mnX = x; if (y < mnY) mnY = y;
+            if (x > mxX) mxX = x; if (y > mxY) mxY = y;
+          }
+        }
+      }
+
+      // 8% padding so polygons aren't flush against the edge.
+      const padW = (mxX - mnX) * 0.08;
+      const padH = (mxY - mnY) * 0.08;
       bx = mnX - padW; by = mnY - padH;
       bw = (mxX - mnX) + 2 * padW;
       bh = (mxY - mnY) + 2 * padH;
