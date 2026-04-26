@@ -6,196 +6,6 @@
 "geometry": {
 "type": "Point",
 "coordinates": [
--71.0564,
-42.3575
-]
-},
-"properties": {
-"id": "28ecd29a51526b27",
-"name": "U.S. EPA Region 1 \u2014 New England",
-"acronym": "EPA-R1",
-"type": "federal",
-"country": "US",
-"url": "https://www.epa.gov/aboutepa/epa-region-1-new-england",
-"parent_org": "U.S. Environmental Protection Agency"
-}
-},
-{
-"type": "Feature",
-"geometry": {
-"type": "Point",
-"coordinates": [
--74.0058,
-40.7148
-]
-},
-"properties": {
-"id": "3fd2353032a8a78a",
-"name": "U.S. EPA Region 2",
-"acronym": "EPA-R2",
-"type": "federal",
-"country": "US",
-"url": "https://www.epa.gov/aboutepa/about-epa-region-2",
-"parent_org": "U.S. Environmental Protection Agency"
-}
-},
-{
-"type": "Feature",
-"geometry": {
-"type": "Point",
-"coordinates": [
--75.1672,
-39.9549
-]
-},
-"properties": {
-"id": "8cde9b7ba35da99b",
-"name": "U.S. EPA Region 3 \u2014 Mid-Atlantic",
-"acronym": "EPA-R3",
-"type": "federal",
-"country": "US",
-"url": "https://www.epa.gov/aboutepa/about-epa-region-3-mid-atlantic",
-"parent_org": "U.S. Environmental Protection Agency"
-}
-},
-{
-"type": "Feature",
-"geometry": {
-"type": "Point",
-"coordinates": [
--84.3932,
-33.7531
-]
-},
-"properties": {
-"id": "30b002ce4547c553",
-"name": "U.S. EPA Region 4 \u2014 Southeast",
-"acronym": "EPA-R4",
-"type": "federal",
-"country": "US",
-"url": "https://www.epa.gov/aboutepa/about-epa-region-4-southeast",
-"parent_org": "U.S. Environmental Protection Agency"
-}
-},
-{
-"type": "Feature",
-"geometry": {
-"type": "Point",
-"coordinates": [
--87.6302,
-41.8782
-]
-},
-"properties": {
-"id": "91b853954beaac0d",
-"name": "U.S. EPA Region 5 \u2014 Great Lakes",
-"acronym": "EPA-R5",
-"type": "federal",
-"country": "US",
-"url": "https://www.epa.gov/aboutepa/epa-region-5",
-"parent_org": "U.S. Environmental Protection Agency"
-}
-},
-{
-"type": "Feature",
-"geometry": {
-"type": "Point",
-"coordinates": [
--96.8023,
-32.7843
-]
-},
-"properties": {
-"id": "5a54e316e9347104",
-"name": "U.S. EPA Region 6 \u2014 South Central",
-"acronym": "EPA-R6",
-"type": "federal",
-"country": "US",
-"url": "https://www.epa.gov/aboutepa/about-epa-region-6-south-central",
-"parent_org": "U.S. Environmental Protection Agency"
-}
-},
-{
-"type": "Feature",
-"geometry": {
-"type": "Point",
-"coordinates": [
--94.7793,
-38.9257
-]
-},
-"properties": {
-"id": "529ea1ba3767cf50",
-"name": "U.S. EPA Region 7",
-"acronym": "EPA-R7",
-"type": "federal",
-"country": "US",
-"url": "https://www.epa.gov/aboutepa/about-epa-region-7",
-"parent_org": "U.S. Environmental Protection Agency"
-}
-},
-{
-"type": "Feature",
-"geometry": {
-"type": "Point",
-"coordinates": [
--105.0009,
-39.7518
-]
-},
-"properties": {
-"id": "50710e9affbebd3c",
-"name": "U.S. EPA Region 8 \u2014 Mountains and Plains",
-"acronym": "EPA-R8",
-"type": "federal",
-"country": "US",
-"url": "https://www.epa.gov/aboutepa/about-epa-region-8",
-"parent_org": "U.S. Environmental Protection Agency"
-}
-},
-{
-"type": "Feature",
-"geometry": {
-"type": "Point",
-"coordinates": [
--122.3984,
-37.7851
-]
-},
-"properties": {
-"id": "abb8b9a91bddfb11",
-"name": "U.S. EPA Region 9 \u2014 Pacific Southwest",
-"acronym": "EPA-R9",
-"type": "federal",
-"country": "US",
-"url": "https://www.epa.gov/aboutepa/about-epa-region-9-pacific-southwest",
-"parent_org": "U.S. Environmental Protection Agency"
-}
-},
-{
-"type": "Feature",
-"geometry": {
-"type": "Point",
-"coordinates": [
--122.3319,
-47.6084
-]
-},
-"properties": {
-"id": "cdd9b79d479c6114",
-"name": "U.S. EPA Region 10 \u2014 Pacific Northwest",
-"acronym": "EPA-R10",
-"type": "federal",
-"country": "US",
-"url": "https://www.epa.gov/aboutepa/about-epa-region-10-pacific-northwest",
-"parent_org": "U.S. Environmental Protection Agency"
-}
-},
-{
-"type": "Feature",
-"geometry": {
-"type": "Point",
-"coordinates": [
 -122.2583,
 47.6833
 ]
@@ -3989,6 +3799,196 @@
 "country": "BB",
 "url": "https://cermes.cavehill.uwi.edu/",
 "parent_org": "University of the West Indies \u2014 Cave Hill"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-71.0564,
+42.3575
+]
+},
+"properties": {
+"id": "28ecd29a51526b27",
+"name": "U.S. EPA Region 1 \u2014 New England",
+"acronym": "EPA-R1",
+"type": "federal",
+"country": "US",
+"url": "https://www.epa.gov/aboutepa/epa-region-1-new-england",
+"parent_org": "U.S. Environmental Protection Agency"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-74.0058,
+40.7148
+]
+},
+"properties": {
+"id": "3fd2353032a8a78a",
+"name": "U.S. EPA Region 2",
+"acronym": "EPA-R2",
+"type": "federal",
+"country": "US",
+"url": "https://www.epa.gov/aboutepa/about-epa-region-2",
+"parent_org": "U.S. Environmental Protection Agency"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-75.1672,
+39.9549
+]
+},
+"properties": {
+"id": "8cde9b7ba35da99b",
+"name": "U.S. EPA Region 3 \u2014 Mid-Atlantic",
+"acronym": "EPA-R3",
+"type": "federal",
+"country": "US",
+"url": "https://www.epa.gov/aboutepa/about-epa-region-3-mid-atlantic",
+"parent_org": "U.S. Environmental Protection Agency"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-84.3932,
+33.7531
+]
+},
+"properties": {
+"id": "30b002ce4547c553",
+"name": "U.S. EPA Region 4 \u2014 Southeast",
+"acronym": "EPA-R4",
+"type": "federal",
+"country": "US",
+"url": "https://www.epa.gov/aboutepa/about-epa-region-4-southeast",
+"parent_org": "U.S. Environmental Protection Agency"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-87.6302,
+41.8782
+]
+},
+"properties": {
+"id": "91b853954beaac0d",
+"name": "U.S. EPA Region 5 \u2014 Great Lakes",
+"acronym": "EPA-R5",
+"type": "federal",
+"country": "US",
+"url": "https://www.epa.gov/aboutepa/epa-region-5",
+"parent_org": "U.S. Environmental Protection Agency"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-96.8023,
+32.7843
+]
+},
+"properties": {
+"id": "5a54e316e9347104",
+"name": "U.S. EPA Region 6 \u2014 South Central",
+"acronym": "EPA-R6",
+"type": "federal",
+"country": "US",
+"url": "https://www.epa.gov/aboutepa/about-epa-region-6-south-central",
+"parent_org": "U.S. Environmental Protection Agency"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-94.7793,
+38.9257
+]
+},
+"properties": {
+"id": "529ea1ba3767cf50",
+"name": "U.S. EPA Region 7",
+"acronym": "EPA-R7",
+"type": "federal",
+"country": "US",
+"url": "https://www.epa.gov/aboutepa/about-epa-region-7",
+"parent_org": "U.S. Environmental Protection Agency"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-105.0009,
+39.7518
+]
+},
+"properties": {
+"id": "50710e9affbebd3c",
+"name": "U.S. EPA Region 8 \u2014 Mountains and Plains",
+"acronym": "EPA-R8",
+"type": "federal",
+"country": "US",
+"url": "https://www.epa.gov/aboutepa/about-epa-region-8",
+"parent_org": "U.S. Environmental Protection Agency"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-122.3984,
+37.7851
+]
+},
+"properties": {
+"id": "abb8b9a91bddfb11",
+"name": "U.S. EPA Region 9 \u2014 Pacific Southwest",
+"acronym": "EPA-R9",
+"type": "federal",
+"country": "US",
+"url": "https://www.epa.gov/aboutepa/about-epa-region-9-pacific-southwest",
+"parent_org": "U.S. Environmental Protection Agency"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-122.3319,
+47.6084
+]
+},
+"properties": {
+"id": "cdd9b79d479c6114",
+"name": "U.S. EPA Region 10 \u2014 Pacific Northwest",
+"acronym": "EPA-R10",
+"type": "federal",
+"country": "US",
+"url": "https://www.epa.gov/aboutepa/about-epa-region-10-pacific-northwest",
+"parent_org": "U.S. Environmental Protection Agency"
 }
 }
 ]
