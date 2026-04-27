@@ -28,3 +28,8 @@ lter-site,LTER Site,Long-Term Ecological Research member site,us-regional,https:
 marine-monument,Marine National Monuments,U.S. Marine National Monument|USFWS Marine National Monuments,us-national,https://www.fws.gov/program/national-wildlife-refuge-system
 nps-coastal,NPS Coastal Units,National Park Service Coastal Units,us-national,https://www.nps.gov/
 epa-region,EPA Regions,U.S. EPA Administrative Regions,us-national,https://www.epa.gov/aboutepa/regional-and-geographic-offices
+nwrs,NWRS,National Wildlife Refuge System,us-national,https://www.fws.gov/program/national-wildlife-refuge-system
+nps-im,NPS-IM,NPS Inventory and Monitoring Program,us-national,https://www.nps.gov/im/
+usfs-rna-ef,USFS-RNA-EF,USFS Research Natural Area / Experimental Forest network,us-national,https://www.fs.usda.gov/research/rmrs/research-natural-areas
+nwps,NWPS,National Wilderness Preservation System,us-national,https://www.wilderness.net
+ramsar,RAMSAR,Ramsar Convention on Wetlands of International Importance,international,https://www.ramsar.org

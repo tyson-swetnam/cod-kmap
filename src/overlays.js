@@ -19,7 +19,18 @@ const MANIFEST_URL = `${DATA_BASE}overlays/manifest.json`;
 
 // Overlays that should NOT render on first paint. Context layers for the
 // US are less useful by default than the coastal + marine boundaries.
-const DEFAULT_OFF = new Set(['epa-regions', 'neon-domains']);
+// New coastal-terrestrial layers default to OFF too, even though they're
+// likely the most-requested layer for terrestrial-coast research, because:
+// (a) coastal-fws-units alone is ~880 KB and four-on layers ≈ 2 MB which
+// would slow first-paint, and
+// (b) heavy overlap with the existing nps-coastal/nerr-reserves layers
+// would clutter the default view. Users opt in from the sidebar.
+const DEFAULT_OFF = new Set([
+  'epa-regions', 'neon-domains',
+  'coastal-fws-units', 'coastal-nps-units',
+  'coastal-usfs-special', 'coastal-wilderness',
+  'coastal-state-protected', 'coastal-ngo-private', 'ramsar-us',
+]);
 
 // Layer ids that must stay on top of every overlay so the facility dots
 // remain visible. Kept in sync with map.js. (Clustering was removed in
@@ -57,6 +68,7 @@ export async function initOverlays(map, container, onChange) {
 
   const CATEGORY_LABELS = {
     coastal: 'Coastal boundaries',
+    'coastal-terrestrial': 'Coastal terrestrial protected areas',
     marine:  'Marine protected areas',
     context: 'Context layers',
   };
@@ -77,7 +89,7 @@ export async function initOverlays(map, container, onChange) {
   });
 
   const body = sec.querySelector('.overlay-body');
-  const orderedCats = ['coastal', 'marine', 'context'];
+  const orderedCats = ['coastal', 'coastal-terrestrial', 'marine', 'context'];
   for (const cat of orderedCats) {
     if (!byCat[cat]) continue;
     const group = document.createElement('div');
