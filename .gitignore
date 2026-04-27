@@ -40,3 +40,18 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# coastal-research harvest sandbox (resume cursors, ndjson caches, big raw GIS pulls)
+data/raw/R11_coastal_ecosystems/_state/
+data/raw/R11_coastal_ecosystems/_cache/
+network_synth_spatial_analysis/coastal_protected/
+
+# DuckDB write-ahead log sidecar (regenerated on every open).
+db/*.duckdb.wal
+db/*.duckdb.tmp
+db/*.duckdb.bak
+
+# Cowork-mode helper scripts emitted alongside batches of work. They are
+# one-shot commit drivers, not source. Keep on disk for reference; don't
+# track or push.
+COMMIT_*.sh
