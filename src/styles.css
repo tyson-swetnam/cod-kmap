@@ -118,6 +118,24 @@ body {
 .view { display: none; height: 100%; width: 100%; overflow: auto; min-height: 0; min-width: 0; }
 .view.active { display: block; }
 
+/* Each <section id="view-*"> wraps a single <div id="*"> that the
+ * corresponding view's JS renders into. Make those inner containers
+ * fill their parent so flex / grid layouts inside them have a real
+ * height to resolve `100%` against. Without this, views that use
+ * inner flex columns (Browse table, Network canvas, SQL editor)
+ * collapse to content height and won't scroll. */
+#view-browse > #browse,
+#view-network > #network,
+#view-people  > #people,
+#view-sql     > #sql,
+#view-stats   > #stats,
+#view-docs    > #docs {
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+
 /* Map view takes the full area and stacks the map canvas + a collapsible
  * list panel pinned to the bottom. The list shows only facilities whose
  * coordinates fall inside the current map viewport. */
@@ -571,6 +589,18 @@ footer a:hover { color: var(--c-primary); }
  * through on every other tab (Network, Stats, Docs). */
 #view-browse { overflow: hidden; flex-direction: column; }
 #view-browse.active { display: flex; }
+/* The list-view module renders its content into the #browse container
+ * (header + .browse-scroll). Without these rules #browse is a plain
+ * block element and the inner .browse-scroll's `flex: 1` has no flex
+ * parent — so the table grows taller than its container and the page
+ * 'doesn't scroll'. Make #browse a flex column that fills #view-browse. */
+#view-browse > #browse {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.browse-scroll { min-height: 0; }   /* allow flex shrink below content height */
 .browse-header {
   padding: 12px 20px;
   background: var(--c-surface);
