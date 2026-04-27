@@ -102,34 +102,92 @@ function mdToHtml(md) {
   const out = [];
   const toc = [];
   const seenIds = new Set();
-  let inCode = false, codeLines = [];
+  let inCode = false, codeLines = [];           // ```fenced``` code
+  let inIndentCode = false, indentLines = [];   // 4-space-indented code
   let inTable = false, tableLines = [];
+  let inBQ = false, bqLines = [];
+  let inHtml = false, htmlLines = [];
+
+  // Stack of `<ul>`/`<ol>` indents currently open.
+  // Each entry = { indent: number-of-leading-spaces, kind: 'ul'|'ol' }
+  const listStack = [];
+  const closeListsTo = (targetIndent) => {
+    while (listStack.length && listStack[listStack.length - 1].indent >= targetIndent) {
+      out.push(`</${listStack.pop().kind}>`);
+    }
+  };
+  const closeAllLists = () => closeListsTo(-1);
+
+  const flushTable = () => {
+    if (inTable) { out.push(renderTable(tableLines)); tableLines = []; inTable = false; }
+  };
+  const flushIndentCode = () => {
+    if (inIndentCode) {
+      // Strip the 4-space indent before emitting.
+      out.push('<pre><code>' + indentLines.map((l) => escHtml(l.replace(/^ {4}/, ''))).join('\n') + '</code></pre>');
+      indentLines = [];
+      inIndentCode = false;
+    }
+  };
+  const flushBQ = () => {
+    if (inBQ) {
+      out.push('<blockquote>' + bqLines.map((l) => `<p>${inlinesMd(l)}</p>`).join('') + '</blockquote>');
+      bqLines = [];
+      inBQ = false;
+    }
+  };
+  const flushHtml = () => {
+    if (inHtml) { out.push(htmlLines.join('\n')); htmlLines = []; inHtml = false; }
+  };
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+
+    // Fenced code block — highest precedence.
     if (line.startsWith('```')) {
       if (inCode) {
         out.push('<pre><code>' + codeLines.map(escHtml).join('\n') + '</code></pre>');
         codeLines = [];
         inCode = false;
       } else {
+        closeAllLists(); flushTable(); flushIndentCode(); flushBQ(); flushHtml();
         inCode = true;
       }
       continue;
     }
     if (inCode) { codeLines.push(line); continue; }
 
-    if (line.startsWith('|')) { tableLines.push(line); inTable = true; continue; }
-    if (inTable) { out.push(renderTable(tableLines)); tableLines = []; inTable = false; }
+    // Pass-through HTML block (line begins with `<` and looks like a tag).
+    // Flushed as-is so authors can drop in <iframe>, <details>, <img>, etc.
+    if (/^<[a-zA-Z!][^>]*>?/.test(line.trim()) && !inIndentCode) {
+      if (!inHtml) {
+        closeAllLists(); flushTable(); flushIndentCode(); flushBQ();
+        inHtml = true;
+      }
+      htmlLines.push(line);
+      continue;
+    }
+    if (inHtml && line.trim() === '') { flushHtml(); continue; }
+    if (inHtml) { htmlLines.push(line); continue; }
 
+    // Pipe-table.
+    if (line.startsWith('|')) {
+      closeAllLists(); flushIndentCode(); flushBQ();
+      tableLines.push(line);
+      inTable = true;
+      continue;
+    }
+    if (inTable) flushTable();
+
+    // Headings (always close pending blocks first).
     const hMatch = line.match(/^(#{1,6})\s+(.*)/);
     if (hMatch) {
+      closeAllLists(); flushIndentCode(); flushBQ();
       const level = hMatch[1].length;
       const rawText = hMatch[2];
       let id = slugify(rawText);
-      // Avoid id collisions within a single doc.
       let n = 2;
-      let baseId = id;
+      const baseId = id;
       while (seenIds.has(id)) id = `${baseId}-${n++}`;
       seenIds.add(id);
       if (level <= 3) toc.push({ level, text: rawText.replace(/[`*_]/g, ''), id });
@@ -137,24 +195,91 @@ function mdToHtml(md) {
       continue;
     }
 
-    if (/^---+$/.test(line.trim())) { out.push('<hr>'); continue; }
-
-    if (/^[-*]\s/.test(line)) {
-      out.push(`<li>${inlinesMd(line.replace(/^[-*]\s/, ''))}</li>`);
+    // Horizontal rule.
+    if (/^---+$/.test(line.trim())) {
+      closeAllLists(); flushIndentCode(); flushBQ();
+      out.push('<hr>');
       continue;
     }
 
-    if (line.trim() === '') { out.push(''); continue; }
+    // Blockquote.
+    const bqMatch = line.match(/^>\s?(.*)/);
+    if (bqMatch) {
+      closeAllLists(); flushIndentCode();
+      if (!inBQ) inBQ = true;
+      bqLines.push(bqMatch[1]);
+      continue;
+    }
+    if (inBQ) flushBQ();
 
+    // List item: bullet (- *) or numbered (1. ). Indent (every 2 spaces) is
+    // a nesting level. We open / close <ul>/<ol> as the indent depth changes.
+    const listMatch = line.match(/^(\s*)([-*]|\d+\.)\s+(.*)/);
+    if (listMatch) {
+      flushIndentCode(); flushBQ();
+      const indent = listMatch[1].length;
+      const marker = listMatch[2];
+      const text = listMatch[3];
+      const kind = /\d+\./.test(marker) ? 'ol' : 'ul';
+
+      // Close deeper lists.
+      closeListsTo(indent + 1);
+      // Open a new list if the current top is shallower or different kind.
+      if (!listStack.length
+          || listStack[listStack.length - 1].indent < indent
+          || listStack[listStack.length - 1].kind !== kind) {
+        listStack.push({ indent, kind });
+        out.push(`<${kind}>`);
+      }
+      out.push(`<li>${inlinesMd(text)}</li>`);
+      continue;
+    }
+    // A list-item continuation line (extra-indented prose under a bullet)
+    // — append it to the previous <li> as a soft break so the bullet keeps
+    // its full text. Only triggers while we're inside a list.
+    if (listStack.length && /^\s{2,}\S/.test(line)) {
+      const last = out.length - 1;
+      if (last >= 0 && out[last].endsWith('</li>')) {
+        out[last] = out[last].replace(/<\/li>$/, ' ' + inlinesMd(line.trim()) + '</li>');
+        continue;
+      }
+    }
+    if (line.trim() !== '' && listStack.length) closeAllLists();
+
+    // Indented (4-space) code block — but only when we're NOT in a list.
+    if (/^ {4}\S/.test(line) && !listStack.length) {
+      flushTable();
+      if (!inIndentCode) inIndentCode = true;
+      indentLines.push(line);
+      continue;
+    }
+    if (inIndentCode && line.trim() === '') {
+      // Blank line inside an indented code block — keep it.
+      indentLines.push(line);
+      continue;
+    }
+    if (inIndentCode) flushIndentCode();
+
+    // Blank line: paragraph break.
+    if (line.trim() === '') {
+      closeAllLists();
+      out.push('');
+      continue;
+    }
+
+    // Paragraph (default).
     out.push(`<p>${inlinesMd(line)}</p>`);
   }
 
-  if (inTable) out.push(renderTable(tableLines));
+  // Final flush of any open block.
+  if (inTable) flushTable();
+  flushIndentCode();
+  flushBQ();
+  flushHtml();
+  closeAllLists();
   if (inCode) out.push('<pre><code>' + codeLines.map(escHtml).join('\n') + '</code></pre>');
 
-  // Wrap consecutive <li> in <ul>
-  const html = out.join('\n').replace(/(<li>.*?<\/li>\n?)+/gs, (m) => `<ul>${m}</ul>`);
-  return { html, toc };
+  return { html: out.join('\n'), toc };
 }
 
 
