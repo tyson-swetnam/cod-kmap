@@ -12,7 +12,7 @@ import { initOverlays, activeOverlays } from './overlays.js';
 import { initDB, loadFallback, query } from './db.js';
 import { initListView, renderList } from './views/list.js';
 import { initStatsView, renderStats } from './views/stats.js';
-import { initDocsView } from './views/docs.js';
+import { initDocsView, renderDocsView } from './views/docs.js';
 import { initNetworkView, renderNetworkView } from './views/network.js';
 import { initPeopleView, renderPeopleView } from './views/people.js';
 import { initSqlView, renderSqlView } from './views/sql.js';
@@ -252,11 +252,16 @@ initRouter({
     setDrawer(false);
     renderStats(state.lastFeatures);
   },
-  '/docs': () => {
+  '/docs': (path) => {
     showView('/docs');
     document.body.classList.add('no-sidebar');
     setDrawer(false);
+    // Build the persistent tab shell on first visit, then route the
+    // active tab off the URL slug (e.g. '#/docs/methods' →
+    // 'methods'). Sub-routes call '/docs' too via the router's
+    // top-segment fall-through (see src/router.js).
     initDocsView(document.getElementById('docs'));
+    renderDocsView(path);
   },
 });
 
