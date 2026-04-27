@@ -30,8 +30,13 @@ jobs:
           set -eu
           mkdir -p _site
           cp index.html _site/
+          cp favicon.svg _site/ 2>/dev/null || true
           cp -R src _site/src
           cp -R public _site/public
+          # Human-authored markdown lives at /docs/ in the repo and is
+          # rendered by src/views/docs.js. Without this stage step the
+          # Docs tab returns HTTP 404 for every page.
+          cp -R docs _site/docs
 
       - uses: actions/upload-pages-artifact@v3
         with:

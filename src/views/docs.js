@@ -1,6 +1,17 @@
-// docs.js — Docs view: renders METHODS.md as styled HTML
+// docs.js — Docs view: renders the repo's human-authored markdown as
+// styled HTML.
+//
+// NOTE: docs are fetched from a DIFFERENT base than the rest of the
+// app's data. config.js's DATA_BASE points at /<repo>/public/ (where
+// parquet + json data live), but the human-authored markdown lives in
+// /<repo>/docs/ at the repo root. Using DATA_BASE here produced a 404
+// on "public/docs/cod_purpose_and_msi_handout.md" — that path doesn't
+// exist on GitHub Pages. Resolving relative to document.baseURI (the
+// directory of index.html, which IS the repo root on GitHub Pages)
+// fixes it. The deploy workflow stages /docs/ alongside /public/ so
+// these paths resolve to /<repo>/docs/<file>.md on the live site.
 
-import { DATA_BASE as BASE } from '../config.js';
+const BASE = new URL('./', document.baseURI).href;
 let _container = null;
 let _cachedHtml = null;
 
@@ -104,11 +115,14 @@ function escHtml(s) {
 // Pages rendered in the in-app Docs tab. Order matters — the COD
 // purpose / MSI handout content goes first since it explains WHY the
 // app exists; METHODS describes HOW the data was assembled.
+//
+// All paths are relative to BASE (= repo root); they should be the
+// actual on-disk path under /docs/ in the repository.
 const DOC_PAGES = [
   { title: 'Coastal Observatory Design — purpose & MSI handout',
     path: 'docs/cod_purpose_and_msi_handout.md' },
   { title: 'Methods',
-    path: 'METHODS.md' },
+    path: 'docs/METHODS.md' },
 ];
 
 export async function initDocsView(container) {
