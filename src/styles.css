@@ -700,13 +700,28 @@ footer a:hover { color: var(--c-primary); }
   font-weight: 600;
 }
 
-/* Body + TOC two-column layout */
+/* Body + TOC two-column layout.
+ *
+ * The article column flexes (1fr); the TOC stays a fixed 280 px. We cap
+ * the entire grid at 1700 px and centre it so very wide displays don't
+ * end up with a left-aligned 820 px column floating in a sea of white.
+ * Up to ~1700 px the layout fills the viewport; beyond that the gutters
+ * absorb the extra width and the content stays readable.
+ *
+ * Inside the article column, we DON'T cap .docs-body itself — that lets
+ * wide tables and code blocks use the room. Prose elements (p / ul /
+ * li / blockquote) carry their own per-element max-width so reading
+ * line lengths stay around 75 ch even when the column is wider.
+ */
 .docs-layout {
   flex: 1 1 auto;
   display: grid;
-  grid-template-columns: minmax(0,1fr) 260px;
+  grid-template-columns: minmax(0, 1fr) 280px;
   gap: 0;
   min-height: 0;
+  width: 100%;
+  max-width: 1700px;
+  margin: 0 auto;            /* centre the layout when viewport > max */
   background: var(--c-surface);
 }
 .docs-toc-wrap {
@@ -792,12 +807,15 @@ footer a:hover { color: var(--c-primary); }
 }
 
 .docs-body {
-  /* The article lives inside the .docs-layout grid; cap reading
-     line-length but otherwise fill the column. */
-  max-width: 820px;
+  /* Fill the article column. Reading-width caps live on individual
+     prose elements below so tables / pre / images can use the full
+     width while paragraphs stay around 75 ch.
+   */
   margin: 0;
-  padding: 36px 28px 56px;
+  padding: 40px 56px 72px;
   overflow: auto;
+  /* Ensure inner block elements that we DO cap stay left-aligned. */
+  text-align: left;
 }
 .docs-body h1 {
   font-size: 1.85rem;
@@ -819,9 +837,35 @@ footer a:hover { color: var(--c-primary); }
   color: var(--c-text);
   margin: 20px 0 8px;
 }
-.docs-body p { margin: 0 0 12px; line-height: 1.65; color: var(--c-text-soft); }
-.docs-body ul { margin: 0 0 14px; padding-left: 22px; }
+.docs-body p {
+  margin: 0 0 12px;
+  line-height: 1.65;
+  color: var(--c-text-soft);
+  max-width: 78ch;        /* keep reading lines comfortable on wide displays */
+}
+.docs-body ul, .docs-body ol {
+  margin: 0 0 14px;
+  padding-left: 22px;
+  max-width: 78ch;
+}
 .docs-body li { margin-bottom: 4px; line-height: 1.55; color: var(--c-text-soft); }
+.docs-body blockquote {
+  margin: 0 0 14px;
+  padding: 8px 14px;
+  border-left: 3px solid var(--c-border-d);
+  background: var(--c-bg-alt);
+  color: var(--c-text-soft);
+  max-width: 78ch;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+/* Headings, tables, code blocks, images — let them use the full
+ * column width so big tables don't get squashed by the 78 ch cap. */
+.docs-body h1, .docs-body h2, .docs-body h3, .docs-body h4,
+.docs-body table, .docs-body pre, .docs-body img,
+.docs-body .md-table {
+  max-width: none;
+}
+.docs-body img { max-width: 100%; height: auto; }
 .docs-body pre {
   background: #f1f5f4;
   border: 1px solid var(--c-border);
