@@ -143,21 +143,26 @@ function cardHtml(p) {
   if (p.google_scholar_id) urls.push(`<a href="https://scholar.google.com/citations?user=${esc(p.google_scholar_id)}" target="_blank" rel="noopener">Google&nbsp;Scholar</a>`);
 
   // affiliations / areas may come back as null when a person has no
-  // facility_personnel or no person_area_metrics rows.
-  const affRaw = Array.isArray(p.affiliations) ? p.affiliations : [];
-  const areaRaw = Array.isArray(p.areas) ? p.areas : [];
+  // facility_personnel or no person_area_metrics rows. unwrapRow in
+  // db.js handles the Arrow → plain JS conversion + drops null list
+  // entries, but we still defend here against partial structs (e.g. a
+  // list element that's an empty {} from a quirky DuckDB-Wasm decode).
+  const affRaw = (Array.isArray(p.affiliations) ? p.affiliations : [])
+    .filter((a) => a && (a.role || a.facility || a.title));
+  const areaRaw = (Array.isArray(p.areas) ? p.areas : [])
+    .filter((a) => a && (a.area || a.area_id));
   const aff = affRaw.slice(0, 4).map((a) => `
     <li>
       <strong>${esc(a.role || '—')}</strong>
       ${a.title ? ` · ${esc(a.title)}` : ''}
-      <br><small>${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.facility)}</a>` : esc(a.facility)}${a.country ? ` <span class="ppl-flag">${esc(a.country)}</span>` : ''}</small>
+      <br><small>${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.facility || '')}</a>` : esc(a.facility || '')}${a.country ? ` <span class="ppl-flag">${esc(a.country)}</span>` : ''}</small>
     </li>`).join('');
   const moreAff = affRaw.length > 4
     ? `<li class="ppl-more">+${affRaw.length - 4} more</li>` : '';
 
   const areas = areaRaw.slice(0, 6).map((a) => `
     <li>
-      <span class="ppl-area-label">${esc(a.area || a.area_id)}</span>
+      <span class="ppl-area-label">${esc(a.area || a.area_id || '')}</span>
       <small>${fmtInt(a.n_pubs)} pubs · ${fmtInt(a.citations)} citations · h ${fmtInt(a.h)}</small>
     </li>`).join('');
 
@@ -201,7 +206,8 @@ function applyFilterSort(people) {
   const q = _qFilter.trim().toLowerCase();
   let rows = q
     ? people.filter((p) => {
-        const aff = Array.isArray(p.affiliations) ? p.affiliations : [];
+        const aff = (Array.isArray(p.affiliations) ? p.affiliations : [])
+          .filter((a) => a);
         const hay = [
           p.name, p.primary_area_label,
           ...aff.map((a) => a.facility || ''),

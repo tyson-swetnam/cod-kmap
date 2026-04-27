@@ -39,19 +39,45 @@ export function arrowToPlain(v) {
     return (v <= Number.MAX_SAFE_INTEGER && v >= Number.MIN_SAFE_INTEGER)
       ? Number(v) : String(v);
   }
-  if (Array.isArray(v)) {
-    return v.map(arrowToPlain);
+  if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+    return v;
   }
-  // Arrow Vector / list-like object: numeric .length, integer-keyed.
-  if (typeof v === 'object'
-      && typeof v.length === 'number'
-      && typeof v !== 'string'
-      && !(v instanceof Date)) {
+  if (v instanceof Date) {
+    return v;
+  }
+  if (Array.isArray(v)) {
+    // Filter out NULLs/undefineds — Arrow LIST columns can contain null
+    // slots which the People view's render code is not defensive
+    // against.
+    return v.map(arrowToPlain).filter((x) => x != null);
+  }
+  // Arrow Vector / list-like object: numeric `.length`, indexable.
+  // In apache-arrow ≥10 (which DuckDB-Wasm 1.29 ships), `vector[i]`
+  // returns undefined and you have to call `vector.get(i)` to read a
+  // value. Try .get first, fall back to bracket access, drop null
+  // entries either way.
+  if (typeof v === 'object' && typeof v.length === 'number') {
     const arr = [];
-    for (let i = 0; i < v.length; i++) arr.push(arrowToPlain(v[i]));
+    const useGet = (typeof v.get === 'function');
+    for (let i = 0; i < v.length; i++) {
+      const raw = useGet ? v.get(i) : v[i];
+      if (raw == null) continue;
+      arr.push(arrowToPlain(raw));
+    }
     return arr;
   }
-  if (typeof v === 'object' && !(v instanceof Date)) {
+  if (typeof v === 'object') {
+    // Plain object / Arrow struct row. Arrow struct rows expose their
+    // children as own properties via the Proxy returned by row.toJSON()
+    // recursively, but in some versions only `.toArray()` / `.toJSON()`
+    // unwrap them. Try .toJSON if available, then fall back to
+    // Object.keys.
+    if (typeof v.toJSON === 'function') {
+      try {
+        const j = v.toJSON();
+        if (j !== v) return arrowToPlain(j);
+      } catch (_) { /* fall through */ }
+    }
     const out = {};
     for (const k of Object.keys(v)) out[k] = arrowToPlain(v[k]);
     return out;
