@@ -168,71 +168,143 @@ function raiseFacilityLayers() {
   }
 }
 
+// Geometry kind per overlay so showOverlay / hideOverlay know which
+// layer ids to flip. Populated by ensureLoaded after fetching the
+// GeoJSON header. 'polygon' adds {fill, outline}; 'point' adds {circle}.
+const _geomKind = new Map();
+
 async function ensureLoaded(id) {
   if (_loaded.has(id)) return;
   await whenStyleReady();
   await whenFacilityLayersReady();
   const meta = _manifest[id];
   const url = `${DATA_BASE}overlays/${id}.geojson`;
-  _map.addSource(`ov-${id}`, { type: 'geojson', data: url });
 
-  // Insert beneath the first facility layer so points stay on top.
-  const beforeLayer = FACILITY_LAYERS.find((id) => _map.getLayer(id));
+  // Pre-fetch a small slice of the file to detect Point vs Polygon
+  // features. We need this to choose layer types — a fill layer over
+  // Point geometry renders nothing (which is why NEON / Ramsar
+  // overlays appeared invisible). The fetched geojson is then handed
+  // to MapLibre as the source data so we don't double-fetch.
+  let geojson = null;
+  let kind = 'polygon';
+  try {
+    const r = await fetch(url);
+    if (r.ok) {
+      geojson = await r.json();
+      const firstGeom = (geojson.features || []).find((f) => f && f.geometry)?.geometry;
+      if (firstGeom && (firstGeom.type === 'Point' || firstGeom.type === 'MultiPoint')) {
+        kind = 'point';
+      }
+    }
+  } catch (e) {
+    console.warn(`[overlays] could not pre-fetch ${url}, falling back to polygon layers:`, e);
+  }
+  _geomKind.set(id, kind);
 
-  _map.addLayer({
-    id: `ov-${id}-fill`,
-    type: 'fill',
-    source: `ov-${id}`,
-    layout: { visibility: 'none' },
-    paint: {
-      'fill-color': meta.color,
-      'fill-opacity': 0.16,
-    },
-  }, beforeLayer);
+  _map.addSource(`ov-${id}`, geojson
+    ? { type: 'geojson', data: geojson }
+    : { type: 'geojson', data: url });
 
-  _map.addLayer({
-    id: `ov-${id}-outline`,
-    type: 'line',
-    source: `ov-${id}`,
-    layout: { visibility: 'none' },
-    paint: {
-      'line-color': meta.color,
-      'line-width': 1.25,
-      'line-opacity': 0.75,
-    },
-  }, beforeLayer);
+  // Insert beneath the first facility layer so the user's facility
+  // points stay on top of polygon overlays.
+  const beforeLayer = FACILITY_LAYERS.find((lid) => _map.getLayer(lid));
 
-  // Belt-and-braces: force every facility/cluster layer back to the top in
-  // case an insertion race left one beneath an overlay.
+  if (kind === 'polygon') {
+    _map.addLayer({
+      id: `ov-${id}-fill`,
+      type: 'fill',
+      source: `ov-${id}`,
+      layout: { visibility: 'none' },
+      paint: { 'fill-color': meta.color, 'fill-opacity': 0.16 },
+    }, beforeLayer);
+
+    _map.addLayer({
+      id: `ov-${id}-outline`,
+      type: 'line',
+      source: `ov-${id}`,
+      layout: { visibility: 'none' },
+      paint: {
+        'line-color': meta.color,
+        'line-width': 1.25,
+        'line-opacity': 0.75,
+      },
+    }, beforeLayer);
+
+    _map.on('click', `ov-${id}-fill`, (e) => {
+      const f = e.features?.[0];
+      if (!f) return;
+      new maplibregl.Popup({ maxWidth: '280px' })
+        .setLngLat([e.lngLat.lng, e.lngLat.lat])
+        .setHTML(overlayPopup(id, f.properties || {}))
+        .addTo(_map);
+    });
+    _map.on('mouseenter', `ov-${id}-fill`, () => { _map.getCanvas().style.cursor = 'pointer'; });
+    _map.on('mouseleave', `ov-${id}-fill`, () => { _map.getCanvas().style.cursor = ''; });
+  } else {
+    // Point layer — circle marker with a coloured fill + white halo so
+    // the points are visible regardless of basemap.
+    _map.addLayer({
+      id: `ov-${id}-circle`,
+      type: 'circle',
+      source: `ov-${id}`,
+      layout: { visibility: 'none' },
+      paint: {
+        'circle-radius': [
+          'interpolate', ['linear'], ['zoom'],
+          3, 3,    // 3 px at zoom 3
+          7, 5,
+          12, 7,
+        ],
+        'circle-color': meta.color,
+        'circle-stroke-color': '#ffffff',
+        'circle-stroke-width': 1.5,
+        'circle-opacity': 0.92,
+      },
+    });   // No `beforeLayer` — points should sit on top of polygon overlays.
+
+    _map.on('click', `ov-${id}-circle`, (e) => {
+      const f = e.features?.[0];
+      if (!f) return;
+      new maplibregl.Popup({ maxWidth: '280px' })
+        .setLngLat([e.lngLat.lng, e.lngLat.lat])
+        .setHTML(overlayPopup(id, f.properties || {}))
+        .addTo(_map);
+    });
+    _map.on('mouseenter', `ov-${id}-circle`, () => { _map.getCanvas().style.cursor = 'pointer'; });
+    _map.on('mouseleave', `ov-${id}-circle`, () => { _map.getCanvas().style.cursor = ''; });
+  }
+
+  // Belt-and-braces: force every facility/cluster layer back to the top
+  // in case an insertion race left one beneath an overlay.
   raiseFacilityLayers();
-
-  _map.on('click', `ov-${id}-fill`, (e) => {
-    const f = e.features?.[0];
-    if (!f) return;
-    new maplibregl.Popup({ maxWidth: '280px' })
-      .setLngLat([e.lngLat.lng, e.lngLat.lat])
-      .setHTML(overlayPopup(id, f.properties || {}))
-      .addTo(_map);
-  });
-
-  _map.on('mouseenter', `ov-${id}-fill`, () => { _map.getCanvas().style.cursor = 'pointer'; });
-  _map.on('mouseleave', `ov-${id}-fill`, () => { _map.getCanvas().style.cursor = ''; });
-
   _loaded.add(id);
+}
+
+function _layerIds(id) {
+  const k = _geomKind.get(id) || 'polygon';
+  return k === 'point'
+    ? [`ov-${id}-circle`]
+    : [`ov-${id}-fill`, `ov-${id}-outline`];
 }
 
 async function showOverlay(id) {
   await ensureLoaded(id);
-  _map.setLayoutProperty(`ov-${id}-fill`, 'visibility', 'visible');
-  _map.setLayoutProperty(`ov-${id}-outline`, 'visibility', 'visible');
+  for (const lid of _layerIds(id)) {
+    if (_map.getLayer(lid)) {
+      _map.setLayoutProperty(lid, 'visibility', 'visible');
+    }
+  }
   raiseFacilityLayers();
   _active.add(id);
 }
 
 function hideOverlay(id) {
   if (!_loaded.has(id)) { _active.delete(id); return; }
-  _map.setLayoutProperty(`ov-${id}-fill`, 'visibility', 'none');
-  _map.setLayoutProperty(`ov-${id}-outline`, 'visibility', 'none');
+  for (const lid of _layerIds(id)) {
+    if (_map.getLayer(lid)) {
+      _map.setLayoutProperty(lid, 'visibility', 'none');
+    }
+  }
   raiseFacilityLayers();
   _active.delete(id);
 }

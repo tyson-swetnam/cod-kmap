@@ -18,6 +18,13 @@ export const TYPE_COLORS = {
   vessel: '#0ea5e9',
   observatory: '#0369a1',
   virtual: '#94a3b8',
+  // Coastal-terrestrial protected-area facility types. Colours match
+  // the corresponding polygon overlays in public/overlays/manifest.json
+  // so a facility's centroid dot has visual continuity with its
+  // boundary polygon.
+  'protected-area-federal': '#a16207',  // amber (matches coastal-fws-units)
+  'protected-area-state':   '#0e7490',  // teal  (matches coastal-state-protected)
+  'protected-area-private': '#a21caf',  // magenta (matches coastal-ngo-private)
 };
 
 function typeColorExpr() {

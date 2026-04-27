@@ -113,6 +113,10 @@ export async function initFilters(container, state) {
     'federal', 'state', 'university-marine-lab', 'nonprofit', 'foundation',
     'network', 'international-federal', 'international-university',
     'international-nonprofit', 'observatory',
+    // Coastal-terrestrial protected-area facility types (R11 ingest).
+    // These cover thousands of points (state parks, NWRs, etc.) so they
+    // need to be toggleable in the Facility-type filter.
+    'protected-area-federal', 'protected-area-state', 'protected-area-private',
   ];
   const typeSection = makeFacetSection(
     'f-type', 'Facility type',
