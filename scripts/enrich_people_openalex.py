@@ -89,14 +89,20 @@ def resolve_author(sess: requests.Session, person: dict) -> dict | None:
             if hits:
                 return hits[0]
 
-    name = (person.get("name") or "").strip()
-    if name:
-        r = sess.get(f"{API}/authors",
-                     params={"search": name, "per_page": 1})
-        if r.ok:
-            hits = r.json().get("results", [])
-            if hits:
-                return hits[0]
+    # Name-only resolution is DELIBERATELY DISABLED. It used to fall back
+    # to /authors?search=<name>&per_page=1, which returns the OpenAlex
+    # author with that name who has the most publications globally —
+    # almost always a prolific medical doctor when our coastal scientist
+    # shares a name with one. That created the 2026-04-26 incident where
+    # >50 cod-kmap people displayed "Medicine, Internal medicine" research
+    # interests in the People view because their openalex_id pointed at
+    # an MD instead. See scripts/wipe_medicine_attributions.py for the
+    # cleanup that fixed it.
+    #
+    # If a person has no openalex_id and no ORCID, they stay un-enriched.
+    # Add their openalex_id by hand to data/seed/openalex_institution_overrides.csv
+    # (or to data/seed/orcid_resolution_log.csv with a verified ORCID) and
+    # re-run this script.
     return None
 
 

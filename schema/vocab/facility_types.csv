@@ -14,3 +14,6 @@ industry,Industry,"RESERVED — private or industry research facility. No facili
 vessel,Research vessel,"RESERVED — research vessel treated as a mobile facility. No facilities ingested yet; slug kept for future coverage."
 observatory,Observatory,"Cabled observatory or ocean observing platform"
 virtual,Virtual,"RESERVED — organization without a single physical headquarters. No facilities ingested yet; slug kept for future coverage."
+protected-area-federal,Federal protected area,"Federally-managed protected area: National Wildlife Refuge, National Park / Seashore / Lakeshore / Monument, USFS Research Natural Area, USFS Experimental Forest, designated Wilderness, etc. Often the underlying land for terrestrial coastal-ecosystem research."
+protected-area-state,State protected area,"State-managed protected area: state park, state wildlife management area, state nature preserve, state estuarine reserve, state aquatic preserve, etc."
+protected-area-private,Private protected area,"Privately-managed conservation property: TNC preserve, Audubon sanctuary, regional land trust holding, conservation easement, etc."
