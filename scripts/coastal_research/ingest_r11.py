@@ -60,6 +60,8 @@ R11_FILES = [
     "facilities_state_protected.json",
     "facilities_ngo_private.json",
     "facilities_ramsar.json",
+    # Phase-3: NEON field sites (all 81; 45 in coastal states/territories).
+    "facilities_neon_sites.json",
 ]
 
 PARQUET_TABLES = (

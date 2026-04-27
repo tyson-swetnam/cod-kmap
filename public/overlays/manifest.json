@@ -91,6 +91,16 @@
     "feature_count": 40,
     "notes": "Point features (no polygon boundaries published in machine-readable form)."
   },
+  "neon-sites": {
+    "label": "NEON field sites",
+    "color": "#b45309",
+    "category": "context",
+    "source": "NEON Data Portal — https://data.neonscience.org/api/v0/sites",
+    "manager": "National Ecological Observatory Network (NSF)",
+    "filter": "All 81 NEON field sites (Core + Gradient, terrestrial + aquatic). 45 are in coastal states or US territories.",
+    "feature_count": 81,
+    "notes": "Point features. Each site links through to neonscience.org/field-sites/<code>."
+  },
   "neon-domains": {
     "label": "NEON Ecological Domains",
     "color": "#d4a017",

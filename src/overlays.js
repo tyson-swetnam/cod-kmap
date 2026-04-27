@@ -30,6 +30,7 @@ const DEFAULT_OFF = new Set([
   'coastal-fws-units', 'coastal-nps-units',
   'coastal-usfs-special', 'coastal-wilderness',
   'coastal-state-protected', 'coastal-ngo-private', 'ramsar-us',
+  'neon-sites',
 ]);
 
 // Layer ids that must stay on top of every overlay so the facility dots
