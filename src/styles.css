@@ -90,13 +90,32 @@ body {
 #app {
   display: grid;
   grid-template-columns: 320px 1fr;
+  /* The implicit single grid row defaults to `auto` (= tallest child's
+   * content height). Without an explicit `1fr` row template, child views
+   * with `height: 100%` resolve against an under-sized row and the map,
+   * Browse table, Network canvas, etc. stop short of the viewport edge,
+   * leaving wasted white space below. Pin the row to fill #app's flex-
+   * assigned height. */
+  grid-template-rows: 1fr;
   flex: 1;
   min-height: 0;
+  /* min-width: 0 lets a long facility name in the bottom panel ellipsize
+   * instead of pushing the grid wider than the viewport. */
+  min-width: 0;
 }
 
 /* ── View sections ──────────────────────────────────────────────── */
-#viewport { position: relative; min-height: 0; }
-.view { display: none; height: 100%; width: 100%; overflow: auto; }
+#viewport {
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  /* Viewport is a grid item in #app; height: 100% pins it to the row
+   * track (which is now 1fr per the rule above). */
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+.view { display: none; height: 100%; width: 100%; overflow: auto; min-height: 0; min-width: 0; }
 .view.active { display: block; }
 
 /* Map view takes the full area and stacks the map canvas + a collapsible
