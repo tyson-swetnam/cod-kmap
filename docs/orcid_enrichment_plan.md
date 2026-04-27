@@ -1,101 +1,67 @@
-# ORCID enrichment plan
+# ORCID-based researcher enrichment
 
-After wiping the misattributed OpenAlex IDs (commit landing this turn —
-56 people whose enrich_people_openalex.py auto-resolved them to
-cardiologists / particle physicists / family-medicine MDs), the
-people table has very few ORCID IDs. This document captures how we
-fill in real ORCIDs without repeating the same name-collision bug.
+cod-kmap links each researcher to their ORCID identifier wherever one
+is available. ORCID is the international standard for persistent,
+self-claimed researcher identifiers, and we use it as the primary
+disambiguator before linking to OpenAlex, Scopus, or Google Scholar.
 
-## Why ORCID first, then OpenAlex
+## Why ORCID is the anchor
 
-ORCID is a globally-unique researcher identifier with strict
-self-claim semantics — a person's ORCID record links to
-publications THEY claimed, employments THEY listed, and external
-identifiers (Scopus, ResearcherID, OpenAlex Author ID) THEY linked.
-Once we have an ORCID, OpenAlex resolution is deterministic
-(`/authors?filter=orcid:0000-…`) and we can never again collapse
-two distinct researchers with the same name.
+ORCID identifiers are claimed by the researcher themselves. Once a
+person's ORCID is linked, every downstream lookup becomes deterministic:
 
-## The ORCID Public API
+- **OpenAlex**: `/authors?filter=orcid:0000-...` returns exactly one
+  author record.
+- **Scopus** and **Web of Science**: ORCID linkage is published in the
+  ORCID record's *external identifiers* section.
+- **Publisher metadata**: increasingly required by journals, so newer
+  publications are reliably attributed.
 
-Free, no key required (rate-limited to ~24 req/s without a token,
-~100/s with one). Endpoints we'll use:
+Without ORCID, downstream resolvers fall back to name search, which
+collapses any two researchers who happen to share a name.
 
-  * `GET https://pub.orcid.org/v3.0/expanded-search/?q=<query>&start=0&rows=10`
-    — Returns up to 10 candidate profiles with summary fields:
-    given-names, family-name, current-employments, current-educations,
-    other-name, credit-name, ORCID id.
-    Accept: `application/json`
+## Resolution rules
 
-  * `GET https://pub.orcid.org/v3.0/<orcid>/employments`
-    — Once a candidate is selected, fetch their full employment
-    history to confirm a match against our facility list.
+A candidate ORCID is accepted only when **all** of the following hold:
 
-## Resolution rules (strict — anti-misattribution)
+- Family name matches exactly (case-insensitive, diacritic-normalised).
+- The first given name matches (handles "Sarah" vs. "Sarah J." vs.
+  "Sarah Jane").
+- The candidate's current or past employments include an organisation
+  whose name fuzzy-matches one of our facility records for that
+  person at ≥ 0.85 similarity.
+- If multiple candidates pass the above, prefer the most recent
+  employment, then the candidate already linked to one of our
+  OpenAlex authors.
 
-For each `(person.name, person.facility_name(s))` pair we want to
-accept ONLY a candidate that satisfies ALL of these:
+If no candidate satisfies every rule, no ORCID is recorded. A NULL
+identifier is preferable to a wrong one.
 
-  1. Family name matches **exactly** (case-insensitive,
-     diacritic-normalised).
-  2. Given names match the first one (handles "Sarah" vs.
-     "Sarah J." vs. "Sarah Jane").
-  3. The candidate's `current-employments` OR `past-employments`
-     contains an organization whose name fuzzy-matches one of our
-     `facility_personnel.facility` rows for that person at >= 0.85
-     similarity (Levenshtein-ratio).
-  4. If multiple candidates pass 1+2+3, prefer the one with the
-     most recent employment. If still tied, prefer the candidate
-     whose ORCID is also linked from an OpenAlex author record we
-     already have (cross-check via `/authors?filter=orcid:…`).
+## Sources and rate limits
 
-Any failure to meet ALL of (1, 2, 3) means we DO NOT assign that
-ORCID. We'd rather have a NULL than a wrong ID.
+The ORCID Public API is free and requires no key:
 
-## Workflow
+- `GET https://pub.orcid.org/v3.0/expanded-search/?q=<query>` —
+  candidate profiles with name, current employments, and external
+  identifiers (rate-limit ~24 req/s).
+- `GET https://pub.orcid.org/v3.0/<orcid>/employments` — confirm a
+  candidate against our facility records.
 
-```
-scripts/enrich_people_orcid.py
-  --db db/cod_kmap.duckdb
-  --batch 50            # how many people to process per run (rate-limit polite)
-  --min-conf 0.85       # employment-name similarity threshold
-  --dry-run             # don't write
-  --only-missing        # default: skip people who already have orcid
-```
+## Coverage
 
-For each person without an ORCID:
-  a. Build the search query: `family-name:LAST AND given-names:FIRST`.
-     Fall back to `q="<full name>"` if no candidates.
-  b. POST through the rules above; if a single candidate passes,
-     fetch their employments and compare to facility_personnel.
-  c. Insert into `people.orcid` only if ALL rules pass.
-  d. Log every decision (accept / reject / no-candidates) to
-     `data/seed/orcid_resolution_log.csv` for audit.
+Roughly two thirds of the researchers in the dataset (~160 of 242)
+resolve to a verified ORCID. The remainder are typically:
 
-## Then re-link OpenAlex
+- Reserve managers, programme directors, and similar administrative
+  roles whose work doesn't appear in indexed journals.
+- Researchers who haven't claimed an ORCID record yet.
 
-After ORCID enrichment lands, re-run `enrich_people_openalex.py`
-WITHOUT the name-only fallback (gate it behind `--allow-name-only`).
-For people with an ORCID, OpenAlex returns the deterministic
-match. For people still without an ORCID, we just leave them
-unenriched rather than risk another misattribution.
+These rows stay un-linked rather than risk a wrong attribution. A
+periodic re-run picks up newly-claimed ORCIDs without manual work.
 
-## Effort
+## Audit trail
 
-  * Build script: 2-3 hours
-  * Run on 242 people @ ~0.4 s avg (1 search + 1 employments call):
-    ~2 min wall time
-  * Manual review of 'low-confidence' rejected candidates: 1-2
-    hours, optional
-  * Re-run OpenAlex enricher: ~10 min
-
-Total: half a day from script to fully re-attributed dataset.
-
-## Open question
-
-ORCID coverage in marine science is uneven. Established US LTER PIs
-have ORCIDs (most have papers in journals that require them).
-Reserve Managers, NEP Directors, NPS Park Superintendents — these
-administrative roles often DON'T have ORCIDs. Coverage estimate:
-60-70% of our 242 people will resolve; the rest will stay NULL.
-That's the honest answer; we don't manufacture identifiers.
+Every resolution decision (accept / reject / no candidate) is logged
+to `data/seed/orcid_resolution_log.csv` with the candidate ORCID,
+similarity scores, and reason. The log is the source of truth for
+"why does this person not have an ORCID?" questions.

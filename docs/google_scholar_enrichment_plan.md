@@ -1,73 +1,46 @@
-# Google Scholar profile enrichment plan
+# Google Scholar profile linkage
 
-After ORCID enrichment we still want a Google Scholar profile link
-per researcher (the Scholar h-index + citation history is the
-single most-recognised metric in academia and the people-card link
-is a high-value affordance). Scholar has no official API; this doc
-captures the tiered approach.
+Where a researcher has a public Google Scholar profile, cod-kmap
+surfaces a direct link on the researcher card. Scholar's h-index and
+citation history are the most widely-recognised academic metrics, and
+the link is high-value for non-specialist readers.
 
-## Tier 1 — derive from OpenAlex (deterministic, free) ✅ ship today
+Google Scholar has no official API. We populate the field via a
+tiered approach, preferring deterministic sources over scraping.
 
-OpenAlex Author records carry an `external_ids` block that often
-lists `"google_scholar"` when the author has claimed it on their
-ORCID or has been merged from another scraper. Coverage is partial
-(~30-50% of marine researchers) but it's the only ZERO-cost,
-ZERO-rate-limit path that doesn't risk Google blocking us.
+## Tiered sources
 
-`scripts/enrich_people_gscholar.py --source openalex` reads each
-person's openalex_id, hits `/authors/<id>` (already cached
-via the rest of the enrichment pipeline if we're polite), reads
-`ids.scholar` if present, and writes to `people.google_scholar_id`.
+| Tier | Source            | Method                                | Coverage |
+|-----:|-------------------|---------------------------------------|---------:|
+| 1    | OpenAlex          | `external_ids.scholar` field          | ~30–50%  |
+| 2    | ORCID             | `external-identifiers` block          | +10–20%  |
+| 3    | Institutional homepage | Stored in `people.homepage_url`; reader follows the link | indirect |
+| 4    | Paid SerpAPI / scholar_author | JSON; reserved for high-value queries | optional |
 
-## Tier 2 — derive from ORCID record (deterministic, free)
-
-ORCID `/v3.0/<orcid>/external-identifiers` sometimes lists Scholar
-when researchers have claimed it. Same pattern as OpenAlex; ~10-20%
-incremental coverage on people who DIDN'T have it on OpenAlex.
-
-`scripts/enrich_people_gscholar.py --source orcid`
-
-## Tier 3 — `scholarly` library scrape (fragile)
-
-The `scholarly` Python package scrapes Scholar's HTML with rotating
-user-agents and proxy support. Without proxies it gets blocked after
-~40-60 author lookups. With Tor/proxies it's slower but functional.
-Realistic: 80-90% incremental coverage of the long tail, but
-**operationally fragile** — Google rotates anti-bot tactics every
-few months, and any future re-run requires a config check.
-
-Recommendation: defer Tier 3 until we have a clear need. Most
-researchers' Scholar profiles are ALSO on their institutional
-homepage, and we already store `homepage_url`. A user clicking a
-homepage link is one extra hop to find Scholar.
-
-## Tier 4 — paid SerpAPI ($50/mo, deterministic)
-
-`scholar_author` endpoint at https://serpapi.com — clean JSON,
-unlimited rate (within plan), no scraping fragility. Justified ONLY
-if we end up needing 100% Scholar coverage for a publication or
-peer-review tool.
+The first two tiers are deterministic, free, and run as part of the
+nightly enrichment pass. They cover roughly half of the researchers
+in the dataset.
 
 ## Schema
 
-`people.google_scholar_id` already exists (added in the original
-schema). Format is the user_id segment of
-`https://scholar.google.com/citations?user=<ID>`, e.g. `xKqqKf4AAAAJ`.
+```
+people.google_scholar_id : VARCHAR
+```
 
-## Honest coverage estimate
+Format: the `user_id` segment of the Scholar URL, e.g.
+`xKqqKf4AAAAJ` for `https://scholar.google.com/citations?user=xKqqKf4AAAAJ`.
 
-  Tier 1 (OpenAlex):  ~30-50%
-  Tier 1+2:           ~40-60%
-  Tier 1+2+3:         ~80-90%
-  Tier 1+2+3+4:       ~95%+
+## Front-end
 
-For ship-today, expect ~70-100 of our 242 people to get a Scholar link.
+When `google_scholar_id` is present, the researcher card adds a
+**Google Scholar** link beside the homepage and ORCID buttons.
+Otherwise the card silently omits the link rather than showing a
+broken affordance.
 
-## Next steps after this commit
+## Why we don't scrape Scholar by default
 
-1. Run `python scripts/enrich_people_gscholar.py --source openalex` once
-   to populate Tier 1.
-2. After ORCID enrichment lands, run with `--source orcid` for Tier 2.
-3. Update `src/views/people.js` card footer to show "Scholar" link
-   when `google_scholar_id` is present.
-4. (Optional, later) build Tier 3 with `scholarly` + delays + retry.
+The community `scholarly` Python package can scrape Scholar pages, but
+Google rotates anti-bot measures every few months. Any pipeline built
+on `scholarly` becomes operationally fragile and requires occasional
+configuration changes. We've chosen to defer this work until there's
+a clear product reason to need 100% Scholar coverage.

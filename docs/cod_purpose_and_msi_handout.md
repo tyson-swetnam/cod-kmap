@@ -1,179 +1,176 @@
-# Coastal Observatory Design — purpose, scope, and how cod-kmap supports it
-
-This document captures the content of the NSF MSI handout
-(`MSI Handout_2Page_2026_v2.0_HWL_AMP.pptx`) the team is shopping to
-NSF program officers, and explains how the cod-kmap dataset + map
-+ dashboards directly support each section of the pitch.
+# Coastal Observatory Design — purpose and scope
 
 The Coastal Critical Zone Observatory (CCZO) is being scoped under
-**NSF Mid-scale R1 Infrastructure Design (24-598)** with a
+**NSF Mid-scale R1 Infrastructure Design (24-598)**, with a
 pre-proposal due **September 1, 2026** and a full proposal due
-**February 8, 2027**.
+**February 8, 2027**. cod-kmap is the operational dataset, map, and
+dashboards supporting the proposal.
 
 ## Why this matters
 
-  - **>40 % of Americans live in coastal counties.**
-  - **~50 % of the US economy is based in coastal areas.**
-  - Coastal natural, managed, and socioeconomic systems incur
-    complex interacting stresses.
-  - **There is currently no NSF Coastal Observatory in the US**, even
-    though coastal ecosystems underpin the US socio-economic fabric.
+- **More than 40 % of Americans live in coastal counties.**
+- **About 50 % of the US economy is based in coastal areas.**
+- Coastal natural, managed, and socio-economic systems carry
+  complex, interacting stresses.
+- **There is currently no NSF coastal observatory in the United
+  States**, even though coastal ecosystems underpin a large share
+  of the national economy.
 
-## Defined Coastal Critical Zone
+## What "coastal critical zone" means
 
-The CCZO scope is the *coupled land–water–human interface* — including
-terrestrial and built areas near coasts, river deltas, tidal inlands,
-and estuaries.
+The CCZO scope is the *coupled land–water–human interface* —
+including terrestrial and built areas near coasts, river deltas,
+tidal inlands, and estuaries.
 
-## Proposal Pillars
+## Proposal pillars
 
-### 1. Resolve Competing Coastal Research Interests
-  - Integrate research and agency programs.
-  - Demonstrate value added to other networks.
-  - Previous attempts for a coastal observatory failed because of a
-    site-based focus, which is not novel.
+### 1. Resolve competing coastal research interests
 
-### 2. AI-Embedded Design Framework
-  - Flip the script by having cyber-infrastructure and generative AI
-    as **core infrastructure at onset** — not a bolt-on.
-  - Multimodal AI identifies spatial, temporal, and data gaps.
-  - Prototyping AI guides observatory design and reduces risk.
+- Integrate research and agency programmes that are otherwise
+  fragmented.
+- Demonstrate value-added to existing networks rather than
+  duplicating them.
+- Earlier attempts at a coastal observatory have failed when the
+  design centred on a single site rather than a network.
 
-### 3. Co-Development of Coastal Ecosystem Functions and Social Dimensions
-  - Coastal biogeochemical processes; saltwater intrusion + sea-level
-    rise; wind effects; flooding; ecosystem functions.
-  - Ecosystem services; local-to-regional economies and dependencies;
-    policy frameworks to guide decision-making.
+### 2. AI-embedded design framework
 
-### 4. Co-Design Workforce Development
-  - Science and research management is multifaceted and supports
-    careers in many fields, not just science.
-  - Science operations need trained personnel.
-  - AI skills needed for data management.
-  - Infrastructure operation curriculum.
-  - Prototype workforce development in design.
+- Treat cyberinfrastructure and generative AI as **core
+  infrastructure from the start**, not as a bolt-on.
+- Use multimodal AI to identify spatial, temporal, and data gaps
+  across the existing coastal observing landscape.
+- Use AI-assisted prototyping to guide observatory design and
+  reduce proposal risk.
 
-## The AI-Advantage
+### 3. Co-development of coastal ecosystem function and social dimensions
 
-  - Build upon prior workshops, position papers, knowledge, and
-    capabilities.
-  - Inclusion of existing networks and agency sites + data.
-  - Continental-scale, expert-informed AI-based design to better
-    understand changing coastal processes.
-  - Inclusion of a social dimension is critical.
-  - Workforce pipeline develops cutting-edge skillsets; AI skills will
-    be needed for science technicians.
-  - Design and prototype a workforce pipeline to support technical
-    operations.
-  - Led by an experienced team to scope NSF infrastructure.
+- Coastal biogeochemistry, saltwater intrusion, sea-level rise, wind
+  effects, flooding, ecosystem function.
+- Ecosystem services, local-to-regional economies and dependencies,
+  policy frameworks for decision-making.
+
+### 4. Co-design workforce development
+
+- Science and research management is multifaceted and supports
+  careers across many fields, not only research science.
+- Science operations need trained personnel.
+- AI skills are needed for data management.
+- An infrastructure-operations curriculum is part of the design.
+
+## The AI advantage
+
+- Build on prior workshops, position papers, and existing capabilities
+  rather than starting from scratch.
+- Include existing networks and agency sites and data products.
+- Continental-scale, expert-informed, AI-based design — to better
+  understand changing coastal processes.
+- Inclusion of the social dimension is a first-class design criterion,
+  not an afterthought.
+- The workforce pipeline targets cutting-edge skill sets, including
+  AI for science technicians.
+- An experienced team is in place, with a long history of NSF
+  infrastructure scoping.
 
 ## Team
 
-  - **Skip Van Bloem** — Clemson University — `skipvb@clemson.edu`
-  - **Allison Myers-Pigg** — PNNL — `allison.myers-pigg@pnnl.gov`
-  - **Tyson Swetnam** — University of Arizona — `tswetnam@arizona.edu`
-  - **Hank Loescher** — Battelle — `hloescher@battelleecology.org`
+- **Skip Van Bloem** — Clemson University — `skipvb@clemson.edu`
+- **Allison Myers-Pigg** — Pacific Northwest National Laboratory —
+  `allison.myers-pigg@pnnl.gov`
+- **Tyson Swetnam** — University of Arizona — `tswetnam@arizona.edu`
+- **Hank Loescher** — Battelle — `hloescher@battelleecology.org`
 
-This effort builds upon a **2019 Clemson Baruch Institute Coastal
-Workshop**, a 2022 follow-up meeting, and a 2024 pre-proposal where
-a draft conceptual framework for a Coastal Observatory was developed.
-Attendance included NSF, NOAA NERRS, DHS, Coast Guard, Sea Grant,
-USGCRP IWG, and a broad range of university representation, and
-scientific and programmatic expertise.
+The effort builds on a 2019 Clemson Baruch Institute Coastal
+Workshop, a 2022 follow-up meeting, and a 2024 pre-proposal in which
+a draft conceptual framework for a coastal observatory was
+developed. Workshop attendance has included NSF, NOAA NERRS,
+Department of Homeland Security, Coast Guard, Sea Grant, USGCRP IWG,
+and a broad range of universities.
 
-A core **science team (>40 participants)** and a formal **project
-management team (>10 participants)** have met to identify major
-needs and questions. The team will grow to include new partnerships,
-drawing on experience scoping infrastructure and building
-partnerships within NSF (NEON, others) and globally (GERI). It has a
-working relationship with the NSF Large Facility Office, R1 Community
+A core science team of more than 40 participants and a formal
+project-management team of more than 10 have met to identify the
+major scientific and operational needs. The team has working
+relationships with the NSF Large Facility Office, the R1 Community
 of Interest, and the G7 Group of Senior Advisors for Research
-Infrastructure. The team employs a State-of-the-Art System
-Engineering Approach based on a dynamic model framework.
+Infrastructure, and uses a state-of-the-art systems-engineering
+approach grounded in a dynamic-model framework.
 
-## Aligned with National Academy Reports and Priorities
+## Aligned with national priorities
 
-  - U.S. Global Change Research Program (USGCRP), 2024 — *Our Changing
-    Planet: The U.S. Global Change Research Program for Fiscal Year 2024*
-  - **Fifth National Climate Assessment**, 2023
-  - NAS Report: *Next Generation of Earth Systems Science* (2021)
-  - *Catalyzing Opportunities for Research in the Earth Sciences
-    (CORES): Decadal Survey* (2020)
-  - *Understanding the Long-Term Evolution of the Coupled
-    Natural-Human Coastal System* (2018)
+- U.S. Global Change Research Program (USGCRP), 2024 — *Our Changing
+  Planet: The U.S. Global Change Research Program for Fiscal Year
+  2024*
+- **Fifth National Climate Assessment**, 2023
+- NAS report — *Next Generation of Earth Systems Science*, 2021
+- *Catalyzing Opportunities for Research in the Earth Sciences
+  (CORES): Decadal Survey*, 2020
+- *Understanding the Long-Term Evolution of the Coupled Natural-
+  Human Coastal System*, 2018
 
-## Grand Challenge Questions
+## Grand Challenge questions
 
-These were distilled from the wide range of planning documents and
-will be used to guide the observatory design. Full text and
-associated assumptions are available on request.
+These four questions guide the observatory design. Full text and
+underlying assumptions are available on request.
 
-  - **GC1: Challenging Scientific and Economic Theory.**
-    How do scientific and economic theory and observations inform our
-    understanding of coastal socio-ecological systems? How can this
-    understanding be challenged and improved by a modelled predictive
-    capability? How can generative AI inform new observations or other
-    required data for improved understandings of the coastal critical
-    zone? How do we prepare the future workforce to manage the
-    complexity of both socio-ecological systems and technical
-    advancements?
-
-  - **GC2: Societal Responses.**
-    How do changes in coastal ecosystem functions affect coastal
-    economies? How do they scale from local to region? Which markets
-    and commodities do they affect and how? How is this considered
-    in policy and jurisprudence?
-
-  - **GC3: Coastal Vulnerability.**
-    How stable, resilient, and resistant are coastal ecosystem
-    processes with natural and anthropogenic changes? How do we
-    determine tipping points that would transform a coastal ecosystem
-    to a different state? Which coastal processes are particularly
-    vulnerable to rapid or sustained changes and how do they scale?
-
-  - **GC4: Uncertainties in Coastal Ecosystem Processes.**
-    How will US coastal ecosystems respond to changes in natural- and
-    human-induced changes such as saltwater intrusion, extreme events,
-    intensifying storms, and inland flooding across a range of spatial
-    and temporal scales? How do the feedbacks in coastal processes
-    interact with extreme events? How do these feedbacks vary with
-    ecological context and spatial and temporal scales?
-
----
+- **GC1 — Challenging scientific and economic theory.** How do
+  scientific and economic theory and observations inform our
+  understanding of coastal socio-ecological systems? How can that
+  understanding be challenged and improved by predictive modelling
+  capability? How can generative AI inform new observations or
+  required data for improved understanding of the coastal critical
+  zone? How do we prepare the future workforce to manage the
+  complexity of coupled socio-ecological systems and rapidly
+  evolving technical capability?
+- **GC2 — Societal responses.** How do changes in coastal ecosystem
+  functions affect coastal economies? How do they scale from local
+  to regional? Which markets and commodities are affected and how?
+  How is this considered in policy and jurisprudence?
+- **GC3 — Coastal vulnerability.** How stable, resilient, and
+  resistant are coastal ecosystem processes under natural and
+  anthropogenic change? How do we determine tipping points that
+  would shift a coastal ecosystem to a different state? Which
+  coastal processes are particularly vulnerable to rapid or
+  sustained change, and how do they scale?
+- **GC4 — Uncertainties in coastal ecosystem processes.** How will
+  US coastal ecosystems respond to natural- and human-induced
+  changes — saltwater intrusion, extreme events, intensifying
+  storms, inland flooding — across spatial and temporal scales? How
+  do feedbacks in coastal processes interact with extreme events?
+  How do those feedbacks vary with ecological context, scale, and
+  time?
 
 ## How cod-kmap supports the proposal
 
-The cod-kmap dataset and web app are an **operational tool for the
-"AI-Embedded Design Framework"** pillar — specifically the
-"Multimodal AI identifies spatial, temporal, and data gaps" claim.
+cod-kmap operationalises the proposal's "Multimodal AI identifies
+spatial, temporal, and data gaps" claim. Each of the proposal's
+themes is reflected directly in the application:
 
-| MSI handout claim | cod-kmap support |
-|-------------------|------------------|
-| "Inclusion of existing networks and agency sites/data" | Map view + Browse list catalog 210 facilities across 32 networks (LTER, NERRS, NMS, NEP, IOOS, Sea Grant, NPS coastal, etc.) with full metadata. |
-| "Continental-scale design" | Knowledge-map (`#/network`) shows research-area cartograms across all US coastal facilities + Latin American + Caribbean partners — visualises continent-scale coverage at a glance. |
-| "Spatial / temporal / data gaps" | Stats dashboards (`#/stats`) per research area: facility counts by country, by region overlay, by facility type. Gap-callout panel surfaces under-represented strata. `docs/suitability_roadmap.md` lays out the MEOW + Köppen + GBIF ingestion that will enable "top-N candidate new sites" ranking. |
-| "Inclusion of a social dimension" | Funding tab covers federal + state + nonprofit funding sources per facility; Form-990 totals expose the full revenue picture (federal + state + foundation + tuition pass-through) for the 9 nonprofit/foundation orgs in the dataset. |
-| "Build on prior workshops, knowledge, capabilities" | Researcher directory (`#/people`) + per-person publication/citation metrics tie attendees to their pubs, ORCID, OpenAlex, Google Scholar profiles where available. |
-| "Demonstrate value added to other networks" | Knowledge-map cross-area edges (sky-blue = researcher-bridging, gray = facility-bridging) make interdisciplinary collaboration visible — exactly the "where are the inter-network connections worth funding" question. |
+| Proposal theme | cod-kmap support |
+|---|---|
+| Inclusion of existing networks and agency sites | The Map and Browse tabs catalogue 200+ facilities across 30+ networks (LTER, NERRS, NMS, NEP, IOOS, Sea Grant, NPS coastal, and more) with full metadata. |
+| Continental-scale design | The Network knowledge map shows research-area cartograms across all US coastal facilities plus Latin American and Caribbean partners — visualising continent-scale coverage at a glance. |
+| Spatial, temporal, and data gaps | The Stats dashboards expose per-research-area coverage by country, by overlay region, and by facility type. The site-suitability roadmap describes the next-phase MEOW + Köppen + GBIF ingestion that will enable a *top-N candidate new sites* ranking. |
+| Inclusion of a social dimension | Funding records cover federal, state, and non-profit sources per facility, with Form-990 totals for the non-profit and foundation organisations in the dataset. |
+| Build on prior workshops and capabilities | The researcher directory includes per-person publication and citation metrics, ORCID, OpenAlex, and Google Scholar linkages where available. |
+| Demonstrate value-added to other networks | Cross-area edges in the Network view make interdisciplinary collaboration visible — the "where are the inter-network connections worth funding?" question. |
 
-## What's still missing (next-phase work)
+## What's still missing
 
-To fully deliver against the MSI handout, cod-kmap still needs:
+To fully match the MSI handout, cod-kmap still needs:
 
-  - **Geographic / climatic strata layer** — MEOW marine ecoregions,
-    Köppen-Geiger climate zones, EEZ boundaries (planned in
-    `docs/suitability_roadmap.md`).
-  - **Human-influence + biodiversity proxies** — GHSL population,
-    WCMC marine pressures, GBIF/OBIS species richness (same doc).
-  - **Site-suitability ranking** — H3 hex tiling + composite score so
-    the dashboard can show "top-25 candidate new observatory sites
-    per research area".
-  - **Workforce + curriculum view** — capture training programs,
-    REUs, NRTs, postdoc cohorts at each facility — feeds the
-    "Co-Design Workforce Development" pillar.
-  - **Time-series funding view** — already structured per fiscal year
-    in `funding_events`; needs a chart UI surfacing trends per facility
-    × funder × year.
+- **Geographic and climatic strata** — MEOW marine ecoregions,
+  Köppen-Geiger climate zones, EEZ boundaries (described in the
+  Suitability Roadmap doc).
+- **Human-influence and biodiversity proxies** — GHSL population,
+  WCMC marine pressures, GBIF and OBIS species richness.
+- **Site-suitability ranking** — H3 hex tiling plus a composite
+  score, exposing "top-25 candidate new observatory sites per
+  research area."
+- **Workforce and curriculum view** — capture training programmes,
+  REUs, NRTs, postdoc cohorts at each facility, supporting the
+  Co-Design Workforce Development pillar.
+- **Time-series funding view** — already structured per fiscal year
+  in `funding_events`; needs a chart UI surfacing trends per
+  facility × funder × year.
 
-These are documented as roadmap items so the proposal narrative + the
-operational tool stay tied together as work progresses.
+These items live on the public roadmap so the proposal narrative
+and the operational tool stay in sync as work progresses.
