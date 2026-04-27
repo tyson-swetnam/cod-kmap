@@ -7,7 +7,7 @@
 // queries the user can click to preview interesting slices of the
 // cod-kmap schema.
 
-import { getConn, whenReady } from '../db.js';
+import { getConn, whenReady, unwrapRow } from '../db.js';
 
 // ── Canned queries ──────────────────────────────────────────────────
 //
@@ -258,20 +258,16 @@ function escHtml(s) {
 }
 
 // Convert a DuckDB-Wasm Arrow RecordBatch-backed Table to a simple
-// array of plain JS objects. Handles BigInt (COUNT() results) by
-// converting to Number where it's safe.
+// array of plain JS objects. Delegates to unwrapRow (db.js) which
+// handles BigInts, Arrow Vectors (LIST<STRUCT>), and nested structs.
+// Date stringification is added on top here since the SQL view renders
+// dates verbatim in the result table.
 function resultToRows(result) {
   return result.toArray().map((row) => {
-    const o = row.toJSON();
+    const o = unwrapRow(row.toJSON());
     for (const k of Object.keys(o)) {
-      const v = o[k];
-      if (typeof v === 'bigint') {
-        // BigInt -> Number if under Number.MAX_SAFE_INTEGER. Keep as
-        // BigInt (coerced to string for display) otherwise.
-        o[k] = (v <= Number.MAX_SAFE_INTEGER && v >= Number.MIN_SAFE_INTEGER)
-          ? Number(v) : String(v);
-      } else if (v instanceof Date) {
-        o[k] = v.toISOString();
+      if (o[k] instanceof Date) {
+        o[k] = o[k].toISOString();
       }
     }
     return o;

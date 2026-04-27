@@ -16,6 +16,58 @@ async function fetchJson(path) {
   return res.json();
 }
 
+// ---------------------------------------------------------------------------
+// Arrow → plain JS unwrap.
+//
+// DuckDB-Wasm 1.29 returns LIST<STRUCT> columns as Arrow Vector objects
+// (not plain JS arrays). They expose a numeric `.length` and integer-keyed
+// access, but `Array.isArray()` returns false for them. This silently
+// breaks views that gate on Array.isArray() (e.g. People + Network
+// affiliation/area lists rendered "No facility roles recorded." even
+// when the parquet had data).
+//
+// `arrowToPlain` walks any value returned by `row.toJSON()` and converts
+// every Arrow Vector to a plain JS Array, every nested struct to a
+// plain Object, and unwraps BigInts to Numbers (or strings if too big).
+// Use it once after `row.toJSON()` and downstream code can treat
+// everything as standard JS.
+// ---------------------------------------------------------------------------
+
+export function arrowToPlain(v) {
+  if (v == null) return v;
+  if (typeof v === 'bigint') {
+    return (v <= Number.MAX_SAFE_INTEGER && v >= Number.MIN_SAFE_INTEGER)
+      ? Number(v) : String(v);
+  }
+  if (Array.isArray(v)) {
+    return v.map(arrowToPlain);
+  }
+  // Arrow Vector / list-like object: numeric .length, integer-keyed.
+  if (typeof v === 'object'
+      && typeof v.length === 'number'
+      && typeof v !== 'string'
+      && !(v instanceof Date)) {
+    const arr = [];
+    for (let i = 0; i < v.length; i++) arr.push(arrowToPlain(v[i]));
+    return arr;
+  }
+  if (typeof v === 'object' && !(v instanceof Date)) {
+    const out = {};
+    for (const k of Object.keys(v)) out[k] = arrowToPlain(v[k]);
+    return out;
+  }
+  return v;
+}
+
+// Convenience: unwrap every column of a row object in place. Same as
+// `Object.fromEntries(Object.entries(o).map(([k,v]) => [k, arrowToPlain(v)]))`
+// but mutates the input for hot paths.
+export function unwrapRow(o) {
+  if (o == null) return o;
+  for (const k of Object.keys(o)) o[k] = arrowToPlain(o[k]);
+  return o;
+}
+
 export async function loadFallback() {
   const geojson = await fetchJson(`${DATA_BASE}facilities.geojson`);
   fallbackFeatures = geojson.features || [];

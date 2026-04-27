@@ -14,7 +14,7 @@
 // (people, person_primary_groups, person_area_metrics, facility_personnel,
 // facilities, facility_area_funding).
 
-import { getConn, whenReady } from '../db.js';
+import { getConn, whenReady, unwrapRow } from '../db.js';
 
 let _container = null;
 let _renderedOnce = false;
@@ -36,15 +36,15 @@ function fmtInt(n) {
   if (!n && n !== 0) return '—';
   return Math.round(n).toLocaleString();
 }
+// DuckDB-Wasm 1.29 returns BIGINTs as JS bigints and LIST<STRUCT> values
+// as Arrow Vector objects (NOT plain JS arrays — Array.isArray() returns
+// false for them). The People view's affiliations / areas / urls lists
+// rendered empty because the Array.isArray() guards short-circuited.
+// `unwrapRow` (defined in db.js) recursively converts every column so
+// downstream code can treat lists like plain arrays and structs like
+// plain objects.
 function numify(o) {
-  for (const k of Object.keys(o)) {
-    const v = o[k];
-    if (typeof v === 'bigint') {
-      o[k] = (v <= Number.MAX_SAFE_INTEGER && v >= Number.MIN_SAFE_INTEGER)
-        ? Number(v) : String(v);
-    }
-  }
-  return o;
+  return unwrapRow(o);
 }
 
 async function fetchPeople() {

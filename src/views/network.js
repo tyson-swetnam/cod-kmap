@@ -27,7 +27,7 @@
 // rendering + Web Worker) are documented in docs/map_visualization_plan.md
 // and will land as follow-up commits.
 
-import { getConn, whenReady } from '../db.js';
+import { getConn, whenReady, unwrapRow } from '../db.js';
 
 // ── Module state ────────────────────────────────────────────────────
 let _container = null;
@@ -244,7 +244,12 @@ async function fetchData() {
   const out = {};
   for (const [k, sql] of Object.entries(queries)) {
     const r = await conn.query(sql);
-    out[k] = r.toArray().map((row) => row.toJSON());
+    // unwrapRow converts Arrow Vector LIST<STRUCT> columns (e.g. the
+    // `roles` array on person_affiliations) to plain JS arrays so the
+    // downstream Array.isArray / .map / Map(...) usage works. Without
+    // this, every person's tooltip showed an empty roles list because
+    // Arrow Vectors fail Array.isArray.
+    out[k] = r.toArray().map((row) => unwrapRow(row.toJSON()));
   }
   // Coerce BigInt counts to Number.
   for (const a of out.areas) a.weight = Number(a.weight) || 0;

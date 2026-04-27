@@ -19,7 +19,7 @@
 // straight from DuckDB so it always reflects the full dataset, not
 // the current map filters.
 
-import { getConn, whenReady } from '../db.js';
+import { getConn, whenReady, unwrapRow } from '../db.js';
 import { TYPE_COLORS } from '../map.js';
 
 let _container = null;
@@ -61,16 +61,11 @@ function fmtZ(n) {
   return n.toFixed(1);
 }
 
-// Convert any DuckDB-Wasm BigInt → Number wherever it's safe.
+// Convert any DuckDB-Wasm BigInt → Number wherever it's safe AND unwrap
+// Arrow Vector list/struct values to plain JS arrays/objects. See
+// src/db.js#unwrapRow for the rationale.
 function numify(o) {
-  for (const k of Object.keys(o)) {
-    const v = o[k];
-    if (typeof v === 'bigint') {
-      o[k] = (v <= Number.MAX_SAFE_INTEGER && v >= Number.MIN_SAFE_INTEGER)
-        ? Number(v) : String(v);
-    }
-  }
-  return o;
+  return unwrapRow(o);
 }
 
 async function fetchAll() {
