@@ -30,7 +30,8 @@ const DEFAULT_OFF = new Set([
   'coastal-fws-units', 'coastal-nps-units',
   'coastal-usfs-special', 'coastal-wilderness',
   'coastal-state-protected', 'coastal-ngo-private', 'ramsar-us',
-  'neon-sites',
+  // 'neon-sites' is now small (61 polygons, 99 KB) and the user
+  // explicitly asked for it visible by default. Default-on.
 ]);
 
 // Layer ids that must stay on top of every overlay so the facility dots

@@ -47,7 +47,8 @@ def _count(service: str, where: str) -> int:
 
 
 def _page(service: str, where: str, offset: int, page: int,
-          max_offset: float | None = None) -> list[dict]:
+          max_offset: float | None = None,
+          order_by: str = "OBJECTID") -> list[dict]:
     params = {
         "where": where,
         "outFields": "*",
@@ -55,7 +56,7 @@ def _page(service: str, where: str, offset: int, page: int,
         "returnGeometry": "true",
         "resultOffset": offset,
         "resultRecordCount": page,
-        "orderByFields": "OBJECTID",
+        "orderByFields": order_by,
         "f": "geojson",
     }
     if max_offset is not None:
@@ -125,6 +126,10 @@ def main() -> int:
     ap.add_argument("--max-allowable-offset", type=float, default=None,
                     help="Server-side geometry simplification tolerance (in outSR units, "
                          "i.e. degrees for WGS84). 0.001 ≈ 100 m. Optional.")
+    ap.add_argument("--order-by", default="OBJECTID",
+                    help="Field to ORDER BY for stable pagination. Most ArcGIS layers "
+                         "use OBJECTID; some (e.g. NEON Field_Sampling_Boundaries) "
+                         "use FID. Default OBJECTID.")
     args = ap.parse_args()
 
     os.makedirs(args.state_dir, exist_ok=True)
@@ -158,7 +163,8 @@ def main() -> int:
         for attempt in range(3):
             try:
                 feats = _page(args.service, args.where, cur["offset"], args.page,
-                              max_offset=args.max_allowable_offset)
+                              max_offset=args.max_allowable_offset,
+                              order_by=args.order_by)
                 _append(args.state_dir, feats)
                 cur["offset"] += args.page
                 cur["ts"] = time.strftime("%Y-%m-%dT%H:%M:%S")

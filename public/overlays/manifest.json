@@ -95,11 +95,11 @@
     "label": "NEON field sites",
     "color": "#b45309",
     "category": "context",
-    "source": "NEON Data Portal — https://data.neonscience.org/api/v0/sites",
+    "source": "NEON Field Sampling Boundaries — services1.arcgis.com/CMacGMvXwrlrpmOR (Battelle Ecology / NEON)",
     "manager": "National Ecological Observatory Network (NSF)",
-    "filter": "All 81 NEON field sites (Core + Gradient, terrestrial + aquatic). 45 are in coastal states or US territories.",
-    "feature_count": 81,
-    "notes": "Point features. Each site links through to neonscience.org/field-sites/<code>."
+    "filter": "All 61 published NEON site boundary polygons (Core + Gradient, terrestrial + aquatic).",
+    "feature_count": 61,
+    "notes": "Polygon features — actual NEON sampling footprints. 20 sites are in coastal states; the rest provide continental-scale context for any coastal-vs-inland comparison. Each site links through to neonscience.org/field-sites/<code>."
   },
   "neon-domains": {
     "label": "NEON Ecological Domains",

@@ -60,8 +60,12 @@ R11_FILES = [
     "facilities_state_protected.json",
     "facilities_ngo_private.json",
     "facilities_ramsar.json",
-    # Phase-3: NEON field sites (all 81; 45 in coastal states/territories).
-    "facilities_neon_sites.json",
+    # Phase-3: NEON sites WERE ingested as facility points but were
+    # superseded by the polygon overlay public/overlays/neon-sites.geojson
+    # (sourced from NEON's Field_Sampling_Boundaries feature service).
+    # The points duplicated the polygons on the map, so they were removed
+    # by scripts/coastal_research/remove_neon_facility_points.py and the
+    # seed JSON intentionally left out of this list.
 ]
 
 PARQUET_TABLES = (
