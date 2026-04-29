@@ -447,6 +447,43 @@ footer a:hover { color: var(--c-primary); }
 #map { height: 100%; width: 100%; background: #eef2f4; }
 .maplibregl-ctrl-attrib { font-size: 10px; }
 
+/* WebGL-unavailable fallback (e.g. headless Linux / llvmpipe / no GPU). */
+#map.map-no-webgl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--c-bg-alt);
+  overflow: auto;
+}
+#map.map-no-webgl .map-no-webgl-inner {
+  max-width: 540px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 24px 28px;
+  color: var(--c-text-soft);
+}
+#map.map-no-webgl h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  color: var(--c-text);
+}
+#map.map-no-webgl p { margin: 8px 0; }
+#map.map-no-webgl a {
+  color: var(--c-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+#map.map-no-webgl a:hover { text-decoration: underline; }
+#map.map-no-webgl code {
+  background: var(--c-bg-alt);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+}
+
 /* ── Popups ─────────────────────────────────────────────────────── */
 .maplibregl-popup-content {
   border-radius: var(--radius) !important;

@@ -14,6 +14,7 @@
 
 import maplibregl from 'maplibre-gl';
 import { DATA_BASE } from './config.js';
+import { isMapAvailable } from './map.js';
 
 const MANIFEST_URL = `${DATA_BASE}overlays/manifest.json`;
 
@@ -53,6 +54,14 @@ const _loaded = new Set();
 export async function initOverlays(map, container, onChange) {
   _map = map;
   _onChange = onChange || (() => {});
+
+  // No WebGL: there's no real map to attach overlay layers to. Hide the
+  // overlay panel entirely rather than showing checkboxes that toggle
+  // nothing. The Browse/Network/People/SQL/Stats tabs don't need overlays.
+  if (!isMapAvailable()) {
+    if (container) container.hidden = true;
+    return;
+  }
 
   try {
     const res = await fetch(MANIFEST_URL);

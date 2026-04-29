@@ -35,6 +35,7 @@ function typeColorExpr() {
 }
 
 let map;
+let _stubMode = false;
 let _currentFeatures = [];
 
 // Plug-in API used by overlays.js to publish what's currently rendered.
@@ -46,10 +47,88 @@ export function refreshLegend() {
   document.querySelector('.legend-control')?.dispatchEvent(new CustomEvent('legend:refresh'));
 }
 
+// True when the host has no usable WebGL context (e.g. a headless Linux box
+// with llvmpipe software rendering, where MapLibre's `_setupPainter` throws).
+// overlays.js and main.js use this to skip operations that would NPE on the
+// stub map.
+export function isMapAvailable() {
+  return !_stubMode;
+}
+
+// Probe WebGL synchronously. MapLibre's constructor throws inside
+// `_setupPainter` if the browser can't create a WebGL context, which kills
+// the whole main.js module and breaks every other tab. Detect it ourselves
+// first so we can render a graceful fallback and keep Browse / People / SQL /
+// Stats / Network / Docs working.
+function detectWebGL() {
+  try {
+    const c = document.createElement('canvas');
+    const gl = c.getContext('webgl2')
+      || c.getContext('webgl')
+      || c.getContext('experimental-webgl');
+    return !!gl;
+  } catch (_) {
+    return false;
+  }
+}
+
+function renderNoWebGLFallback(container) {
+  container.classList.add('map-no-webgl');
+  container.innerHTML = `
+    <div class="map-no-webgl-inner">
+      <h2>Interactive map unavailable</h2>
+      <p>The map view needs WebGL, but your browser couldn't create a WebGL
+        context. This usually means hardware acceleration is disabled or the
+        device has no GPU (e.g. a headless Linux session falling back to
+        software rendering).</p>
+      <p><strong>What works without WebGL:</strong> the
+        <a href="#/browse">Browse</a>, <a href="#/network">Network</a>,
+        <a href="#/people">People</a>, <a href="#/sql">SQL</a>,
+        <a href="#/stats">Stats</a>, and <a href="#/docs">Docs</a> tabs above.</p>
+      <p><strong>To get the map back:</strong> enable hardware acceleration in
+        your browser settings, or in Chromium-based browsers visit
+        <code>chrome://flags</code> and enable
+        <em>"Override software rendering list"</em>.</p>
+    </div>
+  `;
+}
+
+// Lightweight stand-in for a maplibregl.Map. Implements only the surface that
+// main.js, overlays.js, and this module poke at — every method is a no-op
+// (or returns a sensible empty value) so callers don't have to special-case
+// the missing map.
+function makeStubMap() {
+  const noop = () => {};
+  const stub = {
+    on: noop, off: noop, once: noop, fire: noop,
+    addControl: noop, removeControl: noop,
+    addSource: noop, removeSource: noop,
+    addLayer: noop, removeLayer: noop, moveLayer: noop,
+    setFilter: noop, setLayoutProperty: noop, setPaintProperty: noop,
+    setData: noop,
+    getSource: () => null,
+    getLayer: () => null,
+    getCanvas: () => ({ style: {} }),
+    getBounds: () => ({ contains: () => true }),
+    isStyleLoaded: () => false,
+    resize: noop,
+    flyTo: noop, fitBounds: noop, panTo: noop, jumpTo: noop,
+    queryRenderedFeatures: () => [],
+  };
+  return stub;
+}
+
 const COASTLINE_URL =
   'https://raw.githubusercontent.com/martynafford/natural-earth-geojson/master/50m/physical/ne_50m_coastline.json';
 
 export function initMap(container) {
+  if (!detectWebGL()) {
+    _stubMode = true;
+    renderNoWebGLFallback(container);
+    map = makeStubMap();
+    return map;
+  }
+
   map = new maplibregl.Map({
     container,
     style: 'https://tiles.openfreemap.org/styles/positron',
@@ -184,6 +263,10 @@ export function onViewportChange(handler) {
 
 export function renderFacilities(features) {
   _currentFeatures = features;
+  // No WebGL → no map → no source to paint. Stash the features so the
+  // browse / stats / people tabs still render and bail before we attach
+  // listeners that the stub map would never fire.
+  if (_stubMode) return;
   const payload = { type: 'FeatureCollection', features };
 
   // The old gate was `map.isStyleLoaded()`, but that flips back to false every
