@@ -67,7 +67,13 @@ body {
 .tabs {
   display: flex;
   gap: 2px;
+  /* Ten tabs no longer fit on a narrow laptop; scroll rather than wrap so
+   * the topbar stays one row tall. */
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: none;
 }
+.tabs::-webkit-scrollbar { display: none; }
 .tabs a {
   color: rgba(255,255,255,.78);
   text-decoration: none;
@@ -127,6 +133,9 @@ body {
 #view-browse > #browse,
 #view-network > #network,
 #view-people  > #people,
+#view-team    > #team,
+#view-scholars > #scholars,
+#view-data    > #datasets,
 #view-sql     > #sql,
 #view-stats   > #stats,
 #view-docs    > #docs {
@@ -1713,4 +1722,283 @@ footer a:hover { color: var(--c-primary); }
   #q { padding: 11px 36px 11px 12px; font-size: 1rem; }
   #q-clear { right: 10px; font-size: 1.2rem; padding: 6px; }
   .legend-control { max-width: 200px; }
+}
+
+/* ── Team view (#/team) ─────────────────────────────────────────────
+ * The COD organisational chart. Institution chips take their colour from
+ * an --inst custom property that team.js sets per row, mirroring the
+ * source chart's colour legend. */
+.team-page { padding: 22px clamp(16px, 3vw, 36px); max-width: 1400px; margin: 0 auto; }
+.team-header h1 { margin: 0 0 6px; font-size: clamp(1.1rem, 1.6vw, 1.4rem); color: #0f172a; }
+.team-summary { color: #1f2937; font-size: .96rem; margin: 4px 0 14px; max-width: 920px; }
+.team-status { text-align: center; color: #64748b; padding: 14px; font-size: .85rem; }
+
+.team-section { margin: 0 0 26px; }
+.team-section > h2 {
+  margin: 0 0 10px; font-size: .95rem; color: #0f172a;
+  display: flex; align-items: center; gap: 8px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--c-border);
+}
+.team-section-note { margin: -4px 0 10px; font-size: .84rem; color: #64748b; }
+.team-count {
+  font-size: .72rem; padding: 1px 8px; border-radius: 999px;
+  background: #f1f5f9; color: #475569; font-weight: 400;
+}
+.team-count-open { background: #fef3c7; color: #92400e; }
+
+.team-hero-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+.team-hero {
+  border: 1px solid var(--c-border); border-radius: 8px;
+  padding: 14px; background: #fff; border-top: 3px solid #94a3b8;
+}
+.team-hero-pi { border-top-color: #0369a1; }
+.team-hero-copi { border-top-color: #0d9488; }
+.team-hero-badge {
+  font-size: .68rem; text-transform: uppercase; letter-spacing: .05em;
+  color: #64748b; margin-bottom: 4px;
+}
+.team-hero h3 { margin: 0 0 2px; font-size: 1.05rem; color: #0f172a; }
+.team-hero-role { margin: 0 0 8px; font-size: .84rem; color: #475569; }
+.team-hero-wbs { margin: 8px 0 0; font-size: .76rem; color: #64748b; }
+.team-interests {
+  margin: 8px 0 0; font-size: .8rem; color: #1e293b;
+  padding-top: 8px; border-top: 1px dashed #e2e8f0;
+}
+.team-metrics {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  padding: 8px 0; margin-top: 8px;
+  border-top: 1px solid #f1f5f9; font-size: .74rem; color: #64748b;
+}
+.team-metrics strong { font-size: .92rem; color: #0f172a; }
+.team-links {
+  font-size: .78rem; color: #475569;
+  margin-top: 8px; padding-top: 6px; border-top: 1px dashed #e2e8f0;
+}
+.team-member .team-links, .team-slc .team-links {
+  margin: 0; padding: 0; border: none;
+}
+.team-links a { color: #0369a1; }
+
+.team-inst {
+  display: inline-block; font-size: .7rem; padding: 2px 8px;
+  border-radius: 999px; white-space: nowrap;
+  background: color-mix(in srgb, var(--inst, #64748b) 14%, #fff);
+  color: color-mix(in srgb, var(--inst, #64748b) 78%, #000);
+  border: 1px solid color-mix(in srgb, var(--inst, #64748b) 34%, #fff);
+}
+
+.team-wbs-head { cursor: pointer; user-select: none; }
+.team-wbs-head:hover { color: #0369a1; }
+.team-caret { color: #94a3b8; font-size: .8rem; width: 10px; }
+.team-wbs-code {
+  font-variant-numeric: tabular-nums; color: #64748b;
+  font-size: .84rem; min-width: 2.4em;
+}
+.team-list { list-style: none; margin: 0; padding: 0; }
+.team-member {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px;
+  padding: 8px 2px; border-bottom: 1px dotted #e2e8f0;
+}
+.team-member:last-child { border-bottom: none; }
+.team-member-open { opacity: .68; }
+.team-member-main { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+.team-member-name { font-weight: 500; color: #0f172a; font-size: .9rem; }
+.team-member-role { font-size: .82rem; color: #475569; }
+.team-member-meta {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-left: auto; font-size: .78rem;
+}
+.team-member-metric { color: #64748b; font-size: .74rem; }
+.team-status-open, .team-status {
+  font-size: .66rem; padding: 1px 6px; border-radius: 3px;
+  background: #fef3c7; color: #92400e; letter-spacing: .04em;
+}
+.team-note { flex-basis: 100%; margin: 2px 0 0; font-size: .74rem; color: #94a3b8; }
+
+.team-slc-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+}
+.team-slc {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  padding: 8px 10px; border: 1px solid var(--c-border);
+  border-radius: 6px; background: #fff; font-size: .82rem;
+}
+.team-slc-chair { border-color: #a5b4fc; background: #f5f3ff; }
+.team-slc-name { font-weight: 500; color: #0f172a; }
+.team-slc-badge {
+  font-size: .64rem; padding: 1px 6px; border-radius: 3px;
+  background: #ddd6fe; color: #5b21b6; text-transform: uppercase;
+}
+
+/* ── Scholars view (#/scholars) ─────────────────────────────────────── */
+.sch-page { padding: 22px clamp(16px, 3vw, 36px); max-width: 1400px; margin: 0 auto; }
+.sch-header h1 { margin: 0 0 6px; font-size: clamp(1.1rem, 1.6vw, 1.4rem); color: #0f172a; }
+.sch-summary { color: #1f2937; font-size: .96rem; margin: 4px 0 10px; max-width: 920px; }
+.sch-summary a { color: #0369a1; }
+.sch-status { text-align: center; color: #64748b; padding: 14px; font-size: .85rem; }
+.sch-count, .sch-count-line { font-size: .82rem; color: #64748b; margin: 8px 0 12px; }
+
+.sch-controls {
+  display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center;
+  margin: 10px 0 4px;
+}
+.sch-controls input[type="search"] {
+  flex: 1 1 240px; min-width: 180px; padding: 6px 10px;
+  border: 1px solid var(--c-border); border-radius: 4px; font-size: .88rem;
+}
+.sch-controls label { font-size: .85rem; color: #475569; }
+.sch-controls select {
+  margin-left: 6px; padding: 4px 6px;
+  border: 1px solid var(--c-border); border-radius: 4px;
+  font-size: .85rem; background: #fff;
+}
+.sch-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sch-chip {
+  font-size: .8rem; padding: 5px 12px; cursor: pointer;
+  border: 1px solid var(--c-border); border-radius: 999px;
+  background: #fff; color: #475569;
+}
+.sch-chip:hover { border-color: #94a3b8; }
+.sch-chip-on { background: #0369a1; border-color: #0369a1; color: #fff; }
+.sch-chip-n { opacity: .75; font-size: .74rem; margin-left: 2px; }
+
+.sch-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 14px;
+}
+.sch-card {
+  border: 1px solid var(--c-border); border-radius: 8px;
+  padding: 12px 14px 14px; background: #fff; scroll-margin-top: 14px;
+}
+.sch-card-active { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,.25); }
+.sch-card-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 8px; margin-bottom: 4px;
+}
+.sch-card-head h3 { margin: 0; font-size: 1rem; color: #0f172a; }
+.sch-badges { display: flex; flex-wrap: wrap; gap: 4px; }
+.sch-badge {
+  font-size: .66rem; padding: 2px 7px; border-radius: 999px; white-space: nowrap;
+}
+.sch-badge-pre { background: #e0e7ff; color: #3730a3; }
+.sch-badge-act { background: #dcfce7; color: #166534; }
+.sch-badge-ris { background: #fef3c7; color: #92400e; }
+.sch-aff { margin: 0 0 8px; font-size: .84rem; color: #475569; }
+.sch-metrics {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  padding: 8px 0; margin-bottom: 8px;
+  border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;
+  font-size: .72rem; color: #64748b;
+}
+.sch-metrics strong { font-size: .92rem; color: #0f172a; }
+.sch-pending {
+  margin: 8px 0; padding: 6px 8px; font-size: .76rem;
+  background: #f8fafc; border-left: 3px solid #cbd5e1; color: #64748b;
+}
+.sch-topics { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.sch-topic {
+  font-size: .7rem; padding: 2px 8px; border-radius: 999px;
+  background: #f1f5f9; color: #475569;
+}
+.sch-rationale { margin: 0; font-size: .78rem; color: #64748b; font-style: italic; }
+.sch-links {
+  margin-top: 10px; padding-top: 8px;
+  border-top: 1px dashed #e2e8f0; font-size: .8rem; color: #475569;
+}
+.sch-links a { color: #0369a1; }
+
+/* ── Data view (#/data) ─────────────────────────────────────────────
+ * Endpoint badges colour themselves from an --ep custom property set by
+ * datasets.js per endpoint type. */
+.ds-page { padding: 22px clamp(16px, 3vw, 36px); max-width: 1400px; margin: 0 auto; }
+.ds-header h1 { margin: 0 0 6px; font-size: clamp(1.1rem, 1.6vw, 1.4rem); color: #0f172a; }
+.ds-summary { color: #1f2937; font-size: .96rem; margin: 4px 0 10px; max-width: 920px; }
+.ds-status { text-align: center; color: #64748b; padding: 14px; font-size: .85rem; }
+.ds-count-line { font-size: .82rem; color: #64748b; margin: 8px 0 14px; }
+.ds-controls {
+  display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin: 10px 0 4px;
+}
+.ds-controls label { font-size: .85rem; color: #475569; }
+.ds-controls select {
+  margin-left: 6px; padding: 4px 6px;
+  border: 1px solid var(--c-border); border-radius: 4px;
+  font-size: .85rem; background: #fff;
+}
+.ds-controls input[type="search"] {
+  flex: 1 1 260px; min-width: 200px; padding: 6px 10px;
+  border: 1px solid var(--c-border); border-radius: 4px; font-size: .88rem;
+}
+
+.ds-group { margin: 0 0 26px; }
+.ds-group > h2 {
+  margin: 0 0 10px; font-size: .95rem; color: #0f172a;
+  display: flex; align-items: center; gap: 8px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--c-border);
+}
+.ds-count {
+  font-size: .72rem; padding: 1px 8px; border-radius: 999px;
+  background: #f1f5f9; color: #475569; font-weight: 400;
+}
+.ds-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 14px;
+}
+.ds-card {
+  border: 1px solid var(--c-border); border-radius: 8px;
+  padding: 12px 14px 14px; background: #fff; scroll-margin-top: 14px;
+}
+.ds-card-active { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,.25); }
+.ds-card-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 8px; margin-bottom: 2px;
+}
+.ds-card-head h3 { margin: 0; font-size: .98rem; color: #0f172a; }
+.ds-cat {
+  font-size: .66rem; padding: 2px 8px; border-radius: 999px;
+  background: #e0f2fe; color: #0369a1; white-space: nowrap;
+}
+.ds-provider { margin: 0 0 6px; font-size: .8rem; color: #475569; }
+.ds-desc { margin: 0 0 10px; font-size: .84rem; color: #1e293b; }
+
+.ds-eps { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.ds-ep {
+  display: inline-flex; align-items: stretch;
+  border: 1px solid color-mix(in srgb, var(--ep, #64748b) 40%, #fff);
+  border-radius: 4px; overflow: hidden; font-size: .72rem;
+  background: color-mix(in srgb, var(--ep, #64748b) 10%, #fff);
+}
+.ds-ep-link {
+  padding: 3px 7px; text-decoration: none;
+  color: color-mix(in srgb, var(--ep, #64748b) 82%, #000);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.ds-ep-link:hover { background: color-mix(in srgb, var(--ep, #64748b) 22%, #fff); }
+.ds-ep-copy {
+  border: none; border-left: 1px solid color-mix(in srgb, var(--ep, #64748b) 30%, #fff);
+  background: transparent; cursor: pointer; padding: 3px 6px;
+  color: color-mix(in srgb, var(--ep, #64748b) 70%, #000); font-size: .74rem;
+}
+.ds-ep-copy:hover { background: color-mix(in srgb, var(--ep, #64748b) 22%, #fff); }
+
+.ds-coverage {
+  display: flex; flex-wrap: wrap; gap: 4px 8px;
+  font-size: .74rem; color: #64748b; margin-bottom: 6px;
+}
+.ds-coverage span:not(:last-child)::after { content: ' ·'; color: #cbd5e1; }
+.ds-vars, .ds-license, .ds-note { margin: 4px 0 0; font-size: .76rem; color: #64748b; }
+.ds-vars strong { color: #475569; }
+.ds-note { font-style: italic; color: #94a3b8; }
+.ds-links {
+  margin-top: 10px; padding-top: 8px;
+  border-top: 1px dashed #e2e8f0; font-size: .8rem; color: #475569;
+}
+.ds-links a { color: #0369a1; }
+
+@media (max-width: 600px) {
+  .team-hero-grid, .team-slc-grid, .sch-grid, .ds-grid { grid-template-columns: 1fr; }
+  .team-member-meta { margin-left: 0; flex-basis: 100%; }
 }
