@@ -171,6 +171,14 @@ distort every per-facility metric on the Stats tab.
 A scholar can carry more than one flag. Each has its own rank column,
 which is what the Scholars tab orders on.
 
+**The curated roster is a candidate pool, not the final cohorts.** It holds
+346 names because a wider pool gives the harvest more to rank and makes it
+less likely that a genuinely leading researcher is missing entirely. The
+harvest then pins the cohorts to the sizes in `COHORTS` — 100 pre-eminent,
+100 most-active, 50 rising — so the measured roster is roughly 250 people,
+and `scripts/qa.py` enforces those sizes once measured rows exist. Until
+then the tab shows the full pool and says so.
+
 ### Two ways the table gets populated
 
 **Curated (what ships).** 346 scholars researched across ten sub-fields —
