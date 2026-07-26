@@ -152,11 +152,36 @@ python scripts/enrich_people_orcid.py        # strict 3-rule matcher
 python scripts/enrich_people_openalex.py     # publications + topics
 python scripts/enrich_people_gscholar.py     # Scholar ids via OpenAlex/ORCID
 python scripts/backfill_publication_topics.py
-python scripts/compute_person_areas.py
-python scripts/compute_collaborations.py
+python scripts/compute_person_areas.py       # needs publication_topics above
+python scripts/compute_collaborations.py --export-parquet
+python scripts/compute_primary_groups.py     # MUST precede area_metrics
 python scripts/compute_area_metrics.py       # h-index, citations, composite_z
-python scripts/compute_primary_groups.py
+python scripts/init_people_tables.py --export-parquet   # publications/authorship/topics
 python scripts/build_cod_team_lake.py        # re-snapshot people.parquet
+python scripts/qa.py
+```
+
+Three things about that order are easy to get wrong, and were wrong in an
+earlier version of this page:
+
+- **`compute_primary_groups.py` must run before `compute_area_metrics.py`**,
+  not after. Two of the metric tables join `facility_primary_groups`, which
+  only the groups script produces.
+- **`compute_collaborations.py` needs `--export-parquet`**; without the flag it
+  updates the database and writes no parquet, so the co-author counts never
+  reach the browser.
+- **`init_people_tables.py --export-parquet` is not optional.** No script in
+  the chain exports `publications`, `authorship`, `person_areas` or
+  `publication_topics`, so newly harvested publications would sit in the local
+  database and never reach the site. That command re-exports all seven
+  people-side tables (it is `CREATE TABLE IF NOT EXISTS`, so it will not wipe
+  anything).
+
+Then stage the refreshed parquet — it is gitignored but tracked, so a plain
+`git add` silently skips it:
+
+```bash
+git add -f db/parquet/*.parquet public/parquet/*.parquet
 ```
 
 Until that runs, the Team tab shows profile links but no metrics, and says
