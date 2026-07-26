@@ -63,8 +63,8 @@ Four defects blocked or corrupted the chain. Each is fixed in the code, not work
 around in the data.
 
 **3.1 OpenAlex authentication.** All six scripts that call the API authenticated with
-the retired `mailto=` polite-pool convention. OpenAlex now requires `api_key` on every
-request and rejects requests carrying both. Added `scripts/openalex_auth.py`, which
+the `mailto=` polite-pool convention, and none could use the API key this project is
+configured with. Added `scripts/openalex_auth.py`, which
 attaches the key to `api.openalex.org` requests and to no other host — so
 `enrich_people_gscholar.py`, which uses one session for both OpenAlex and ORCID, cannot
 leak the key to `pub.orcid.org`. Verified live: OpenAlex 200 with key, stray `mailto`

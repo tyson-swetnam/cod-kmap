@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """Shared OpenAlex authentication for every script that calls the API.
 
-OpenAlex now requires an API key on every request; the older "polite
-pool" convention of passing ``mailto=`` in the query string (or in the
-User-Agent) is no longer sufficient, and anonymous calls come back 403
-or 429. Six scripts in this repo each built their own
+This project authenticates to OpenAlex with an API key rather than with
+the older "polite pool" convention of passing ``mailto=`` in the query
+string or User-Agent. Six scripts in this repo each built their own
 ``requests.Session`` with the mailto convention baked in, so the key
 handling lives here rather than being copied six times.
+
+Verified against the live API on 2026-07-26: a request carrying
+``api_key`` returns 200, and the key is attached to api.openalex.org
+only. Whether an unauthenticated request still succeeds was not tested
+and is not relied on — the key is used because it is the credential
+this project is configured with, and rate limits for keyed clients are
+the ones OpenAlex documents.
 
 Usage::
 
@@ -18,8 +24,9 @@ Usage::
 ``OpenAlexSession`` injects ``api_key`` on requests to
 ``api.openalex.org`` and on no other host, so a session shared with
 ORCID (``scripts/enrich_people_gscholar.py``) never leaks the key. It
-also strips ``mailto`` from OpenAlex query strings, because OpenAlex
-rejects requests that carry both.
+also strips ``mailto`` from OpenAlex query strings: the key identifies
+the client, so the address adds nothing, and not sending a contact
+address to a third-party API by default is the safer posture.
 
 Environment:
     OPENALEX_API_KEY   required for any OpenAlex call
@@ -47,15 +54,15 @@ def require_api_key() -> str:
     """Return the key, or exit with an actionable message.
 
     Scripts that cannot do anything useful without OpenAlex call this at
-    startup so the failure is one clear line rather than a few hundred
-    403s.
+    startup, so a missing key is one clear line at the top rather than a
+    surprise partway through a several-thousand-request harvest.
     """
     key = api_key()
     if not key:
         print(
-            "[error] OPENALEX_API_KEY is not set. OpenAlex requires an API "
-            "key on every request; anonymous calls return 403/429. Get a "
-            "key at https://openalex.org/ and export it before running.",
+            "[error] OPENALEX_API_KEY is not set. This project calls "
+            "OpenAlex with an API key; set one before running. Keys are "
+            "free at https://openalex.org/.",
             file=sys.stderr,
         )
         raise SystemExit(2)

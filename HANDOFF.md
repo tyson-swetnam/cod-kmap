@@ -5,9 +5,9 @@ on a clean rebuild.
 
 **Update 2026-07-26 — the enrichment run in §3 has been executed.** See
 `BIBLIOMETRIC_ENRICHMENT_RUN.md` for what it produced and what it broke on the
-way. Four defects had to be fixed before it would complete: OpenAlex now
-requires an `api_key` rather than the `mailto=` polite pool (all six calling
-scripts rewired through the new `scripts/openalex_auth.py`); the ORCID
+way. Four defects had to be fixed before it would complete: no calling script
+could use an OpenAlex `api_key` — all six were wired for the `mailto=` polite
+pool, and now go through the new `scripts/openalex_auth.py`; the ORCID
 employer matcher accepted unrelated organisations; its name-only fallback
 picked arbitrarily among namesakes; and the harvest's stage A could never
 populate the rising cohort. It also removed 12 pre-existing misattributed

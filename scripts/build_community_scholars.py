@@ -137,7 +137,8 @@ def get(session, path: str, params: dict, tries: int = 4) -> dict | None:
     the whole run."""
     url = f"{OPENALEX}/{path.lstrip('/')}"
     # The api_key is attached by the session (scripts/openalex_auth.py),
-    # which also strips any stray mailto — OpenAlex rejects both together.
+    # which also strips any stray mailto — the key is the client's
+    # identity, so the address is redundant.
     for attempt in range(tries):
         try:
             r = session.get(url, params=params, timeout=60)
