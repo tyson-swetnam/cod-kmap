@@ -160,6 +160,16 @@ export async function initDB() {
     // scripts/compute_area_metrics.py. Drives src/views/stats.js.
     'person_area_metrics', 'facility_area_funding',
     'funder_area_funding', 'area_coverage_matrix',
+    // COD project org chart — written by scripts/build_cod_team_lake.py.
+    // Drives src/views/team.js.
+    'cod_wbs', 'cod_team_members',
+    // Coastal-science community roster — written by
+    // scripts/build_community_scholars.py. Drives src/views/scholars.js.
+    // Ships curated (metric columns null) until the OpenAlex harvest runs.
+    'community_scholars',
+    // Curated dataset catalogue + access endpoints — written by
+    // scripts/load_coastal_datasets.py. Drives src/views/datasets.js.
+    'coastal_datasets', 'dataset_endpoints',
   ];
   for (const t of tables) {
     const url = `${PARQUET_BASE}${t}.parquet`;
@@ -255,6 +265,32 @@ export async function initDB() {
        LEFT JOIN publications       pub ON pub.publication_id = a.publication_id
        GROUP BY p.person_id, p.name, p.name_family, p.orcid, p.openalex_id,
                 p.email, p.homepage_url, p.research_interests, p.status`,
+
+    `CREATE OR REPLACE VIEW v_cod_team_enriched AS
+       SELECT tm.member_id,
+              tm.display_name,
+              tm.wbs_code,
+              w.title       AS wbs_title,
+              w.parent_code AS wbs_parent_code,
+              tm.role,
+              tm.institution,
+              tm.institution_slug,
+              tm.is_pi,
+              tm.is_copi,
+              tm.is_leadership_committee,
+              tm.committees,
+              tm.status,
+              tm.sort_order,
+              w.sort_order  AS wbs_sort_order,
+              p.person_id,
+              p.orcid,
+              p.openalex_id,
+              p.google_scholar_id,
+              p.homepage_url,
+              p.research_interests
+       FROM cod_team_members tm
+       LEFT JOIN cod_wbs w ON w.wbs_code  = tm.wbs_code
+       LEFT JOIN people  p ON p.person_id = tm.person_id`,
   ];
   for (const sql of helperViews) {
     try { await newConn.query(sql); }

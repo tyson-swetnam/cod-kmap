@@ -51,6 +51,18 @@ db/*.duckdb.wal
 db/*.duckdb.tmp
 db/*.duckdb.bak
 
+# DuckLake catalogue + managed data files for the COD team layer. Same
+# rationale as the .duckdb above: not version-portable, and fully
+# regenerable from data/seed/cod_*.csv via scripts/build_cod_team_lake.py.
+# The committed artifact is db/parquet/cod_*.parquet.
+db/*.ducklake
+db/*.ducklake.wal
+db/ducklake_data/
+
+# OpenAlex harvest checkpoints for scripts/build_community_scholars.py
+# (candidate ids + ndjson response caches; regenerable, and large).
+data/raw/community_scholars/
+
 # Cowork-mode helper scripts emitted alongside batches of work. They are
 # one-shot commit drivers, not source. Keep on disk for reference; don't
 # track or push.

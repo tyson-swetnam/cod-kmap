@@ -589,3 +589,161 @@ LEFT JOIN (
     JOIN facilities f ON f.facility_id = fp.facility_id
     GROUP BY fp.person_id
 ) f0 ON f0.person_id = p.person_id;
+
+
+-- ---------------------------------------------------------------------
+-- COD project team, coastal-science community scholars, and the curated
+-- coastal dataset catalogue.
+--
+-- These three groups deliberately use *soft* references (plain VARCHAR
+-- columns, no REFERENCES clauses) rather than real foreign keys:
+--
+--   1. cod_team_members carries rows for unfilled positions (TBD/TBH)
+--      whose person_id is NULL by design. A real FK plus the pre-filter
+--      in scripts/rebuild_db_from_parquet.py would silently drop them.
+--   2. cod_wbs.parent_code is a self-reference, and the WBS bulk-loads
+--      in seed order rather than parent-first.
+--   3. community_scholars are community-wide researchers who mostly do
+--      NOT work at a catalogued facility, so they have no people row to
+--      point at; person_id is populated only when a scholar provably
+--      matches an existing person (ORCID or OpenAlex id equality).
+-- ---------------------------------------------------------------------
+
+-- Work Breakdown Structure of the COD project org chart.
+CREATE OR REPLACE TABLE cod_wbs (
+    wbs_code            VARCHAR PRIMARY KEY,       -- '1.0', '2.1', '2.2.3.1', ...
+    parent_code         VARCHAR,                   -- soft self-ref; NULL at the root
+    title               VARCHAR NOT NULL,          -- 'Science Management', ...
+    lead_person_id      VARCHAR,                   -- soft ref people(person_id); NULL if TBD
+    sort_order          INTEGER,
+    notes               VARCHAR
+);
+
+-- One row per (member, WBS element, role): a person leading two WBS
+-- elements gets two rows. Named members carry a person_id that also
+-- exists in people (kept in sync by scripts/build_cod_team_lake.py);
+-- unfilled positions carry person_id NULL and status 'tbd'/'tbh'.
+CREATE OR REPLACE TABLE cod_team_members (
+    member_id               VARCHAR NOT NULL,      -- person_id, or 'tbd-<wbs>-<n>' for open slots
+    person_id               VARCHAR,               -- soft ref people(person_id); NULL when unfilled
+    display_name            VARCHAR NOT NULL,      -- 'TBD — Fisheries' is a legitimate value
+    wbs_code                VARCHAR NOT NULL,      -- soft ref cod_wbs(wbs_code)
+    role                    VARCHAR NOT NULL,      -- 'PI' | 'Co-PI' | 'Deputy Director' | ...
+    institution             VARCHAR,               -- display form
+    institution_slug        VARCHAR,               -- org-chart colour legend, see COD_INSTITUTIONS
+    is_pi                   BOOLEAN DEFAULT false,
+    is_copi                 BOOLEAN DEFAULT false,
+    is_leadership_committee BOOLEAN DEFAULT false, -- 1.4 Science Leadership Committee
+    committees              VARCHAR,               -- other committees, comma-separated
+    status                  VARCHAR DEFAULT 'active',  -- active | tbd | tbh
+    sort_order              INTEGER,
+    source                  VARCHAR DEFAULT 'org-chart-2026',
+    notes                   VARCHAR,
+    PRIMARY KEY (member_id, wbs_code, role)
+);
+
+-- Roster of pre-eminent / most-active / rising scholars in coastal ocean
+-- science. Separate from people (which is facility staff) so a
+-- community-wide bibliometric cohort can't distort the facility
+-- directory. Rows start life curated (source='websearch-curated', metric
+-- columns NULL) and are replaced with measured values by
+-- scripts/build_community_scholars.py once OpenAlex is reachable.
+CREATE OR REPLACE TABLE community_scholars (
+    scholar_id            VARCHAR PRIMARY KEY,     -- OpenAlex 'A…' id, or 'ws-<name>' pre-harvest
+    person_id             VARCHAR,                 -- soft ref people(person_id); ORCID/OpenAlex match only
+    name                  VARCHAR NOT NULL,
+    orcid                 VARCHAR,
+    openalex_id           VARCHAR,
+    google_scholar_id     VARCHAR,
+    affiliation           VARCHAR,
+    affiliation_country   VARCHAR,                 -- ISO-2
+    affiliation_ror       VARCHAR,
+    homepage_url          VARCHAR,
+    works_count           INTEGER,
+    cited_by_count        INTEGER,
+    h_index               INTEGER,
+    i10_index             INTEGER,
+    two_yr_mean_citedness DOUBLE,
+    coastal_works_count   INTEGER,                 -- works in the curated coastal topic set
+    coastal_recent_works  INTEGER,                 -- same, last 5 years
+    first_pub_year        INTEGER,
+    is_preeminent         BOOLEAN DEFAULT false,
+    is_most_active        BOOLEAN DEFAULT false,
+    is_rising             BOOLEAN DEFAULT false,
+    rank_preeminent       INTEGER,                 -- NULL iff the matching flag is false
+    rank_most_active      INTEGER,
+    rank_rising           INTEGER,
+    top_topics            VARCHAR,                 -- comma-separated topic labels
+    rationale             VARCHAR,                 -- why this scholar is in this cohort
+    source                VARCHAR DEFAULT 'websearch-curated',  -- websearch-curated | openalex
+    source_url            VARCHAR,
+    confidence            VARCHAR,                 -- high | medium | low
+    retrieved_at          DATE
+);
+
+-- Curated catalogue of coastal datasets the observatory design draws on.
+CREATE OR REPLACE TABLE coastal_datasets (
+    dataset_id          VARCHAR PRIMARY KEY,       -- kebab slug, e.g. 'ioos-sccoos'
+    name                VARCHAR NOT NULL,
+    acronym             VARCHAR,
+    provider            VARCHAR NOT NULL,          -- steward org, e.g. 'NOAA NCEI'
+    program             VARCHAR,                   -- parent program label, e.g. 'IOOS'
+    parent_dataset_id   VARCHAR,                   -- soft self-ref, e.g. 'ioos' for each RA
+    category            VARCHAR NOT NULL,          -- see DATASET_CATEGORIES in the loader
+    description         VARCHAR,
+    network_id          VARCHAR,                   -- soft ref networks(network_id)
+    spatial_coverage    VARCHAR,
+    temporal_start      INTEGER,
+    temporal_end        INTEGER,                   -- NULL = ongoing
+    license             VARCHAR,
+    doi                 VARCHAR,
+    homepage_url        VARCHAR,
+    variables           VARCHAR,                   -- headline variables, comma-separated
+    update_frequency    VARCHAR,
+    source              VARCHAR DEFAULT 'manual',
+    source_url          VARCHAR,
+    retrieved_at        DATE,
+    confidence          VARCHAR,                   -- high | medium | low
+    notes               VARCHAR
+);
+
+-- Machine-readable access points for each dataset. One dataset commonly
+-- has several (an ERDDAP base, a THREDDS catalogue, a human portal).
+CREATE OR REPLACE TABLE dataset_endpoints (
+    dataset_id      VARCHAR NOT NULL,              -- soft ref coastal_datasets(dataset_id)
+    endpoint_type   VARCHAR NOT NULL,              -- see ENDPOINT_TYPES in the loader
+    url             VARCHAR NOT NULL,
+    label           VARCHAR,
+    format_notes    VARCHAR,                       -- 'netCDF, CSV via griddap', ...
+    auth_required   BOOLEAN DEFAULT false,
+    PRIMARY KEY (dataset_id, endpoint_type, url)
+);
+
+-- COD team rollup: org-chart position joined to scholarly identity.
+-- Mirrored in src/db.js helperViews (views don't survive parquet export).
+CREATE OR REPLACE VIEW v_cod_team_enriched AS
+SELECT
+    tm.member_id,
+    tm.display_name,
+    tm.wbs_code,
+    w.title                      AS wbs_title,
+    w.parent_code                AS wbs_parent_code,
+    tm.role,
+    tm.institution,
+    tm.institution_slug,
+    tm.is_pi,
+    tm.is_copi,
+    tm.is_leadership_committee,
+    tm.committees,
+    tm.status,
+    tm.sort_order,
+    w.sort_order                 AS wbs_sort_order,
+    p.person_id,
+    p.orcid,
+    p.openalex_id,
+    p.google_scholar_id,
+    p.homepage_url,
+    p.research_interests
+FROM cod_team_members tm
+LEFT JOIN cod_wbs w ON w.wbs_code  = tm.wbs_code
+LEFT JOIN people  p ON p.person_id = tm.person_id;

@@ -1,0 +1,84 @@
+# COD project team, transcribed from the organisational chart (2026 revision).
+# Loaded by scripts/build_cod_team_lake.py.
+#
+# One row per (person, WBS element, role) — a person leading two elements
+# gets two rows (e.g. Hank Loescher at 1.2 and 2.1.4).
+#
+# institution_slug mirrors the chart's colour legend; the loader validates
+# it against COD_INSTITUTIONS. Unfilled positions use status tbd (to be
+# determined) or tbh (to be hired) with a blank person identity, and are
+# rendered muted in the Team tab.
+#
+# orcid / openalex_id / google_scholar_id are filled in only where the
+# identity was independently verified. Blank cells are left for
+# scripts/enrich_people_{orcid,openalex,gscholar}.py to resolve — a wrong
+# identifier is far worse than a missing one (see
+# scripts/wipe_bad_openalex_attributions.py for why).
+display_name,wbs_code,role,institution,institution_slug,is_pi,is_copi,is_leadership_committee,committees,status,orcid,openalex_id,google_scholar_id,email,homepage_url,sort_order,notes
+Skip Van Bloem,1.0,PI / COD Director,Clemson University,clemson,true,false,false,,active,,,bBnWHGYAAAAJ,skipvb@clemson.edu,https://www.clemson.edu/cafls/faculty_staff/profiles/SKIPVB,1,Baruch Institute of Coastal Ecology and Forest Science
+Hank Loescher,1.2,Co-PI / COD Deputy Director,Battelle,battelle,false,true,false,,active,,,2Re6P6UAAAAJ,hloescher@battelleecology.org,,2,
+Allison Myers-Pigg,2.0,Co-PI / Chief Scientist,Pacific Northwest National Laboratory,pnnl,false,true,false,,active,,,15PE7AEAAAAJ,allison.myers-pigg@pnnl.gov,,3,Marine and Coastal Research Laboratory
+Tyson Swetnam,5.0,Co-PI / Cyberinfrastructure Manager,University of Arizona,arizona,false,true,false,,active,,,nanIeAYAAAAJ,tswetnam@arizona.edu,,4,
+Tyson Swetnam,5.1,Cyberinfrastructure Management,University of Arizona,arizona,false,true,false,,active,,,nanIeAYAAAAJ,tswetnam@arizona.edu,,5,
+Tyson Swetnam,5.6,Data Discovery / Workbench Design,University of Arizona,arizona,false,true,false,,active,,,nanIeAYAAAAJ,tswetnam@arizona.edu,,6,
+Hank Loescher,2.1.4,Integral Design,Battelle,battelle,false,true,false,,active,,,2Re6P6UAAAAJ,hloescher@battelleecology.org,,7,
+Susan Whitmire,1.3,Project Governance,Clemson University,clemson,false,false,false,,active,,,,,,10,
+Susan Whitmire,2.1,Science Management,Clemson University,clemson,false,false,false,,active,,,,,,11,
+Sean Malone,2.1.1,Physical Environment Lead,Yale University,yale,false,false,false,,active,,,,,,12,Chart colour legend maps this box to Yale
+Julie Zinnert,2.1.3,Biotic Environment Lead,Virginia Commonwealth University,vcu,false,false,true,COD Science Leadership Committee,active,,,,,,13,Also VCR LTER
+Mac Denslow,2.1.5,Biodiversity and Collections Lead,Clemson University,clemson,false,false,false,,active,,,,,,14,Listed as M. Denslow MS on the chart
+David White,2.1.6,Coastal Informatics Lead,Clemson University,clemson,false,false,false,,active,,,,,,15,
+Debabrata Sahoo,2.1.7,Built Environment Lead,Clemson University,clemson,false,false,false,,active,,,,,,16,
+Craig Landry,2.2,Social Dimension Lead,University of Georgia,uga,false,false,false,,active,,,,,,17,
+Reed Goodman,2.2.1,Social Dimension Management,University of Georgia,uga,false,false,false,,active,,,,,,18,Chart draws this box with the external-community border
+Pamela Martin,2.2.2,Jurisprudence Lead,Coastal Carolina University,coastal-carolina,false,false,true,COD Science Leadership Committee,active,,,,,,19,
+Norm Levine,2.2.3,State and Municipal Data Products Lead,College of Charleston,charleston,false,false,false,,active,,,,,,20,
+Daewoon Jeong,2.2.3.1,Critical Infrastructure Lead,Clemson University,clemson,false,false,false,,active,,,,,,21,
+Kristin Lazar,3.0,Workforce and Broader Impacts Lead,Clemson University,clemson,false,false,false,,active,,,,,,22,
+Kristin Lazar,3.1,COD Broader Impacts Management,Clemson University,clemson,false,false,false,,active,,,,,,23,
+Kathleen Morris,3.2,Science Engagement Lead,Pacific Northwest National Laboratory,pnnl,false,false,false,,active,,,,,,24,
+Kathleen Morris,3.3.1,PNNL Workforce Pipeline,Pacific Northwest National Laboratory,pnnl,false,false,false,,active,,,,,,25,
+Matthew Bolick,3.3,STEM Workforce Pipeline Lead,Clemson University,clemson,false,false,false,,active,,,,,,26,
+Matthew Bolick,3.3.3,Clemson Workforce Pipeline,Clemson University,clemson,false,false,false,,active,,,,,,27,
+Chris Philson,3.3.2,OBFS Workforce Pipeline,Organization of Biological Field Stations,obfs,false,false,false,,active,,,,,,28,
+George Burba,4.0,Commercialization Lead,University of Nebraska-Lincoln,unl,false,false,false,,active,,,,,,29,LI-COR Biosciences / UNL
+George Burba,4.1,Commercialization Management,University of Nebraska-Lincoln,unl,false,false,false,,active,,,,,,30,
+George Burba,4.2,Technology and Innovation,University of Nebraska-Lincoln,unl,false,false,false,,active,,,,,,31,
+Sarah Pennington,5.7,Cyberinfrastructure IPT,Battelle,battelle,false,false,false,,active,,,,,,32,
+Kevin Nitschke,6.0,Prototype Infrastructure Lead,Battelle,battelle,false,false,false,,active,,,,,,33,PMP
+Kevin Nitschke,6.1,Engineering Management,Battelle,battelle,false,false,false,,active,,,,,,34,PMP
+NEON Staff,6.2,"Sensor Assemblies, Calibration and Validation",Battelle / NEON,battelle,false,false,false,,active,,,,,,35,Chart lists the NEON staff pool rather than a named individual
+Eric McLamore,6.5,COD Tech R+D,Clemson University,clemson,false,false,false,,active,,,,,,36,Chart renders the surname as Maclamore
+Hongxu Xiao,6.5,COD Tech R+D,Clemson University,clemson,false,false,false,,active,,,,,,37,
+Christopher Ritz,7.0,Project Management Office / Project Control Manager,Clemson University,clemson,false,false,false,,active,,,,,,38,PMP
+Michael Stewart,7.2,System Engineering,Clemson University,clemson,false,false,false,,active,,,,,,39,
+Rodrigo Vargas,1.4,Science Leadership Committee Co-Chair,University of Delaware,delaware,false,false,true,COD Science Leadership Committee,active,,,,,,50,Chart labels the affiliation Arizona; verify before publishing
+Ben Bond-Lamberty,1.4,Science Leadership Committee Co-Chair,Pacific Northwest National Laboratory,pnnl,false,false,true,COD Science Leadership Committee,active,,,,,,51,
+Erik Smith,1.4,Science Leadership Committee Member,University of South Carolina / NOAA NERRS,usc,false,false,true,COD Science Leadership Committee,active,,,,,,52,North Inlet-Winyah Bay NERR
+Lilian Alessa,1.4,Science Leadership Committee Member,University of Idaho,uidaho,false,false,true,COD Science Leadership Committee,active,,,,,,53,
+Bill Kleindl,1.4,Science Leadership Committee Member,Montana State University,montana-state,false,false,true,COD Science Leadership Committee,active,,,,,,54,
+Julia Cherry,1.4,Science Leadership Committee Member,University of Alabama,alabama,false,false,true,COD Science Leadership Committee,active,,,,,,55,
+Jim Anderson,1.4,Science Leadership Committee Member,Clemson University,clemson,false,false,true,COD Science Leadership Committee,active,,,,,,56,
+Clarissa Anderson,1.4,Science Leadership Committee Member,Scripps Institution of Oceanography / SCCOOS,other-university,false,false,true,COD Science Leadership Committee,active,,,,,,57,
+Christine Angelini,1.4,Science Leadership Committee Member,University of Florida,florida,false,false,true,COD Science Leadership Committee,active,,,,,,58,Chart labels the affiliation AECOM; verify before publishing
+Sheila Lischwe,1.5,Sponsored Research / Contract Management and Government Compliance,Clemson University,clemson,false,false,false,,active,,,,,,60,Administrative function
+Kate Riley,1.5,Accounting,Clemson University,clemson,false,false,false,,active,,,,,,61,Administrative function
+Renee Roux,1.5,Legal,Clemson University,clemson,false,false,false,,active,,,,,,62,Administrative function
+Candace Heatherly,1.5,Human Resources,Clemson University,clemson,false,false,false,,active,,,,,,63,Administrative function
+Jim Grieger,1.5,"Health, Safety and Environment",Clemson University,clemson,false,false,false,,active,,,,,,64,Administrative function
+TBD — Procurement,1.5,Procurement,,various,false,false,false,,tbd,,,,,,65,
+TBD — Permitting,1.5,Permitting,,various,false,false,false,,tbd,,,,,,66,
+TBD — Fisheries,2.2.3.2,Fisheries Lead,,various,false,false,false,,tbd,,,,,,70,
+TBD — Recreation,2.2.3.3,Recreation Lead,,various,false,false,false,,tbd,,,,,,71,
+TBD — Data as a Service,4.3,Data as a Service Lead,,various,false,false,false,,tbd,,,,,,72,
+TBD — Market Analysis and Pathway,4.4,Market Analysis and Pathway Lead,,various,false,false,false,,tbd,,,,,,73,
+TBH — Data Ingest Monitoring and Storage,5.2,Data Ingest Monitoring and Storage Lead,,various,false,false,false,,tbh,,,,,,74,
+TBH — AI Data Harmonization,5.3,AI Data Harmonization Lead,,various,false,false,false,,tbh,,,,,,75,
+TBH — AI Environment,5.4,AI Environment Lead,,various,false,false,false,,tbh,,,,,,76,
+TBH — Cyberinfrastructure Design,5.5,Cyberinfrastructure Design Lead,,various,false,false,false,,tbh,,,,,,77,
+TBD — Field Logistics,6.3,Field Logistics Lead,,various,false,false,false,,tbd,,,,,,78,
+TBD — Field Deployment and Testing,6.4,Field Deployment and Testing Lead,,various,false,false,false,,tbd,,,,,,79,
+TBD — Project Controls,7.1,Project Controls,,various,false,false,false,,tbd,,,,,,80,PMP
+TBD — Prototype Management,7.3,Prototype Management,,various,false,false,false,,tbd,,,,,,81,PMP
+TBD — Quality Control,7.4,Quality Control,,various,false,false,false,,tbd,,,,,,82,
+TBD — Transition Management Planning,7.5,Transition Management Planning,,various,false,false,false,,tbd,,,,,,83,PMP

@@ -69,7 +69,16 @@ LOAD_ORDER = [
     "publications",
     "authorship",
     "person_areas",
+    "publication_topics",   # loads after publications; drives compute_person_areas.py
     "collaborations",
+    # COD team / community scholars / dataset catalogue. All soft-ref
+    # tables, so no FK_FILTERS entries and no ordering constraint beyond
+    # loading cod_wbs before cod_team_members for readability.
+    "cod_wbs",
+    "cod_team_members",
+    "community_scholars",
+    "coastal_datasets",
+    "dataset_endpoints",
 ]
 
 
