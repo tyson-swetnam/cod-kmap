@@ -1,0 +1,33 @@
+# Curated OpenAlex topic set defining "coastal ocean science" for the
+# community scholar harvest (scripts/build_community_scholars.py).
+#
+# This file is the reproducibility anchor: change it and the cohorts
+# change, so it is committed alongside the roster it produced.
+#
+# openalex_topic_id must be a real OpenAlex topic id of the form T#####
+# (https://api.openalex.org/topics?search=...). Rows whose id is still the
+# RESOLVE sentinel are looked up by `label` at run time via the topics
+# endpoint and the script prints the resolved ids so they can be pasted
+# back here — it refuses to build cohorts while any sentinel remains, so a
+# published roster is always traceable to explicit topic ids.
+#
+# subfield groups topics for reporting only; it does not affect selection.
+openalex_topic_id,label,subfield,include_in
+RESOLVE,Coastal and Marine Dynamics,physical,candidates
+RESOLVE,Oceanographic and Atmospheric Processes,physical,candidates
+RESOLVE,Coastal and Marine Sediment Transport,physical,candidates
+RESOLVE,Sea Level Change and Coastal Flooding,physical,candidates
+RESOLVE,Coastal and Estuarine Ecology,ecology,candidates
+RESOLVE,Seagrass and Macroalgae Ecology,ecology,candidates
+RESOLVE,Mangrove and Salt Marsh Ecosystems,ecology,candidates
+RESOLVE,Marine Biodiversity and Benthic Ecology,ecology,candidates
+RESOLVE,Estuarine and Coastal Biogeochemistry,biogeochemistry,candidates
+RESOLVE,Blue Carbon and Wetland Carbon Sequestration,biogeochemistry,candidates
+RESOLVE,Ocean Acidification and Carbonate Chemistry,biogeochemistry,candidates
+RESOLVE,Coastal Hypoxia and Eutrophication,biogeochemistry,candidates
+RESOLVE,Harmful Algal Blooms,biogeochemistry,candidates
+RESOLVE,Coastal Geomorphology and Shoreline Change,geomorphology,candidates
+RESOLVE,Ocean Observing Systems and Instrumentation,observing,candidates
+RESOLVE,Coastal Hazards and Community Resilience,human-dimensions,candidates
+RESOLVE,Coastal Zone Management and Policy,human-dimensions,candidates
+RESOLVE,Coastal Remote Sensing,remote-sensing,candidates

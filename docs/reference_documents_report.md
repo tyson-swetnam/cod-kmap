@@ -20,6 +20,18 @@ each piece informs cod-kmap.
 
 ## Organisational structure
 
+> **Superseded, 2026-07-26.** The summary below describes the Clemson
+> CCZO **2024** chart. The 2026 revision reorganises the work-breakdown
+> structure into seven tracks and changes several assignments — Workforce
+> and Broader Impacts is now 3.0 under K. Lazar, Cyberinfrastructure is
+> 5.0 under Tyson Swetnam, Prototype Infrastructure is 6.0, and the
+> Project Management Office is 7.0. The current chart is transcribed in
+> full in `data/seed/cod_wbs.csv` and `data/seed/cod_team_members.csv`,
+> rendered by the **Team** tab, and its provenance is documented in
+> [Team, Scholars & Data Methods](#/docs/team-scholars-datasets-methods).
+> The 2024 text is kept here as a record of how the project was
+> originally structured.
+
 The Clemson CCZO 2024 organisational chart and the Design Flow
 diagram together describe a five-track work-breakdown structure:
 
@@ -121,12 +133,21 @@ Team — Physical Environment, Biotic Environment, Coastal Informatics,
 Social Dimension, Integrative Design, or Built Environment — so the
 Stats and Network views can filter by IPT.
 
-### Curated coastal datasets
+### Curated coastal datasets — **implemented**
 
 The 14 datasets named in the Design Flow are tracked in a dedicated
 `coastal_datasets` table and linked back to the facilities that
 contribute. This lets cod-kmap show "which COD partner stewards this
 dataset?" alongside the facility view.
+
+> **Built, 2026-07-26**, and expanded well past the original 14: the
+> catalogue holds 82 datasets with 258 access endpoints, including all 11
+> IOOS regional associations and the federal archives. A companion
+> `dataset_endpoints` table carries the ERDDAP / THREDDS / OPeNDAP / OGC /
+> REST / S3 / STAC endpoints, which is what makes the catalogue usable
+> rather than merely descriptive. Rendered by the **Data** tab. The
+> facility linkage is via `network_id`; a direct dataset-to-facility
+> stewardship edge is still future work.
 
 ### Partner organisations
 
@@ -142,11 +163,24 @@ Responses, Coastal Vulnerability, Uncertainties in Coastal Ecosystem
 Processes) are embedded in the Stats and Network views: each research
 area surfaces which Grand Challenge it contributes to.
 
-### COD team in the People directory
+### COD team in the People directory — **implemented, with changes**
 
 The ~30 named people in the organisational chart appear in the
 researcher directory with their COD role explicitly tagged, and are
 filterable via a "COD Team" facet in the People view.
+
+> **Built, 2026-07-26**, as its own **Team** tab rather than a facet on
+> the People view. The org chart is a hierarchy — seven WBS tracks, a
+> leadership committee, and unfilled positions — and a flat filtered card
+> grid could not show that structure. The 41 named members are still
+> synced into `people`, so they appear in the researcher directory too and
+> the existing OpenAlex/ORCID enrichment scripts pick them up.
+>
+> A second, larger roster came out of the same work: `community_scholars`
+> holds 346 coastal-ocean-science researchers across the pre-eminent,
+> most-active, and rising cohorts, rendered by the **Scholars** tab. That
+> one is deliberately a separate table from `people` — it is a
+> field-wide bibliometric cohort, not the staff of catalogued facilities.
 
 ## Lessons from WATERS
 

@@ -15,6 +15,9 @@ import { initStatsView, renderStats } from './views/stats.js';
 import { initDocsView, renderDocsView } from './views/docs.js';
 import { initNetworkView, renderNetworkView } from './views/network.js';
 import { initPeopleView, renderPeopleView } from './views/people.js';
+import { initTeamView, renderTeamView } from './views/team.js';
+import { initScholarsView, renderScholarsView } from './views/scholars.js';
+import { initDatasetsView, renderDatasetsView } from './views/datasets.js';
 import { initSqlView, renderSqlView } from './views/sql.js';
 import { initRouter, currentPath } from './router.js';
 
@@ -56,6 +59,9 @@ initListView(document.getElementById('browse'));
 initStatsView(document.getElementById('stats'));
 initNetworkView(document.getElementById('network'));
 initPeopleView(document.getElementById('people'));
+initTeamView(document.getElementById('team'));
+initScholarsView(document.getElementById('scholars'));
+initDatasetsView(document.getElementById('datasets'));
 initSqlView(document.getElementById('sql'));
 
 // ── Debounced search + clear button ────────────────────────────────
@@ -198,6 +204,9 @@ const views = {
   '/browse':  document.getElementById('view-browse'),
   '/network': document.getElementById('view-network'),
   '/people':  document.getElementById('view-people'),
+  '/team':    document.getElementById('view-team'),
+  '/scholars': document.getElementById('view-scholars'),
+  '/data':    document.getElementById('view-data'),
   '/sql':     document.getElementById('view-sql'),
   '/stats':   document.getElementById('view-stats'),
   '/docs':    document.getElementById('view-docs'),
@@ -239,6 +248,28 @@ initRouter({
     // /people/<person_id> jumps + highlights that researcher's card.
     const m = path.match(/^\/people\/(.+)$/);
     renderPeopleView(m ? decodeURIComponent(m[1]) : null);
+  },
+  '/team': () => {
+    showView('/team');
+    document.body.classList.add('no-sidebar');
+    setDrawer(false);
+    renderTeamView();
+  },
+  '/scholars': (path) => {
+    showView('/scholars');
+    document.body.classList.add('no-sidebar');
+    setDrawer(false);
+    // /scholars/<scholar_id> jumps + highlights that scholar's card.
+    const m = path.match(/^\/scholars\/(.+)$/);
+    renderScholarsView(m ? decodeURIComponent(m[1]) : null);
+  },
+  '/data': (path) => {
+    showView('/data');
+    document.body.classList.add('no-sidebar');
+    setDrawer(false);
+    // /data/<dataset_id> jumps + highlights that dataset's card.
+    const m = path.match(/^\/data\/(.+)$/);
+    renderDatasetsView(m ? decodeURIComponent(m[1]) : null);
   },
   '/sql': () => {
     showView('/sql');

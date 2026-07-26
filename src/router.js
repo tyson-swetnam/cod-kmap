@@ -37,10 +37,15 @@ function navigate(path) {
     a.classList.toggle('active', a.dataset.view === rootSeg);
   });
 
-  // Hide/show sidebar for views that don't need it.
-  const noSidebar = (rootSeg === '/docs' || rootSeg === '/stats'
-                  || rootSeg === '/network' || rootSeg === '/sql'
-                  || rootSeg === '/people');
+  // Hide/show sidebar for views that don't need it. Keep in step with the
+  // `no-sidebar` class each route handler in main.js sets: this toggle
+  // runs on every navigation, so a view missing from this list gets the
+  // class stripped straight back off again.
+  const NO_SIDEBAR = new Set([
+    '/docs', '/stats', '/network', '/sql', '/people',
+    '/team', '/scholars', '/data',
+  ]);
+  const noSidebar = NO_SIDEBAR.has(rootSeg);
   document.body.classList.toggle('no-sidebar', noSidebar);
 
   // Call route handler. Try exact match first; if the path has

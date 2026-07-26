@@ -51,6 +51,10 @@ The live application has seven tabs:
 |---|---:|
 | Facilities (federal, state, university, NGO, protected area) | 3,500+ |
 | Researchers in the People directory | 240+ |
+| COD project team members (Team tab) | 41 |
+| Coastal ocean science scholars (Scholars tab) | 346 |
+| Curated coastal datasets (Data tab) | 82 |
+| Dataset access endpoints | 258 |
 | Networks / consortia | 32+ |
 | Funders | 80+ |
 | Polygon overlays | 12 |
@@ -77,6 +81,17 @@ A summary:
   the per-(funder, facility, award, fiscal year) records.
 - **`people`** + **`facility_personnel`** — researchers and the role
   each holds at each facility.
+- **`cod_wbs`** + **`cod_team_members`** — the COD project
+  organisational chart: work-breakdown tracks and one row per
+  (person, WBS element, role). Named members are also synced into
+  `people`. See
+  [Team, Scholars & Data](#/docs/team-scholars-datasets-methods).
+- **`community_scholars`** — a field-wide roster of coastal ocean
+  science researchers across the pre-eminent, most-active, and rising
+  cohorts. Kept separate from `people`, which is facility staff.
+- **`coastal_datasets`** + **`dataset_endpoints`** — the curated
+  dataset catalogue and its ERDDAP / THREDDS / OPeNDAP / OGC / REST /
+  S3 / STAC access endpoints.
 
 **Vocabularies** (loaded from `schema/vocab/*.csv`)
 

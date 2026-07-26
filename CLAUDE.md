@@ -62,6 +62,20 @@ Every research record must conform to the shared facility JSON schema documented
 
 Beyond facilities, the schema and pipeline now cover: regions (overlay polygons + `facility_regions` containment edges), people (`facility_personnel`, `publications`, `authorship`, `person_areas`, `collaborations`), and precomputed MVG groupings (`facility_primary_groups`, `person_primary_groups`, area metrics). The full table list driving the frontend is the `tables` array in `src/db.js:142`.
 
+Three further layers are **CSV/JSON-seeded rather than agent-researched** — they have no `agents/` spec and never touch `data/raw/` (see `docs/team_scholars_datasets_methods.md`):
+
+| Layer | Seed | Build script | Tab |
+|---|---|---|---|
+| COD project org chart | `data/seed/cod_wbs.csv`, `data/seed/cod_team_members.csv` | `scripts/build_cod_team_lake.py` | `/team` |
+| Coastal-science scholar roster | `data/seed/community_scholars_seed.json`, `data/datasets/coastal_topics.csv` | `scripts/build_community_scholars.py` (`--seed` offline / `--harvest` needs OpenAlex) | `/scholars` |
+| Curated dataset catalogue | `data/datasets/coastal_datasets.json` | `scripts/load_coastal_datasets.py` | `/data` |
+
+- **The COD team layer is a real DuckLake.** `scripts/build_cod_team_lake.py` writes `db/cod_team.ducklake` + `db/ducklake_data/` (both gitignored, same rationale as the `.duckdb`) so roster revisions are snapshotted and queryable via `teamlake.snapshots()` / `AT (VERSION => n)`. Install with `pip install duckdb-extensions duckdb-extension-ducklake` — the wheel bundles the binary, so it works without reaching `extensions.duckdb.org`. **If the extension is missing the script falls back to plain tables and the parquet output is identical**, so a fallback run is not a degraded run. Stage rows with one `INSERT … SELECT` per table: DuckLake snapshots per *statement*, so row-by-row inserts bury the real change under a hundred single-row snapshots.
+- **Never resolve a person by name alone.** `scripts/wipe_bad_openalex_attributions.py` and `wipe_medicine_attributions.py` exist because a name-only OpenAlex resolver attached cardiologists to marine labs. New code links on ORCID or `openalex_id` equality only; the scholar harvest additionally gates on a coastal-topic share (≥10 works and ≥15% of output). A missing identifier is far better than a wrong one — leave seed ID cells blank.
+- **`person_id` formula is `sha1(f"{name.lower()}|{orcid}|{email.lower()}")[:16]`** (`scripts/load_facility_personnel.py:54`). Two older scripts use a different formula; use this one for anything new.
+- **New parquet must be staged with `git add -f`** — `db/parquet/*.parquet` and `public/parquet/*.parquet` are gitignored but tracked, so a new file is silently skipped and the live site 404s while everything works locally.
+- **New `qa.py` invariants for these tables must be gated on the table being non-empty.** `refresh-data.yml` runs `ingest.py`, which re-executes `schema.sql` and empties them in the CI database; their data lives in committed parquet that ingest never touches.
+
 ## Frontend layout
 
 - `index.html` — importmap pulls `maplibre-gl` + `@duckdb/duckdb-wasm` from esm.sh; loads `src/main.js` as a module.

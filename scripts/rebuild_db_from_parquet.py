@@ -69,7 +69,33 @@ LOAD_ORDER = [
     "publications",
     "authorship",
     "person_areas",
+    "publication_topics",   # loads after publications; drives compute_person_areas.py
     "collaborations",
+    # COD team / community scholars / dataset catalogue. All soft-ref
+    # tables, so no FK_FILTERS entries and no ordering constraint beyond
+    # loading cod_wbs before cod_team_members for readability.
+    "cod_wbs",
+    "cod_team_members",
+    "community_scholars",
+    "coastal_datasets",
+    "dataset_endpoints",
+]
+
+# Derived tables that have no DDL in schema/schema.sql — they are computed
+# artifacts written straight to parquet by scripts/compute_*.py. src/db.js
+# registers all of them in the browser, so leaving them out of the rebuild
+# meant the local DB was missing tables the frontend can query (the Team
+# tab's metrics join and the Stats dashboard both need
+# person_area_metrics). Loaded with CREATE TABLE AS rather than INSERT
+# because there is no pre-existing table to insert into.
+DERIVED_TABLES = [
+    "facility_primary_groups",
+    "person_primary_groups",
+    "research_areas_active",
+    "person_area_metrics",
+    "facility_area_funding",
+    "funder_area_funding",
+    "area_coverage_matrix",
 ]
 
 
@@ -189,9 +215,26 @@ def main() -> int:
         marker = f"  [DROPPED {dropped} fk-orphan rows]" if dropped else ""
         print(f"[load]   {table:<22} {cnt:>6} rows  <- {f.name}{marker}")
 
+    # Derived / computed tables: materialise straight from parquet, since
+    # they have no schema.sql definition to insert into.
+    for table in DERIVED_TABLES:
+        f = args.parquet / f"{table}.parquet"
+        if not f.exists():
+            print(f"[skip]   {table:<22} (no {f.name})")
+            continue
+        try:
+            conn.execute(
+                f"CREATE OR REPLACE TABLE {table} AS "
+                f"SELECT * FROM read_parquet('{f}')"
+            )
+            cnt = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+            print(f"[derive] {table:<22} {cnt:>6} rows  <- {f.name}")
+        except duckdb.Error as e:
+            print(f"[error]  {table:<22} CREATE failed: {e}")
+
     # Summary.
     print("\n[summary]")
-    for table in LOAD_ORDER:
+    for table in LOAD_ORDER + DERIVED_TABLES:
         try:
             n = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
             print(f"  {table:<24} {n:>6}")
