@@ -119,6 +119,22 @@ def table_rows(conn, table: str) -> int:
         return -1
 
 
+def check_tables_present(conn, failures: list[str]) -> None:
+    """If any of the new tables has rows, they must all exist.
+
+    Every check below no-ops on an empty table so the ingest-only CI stays
+    green, which means an accidentally *dropped* table looked exactly like an
+    empty one and silenced its invariants. Once one of the group is populated
+    we know this is a full database, so a missing sibling is a real fault.
+    """
+    counts = {t: table_rows(conn, t) for t in EXPECTED_COLUMNS}
+    if not any(n > 0 for n in counts.values()):
+        return
+    absent = sorted(t for t, n in counts.items() if n < 0)
+    assert_true(not absent,
+                f"table(s) missing from a populated database: {absent}", failures)
+
+
 def check_columns(conn, failures: list[str]) -> None:
     for table, expected in EXPECTED_COLUMNS.items():
         try:
@@ -160,15 +176,17 @@ def check_cod_team(conn, failures: list[str]) -> None:
     assert_true(orphans == 0,
                 f"{orphans} active COD team rows without a matching people row", failures)
 
-    # Unfilled positions must NOT carry a person.
+    # Unfilled positions and group-staffed work must NOT carry a person: a
+    # staffing pool stored as a human would be enriched as one.
     ghosts = conn.execute(
         "SELECT COUNT(*) FROM cod_team_members "
         "WHERE status <> 'active' AND person_id IS NOT NULL").fetchone()[0]
-    assert_true(ghosts == 0, f"{ghosts} unfilled COD positions carry a person_id", failures)
+    assert_true(ghosts == 0,
+                f"{ghosts} unfilled or group-staffed COD rows carry a person_id", failures)
 
     bad_status = conn.execute(
-        "SELECT COUNT(*) FROM cod_team_members WHERE status NOT IN ('active','tbd','tbh')"
-    ).fetchone()[0]
+        "SELECT COUNT(*) FROM cod_team_members "
+        "WHERE status NOT IN ('active','tbd','tbh','collective')").fetchone()[0]
     assert_true(bad_status == 0, f"{bad_status} COD team rows with an unknown status", failures)
 
     slugs = conn.execute(
@@ -201,21 +219,29 @@ def check_scholars(conn, failures: list[str]) -> None:
     assert_true(no_cohort == 0,
                 f"{no_cohort} scholars carry no cohort flag", failures)
 
-    # A rank is meaningless without its flag, and a flag without a rank
-    # leaves the Scholars tab unable to order the cohort.
+    # A rank must never outlive its flag. The converse is allowed: a curated
+    # row has no measured metric to rank on, and inventing an order (the
+    # roster once ranked alphabetically) renders in the UI as "#1" and reads
+    # as a finding rather than an artifact. Unranked-but-flagged is honest.
     for flag, rank in (("is_preeminent", "rank_preeminent"),
                        ("is_most_active", "rank_most_active"),
                        ("is_rising", "rank_rising")):
-        mismatched = conn.execute(
+        stray = conn.execute(
             f"SELECT COUNT(*) FROM community_scholars "
-            f"WHERE ({rank} IS NOT NULL AND NOT {flag}) "
-            f"   OR ({rank} IS NULL AND {flag})").fetchone()[0]
-        assert_true(mismatched == 0,
-                    f"{mismatched} scholars where {flag} and {rank} disagree", failures)
+            f"WHERE {rank} IS NOT NULL AND NOT {flag}").fetchone()[0]
+        assert_true(stray == 0,
+                    f"{stray} scholars carry {rank} without {flag}", failures)
         dupes = conn.execute(
             f"SELECT COUNT(*) FROM (SELECT {rank} FROM community_scholars "
             f"WHERE {rank} IS NOT NULL GROUP BY {rank} HAVING COUNT(*) > 1)").fetchone()[0]
         assert_true(dupes == 0, f"{dupes} duplicate {rank} values", failures)
+        # Every measured row in a cohort must be ranked, or the tab cannot
+        # order it.
+        unranked = conn.execute(
+            f"SELECT COUNT(*) FROM community_scholars "
+            f"WHERE {flag} AND {rank} IS NULL AND h_index IS NOT NULL").fetchone()[0]
+        assert_true(unranked == 0,
+                    f"{unranked} measured scholars in {flag} have no {rank}", failures)
 
     bad_orcid = conn.execute(
         r"SELECT COUNT(*) FROM community_scholars WHERE orcid IS NOT NULL "
@@ -236,24 +262,32 @@ def check_scholars(conn, failures: list[str]) -> None:
     assert_true(orphans == 0,
                 f"{orphans} scholars link to a person_id that isn't in people", failures)
 
+    # Two researchers can legitimately share a name, and this repo's identity
+    # rule is that a name is never an identity. So the invariant is a shared
+    # name AND affiliation — which is a record entered twice, not a homonym.
     dup_names = conn.execute(
-        "SELECT COUNT(*) FROM (SELECT lower(name) FROM community_scholars "
-        "GROUP BY 1 HAVING COUNT(*) > 1)").fetchone()[0]
+        "SELECT COUNT(*) FROM (SELECT lower(name), lower(COALESCE(affiliation,'')) "
+        "FROM community_scholars GROUP BY 1, 2 HAVING COUNT(*) > 1)").fetchone()[0]
     assert_true(dup_names == 0,
-                f"{dup_names} scholar names appear more than once", failures)
+                f"{dup_names} scholar name+affiliation pair(s) appear more than once",
+                failures)
 
-    # Cohort sizes are only pinned once metrics exist; a curated-only
-    # roster is a candidate pool and is deliberately larger.
+    # Cohort sizes are pinned only over the rows the harvest actually ranks.
+    # Curated-only rows stay flagged on purpose — a hand-picked expert is not
+    # dropped because a threshold disliked them — so counting them here would
+    # fail the gate for doing the right thing.
     measured = conn.execute(
-        "SELECT COUNT(*) FROM community_scholars WHERE source LIKE '%openalex%'").fetchone()[0]
+        "SELECT COUNT(*) FROM community_scholars WHERE h_index IS NOT NULL").fetchone()[0]
     if measured > 0:
         for flag, lo, hi in (("is_preeminent", 90, 110),
                              ("is_most_active", 90, 110),
                              ("is_rising", 40, 60)):
             n = conn.execute(
-                f"SELECT COUNT(*) FROM community_scholars WHERE {flag}").fetchone()[0]
+                f"SELECT COUNT(*) FROM community_scholars "
+                f"WHERE {flag} AND h_index IS NOT NULL").fetchone()[0]
             assert_true(lo <= n <= hi,
-                        f"harvested {flag} cohort is {n}, expected {lo}-{hi}", failures)
+                        f"harvested {flag} cohort is {n} measured rows, "
+                        f"expected {lo}-{hi}", failures)
 
 
 def check_datasets(conn, failures: list[str]) -> None:
@@ -310,6 +344,23 @@ def check_datasets(conn, failures: list[str]) -> None:
     ).fetchone()[0]
     assert_true(bad_url == 0, f"{bad_url} endpoints with a non-http(s) URL", failures)
 
+    # The catalogue was assembled from two research passes, which found some
+    # of the same resources under different slugs. Uniqueness on dataset_id
+    # cannot catch that, so check the fields that identify a resource: two
+    # rows sharing a landing page, or a name, are the same thing recorded
+    # twice and should be merged rather than shown as separate entries.
+    dup_url = conn.execute(
+        "SELECT COUNT(*) FROM (SELECT homepage_url FROM coastal_datasets "
+        "WHERE homepage_url IS NOT NULL GROUP BY 1 HAVING COUNT(*) > 1)").fetchone()[0]
+    assert_true(dup_url == 0,
+                f"{dup_url} homepage_url(s) shared by more than one dataset", failures)
+
+    dup_name = conn.execute(
+        "SELECT COUNT(*) FROM (SELECT lower(name) FROM coastal_datasets "
+        "GROUP BY 1 HAVING COUNT(*) > 1)").fetchone()[0]
+    assert_true(dup_name == 0,
+                f"{dup_name} dataset name(s) appear more than once", failures)
+
 
 def main() -> int:
     failures: list[str] = []
@@ -354,6 +405,7 @@ def main() -> int:
         # COD team / community scholars / dataset catalogue. Each block
         # no-ops when its table is empty or absent, so the ingest-only CI
         # rebuild isn't failed by data it never produces.
+        check_tables_present(conn, failures)
         check_columns(conn, failures)
         check_cod_team(conn, failures)
         check_scholars(conn, failures)

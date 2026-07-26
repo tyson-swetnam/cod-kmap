@@ -1,52 +1,5 @@
 [
   {
-    "dataset_id": "cdip",
-    "name": "Coastal Data Information Program",
-    "acronym": "CDIP",
-    "provider": "Scripps Institution of Oceanography (UC San Diego)",
-    "program": "CDIP",
-    "parent_dataset_id": null,
-    "category": "observing-system",
-    "description": "Long-running network of wave-measurement buoys providing near-real-time and historic directional wave, sea surface temperature, and wave-model data, served via THREDDS and ERDDAP.",
-    "network_id": null,
-    "spatial_coverage": "U.S. coasts (Pacific, Atlantic, Gulf, Great Lakes, Pacific Islands)",
-    "temporal_start": 1975,
-    "temporal_end": null,
-    "license": "Public domain (U.S. Government work)",
-    "doi": null,
-    "homepage_url": "https://cdip.ucsd.edu/",
-    "variables": "significant wave height, peak/mean wave period, wave direction, directional wave spectra, sea surface temperature, wave-model output",
-    "update_frequency": "real-time (every 30 minutes)",
-    "source": "manual",
-    "source_url": "https://cdip.ucsd.edu/m/documents/data_access.html",
-    "retrieved_at": "2026-07-26",
-    "confidence": "high",
-    "notes": "Operated by Scripps with U.S. Army Corps of Engineers and California DPR support; buoys transmit via Iridium every 30 minutes.",
-    "endpoints": [
-      {
-        "endpoint_type": "portal",
-        "url": "https://cdip.ucsd.edu/",
-        "label": "CDIP home",
-        "format_notes": null,
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "thredds",
-        "url": "https://thredds.cdip.ucsd.edu/thredds/catalog/cdip/archive/catalog.html",
-        "label": "CDIP THREDDS archive catalog",
-        "format_notes": "netCDF, OPeNDAP",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "erddap",
-        "url": "https://erddap.cdip.ucsd.edu/erddap/",
-        "label": "CDIP ERDDAP",
-        "format_notes": "tabledap/griddap; netCDF, CSV",
-        "auth_required": false
-      }
-    ]
-  },
-  {
     "dataset_id": "hydroshare",
     "name": "CUAHSI HydroShare",
     "acronym": null,
@@ -256,147 +209,6 @@
     ]
   },
   {
-    "dataset_id": "noaa-ccap",
-    "name": "NOAA Coastal Change Analysis Program Regional Land Cover",
-    "acronym": "C-CAP",
-    "provider": "NOAA Office for Coastal Management",
-    "program": "NOAA Digital Coast",
-    "parent_dataset_id": null,
-    "category": "mapping-product",
-    "description": "Nationally standardized, raster-based land cover and land cover change products (30 m) for the coastal regions of the conterminous U.S., updated on a roughly 5-year cycle.",
-    "network_id": null,
-    "spatial_coverage": "Coastal conterminous United States (plus territories)",
-    "temporal_start": 1996,
-    "temporal_end": null,
-    "license": "Public domain (U.S. Government work)",
-    "doi": null,
-    "homepage_url": "https://coast.noaa.gov/digitalcoast/data/ccapregional.html",
-    "variables": "25-class land cover, land cover change, impervious surface, wetlands, developed/agriculture/forest classes",
-    "update_frequency": "every 5 years (1996, 2001, 2006, 2010, 2016, 2021)",
-    "source": "manual",
-    "source_url": "https://coast.noaa.gov/digitalcoast/data/ccapregional.html",
-    "retrieved_at": "2026-07-26",
-    "confidence": "high",
-    "notes": null,
-    "endpoints": [
-      {
-        "endpoint_type": "portal",
-        "url": "https://coast.noaa.gov/digitalcoast/data/ccapregional.html",
-        "label": "C-CAP Regional Land Cover",
-        "format_notes": null,
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "s3",
-        "url": "https://coastalimagery.blob.core.windows.net/ccap-landcover/CCAP_bulk_download/index.html",
-        "label": "Azure blob bulk download",
-        "format_notes": "GeoTIFF/IMG",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "ftp",
-        "url": "https://coast.noaa.gov/htdata/raster1/landcover/bulkdownload/30m_lc/",
-        "label": "HTTP bulk download (30 m)",
-        "format_notes": "GeoTIFF via HTTP directory",
-        "auth_required": false
-      }
-    ]
-  },
-  {
-    "dataset_id": "noaa-ccap-highres",
-    "name": "NOAA C-CAP High-Resolution Land Cover",
-    "acronym": "C-CAP High-Res",
-    "provider": "NOAA Office for Coastal Management",
-    "program": "NOAA Digital Coast",
-    "parent_dataset_id": "noaa-ccap",
-    "category": "mapping-product",
-    "description": "1-meter resolution land cover, impervious surface, and change products derived by C-CAP for the coastal U.S., a higher-resolution companion to the 30 m regional product.",
-    "network_id": null,
-    "spatial_coverage": "Coastal United States (selected regions/states)",
-    "temporal_start": null,
-    "temporal_end": null,
-    "license": "Public domain (U.S. Government work)",
-    "doi": null,
-    "homepage_url": "https://coast.noaa.gov/digitalcoast/data/ccaphighres.html",
-    "variables": "1-m land cover, impervious surface, tree canopy, land cover change",
-    "update_frequency": "periodic",
-    "source": "manual",
-    "source_url": "https://coast.noaa.gov/digitalcoast/data/ccaphighres.html",
-    "retrieved_at": "2026-07-26",
-    "confidence": "high",
-    "notes": "Coverage and vintages vary by region; distributed alongside the regional product on Digital Coast.",
-    "endpoints": [
-      {
-        "endpoint_type": "portal",
-        "url": "https://coast.noaa.gov/digitalcoast/data/ccaphighres.html",
-        "label": "C-CAP High-Resolution Land Cover",
-        "format_notes": null,
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "portal",
-        "url": "https://coast.noaa.gov/digitalcoast/tools/lca.html",
-        "label": "C-CAP Land Cover Atlas viewer",
-        "format_notes": null,
-        "auth_required": false
-      }
-    ]
-  },
-  {
-    "dataset_id": "nasa-ecco",
-    "name": "Estimating the Circulation and Climate of the Ocean (ECCO)",
-    "acronym": "ECCO",
-    "provider": "NASA JPL / ECCO Consortium via PO.DAAC",
-    "program": "NASA Earthdata",
-    "parent_dataset_id": "nasa-podaac",
-    "category": "model-output",
-    "description": "ECCO is a data-assimilating global ocean/sea-ice state estimate that fits a free-running ocean model to satellite and in-situ observations while satisfying physical conservation laws, yielding a dynamically consistent full-depth reconstruction. The V4r4 release provides global fields over 1992-2018 at daily and monthly intervals on both the native LLC90 grid and a 0.5-degree lat-lon grid.",
-    "network_id": null,
-    "spatial_coverage": "Global ocean, full depth",
-    "temporal_start": 1992,
-    "temporal_end": 2018,
-    "license": "NASA open data / U.S. public domain (Earthdata login required)",
-    "doi": null,
-    "homepage_url": "https://podaac.jpl.nasa.gov/ECCO",
-    "variables": "ocean velocity, potential temperature, salinity, sea surface height, ocean bottom pressure, sea ice concentration/thickness, heat/volume/freshwater fluxes",
-    "update_frequency": "periodic version releases (e.g., V4r4)",
-    "source": "manual",
-    "source_url": "https://podaac.jpl.nasa.gov/ECCO",
-    "retrieved_at": "2026-07-26",
-    "confidence": "high",
-    "notes": null,
-    "endpoints": [
-      {
-        "endpoint_type": "portal",
-        "url": "https://podaac.jpl.nasa.gov/ECCO",
-        "label": "ECCO project page at PO.DAAC",
-        "format_notes": "links to ~79 V4r4 dataset landing pages",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "opendap",
-        "url": "https://opendap.jpl.nasa.gov/opendap/",
-        "label": "JPL OPeNDAP",
-        "format_notes": "OPeNDAP access to ECCO netCDF fields",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "thredds",
-        "url": "https://thredds.jpl.nasa.gov/thredds/catalog.html",
-        "label": "JPL THREDDS catalog",
-        "format_notes": null,
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "rest-api",
-        "url": "https://cmr.earthdata.nasa.gov/search/",
-        "label": "Earthdata CMR search (ECCO collections)",
-        "format_notes": null,
-        "auth_required": false
-      }
-    ]
-  },
-  {
     "dataset_id": "emodnet",
     "name": "European Marine Observation and Data Network",
     "acronym": "EMODnet",
@@ -451,16 +263,16 @@
     "program": "GBIF",
     "parent_dataset_id": null,
     "category": "data-portal",
-    "description": "International open-data infrastructure aggregating species occurrence and checklist records worldwide; the coastal/marine subset is queryable through the GBIF REST API by taxonomy, geometry, and environment.",
+    "description": "The Global Biodiversity Information Facility provides free, open access to biodiversity occurrence data aggregated from thousands of institutions worldwide, including extensive marine species records (many shared jointly with OBIS). The REST API (api.gbif.org/v1) supports programmatic search, faceting, and asynchronous download of occurrence records, filterable to marine taxa and datasets.",
     "network_id": null,
-    "spatial_coverage": "Global",
-    "temporal_start": null,
+    "spatial_coverage": "Global (terrestrial and marine); marine subset via taxon/dataset/environment filters",
+    "temporal_start": 2001,
     "temporal_end": null,
     "license": "Mixed per dataset (CC0, CC-BY, CC-BY-NC)",
     "doi": null,
     "homepage_url": "https://www.gbif.org/",
     "variables": "species occurrence, taxonomy, coordinates, event date, basis of record, dataset metadata (Darwin Core)",
-    "update_frequency": "continuous",
+    "update_frequency": "Continuous (near-daily indexing of contributed datasets)",
     "source": "manual",
     "source_url": "https://api.gbif.org/v1/",
     "retrieved_at": "2026-07-26",
@@ -479,46 +291,6 @@
         "url": "https://www.gbif.org/",
         "label": "GBIF portal",
         "format_notes": "search, download, and dataset registry",
-        "auth_required": false
-      }
-    ]
-  },
-  {
-    "dataset_id": "gbif-occurrence-api",
-    "name": "GBIF Occurrence API (marine records)",
-    "acronym": "GBIF",
-    "provider": "Global Biodiversity Information Facility Secretariat",
-    "program": "GBIF",
-    "parent_dataset_id": null,
-    "category": "data-portal",
-    "description": "The Global Biodiversity Information Facility provides free, open access to biodiversity occurrence data aggregated from thousands of institutions worldwide, including extensive marine species records (many shared jointly with OBIS). The REST API (api.gbif.org/v1) supports programmatic search, faceting, and asynchronous download of occurrence records, filterable to marine taxa and datasets.",
-    "network_id": null,
-    "spatial_coverage": "Global (terrestrial and marine); marine subset via taxon/dataset/environment filters",
-    "temporal_start": 2001,
-    "temporal_end": null,
-    "license": "Varies by record (CC0, CC-BY, CC-BY-NC)",
-    "doi": null,
-    "homepage_url": "https://www.gbif.org/",
-    "variables": "species occurrence records (scientific name, taxonKey, lat/lon, event date, basis of record, depth), dataset provenance",
-    "update_frequency": "Continuous (near-daily indexing of contributed datasets)",
-    "source": "manual",
-    "source_url": "https://www.gbif.org/",
-    "retrieved_at": "2026-07-26",
-    "confidence": "medium",
-    "notes": null,
-    "endpoints": [
-      {
-        "endpoint_type": "rest-api",
-        "url": "https://api.gbif.org/v1/",
-        "label": "GBIF REST API v1",
-        "format_notes": "JSON; /occurrence/search?..., /occurrence/download (POST, auth for downloads); marine filter via taxonKey/datasetKey",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "portal",
-        "url": "https://www.gbif.org/",
-        "label": "GBIF portal (human entry point)",
-        "format_notes": null,
         "auth_required": false
       }
     ]
@@ -780,6 +552,53 @@
         "url": "https://erddap2.gcoos.org/erddap/",
         "label": "GCOOS ERDDAP (secondary)",
         "format_notes": "additional station datasets",
+        "auth_required": false
+      }
+    ]
+  },
+  {
+    "dataset_id": "ioos-glider-dac",
+    "name": "IOOS National Glider Data Assembly Center",
+    "acronym": "Glider DAC (NGDAC)",
+    "provider": "U.S. IOOS / NOAA (hosted at Rutgers, archived at NCEI)",
+    "program": "IOOS",
+    "parent_dataset_id": "us-ioos",
+    "category": "data-portal",
+    "description": "Centralized assembly center where glider operators submit autonomous underwater glider profiles for standardization, distribution over the WMO Global Telecommunications System, and archival at NCEI. Holds roughly 2,100 glider deployment datasets served through ERDDAP and THREDDS.",
+    "network_id": "ioos",
+    "spatial_coverage": "Global (U.S. and international underwater glider deployments)",
+    "temporal_start": 2014,
+    "temporal_end": null,
+    "license": "U.S. Government data / public domain (no access restrictions)",
+    "doi": null,
+    "homepage_url": "https://gliders.ioos.us/",
+    "variables": "temperature, salinity, conductivity, density, pressure, depth; some gliders add dissolved oxygen, chlorophyll/fluorescence, CDOM, backscatter",
+    "update_frequency": "continuous during deployments (real-time and delayed-mode)",
+    "source": "manual",
+    "source_url": "https://gliders.ioos.us/",
+    "retrieved_at": "2026-07-26",
+    "confidence": "high",
+    "notes": null,
+    "endpoints": [
+      {
+        "endpoint_type": "erddap",
+        "url": "https://gliders.ioos.us/erddap/",
+        "label": "Glider DAC ERDDAP",
+        "format_notes": "tabledap; CSV, JSON, NetCDF; RESTful web services",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "thredds",
+        "url": "https://gliders.ioos.us/thredds/catalog.html",
+        "label": "Glider DAC THREDDS Data Server",
+        "format_notes": "OPeNDAP, NetCDF Subset, WMS",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "portal",
+        "url": "https://gliders.ioos.us/",
+        "label": "Glider DAC map/portal",
+        "format_notes": null,
         "auth_required": false
       }
     ]
@@ -1196,6 +1015,128 @@
     ]
   },
   {
+    "dataset_id": "mbon",
+    "name": "Marine Biodiversity Observation Network",
+    "acronym": "MBON",
+    "provider": "U.S. Integrated Ocean Observing System (IOOS)",
+    "program": "IOOS",
+    "parent_dataset_id": null,
+    "category": "observing-system",
+    "description": "A network that coordinates the collection, integration, and sharing of marine biodiversity observations (from microbes to megafauna) to detect and understand change across U.S. and global waters, developed under U.S. IOOS and connected to the global GEO BON and GOOS frameworks. Standardized biodiversity products are served through IOOS-affiliated ERDDAP servers, OBIS/GBIF, and the MBON data portals.",
+    "network_id": "ioos",
+    "spatial_coverage": "U.S. regional MBON sites (e.g., Florida Keys, Santa Barbara Channel, Monterey Bay, Chukchi/Arctic) and global partner network",
+    "temporal_start": 2014,
+    "temporal_end": null,
+    "license": "Varies by contributing project (often CC-BY / Public Domain)",
+    "doi": null,
+    "homepage_url": "https://mbon.ioos.us/",
+    "variables": "biodiversity, species occurrence, productivity, genomics/eDNA, phenology, habitat characterization, satellite-derived variables",
+    "update_frequency": "Varies by project (continuous to periodic)",
+    "source": "manual",
+    "source_url": "https://ioos.noaa.gov/project/mbon/",
+    "retrieved_at": "2026-07-26",
+    "confidence": "high",
+    "notes": "Biological data flow to OBIS/GBIF; the MBON Data Portal (built on the AXIOM Research Workspace) integrates real-time conditions, satellite, and biodiversity layers.",
+    "endpoints": [
+      {
+        "endpoint_type": "portal",
+        "url": "https://mbon.ioos.us/",
+        "label": "MBON Data Portal",
+        "format_notes": "data exploration and layer search",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "rest-api",
+        "url": "https://api.obis.org/",
+        "label": "MBON biological records via OBIS API",
+        "format_notes": "Darwin Core occurrence JSON",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "portal",
+        "url": "https://ioos.noaa.gov/project/mbon/",
+        "label": "U.S. IOOS MBON program",
+        "format_notes": "program overview and regional networks",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "portal",
+        "url": "https://marinebon.org/",
+        "label": "MBON community portal",
+        "format_notes": null,
+        "auth_required": false
+      }
+    ]
+  },
+  {
+    "dataset_id": "us-ioos",
+    "name": "U.S. Integrated Ocean Observing System",
+    "acronym": "IOOS",
+    "provider": "U.S. IOOS Program Office (NOAA)",
+    "program": "IOOS",
+    "parent_dataset_id": null,
+    "category": "observing-system",
+    "description": "The national program coordinating 11 IOOS Regional Associations plus federal partners into a distributed U.S. coastal and ocean observing system. The IOOS Data Catalog (CKAN/pycsw) inventories DMAC-compliant datasets, and the IOOS Sensor Map aggregates real-time in-situ sensor observations network-wide into a single ERDDAP server.",
+    "network_id": "ioos",
+    "spatial_coverage": "United States coastal waters, Great Lakes, territories, and adjacent oceans (11 regional associations)",
+    "temporal_start": 2004,
+    "temporal_end": null,
+    "license": "U.S. Government data / public domain (no access restrictions)",
+    "doi": null,
+    "homepage_url": "https://ioos.noaa.gov/",
+    "variables": "water temperature, salinity, currents, waves, water level, winds, dissolved oxygen, HF radar, gliders, biological observations",
+    "update_frequency": "near real-time (member-service dependent)",
+    "source": "manual",
+    "source_url": "https://ioos.noaa.gov/data/access-ioos-data/",
+    "retrieved_at": "2026-07-26",
+    "confidence": "high",
+    "notes": "The catalog harvests ISO 19115 metadata from regional associations and exposes a CKAN API plus an embedded CS-W (pycsw).",
+    "endpoints": [
+      {
+        "endpoint_type": "portal",
+        "url": "https://ioos.noaa.gov/",
+        "label": "U.S. IOOS home",
+        "format_notes": null,
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "rest-api",
+        "url": "https://data.ioos.us/",
+        "label": "IOOS Data Catalog (CKAN)",
+        "format_notes": "CKAN API + CS-W (pycsw); ISO 19115 metadata",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "portal",
+        "url": "https://sensors.ioos.us/",
+        "label": "IOOS Environmental Sensor Map",
+        "format_notes": null,
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "erddap",
+        "url": "https://erddap.sensors.ioos.us/erddap/",
+        "label": "IOOS Sensors ERDDAP (national aggregation)",
+        "format_notes": "tabledap/griddap; CSV, JSON, NetCDF",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "rest-api",
+        "url": "https://data.ioos.us/api/3",
+        "label": "IOOS Data Catalog CKAN API",
+        "format_notes": "CKAN Action API (JSON); OGC CSW also available",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "portal",
+        "url": "https://data.ioos.us/",
+        "label": "IOOS Data Catalog (human entry)",
+        "format_notes": null,
+        "auth_required": false
+      }
+    ]
+  },
+  {
     "dataset_id": "psmsl",
     "name": "Permanent Service for Mean Sea Level",
     "acronym": "PSMSL",
@@ -1337,95 +1278,135 @@
     ]
   },
   {
-    "dataset_id": "marinegeo",
-    "name": "Smithsonian MarineGEO (Marine Global Earth Observatory)",
-    "acronym": "MarineGEO",
-    "provider": "Smithsonian Institution, Tennenbaum Marine Observatories Network",
-    "program": "MarineGEO / TMON",
+    "dataset_id": "edi-lter-coastal",
+    "name": "Coastal LTER Datasets in the Environmental Data Initiative Repository",
+    "acronym": "EDI",
+    "provider": "Environmental Data Initiative (EDI)",
+    "program": "LTER",
     "parent_dataset_id": null,
-    "category": "monitoring-program",
-    "description": "A global network of coastal observatories that tracks marine biodiversity and ecosystem change using standardized, coordinated protocols. Biological survey data are curated centrally and published to open repositories such as OBIS.",
-    "network_id": "marinegeo",
-    "spatial_coverage": "Global coastal (network of partner observatories worldwide)",
-    "temporal_start": 2013,
+    "category": "archive",
+    "description": "EDI is the trusted repository (built on the PASTA+ software stack, co-developed with the US LTER Network) that curates and disseminates long-term ecological data, including coastal and estuarine LTER sites such as VCR, GCE, PIE, FCE, SBC, CCE, PAL, MCR, and NGA. Data packages are EML-described and served through the PASTA+ Data Package Manager REST API, with the EDI Data Portal as the human interface.",
+    "network_id": "lter",
+    "spatial_coverage": "United States LTER coastal/estuarine and open-ocean sites (global partner sites also present)",
+    "temporal_start": 1980,
     "temporal_end": null,
-    "license": null,
+    "license": "typically CC0 or CC-BY per data package (declared in EML)",
     "doi": null,
-    "homepage_url": "https://marinegeo.si.edu/",
-    "variables": "biodiversity, seagrass/habitat monitoring, epifauna, predation assays, fish/invertebrate community composition, water quality",
-    "update_frequency": "periodic",
+    "homepage_url": "https://portal.edirepository.org/",
+    "variables": "site-dependent: water quality, nutrients, salinity/temperature, primary production, tides/hydrography, community ecology, biogeochemistry",
+    "update_frequency": "ongoing (rolling data package revisions)",
     "source": "manual",
-    "source_url": "https://marinegeo.si.edu/about-us/what-we-do",
+    "source_url": "https://portal.edirepository.org/",
     "retrieved_at": "2026-07-26",
     "confidence": "high",
-    "notes": "MarineGEO has no single open machine API; standardized data flow to OBIS/GBIF and protocols/templates are published on Figshare and marinegeo.github.io. Licensing varies by dataset.",
+    "notes": null,
     "endpoints": [
       {
-        "endpoint_type": "portal",
-        "url": "https://marinegeo.si.edu/",
-        "label": "MarineGEO home",
-        "format_notes": null,
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "portal",
-        "url": "https://marinegeo.github.io/",
-        "label": "MarineGEO data tools & standardized protocols",
-        "format_notes": "protocols, data-entry templates, standards",
-        "auth_required": false
-      },
-      {
         "endpoint_type": "rest-api",
-        "url": "https://api.obis.org/v3/",
-        "label": "OBIS API (MarineGEO datasets published to OBIS)",
-        "format_notes": "JSON; Darwin Core occurrence records",
+        "url": "https://pasta.lternet.edu/package",
+        "label": "PASTA+ Data Package Manager REST API",
+        "format_notes": "EML metadata, data entities, and search; e.g. /metadata/eml/{scope}/{id}/{rev}",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "portal",
+        "url": "https://portal.edirepository.org/",
+        "label": "EDI Data Portal",
+        "format_notes": "human search/browse UI over PASTA+",
         "auth_required": false
       }
     ]
   },
   {
-    "dataset_id": "nasa-sea-level-change",
-    "name": "NASA Sea Level Change Portal",
-    "acronym": null,
-    "provider": "NASA Sea Level Change Team / JPL",
-    "program": "NASA",
+    "dataset_id": "nasa-cmr",
+    "name": "NASA Common Metadata Repository",
+    "acronym": "CMR",
+    "provider": "NASA EOSDIS / ESDIS",
+    "program": "NASA Earthdata",
     "parent_dataset_id": null,
     "category": "data-portal",
-    "description": "NASA's portal aggregating sea level observations, ice observations, and model output with interactive analysis and projection tools, plus programmatic statistics services (NEXUS/SDAP).",
+    "description": "NASA's high-performance metadata catalog for Earth-observing data (including all EOSDIS DAACs plus partner agencies), providing REST search APIs for collections, granules, and services with keyword, spatial, temporal, and faceted queries.",
     "network_id": null,
     "spatial_coverage": "Global",
-    "temporal_start": 2015,
+    "temporal_start": null,
     "temporal_end": null,
-    "license": "Public domain (U.S. Government work)",
+    "license": "NASA open data (metadata freely available)",
     "doi": null,
-    "homepage_url": "https://sealevel.nasa.gov/",
-    "variables": "global mean sea level, sea level anomaly, ice mass, sea level projections (IPCC AR6), regional sea level",
-    "update_frequency": "periodic",
+    "homepage_url": "https://www.earthdata.nasa.gov/about/esdis/eosdis/cmr",
+    "variables": "collection metadata, granule metadata, service metadata, spatial/temporal extents, data access URLs",
+    "update_frequency": "continuous",
     "source": "manual",
-    "source_url": "https://sealevel.nasa.gov/data",
+    "source_url": "https://cmr.earthdata.nasa.gov/search/",
+    "retrieved_at": "2026-07-26",
+    "confidence": "high",
+    "notes": "Underlies Earthdata Search and PO.DAAC discovery; also exposes an OpenSearch interface and GraphQL. Search is anonymous; data downloads generally require Earthdata Login.",
+    "endpoints": [
+      {
+        "endpoint_type": "rest-api",
+        "url": "https://cmr.earthdata.nasa.gov/search/",
+        "label": "CMR Search API",
+        "format_notes": "REST; collections/granules/services, JSON/ATOM/UMM/ECHO10",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "portal",
+        "url": "https://search.earthdata.nasa.gov/",
+        "label": "Earthdata Search",
+        "format_notes": "web discovery UI over CMR",
+        "auth_required": false
+      }
+    ]
+  },
+  {
+    "dataset_id": "nasa-ecco",
+    "name": "Estimating the Circulation and Climate of the Ocean (ECCO)",
+    "acronym": "ECCO",
+    "provider": "NASA JPL / ECCO Consortium via PO.DAAC",
+    "program": "NASA Earthdata",
+    "parent_dataset_id": "nasa-podaac",
+    "category": "model-output",
+    "description": "ECCO is a data-assimilating global ocean/sea-ice state estimate that fits a free-running ocean model to satellite and in-situ observations while satisfying physical conservation laws, yielding a dynamically consistent full-depth reconstruction. The V4r4 release provides global fields over 1992-2018 at daily and monthly intervals on both the native LLC90 grid and a 0.5-degree lat-lon grid.",
+    "network_id": null,
+    "spatial_coverage": "Global ocean, full depth",
+    "temporal_start": 1992,
+    "temporal_end": 2018,
+    "license": "NASA open data / U.S. public domain (Earthdata login required)",
+    "doi": null,
+    "homepage_url": "https://podaac.jpl.nasa.gov/ECCO",
+    "variables": "ocean velocity, potential temperature, salinity, sea surface height, ocean bottom pressure, sea ice concentration/thickness, heat/volume/freshwater fluxes",
+    "update_frequency": "periodic version releases (e.g., V4r4)",
+    "source": "manual",
+    "source_url": "https://podaac.jpl.nasa.gov/ECCO",
     "retrieved_at": "2026-07-26",
     "confidence": "high",
     "notes": null,
     "endpoints": [
       {
         "endpoint_type": "portal",
-        "url": "https://sealevel.nasa.gov/",
-        "label": "Sea Level Change Portal home",
-        "format_notes": null,
+        "url": "https://podaac.jpl.nasa.gov/ECCO",
+        "label": "ECCO project page at PO.DAAC",
+        "format_notes": "links to ~79 V4r4 dataset landing pages",
         "auth_required": false
       },
       {
-        "endpoint_type": "portal",
-        "url": "https://sealevel.nasa.gov/data",
-        "label": "Data page & tools",
+        "endpoint_type": "opendap",
+        "url": "https://opendap.jpl.nasa.gov/opendap/",
+        "label": "JPL OPeNDAP",
+        "format_notes": "OPeNDAP access to ECCO netCDF fields",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "thredds",
+        "url": "https://thredds.jpl.nasa.gov/thredds/catalog.html",
+        "label": "JPL THREDDS catalog",
         "format_notes": null,
         "auth_required": false
       },
       {
         "endpoint_type": "rest-api",
-        "url": "https://sealevel-nexus.jpl.nasa.gov/",
-        "label": "Sea Level statistics services (NEXUS/SDAP)",
-        "format_notes": "JSON or CSV",
+        "url": "https://cmr.earthdata.nasa.gov/search/",
+        "label": "Earthdata CMR search (ECCO collections)",
+        "format_notes": null,
         "auth_required": false
       }
     ]
@@ -1473,46 +1454,6 @@
         "url": "https://oceancolor.gsfc.nasa.gov/l3/",
         "label": "Level-3 browse and download",
         "format_notes": null,
-        "auth_required": false
-      }
-    ]
-  },
-  {
-    "dataset_id": "nasa-cmr",
-    "name": "NASA Common Metadata Repository",
-    "acronym": "CMR",
-    "provider": "NASA EOSDIS / ESDIS",
-    "program": "NASA Earthdata",
-    "parent_dataset_id": null,
-    "category": "data-portal",
-    "description": "NASA's high-performance metadata catalog for Earth-observing data (including all EOSDIS DAACs plus partner agencies), providing REST search APIs for collections, granules, and services with keyword, spatial, temporal, and faceted queries.",
-    "network_id": null,
-    "spatial_coverage": "Global",
-    "temporal_start": null,
-    "temporal_end": null,
-    "license": "NASA open data (metadata freely available)",
-    "doi": null,
-    "homepage_url": "https://www.earthdata.nasa.gov/about/esdis/eosdis/cmr",
-    "variables": "collection metadata, granule metadata, service metadata, spatial/temporal extents, data access URLs",
-    "update_frequency": "continuous",
-    "source": "manual",
-    "source_url": "https://cmr.earthdata.nasa.gov/search/",
-    "retrieved_at": "2026-07-26",
-    "confidence": "high",
-    "notes": "Underlies Earthdata Search and PO.DAAC discovery; also exposes an OpenSearch interface and GraphQL. Search is anonymous; data downloads generally require Earthdata Login.",
-    "endpoints": [
-      {
-        "endpoint_type": "rest-api",
-        "url": "https://cmr.earthdata.nasa.gov/search/",
-        "label": "CMR Search API",
-        "format_notes": "REST; collections/granules/services, JSON/ATOM/UMM/ECHO10",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "portal",
-        "url": "https://search.earthdata.nasa.gov/",
-        "label": "Earthdata Search",
-        "format_notes": "web discovery UI over CMR",
         "auth_required": false
       }
     ]
@@ -1591,7 +1532,7 @@
     "acronym": "PO.DAAC",
     "provider": "NASA JPL Physical Oceanography Distributed Active Archive Center",
     "program": "NASA Earthdata",
-    "parent_dataset_id": null,
+    "parent_dataset_id": "nasa-podaac",
     "category": "remote-sensing",
     "description": "NASA's physical oceanography data center distributing satellite sea surface height and coastal altimetry products (retracked/corrected for coastal and inland waters), including gridded MEaSUREs SSHA and SWOT.",
     "network_id": null,
@@ -1633,25 +1574,25 @@
     ]
   },
   {
-    "dataset_id": "nasa-sea-level-change-portal",
+    "dataset_id": "nasa-sea-level-change",
     "name": "NASA Sea Level Change Portal",
     "acronym": null,
-    "provider": "NASA Jet Propulsion Laboratory (JPL)",
+    "provider": "NASA Sea Level Change Team / JPL",
     "program": "NASA Sea Level Change",
     "parent_dataset_id": null,
     "category": "data-portal",
     "description": "NASA's public gateway to sea level change science, aggregating satellite altimetry, GRACE/GRACE-FO mass change, and in-situ records into interactive data-analysis tools and downloadable time series. It also hosts IPCC AR6 sea level projection tools and a statistics/analysis service that returns gridded and point sea level data as JSON or CSV.",
     "network_id": null,
     "spatial_coverage": "Global ocean, with regional/local projection tools",
-    "temporal_start": 1993,
+    "temporal_start": 2015,
     "temporal_end": null,
     "license": "NASA open data / U.S. public domain (Earthdata login may be required for some products)",
     "doi": null,
     "homepage_url": "https://sealevel.nasa.gov/",
-    "variables": "mean sea level, sea surface height anomaly, ocean mass, land water storage, steric sea level, sea level projections",
+    "variables": "global mean sea level, sea level anomaly, ice mass, sea level projections (IPCC AR6), regional sea level",
     "update_frequency": "periodic (satellite record and analysis tools updated as new cycles are processed)",
     "source": "manual",
-    "source_url": "https://sealevel.nasa.gov/",
+    "source_url": "https://sealevel.nasa.gov/data",
     "retrieved_at": "2026-07-26",
     "confidence": "high",
     "notes": null,
@@ -1660,14 +1601,21 @@
         "endpoint_type": "portal",
         "url": "https://sealevel.nasa.gov/",
         "label": "Sea Level Change Portal home",
-        "format_notes": "human entry point; links to data tools and downloads",
+        "format_notes": null,
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "portal",
+        "url": "https://sealevel.nasa.gov/data",
+        "label": "Data page & tools",
+        "format_notes": null,
         "auth_required": false
       },
       {
         "endpoint_type": "rest-api",
         "url": "https://sealevel-nexus.jpl.nasa.gov/",
-        "label": "Sea Level Change Portal statistics services (NEXUS)",
-        "format_notes": "returns time-series/statistics output in JSON or CSV",
+        "label": "Sea Level statistics services (NEXUS/SDAP)",
+        "format_notes": "JSON or CSV",
         "auth_required": false
       },
       {
@@ -1685,7 +1633,7 @@
     "acronym": "NCEI Natural Hazards",
     "provider": "NOAA National Centers for Environmental Information (NCEI, formerly National Geophysical Data Center)",
     "program": "NCEI Natural Hazards",
-    "parent_dataset_id": "noaa-ncei-archive",
+    "parent_dataset_id": "noaa-ncei",
     "category": "archive",
     "description": "NOAA's authoritative historical hazards databases covering tsunami events and runups, significant earthquakes, and significant volcanic eruptions, plus related coastal DART deep-ocean assessment data. Records span from deep antiquity to present and are searchable through the HazEL viewer and a hazard-service REST API.",
     "network_id": null,
@@ -1732,7 +1680,7 @@
     "acronym": "WOD",
     "provider": "NOAA National Centers for Environmental Information",
     "program": "NCEI Ocean Climate Laboratory",
-    "parent_dataset_id": "noaa-ncei-archive",
+    "parent_dataset_id": "noaa-ncei",
     "category": "archive",
     "description": "The world's largest collection of uniformly formatted, quality-controlled ocean profile data (temperature, salinity, oxygen, nutrients, chlorophyll) from bottles, CTDs, XBTs, gliders, profiling floats, and moorings. Foundation for the World Ocean Atlas climatologies and a core reference archive for coastal-to-open-ocean hydrography.",
     "network_id": null,
@@ -1807,96 +1755,9 @@
     ]
   },
   {
-    "dataset_id": "neon-aquatic",
-    "name": "NEON Aquatic Data (Data Portal)",
-    "acronym": "NEON",
-    "provider": "NSF National Ecological Observatory Network (Battelle)",
-    "program": "NEON",
-    "parent_dataset_id": null,
-    "category": "observing-system",
-    "description": "Standardized, quality-controlled aquatic data products (streams, rivers, lakes) from NEON's continental network of field sites, accessible through the NEON Data Portal and API.",
-    "network_id": "neon",
-    "spatial_coverage": "United States aquatic field sites (streams, rivers, lakes; some coastal-influenced)",
-    "temporal_start": 2016,
-    "temporal_end": null,
-    "license": "CC-BY-4.0",
-    "doi": null,
-    "homepage_url": "https://data.neonscience.org/",
-    "variables": "surface water quality, water temperature, stream discharge/elevation, dissolved gases, nutrients, aquatic organisms (macroinvertebrates, algae, fish), meteorology",
-    "update_frequency": "periodic (regular releases)",
-    "source": "manual",
-    "source_url": "https://data.neonscience.org/",
-    "retrieved_at": "2026-07-26",
-    "confidence": "high",
-    "notes": "As of June 30, 2026, data downloads require a NEON account or API token; all data products released under CC BY 4.0.",
-    "endpoints": [
-      {
-        "endpoint_type": "portal",
-        "url": "https://data.neonscience.org/",
-        "label": "NEON Data Portal",
-        "format_notes": null,
-        "auth_required": true
-      },
-      {
-        "endpoint_type": "rest-api",
-        "url": "https://data.neonscience.org/api/v0/",
-        "label": "NEON Data API (v0)",
-        "format_notes": "JSON metadata; CSV data files; token/account required as of 2026",
-        "auth_required": true
-      }
-    ]
-  },
-  {
-    "dataset_id": "noaa-nerrs-cdmo",
-    "name": "NERRS System-Wide Monitoring Program (Centralized Data Management Office)",
-    "acronym": "SWMP / CDMO",
-    "provider": "NOAA NERRS Centralized Data Management Office (Univ. of South Carolina, Baruch Institute)",
-    "program": "NERRS",
-    "parent_dataset_id": null,
-    "category": "monitoring-program",
-    "description": "Long-term, standardized water-quality, nutrient, and meteorological monitoring across the National Estuarine Research Reserve System, managed and served by the Centralized Data Management Office (CDMO).",
-    "network_id": "nerrs",
-    "spatial_coverage": "United States estuaries (30+ National Estuarine Research Reserves)",
-    "temporal_start": 1995,
-    "temporal_end": null,
-    "license": "Public domain (U.S. Government work)",
-    "doi": null,
-    "homepage_url": "https://cdmo.baruch.sc.edu/",
-    "variables": "water temperature, salinity, dissolved oxygen, pH, turbidity, depth, nutrients, chlorophyll-a, air temperature, wind, precipitation, PAR",
-    "update_frequency": "real-time (15-minute intervals)",
-    "source": "manual",
-    "source_url": "https://cdmo.baruch.sc.edu/webservices.cfm",
-    "retrieved_at": "2026-07-26",
-    "confidence": "high",
-    "notes": "SWMP web services (SOAP) require prior authorization and a registered static IP; interactive exports are available via the Get Data / DGES interface without registration.",
-    "endpoints": [
-      {
-        "endpoint_type": "portal",
-        "url": "https://cdmo.baruch.sc.edu/",
-        "label": "CDMO home",
-        "format_notes": null,
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "portal",
-        "url": "https://cdmo.baruch.sc.edu/get/landing.cfm",
-        "label": "Get Data (DGES exports)",
-        "format_notes": "CSV exports, charting, real-time conditions",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "rest-api",
-        "url": "https://cdmo.baruch.sc.edu/webservices2/requests.cfc?wsdl",
-        "label": "SWMP web services (WSDL)",
-        "format_notes": "SOAP/XML; requires registered static IP",
-        "auth_required": true
-      }
-    ]
-  },
-  {
     "dataset_id": "nerrs-cdmo",
     "name": "NERRS Centralized Data Management Office",
-    "acronym": "CDMO",
+    "acronym": "SWMP / CDMO",
     "provider": "NOAA / University of South Carolina Baruch Institute (North Inlet-Winyah Bay NERR)",
     "program": "NERRS",
     "parent_dataset_id": "nerrs-swmp",
@@ -1915,7 +1776,7 @@
     "source_url": "https://cdmo.baruch.sc.edu/webservices.cfm",
     "retrieved_at": "2026-07-26",
     "confidence": "high",
-    "notes": null,
+    "notes": "SWMP web services (SOAP) require prior authorization and a registered static IP; interactive exports are available via the Get Data / DGES interface without registration.",
     "endpoints": [
       {
         "endpoint_type": "rest-api",
@@ -1944,92 +1805,59 @@
         "label": "CDMO GIS data downloads",
         "format_notes": "Station locations and SWMP GIS/shapefile downloads",
         "auth_required": false
+      },
+      {
+        "endpoint_type": "portal",
+        "url": "https://cdmo.baruch.sc.edu/get/landing.cfm",
+        "label": "Get Data (DGES exports)",
+        "format_notes": "CSV exports, charting, real-time conditions",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "rest-api",
+        "url": "https://cdmo.baruch.sc.edu/webservices2/requests.cfc?wsdl",
+        "label": "SWMP web services (WSDL)",
+        "format_notes": "SOAP/XML; requires registered static IP",
+        "auth_required": true
       }
     ]
   },
   {
-    "dataset_id": "noaa-ncei",
-    "name": "NOAA National Centers for Environmental Information",
-    "acronym": "NCEI",
-    "provider": "NOAA National Environmental Satellite, Data, and Information Service (NESDIS)",
-    "program": "NOAA NESDIS",
+    "dataset_id": "nerrs-swmp",
+    "name": "NERRS System-Wide Monitoring Program",
+    "acronym": "SWMP",
+    "provider": "NOAA Office for Coastal Management / National Estuarine Research Reserve System",
+    "program": "NERRS",
     "parent_dataset_id": null,
-    "category": "archive",
-    "description": "NOAA's primary archive for oceanic, atmospheric, coastal, and geophysical data, providing long-term stewardship and distributed access to model, satellite, and in-situ datasets via ERDDAP, THREDDS, and OPeNDAP.",
-    "network_id": null,
-    "spatial_coverage": "Global",
-    "temporal_start": null,
+    "category": "monitoring-program",
+    "description": "SWMP is the long-term, standardized environmental monitoring program of the National Estuarine Research Reserve System, operating fixed water-quality, nutrient, and meteorological stations across the network of U.S. estuarine reserves. It provides continuous abiotic and biological monitoring to detect short-term variability and long-term change in estuarine ecosystems.",
+    "network_id": "nerrs",
+    "spatial_coverage": "U.S. estuaries across the ~30 National Estuarine Research Reserves (all coasts, Great Lakes, Puerto Rico)",
+    "temporal_start": 1995,
     "temporal_end": null,
-    "license": "Public domain (U.S. Government work)",
+    "license": "U.S. Government public domain (no restrictions)",
     "doi": null,
-    "homepage_url": "https://www.ncei.noaa.gov/",
-    "variables": "sea surface temperature, ocean climate, bathymetry, coastal lidar, model reanalyses, marine buoy archive, salinity, ocean heat content",
-    "update_frequency": "varies by dataset",
+    "homepage_url": "https://coast.noaa.gov/nerrs/",
+    "variables": "water temperature, salinity, specific conductivity, dissolved oxygen, pH, turbidity, water depth, nutrients (nitrogen, phosphorus), chlorophyll-a, air temperature, wind, barometric pressure, precipitation, PAR",
+    "update_frequency": "Continuous (15-minute water-quality/met sampling); telemetered near-real-time hourly, monthly nutrient grabs",
     "source": "manual",
-    "source_url": "https://www.ncei.noaa.gov/erddap/information.html",
+    "source_url": "https://coast.noaa.gov/digitalcoast/data/nerr.html",
     "retrieved_at": "2026-07-26",
     "confidence": "high",
-    "notes": "NCEI archives NDBC buoy data and hosts the Coastal Lidar Archive; distributed access via OPeNDAP-compliant THREDDS and ERDDAP servers.",
+    "notes": null,
     "endpoints": [
       {
-        "endpoint_type": "erddap",
-        "url": "https://www.ncei.noaa.gov/erddap/index.html",
-        "label": "NCEI ERDDAP",
-        "format_notes": "griddap/tabledap; NetCDF/CSV/JSON",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "thredds",
-        "url": "https://www.ncei.noaa.gov/thredds/catalog.html",
-        "label": "NCEI THREDDS Data Server",
-        "format_notes": "OPeNDAP, NetCDF Subset Service, WMS",
+        "endpoint_type": "portal",
+        "url": "https://coast.noaa.gov/nerrs/",
+        "label": "NERRS program homepage",
+        "format_notes": "Program landing page; SWMP data are served through the CDMO (see nerrs-cdmo)",
         "auth_required": false
       },
       {
         "endpoint_type": "portal",
-        "url": "https://www.ncei.noaa.gov/",
-        "label": "NCEI website / archive catalog",
-        "format_notes": "dataset search and access",
-        "auth_required": false
-      }
-    ]
-  },
-  {
-    "dataset_id": "noaa-coastwatch",
-    "name": "NOAA CoastWatch / OceanWatch / PolarWatch",
-    "acronym": "CoastWatch",
-    "provider": "NOAA NESDIS",
-    "program": "NOAA NESDIS",
-    "parent_dataset_id": null,
-    "category": "remote-sensing",
-    "description": "NOAA program delivering global and regional satellite ocean products (SST, ocean color, winds, sea surface height, salinity) through a central ERDDAP hub and a set of regional nodes for coastal and ocean resource management.",
-    "network_id": null,
-    "spatial_coverage": "Global and U.S. regional coastal waters",
-    "temporal_start": null,
-    "temporal_end": null,
-    "license": "Public domain (U.S. Government work)",
-    "doi": null,
-    "homepage_url": "https://coastwatch.noaa.gov/",
-    "variables": "sea surface temperature, chlorophyll-a / ocean color, sea surface winds, sea surface height / anomaly, sea surface salinity, ocean currents",
-    "update_frequency": "daily / near-real-time",
-    "source": "manual",
-    "source_url": "https://coastwatch.noaa.gov/cwn/data-access-tools/erddap-noaa-coastwatch.html",
-    "retrieved_at": "2026-07-26",
-    "confidence": "high",
-    "notes": "Central CoastWatch hub plus regional nodes (West Coast, East Coast, Caribbean/Gulf, Great Lakes, Central Pacific, PolarWatch) each run ERDDAP servers with locally curated products.",
-    "endpoints": [
-      {
-        "endpoint_type": "erddap",
-        "url": "https://coastwatch.noaa.gov/erddap/index.html",
-        "label": "NOAA CoastWatch Central ERDDAP",
-        "format_notes": "griddap/tabledap; NetCDF/GeoTIFF/CSV, WMS",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "portal",
-        "url": "https://coastwatch.noaa.gov/",
-        "label": "NOAA CoastWatch program portal",
-        "format_notes": "data access tools and node directory",
+        "url": "https://coast.noaa.gov/digitalcoast/data/nerr.html",
+        "label": "NERRS SWMP data page on NOAA Digital Coast",
+        "format_notes": "Digital Coast catalog entry describing SWMP data and access routes",
         "auth_required": false
       }
     ]
@@ -2075,97 +1903,50 @@
     ]
   },
   {
-    "dataset_id": "us-ioos",
-    "name": "U.S. Integrated Ocean Observing System",
-    "acronym": "IOOS",
-    "provider": "U.S. IOOS Program Office (NOAA)",
-    "program": "IOOS",
-    "parent_dataset_id": null,
-    "category": "observing-system",
-    "description": "The national program coordinating 11 IOOS Regional Associations plus federal partners into a distributed U.S. coastal and ocean observing system. The IOOS Data Catalog (CKAN/pycsw) inventories DMAC-compliant datasets, and the IOOS Sensor Map aggregates real-time in-situ sensor observations network-wide into a single ERDDAP server.",
-    "network_id": "ioos",
-    "spatial_coverage": "United States coastal waters, Great Lakes, territories, and adjacent oceans (11 regional associations)",
-    "temporal_start": 2004,
-    "temporal_end": null,
-    "license": "U.S. Government data / public domain (no access restrictions)",
-    "doi": null,
-    "homepage_url": "https://ioos.noaa.gov/",
-    "variables": "water temperature, salinity, currents, waves, water level, winds, dissolved oxygen, HF radar, gliders, biological observations",
-    "update_frequency": "near real-time (member-service dependent)",
-    "source": "manual",
-    "source_url": "https://ioos.noaa.gov/data/access-ioos-data/",
-    "retrieved_at": "2026-07-26",
-    "confidence": "high",
-    "notes": "The catalog harvests ISO 19115 metadata from regional associations and exposes a CKAN API plus an embedded CS-W (pycsw).",
-    "endpoints": [
-      {
-        "endpoint_type": "portal",
-        "url": "https://ioos.noaa.gov/",
-        "label": "U.S. IOOS home",
-        "format_notes": null,
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "rest-api",
-        "url": "https://data.ioos.us/",
-        "label": "IOOS Data Catalog (CKAN)",
-        "format_notes": "CKAN API + CS-W (pycsw); ISO 19115 metadata",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "portal",
-        "url": "https://sensors.ioos.us/",
-        "label": "IOOS Environmental Sensor Map",
-        "format_notes": null,
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "erddap",
-        "url": "https://erddap.sensors.ioos.us/erddap/",
-        "label": "IOOS Sensors ERDDAP (national aggregation)",
-        "format_notes": "tabledap/griddap; CSV, JSON, NetCDF",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "rest-api",
-        "url": "https://data.ioos.us/api/3",
-        "label": "IOOS Data Catalog CKAN API",
-        "format_notes": "CKAN Action API (JSON); OGC CSW also available",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "portal",
-        "url": "https://data.ioos.us/",
-        "label": "IOOS Data Catalog (human entry)",
-        "format_notes": null,
-        "auth_required": false
-      }
-    ]
-  },
-  {
-    "dataset_id": "coastwatch-west-coast-erddap",
-    "name": "NOAA CoastWatch West Coast Regional Node ERDDAP (upwell)",
-    "acronym": null,
-    "provider": "NOAA Fisheries Southwest Fisheries Science Center, Environmental Research Division",
+    "dataset_id": "noaa-coastwatch-erddap",
+    "name": "NOAA CoastWatch West Coast Node (ERD) Central ERDDAP",
+    "acronym": "CoastWatch ERDDAP",
+    "provider": "NOAA CoastWatch / NMFS Southwest Fisheries Science Center — Environmental Research Division (ERD)",
     "program": "NOAA CoastWatch",
-    "parent_dataset_id": "noaa-coastwatch",
+    "parent_dataset_id": null,
     "category": "remote-sensing",
-    "description": "The flagship NOAA CoastWatch West Coast Node ERDDAP server (coastwatch.pfeg.noaa.gov/erddap, formerly the 'upwell' host), the original reference ERDDAP installation serving global and eastern North Pacific satellite and model ocean datasets.",
+    "description": "The original NOAA ERDDAP data server operated by the NMFS Environmental Research Division for the CoastWatch program, serving satellite-derived ocean products and in-situ datasets. Provides consistent machine access (griddap/tabledap) with subsetting and format conversion to netCDF, CSV, JSON, and OPeNDAP/WMS.",
     "network_id": null,
-    "spatial_coverage": "U.S. West Coast / eastern North Pacific (many global datasets also served)",
-    "temporal_start": null,
+    "spatial_coverage": "Global gridded satellite products with emphasis on US West Coast / EEZ; in-situ subsets",
+    "temporal_start": 1987,
     "temporal_end": null,
-    "license": "Public domain (U.S. Government work)",
+    "license": "U.S. Government work / public domain (NOAA open data)",
     "doi": null,
     "homepage_url": "https://coastwatch.pfeg.noaa.gov/",
-    "variables": "sea surface temperature, chlorophyll-a, sea surface winds, sea surface height, salinity, primary productivity, in-situ buoy tabular data",
-    "update_frequency": "daily / near-real-time",
+    "variables": "sea surface temperature, ocean color / chlorophyll-a, sea surface height / altimetry, ocean surface winds, sea ice, primary productivity",
+    "update_frequency": "product-dependent (many daily / near real-time)",
     "source": "manual",
-    "source_url": "https://coastwatch.pfeg.noaa.gov/erddap/index.html",
+    "source_url": "https://coastwatch.pfeg.noaa.gov/erddap/",
     "retrieved_at": "2026-07-26",
     "confidence": "high",
     "notes": "Historically run on host upwell.pfeg.noaa.gov; widely used as the canonical ERDDAP reference server. Distinct installation from the CoastWatch Central hub.",
     "endpoints": [
+      {
+        "endpoint_type": "erddap",
+        "url": "https://coastwatch.pfeg.noaa.gov/erddap/",
+        "label": "CoastWatch ERD central ERDDAP",
+        "format_notes": "griddap + tabledap; netCDF, CSV, JSON, .mat, GeoTIFF",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "ogc-wms",
+        "url": "https://coastwatch.pfeg.noaa.gov/erddap/wms/",
+        "label": "ERDDAP per-dataset WMS",
+        "format_notes": "OGC WMS exposed per gridded dataset by ERDDAP",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "portal",
+        "url": "https://coastwatch.noaa.gov/",
+        "label": "NOAA CoastWatch program portal",
+        "format_notes": "human entry point for CoastWatch/OceanWatch/PolarWatch nodes",
+        "auth_required": false
+      },
       {
         "endpoint_type": "erddap",
         "url": "https://coastwatch.pfeg.noaa.gov/erddap/index.html",
@@ -2190,70 +1971,23 @@
     ]
   },
   {
-    "dataset_id": "noaa-coastwatch-erddap",
-    "name": "NOAA CoastWatch West Coast Node (ERD) Central ERDDAP",
-    "acronym": "CoastWatch ERDDAP",
-    "provider": "NOAA CoastWatch / NMFS Southwest Fisheries Science Center — Environmental Research Division (ERD)",
-    "program": "NOAA CoastWatch",
-    "parent_dataset_id": null,
-    "category": "remote-sensing",
-    "description": "The original NOAA ERDDAP data server operated by the NMFS Environmental Research Division for the CoastWatch program, serving satellite-derived ocean products and in-situ datasets. Provides consistent machine access (griddap/tabledap) with subsetting and format conversion to netCDF, CSV, JSON, and OPeNDAP/WMS.",
-    "network_id": null,
-    "spatial_coverage": "Global gridded satellite products with emphasis on US West Coast / EEZ; in-situ subsets",
-    "temporal_start": 1987,
-    "temporal_end": null,
-    "license": "U.S. Government work / public domain (NOAA open data)",
-    "doi": null,
-    "homepage_url": "https://coastwatch.pfeg.noaa.gov/",
-    "variables": "sea surface temperature, ocean color / chlorophyll-a, sea surface height / altimetry, ocean surface winds, sea ice, primary productivity",
-    "update_frequency": "product-dependent (many daily / near real-time)",
-    "source": "manual",
-    "source_url": "https://coastwatch.pfeg.noaa.gov/erddap/",
-    "retrieved_at": "2026-07-26",
-    "confidence": "high",
-    "notes": null,
-    "endpoints": [
-      {
-        "endpoint_type": "erddap",
-        "url": "https://coastwatch.pfeg.noaa.gov/erddap/",
-        "label": "CoastWatch ERD central ERDDAP",
-        "format_notes": "griddap + tabledap; netCDF, CSV, JSON, .mat, GeoTIFF",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "ogc-wms",
-        "url": "https://coastwatch.pfeg.noaa.gov/erddap/wms/",
-        "label": "ERDDAP per-dataset WMS",
-        "format_notes": "OGC WMS exposed per gridded dataset by ERDDAP",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "portal",
-        "url": "https://coastwatch.noaa.gov/",
-        "label": "NOAA CoastWatch program portal",
-        "format_notes": "human entry point for CoastWatch/OceanWatch/PolarWatch nodes",
-        "auth_required": false
-      }
-    ]
-  },
-  {
-    "dataset_id": "noaa-ccap-land-cover",
-    "name": "NOAA Coastal Change Analysis Program Land Cover",
+    "dataset_id": "noaa-ccap",
+    "name": "NOAA Coastal Change Analysis Program Regional Land Cover",
     "acronym": "C-CAP",
     "provider": "NOAA Office for Coastal Management",
     "program": "NOAA Digital Coast",
-    "parent_dataset_id": "noaa-digital-coast",
+    "parent_dataset_id": null,
     "category": "mapping-product",
     "description": "C-CAP produces nationally standardized, raster-based land cover and land cover change products for the coastal regions of the U.S. and its territories, derived from satellite and high-resolution imagery. Regional 30-meter products classify up to 25 land cover categories on a roughly 5-year cycle, and 1-meter high-resolution products support detailed coastal habitat and impervious-surface analysis.",
     "network_id": null,
-    "spatial_coverage": "Coastal U.S. states, territories, and Great Lakes shorelines",
+    "spatial_coverage": "Coastal conterminous United States (plus territories)",
     "temporal_start": 1996,
     "temporal_end": null,
     "license": "U.S. Government public domain (no restrictions)",
     "doi": null,
     "homepage_url": "https://coast.noaa.gov/digitalcoast/data/ccapregional.html",
-    "variables": "land cover classification (up to 25 classes), land cover change, coastal wetlands, impervious surface, developed/forest/agriculture cover",
-    "update_frequency": "Regional products updated on ~1-5 year repeat cycle",
+    "variables": "25-class land cover, land cover change, impervious surface, wetlands, developed/agriculture/forest classes",
+    "update_frequency": "every 5 years (1996, 2001, 2006, 2010, 2016, 2021)",
     "source": "manual",
     "source_url": "https://coast.noaa.gov/digitalcoast/data/ccapregional.html",
     "retrieved_at": "2026-07-26",
@@ -2262,9 +1996,23 @@
     "endpoints": [
       {
         "endpoint_type": "portal",
+        "url": "https://coast.noaa.gov/digitalcoast/data/ccapregional.html",
+        "label": "C-CAP Regional Land Cover",
+        "format_notes": null,
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "portal",
+        "url": "https://coastalimagery.blob.core.windows.net/ccap-landcover/CCAP_bulk_download/index.html",
+        "label": "Azure blob bulk download",
+        "format_notes": "GeoTIFF/IMG",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "portal",
         "url": "https://coast.noaa.gov/htdata/raster1/landcover/bulkdownload/30m_lc/",
-        "label": "C-CAP 30m regional land cover bulk download directory",
-        "format_notes": "HTTP bulk-download directory (wget/curl accessible) of regional 30m land cover rasters",
+        "label": "HTTP bulk download (30 m)",
+        "format_notes": "GeoTIFF via HTTP directory",
         "auth_required": false
       },
       {
@@ -2276,16 +2024,49 @@
       },
       {
         "endpoint_type": "portal",
-        "url": "https://coast.noaa.gov/digitalcoast/data/ccapregional.html",
-        "label": "C-CAP Regional Land Cover product page",
-        "format_notes": "Human entry point; also accessible via Digital Coast Data Access Viewer",
+        "url": "https://www.fisheries.noaa.gov/inport/item/74032",
+        "label": "InPort metadata record (C-CAP 2021 Regional Land Cover)",
+        "format_notes": "NOAA InPort catalog/metadata registry entry",
+        "auth_required": false
+      }
+    ]
+  },
+  {
+    "dataset_id": "noaa-ccap-highres",
+    "name": "NOAA C-CAP High-Resolution Land Cover",
+    "acronym": "C-CAP High-Res",
+    "provider": "NOAA Office for Coastal Management",
+    "program": "NOAA Digital Coast",
+    "parent_dataset_id": "noaa-ccap",
+    "category": "mapping-product",
+    "description": "1-meter resolution land cover, impervious surface, and change products derived by C-CAP for the coastal U.S., a higher-resolution companion to the 30 m regional product.",
+    "network_id": null,
+    "spatial_coverage": "Coastal United States (selected regions/states)",
+    "temporal_start": null,
+    "temporal_end": null,
+    "license": "Public domain (U.S. Government work)",
+    "doi": null,
+    "homepage_url": "https://coast.noaa.gov/digitalcoast/data/ccaphighres.html",
+    "variables": "1-m land cover, impervious surface, tree canopy, land cover change",
+    "update_frequency": "periodic",
+    "source": "manual",
+    "source_url": "https://coast.noaa.gov/digitalcoast/data/ccaphighres.html",
+    "retrieved_at": "2026-07-26",
+    "confidence": "high",
+    "notes": "Coverage and vintages vary by region; distributed alongside the regional product on Digital Coast.",
+    "endpoints": [
+      {
+        "endpoint_type": "portal",
+        "url": "https://coast.noaa.gov/digitalcoast/data/ccaphighres.html",
+        "label": "C-CAP High-Resolution Land Cover",
+        "format_notes": null,
         "auth_required": false
       },
       {
         "endpoint_type": "portal",
-        "url": "https://www.fisheries.noaa.gov/inport/item/74032",
-        "label": "InPort metadata record (C-CAP 2021 Regional Land Cover)",
-        "format_notes": "NOAA InPort catalog/metadata registry entry",
+        "url": "https://coast.noaa.gov/digitalcoast/tools/lca.html",
+        "label": "C-CAP Land Cover Atlas viewer",
+        "format_notes": null,
         "auth_required": false
       }
     ]
@@ -2322,7 +2103,7 @@
         "auth_required": false
       },
       {
-        "endpoint_type": "ftp",
+        "endpoint_type": "portal",
         "url": "https://coast.noaa.gov/htdata/",
         "label": "Digital Coast bulk data store (HTTP directory)",
         "format_notes": "Open HTTP directory listing of lidar (lidar1_z, lidar2_z) and raster products; LAZ/GeoTIFF",
@@ -2425,10 +2206,50 @@
     ]
   },
   {
-    "dataset_id": "noaa-ncei-archive",
-    "name": "NOAA National Centers for Environmental Information — Coastal & Ocean Archives",
+    "dataset_id": "noaa-coastwatch",
+    "name": "NOAA CoastWatch / OceanWatch / PolarWatch",
+    "acronym": "CoastWatch",
+    "provider": "NOAA NESDIS",
+    "program": "NOAA NESDIS",
+    "parent_dataset_id": null,
+    "category": "remote-sensing",
+    "description": "NOAA program delivering global and regional satellite ocean products (SST, ocean color, winds, sea surface height, salinity) through a central ERDDAP hub and a set of regional nodes for coastal and ocean resource management.",
+    "network_id": null,
+    "spatial_coverage": "Global and U.S. regional coastal waters",
+    "temporal_start": null,
+    "temporal_end": null,
+    "license": "Public domain (U.S. Government work)",
+    "doi": null,
+    "homepage_url": "https://coastwatch.noaa.gov/",
+    "variables": "sea surface temperature, chlorophyll-a / ocean color, sea surface winds, sea surface height / anomaly, sea surface salinity, ocean currents",
+    "update_frequency": "daily / near-real-time",
+    "source": "manual",
+    "source_url": "https://coastwatch.noaa.gov/cwn/data-access-tools/erddap-noaa-coastwatch.html",
+    "retrieved_at": "2026-07-26",
+    "confidence": "high",
+    "notes": "Central CoastWatch hub plus regional nodes (West Coast, East Coast, Caribbean/Gulf, Great Lakes, Central Pacific, PolarWatch) each run ERDDAP servers with locally curated products.",
+    "endpoints": [
+      {
+        "endpoint_type": "erddap",
+        "url": "https://coastwatch.noaa.gov/erddap/index.html",
+        "label": "NOAA CoastWatch Central ERDDAP",
+        "format_notes": "griddap/tabledap; NetCDF/GeoTIFF/CSV, WMS",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "portal",
+        "url": "https://coastwatch.noaa.gov/",
+        "label": "NOAA CoastWatch program portal",
+        "format_notes": "data access tools and node directory",
+        "auth_required": false
+      }
+    ]
+  },
+  {
+    "dataset_id": "noaa-ncei",
+    "name": "NOAA National Centers for Environmental Information",
     "acronym": "NCEI",
-    "provider": "NOAA National Centers for Environmental Information (NCEI)",
+    "provider": "NOAA National Environmental Satellite, Data, and Information Service (NESDIS)",
     "program": "NOAA NESDIS",
     "parent_dataset_id": null,
     "category": "archive",
@@ -2443,16 +2264,30 @@
     "variables": "ocean temperature and salinity profiles, sea surface temperature, dissolved oxygen, nutrients, bathymetry, coastal digital elevation models, climate and marine archival datasets",
     "update_frequency": "ongoing archival ingest; product-dependent",
     "source": "manual",
-    "source_url": "https://www.ncei.noaa.gov/",
+    "source_url": "https://www.ncei.noaa.gov/erddap/information.html",
     "retrieved_at": "2026-07-26",
     "confidence": "high",
-    "notes": null,
+    "notes": "NCEI archives NDBC buoy data and hosts the Coastal Lidar Archive; distributed access via OPeNDAP-compliant THREDDS and ERDDAP servers.",
     "endpoints": [
+      {
+        "endpoint_type": "erddap",
+        "url": "https://www.ncei.noaa.gov/erddap/index.html",
+        "label": "NCEI ERDDAP",
+        "format_notes": "griddap/tabledap; NetCDF/CSV/JSON",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "thredds",
+        "url": "https://www.ncei.noaa.gov/thredds/catalog.html",
+        "label": "NCEI THREDDS Data Server",
+        "format_notes": "OPeNDAP, NetCDF Subset Service, WMS",
+        "auth_required": false
+      },
       {
         "endpoint_type": "portal",
         "url": "https://www.ncei.noaa.gov/",
-        "label": "NCEI main site / OneStop discovery",
-        "format_notes": "OneStop catalog also at https://data.noaa.gov/onestop/",
+        "label": "NCEI website / archive catalog",
+        "format_notes": "dataset search and access",
         "auth_required": false
       },
       {
@@ -2460,13 +2295,6 @@
         "url": "https://www.ncei.noaa.gov/access/services/search/v1/",
         "label": "NCEI Common Access / Search API",
         "format_notes": "collection and granule search; JSON",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "thredds",
-        "url": "https://www.ncei.noaa.gov/thredds/catalog.html",
-        "label": "NCEI THREDDS Data Server",
-        "format_notes": "netCDF/OPeNDAP; ocean catalog also at /thredds-ocean/",
         "auth_required": false
       },
       {
@@ -2606,6 +2434,74 @@
     ]
   },
   {
+    "dataset_id": "noaa-digital-coast",
+    "name": "NOAA Digital Coast",
+    "acronym": null,
+    "provider": "NOAA Office for Coastal Management",
+    "program": "NOAA Office for Coastal Management",
+    "parent_dataset_id": null,
+    "category": "data-portal",
+    "description": "Digital Coast is NOAA's data, tools, and training platform for the coastal management community, aggregating elevation (lidar), imagery, land cover, benthic, socioeconomic, and marine cadastre datasets from 900+ contributing organizations. Its Data Access Viewer lets users search, customize, and download coastal geospatial data for free, and bulk data are mirrored on AWS public buckets.",
+    "network_id": null,
+    "spatial_coverage": "Coastal U.S. states, territories, and Great Lakes",
+    "temporal_start": 2007,
+    "temporal_end": null,
+    "license": "U.S. Government public domain / open (per-dataset metadata in InPort)",
+    "doi": null,
+    "homepage_url": "https://coast.noaa.gov/digitalcoast/",
+    "variables": "lidar/elevation, aerial and satellite imagery, land cover (C-CAP), benthic habitat, socioeconomic data, marine cadastre, coastal flooding layers",
+    "update_frequency": "Continuously updated as new contributed datasets are ingested",
+    "source": "manual",
+    "source_url": "https://coast.noaa.gov/digitalcoast/",
+    "retrieved_at": "2026-07-26",
+    "confidence": "high",
+    "notes": null,
+    "endpoints": [
+      {
+        "endpoint_type": "portal",
+        "url": "https://coast.noaa.gov/digitalcoast/",
+        "label": "Digital Coast home",
+        "format_notes": null,
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "portal",
+        "url": "https://coast.noaa.gov/dataviewer/",
+        "label": "Data Access Viewer (custom download)",
+        "format_notes": "user-defined AOI checkout; multiple formats/projections",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "portal",
+        "url": "https://coast.noaa.gov/htdata/",
+        "label": "Bulk data (htdata)",
+        "format_notes": "lidar LAS/LAZ, GeoTIFF via HTTP directory",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "s3",
+        "url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/laz/index.html",
+        "label": "NOAA coastal lidar public S3 bucket",
+        "format_notes": "LAZ point-cloud tiles",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "portal",
+        "url": "https://coast.noaa.gov/digitalcoast/data/home.html",
+        "label": "Digital Coast data catalog",
+        "format_notes": "dataset landing pages",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "s3",
+        "url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/",
+        "label": "NOAA NOS coastal lidar AWS public dataset bucket",
+        "format_notes": "AWS S3 public bucket (Registry of Open Data) mirroring Digital Coast coastal lidar/LAZ point clouds",
+        "auth_required": false
+      }
+    ]
+  },
+  {
     "dataset_id": "uhslc-sea-level",
     "name": "University of Hawaii Sea Level Center",
     "acronym": "UHSLC",
@@ -2658,7 +2554,7 @@
     "acronym": "CZNet",
     "provider": "CUAHSI HydroShare / NSF Critical Zone Collaborative Network",
     "program": "NSF Critical Zone Collaborative Network (Coastal Critical Zone thematic cluster)",
-    "parent_dataset_id": null,
+    "parent_dataset_id": "cznet-coastal",
     "category": "data-portal",
     "description": "CZNet publishes critical-zone research data — including the Coastal Critical Zone thematic cluster studying coupled hydrological, ecological, geomorphological, and biogeochemical processes in the coastal plain — through the CUAHSI HydroShare repository community. HydroShare exposes a full machine-to-machine REST API (hsapi) for discovering and retrieving resources, with the CZNet Hub providing a data catalog and submission portal on top.",
     "network_id": null,
@@ -2801,63 +2697,23 @@
     ]
   },
   {
-    "dataset_id": "nerrs-swmp",
-    "name": "NERRS System-Wide Monitoring Program",
-    "acronym": "SWMP",
-    "provider": "NOAA Office for Coastal Management / National Estuarine Research Reserve System",
-    "program": "NERRS",
-    "parent_dataset_id": null,
-    "category": "monitoring-program",
-    "description": "SWMP is the long-term, standardized environmental monitoring program of the National Estuarine Research Reserve System, operating fixed water-quality, nutrient, and meteorological stations across the network of U.S. estuarine reserves. It provides continuous abiotic and biological monitoring to detect short-term variability and long-term change in estuarine ecosystems.",
-    "network_id": "nerrs",
-    "spatial_coverage": "U.S. estuaries across the ~30 National Estuarine Research Reserves (all coasts, Great Lakes, Puerto Rico)",
-    "temporal_start": 1995,
-    "temporal_end": null,
-    "license": "U.S. Government public domain (no restrictions)",
-    "doi": null,
-    "homepage_url": "https://coast.noaa.gov/nerrs/",
-    "variables": "water temperature, salinity, specific conductivity, dissolved oxygen, pH, turbidity, water depth, nutrients (nitrogen, phosphorus), chlorophyll-a, air temperature, wind, barometric pressure, precipitation, PAR",
-    "update_frequency": "Continuous (15-minute water-quality/met sampling); telemetered near-real-time hourly, monthly nutrient grabs",
-    "source": "manual",
-    "source_url": "https://coast.noaa.gov/digitalcoast/data/nerr.html",
-    "retrieved_at": "2026-07-26",
-    "confidence": "high",
-    "notes": null,
-    "endpoints": [
-      {
-        "endpoint_type": "portal",
-        "url": "https://coast.noaa.gov/nerrs/",
-        "label": "NERRS program homepage",
-        "format_notes": "Program landing page; SWMP data are served through the CDMO (see nerrs-cdmo)",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "portal",
-        "url": "https://coast.noaa.gov/digitalcoast/data/nerr.html",
-        "label": "NERRS SWMP data page on NOAA Digital Coast",
-        "format_notes": "Digital Coast catalog entry describing SWMP data and access routes",
-        "auth_required": false
-      }
-    ]
-  },
-  {
     "dataset_id": "noaa-co-ops",
     "name": "NOAA Center for Operational Oceanographic Products and Services (Tides & Currents)",
     "acronym": "CO-OPS",
     "provider": "NOAA National Ocean Service",
-    "program": "NOAA National Ocean Service",
+    "program": "National Water Level Observation Network (NWLON) / PORTS",
     "parent_dataset_id": null,
     "category": "observing-system",
-    "description": "NOAA's national network of water-level (tide) gauges, current meters, and meteorological sensors providing real-time and historical tides, water levels, currents, and coastal met observations. Data are served through the CO-OPS Data Retrieval API.",
-    "network_id": null,
-    "spatial_coverage": "United States coasts, Great Lakes, and territories",
+    "description": "NOAA's authoritative source for water levels, tide predictions, coastal currents, and ancillary meteorological observations from the National Water Level Observation Network and Physical Oceanographic Real-Time System (PORTS). Observed and predicted data are delivered through the CO-OPS Data Retrieval REST API plus companion metadata and derived-product APIs.",
+    "network_id": "ioos",
+    "spatial_coverage": "US coasts, Great Lakes, and territories (Atlantic, Pacific, Gulf, Caribbean, Pacific islands)",
     "temporal_start": 1854,
     "temporal_end": null,
-    "license": "Public domain (U.S. Government work)",
+    "license": "U.S. Government work / public domain (NOAA open data)",
     "doi": null,
     "homepage_url": "https://tidesandcurrents.noaa.gov/",
     "variables": "water level, tide predictions, currents, water temperature, air temperature, wind, barometric pressure, conductivity, air gap, datums",
-    "update_frequency": "6-minute / near-real-time",
+    "update_frequency": "real-time (6-minute observations; continuous predictions)",
     "source": "manual",
     "source_url": "https://api.tidesandcurrents.noaa.gov/api/prod/",
     "retrieved_at": "2026-07-26",
@@ -2884,33 +2740,7 @@
         "label": "NOAA Tides & Currents",
         "format_notes": "products browser and station pages",
         "auth_required": false
-      }
-    ]
-  },
-  {
-    "dataset_id": "noaa-coops-tidesandcurrents",
-    "name": "Center for Operational Oceanographic Products and Services — Tides & Currents",
-    "acronym": "CO-OPS",
-    "provider": "NOAA National Ocean Service — Center for Operational Oceanographic Products and Services (CO-OPS)",
-    "program": "National Water Level Observation Network (NWLON) / PORTS",
-    "parent_dataset_id": null,
-    "category": "observing-system",
-    "description": "NOAA's authoritative source for water levels, tide predictions, coastal currents, and ancillary meteorological observations from the National Water Level Observation Network and Physical Oceanographic Real-Time System (PORTS). Observed and predicted data are delivered through the CO-OPS Data Retrieval REST API plus companion metadata and derived-product APIs.",
-    "network_id": "ioos",
-    "spatial_coverage": "US coasts, Great Lakes, and territories (Atlantic, Pacific, Gulf, Caribbean, Pacific islands)",
-    "temporal_start": 1854,
-    "temporal_end": null,
-    "license": "U.S. Government work / public domain (NOAA open data)",
-    "doi": null,
-    "homepage_url": "https://tidesandcurrents.noaa.gov/",
-    "variables": "water level, tide predictions, high/low tide, coastal currents, water temperature, air temperature, wind, barometric pressure, conductivity, salinity, relative humidity",
-    "update_frequency": "real-time (6-minute observations; continuous predictions)",
-    "source": "manual",
-    "source_url": "https://tidesandcurrents.noaa.gov/",
-    "retrieved_at": "2026-07-26",
-    "confidence": "high",
-    "notes": null,
-    "endpoints": [
+      },
       {
         "endpoint_type": "rest-api",
         "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter",
@@ -2920,23 +2750,9 @@
       },
       {
         "endpoint_type": "rest-api",
-        "url": "https://api.tidesandcurrents.noaa.gov/mdapi/prod/",
-        "label": "CO-OPS Metadata API (MDAPI)",
-        "format_notes": "station metadata; JSON",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "rest-api",
         "url": "https://api.tidesandcurrents.noaa.gov/dpapi/prod/",
         "label": "CO-OPS Derived Product API (DPAPI)",
         "format_notes": "derived products (e.g., sea level trends, extremes); JSON",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "portal",
-        "url": "https://tidesandcurrents.noaa.gov/",
-        "label": "Tides & Currents web portal",
-        "format_notes": "human entry point, station listings, map",
         "auth_required": false
       }
     ]
@@ -3055,7 +2871,7 @@
     "acronym": "OOI",
     "provider": "Ocean Observatories Initiative (NSF)",
     "program": "OOI",
-    "parent_dataset_id": null,
+    "parent_dataset_id": "nsf-ooi",
     "category": "observing-system",
     "description": "NSF cabled and uncabled coastal observing arrays (Coastal Endurance off Oregon/Washington and Coastal Pioneer in the Mid-Atlantic Bight) delivering near-real-time physical, chemical, and biological ocean data via Data Explorer, ERDDAP, and the M2M API.",
     "network_id": "ooi",
@@ -3144,74 +2960,6 @@
     ]
   },
   {
-    "dataset_id": "noaa-digital-coast",
-    "name": "NOAA Digital Coast",
-    "acronym": null,
-    "provider": "NOAA Office for Coastal Management",
-    "program": "NOAA Office for Coastal Management",
-    "parent_dataset_id": null,
-    "category": "data-portal",
-    "description": "Digital Coast is NOAA's data, tools, and training platform for the coastal management community, aggregating elevation (lidar), imagery, land cover, benthic, socioeconomic, and marine cadastre datasets from 900+ contributing organizations. Its Data Access Viewer lets users search, customize, and download coastal geospatial data for free, and bulk data are mirrored on AWS public buckets.",
-    "network_id": null,
-    "spatial_coverage": "Coastal U.S. states, territories, and Great Lakes",
-    "temporal_start": 2007,
-    "temporal_end": null,
-    "license": "U.S. Government public domain / open (per-dataset metadata in InPort)",
-    "doi": null,
-    "homepage_url": "https://coast.noaa.gov/digitalcoast/",
-    "variables": "lidar/elevation, aerial and satellite imagery, land cover (C-CAP), benthic habitat, socioeconomic data, marine cadastre, coastal flooding layers",
-    "update_frequency": "Continuously updated as new contributed datasets are ingested",
-    "source": "manual",
-    "source_url": "https://coast.noaa.gov/digitalcoast/",
-    "retrieved_at": "2026-07-26",
-    "confidence": "high",
-    "notes": null,
-    "endpoints": [
-      {
-        "endpoint_type": "portal",
-        "url": "https://coast.noaa.gov/digitalcoast/",
-        "label": "Digital Coast home",
-        "format_notes": null,
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "portal",
-        "url": "https://coast.noaa.gov/dataviewer/",
-        "label": "Data Access Viewer (custom download)",
-        "format_notes": "user-defined AOI checkout; multiple formats/projections",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "ftp",
-        "url": "https://coast.noaa.gov/htdata/",
-        "label": "Bulk data (htdata)",
-        "format_notes": "lidar LAS/LAZ, GeoTIFF via HTTP directory",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "s3",
-        "url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/laz/index.html",
-        "label": "NOAA coastal lidar public S3 bucket",
-        "format_notes": "LAZ point-cloud tiles",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "portal",
-        "url": "https://coast.noaa.gov/digitalcoast/data/home.html",
-        "label": "Digital Coast data catalog",
-        "format_notes": "dataset landing pages",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "s3",
-        "url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/",
-        "label": "NOAA NOS coastal lidar AWS public dataset bucket",
-        "format_notes": "AWS S3 public bucket (Registry of Open Data) mirroring Digital Coast coastal lidar/LAZ point clouds",
-        "auth_required": false
-      }
-    ]
-  },
-  {
     "dataset_id": "nasa-swot-ssh",
     "name": "SWOT Level-2 KaRIn Low Rate Sea Surface Height Products",
     "acronym": "SWOT",
@@ -3259,50 +3007,57 @@
     ]
   },
   {
-    "dataset_id": "marinegeo-si",
-    "name": "Smithsonian Marine Global Earth Observatory",
+    "dataset_id": "marinegeo",
+    "name": "Smithsonian MarineGEO (Marine Global Earth Observatory)",
     "acronym": "MarineGEO",
-    "provider": "Smithsonian Institution (Tennenbaum Marine Observatories Network)",
+    "provider": "Smithsonian Institution, Tennenbaum Marine Observatories Network",
     "program": "Tennenbaum Marine Observatories Network",
     "parent_dataset_id": null,
-    "category": "observing-system",
+    "category": "monitoring-program",
     "description": "MarineGEO is a Smithsonian-led global network of coastal observatories that tracks marine biodiversity and ecosystem processes using standardized, coordinated field protocols and a central data management system. Partner observatories worldwide run shared modules (e.g. seagrass/epifauna, fish, predation assays, fouling communities) to link biodiversity change to ecosystem function.",
     "network_id": "marinegeo",
-    "spatial_coverage": "Global coastal/nearshore marine sites at partner observatories worldwide",
+    "spatial_coverage": "Global coastal (network of partner observatories worldwide)",
     "temporal_start": 2013,
     "temporal_end": null,
     "license": "MarineGEO Data Terms of Use and Authorship Policy (data public typically within 2 years of submission; attribution required)",
     "doi": null,
     "homepage_url": "https://marinegeo.si.edu/",
-    "variables": "marine biodiversity, seagrass and epifauna, fish, predation intensity, fouling/settlement communities, water temperature, benthic community structure",
+    "variables": "biodiversity, seagrass/habitat monitoring, epifauna, predation assays, fish/invertebrate community composition, water quality",
     "update_frequency": "Ongoing coordinated campaigns; data submitted and released on a rolling basis",
     "source": "manual",
-    "source_url": "https://marinegeo.si.edu/",
+    "source_url": "https://marinegeo.si.edu/about-us/what-we-do",
     "retrieved_at": "2026-07-26",
-    "confidence": "medium",
-    "notes": null,
+    "confidence": "high",
+    "notes": "MarineGEO has no single open machine API; standardized data flow to OBIS/GBIF and protocols/templates are published on Figshare and marinegeo.github.io. Licensing varies by dataset.",
     "endpoints": [
       {
         "endpoint_type": "portal",
         "url": "https://marinegeo.si.edu/",
-        "label": "MarineGEO program homepage / main entry point",
-        "format_notes": "Primary human entry point; central data submission is currently email-based (marinegeo-data@si.edu), no public ERDDAP/tabledap endpoint was corroborated via search",
+        "label": "MarineGEO home",
+        "format_notes": null,
         "auth_required": false
       },
       {
         "endpoint_type": "portal",
         "url": "https://marinegeo.github.io/",
-        "label": "MarineGEO data tools, standards, and protocols site",
-        "format_notes": "Data standards, submission templates, and R tooling (e.g. marinegeo-data-tracker); protocols also archived on Smithsonian Figshare",
+        "label": "MarineGEO data tools & standardized protocols",
+        "format_notes": "protocols, data-entry templates, standards",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "rest-api",
+        "url": "https://api.obis.org/v3/",
+        "label": "OBIS API (MarineGEO datasets published to OBIS)",
+        "format_notes": "JSON; Darwin Core occurrence records",
         "auth_required": false
       }
     ]
   },
   {
-    "dataset_id": "cdip-wave-buoys",
+    "dataset_id": "cdip",
     "name": "Coastal Data Information Program",
     "acronym": "CDIP",
-    "provider": "Scripps Institution of Oceanography, UC San Diego",
+    "provider": "Scripps Institution of Oceanography (UC San Diego)",
     "program": "U.S. Army Corps of Engineers / California Dept. of Parks & Recreation (funders)",
     "parent_dataset_id": null,
     "category": "observing-system",
@@ -3311,17 +3066,38 @@
     "spatial_coverage": "U.S. coasts (Pacific, Atlantic, Gulf of Mexico, Great Lakes, Pacific Islands) and select international sites",
     "temporal_start": 1975,
     "temporal_end": null,
-    "license": "Public / open (attribution to CDIP requested)",
+    "license": "Public domain (U.S. Government work)",
     "doi": null,
     "homepage_url": "https://cdip.ucsd.edu/",
-    "variables": "significant wave height, peak/mean wave period, peak/mean wave direction, directional wave spectra, sea surface temperature",
+    "variables": "significant wave height, peak/mean wave period, wave direction, directional wave spectra, sea surface temperature, wave-model output",
     "update_frequency": "real-time buoys updated every ~30 minutes",
     "source": "manual",
     "source_url": "https://cdip.ucsd.edu/m/documents/data_access.html",
     "retrieved_at": "2026-07-26",
     "confidence": "high",
-    "notes": null,
+    "notes": "Operated by Scripps with U.S. Army Corps of Engineers and California DPR support; buoys transmit via Iridium every 30 minutes.",
     "endpoints": [
+      {
+        "endpoint_type": "portal",
+        "url": "https://cdip.ucsd.edu/",
+        "label": "CDIP home",
+        "format_notes": null,
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "thredds",
+        "url": "https://thredds.cdip.ucsd.edu/thredds/catalog/cdip/archive/catalog.html",
+        "label": "CDIP THREDDS archive catalog",
+        "format_notes": "netCDF, OPeNDAP",
+        "auth_required": false
+      },
+      {
+        "endpoint_type": "erddap",
+        "url": "https://erddap.cdip.ucsd.edu/erddap/",
+        "label": "CDIP ERDDAP",
+        "format_notes": "tabledap/griddap; netCDF, CSV",
+        "auth_required": false
+      },
       {
         "endpoint_type": "thredds",
         "url": "https://thredds.cdip.ucsd.edu/thredds/catalog/cdip/catalog.html",
@@ -3330,117 +3106,9 @@
         "auth_required": false
       },
       {
-        "endpoint_type": "erddap",
-        "url": "https://erddap.cdip.ucsd.edu/erddap/",
-        "label": "CDIP ERDDAP",
-        "format_notes": "tabledap/griddap; CSV, JSON, NetCDF",
-        "auth_required": false
-      },
-      {
         "endpoint_type": "portal",
         "url": "https://cdip.ucsd.edu/m/products/",
         "label": "CDIP station products/map (human entry)",
-        "format_notes": null,
-        "auth_required": false
-      }
-    ]
-  },
-  {
-    "dataset_id": "ioos-glider-dac",
-    "name": "IOOS National Glider Data Assembly Center",
-    "acronym": "Glider DAC (NGDAC)",
-    "provider": "U.S. IOOS / NOAA (hosted at Rutgers, archived at NCEI)",
-    "program": "IOOS",
-    "parent_dataset_id": "us-ioos",
-    "category": "data-portal",
-    "description": "Centralized assembly center where glider operators submit autonomous underwater glider profiles for standardization, distribution over the WMO Global Telecommunications System, and archival at NCEI. Holds roughly 2,100 glider deployment datasets served through ERDDAP and THREDDS.",
-    "network_id": "ioos",
-    "spatial_coverage": "Global (U.S. and international underwater glider deployments)",
-    "temporal_start": 2014,
-    "temporal_end": null,
-    "license": "U.S. Government data / public domain (no access restrictions)",
-    "doi": null,
-    "homepage_url": "https://gliders.ioos.us/",
-    "variables": "temperature, salinity, conductivity, density, pressure, depth; some gliders add dissolved oxygen, chlorophyll/fluorescence, CDOM, backscatter",
-    "update_frequency": "continuous during deployments (real-time and delayed-mode)",
-    "source": "manual",
-    "source_url": "https://gliders.ioos.us/",
-    "retrieved_at": "2026-07-26",
-    "confidence": "high",
-    "notes": null,
-    "endpoints": [
-      {
-        "endpoint_type": "erddap",
-        "url": "https://gliders.ioos.us/erddap/",
-        "label": "Glider DAC ERDDAP",
-        "format_notes": "tabledap; CSV, JSON, NetCDF; RESTful web services",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "thredds",
-        "url": "https://gliders.ioos.us/thredds/catalog.html",
-        "label": "Glider DAC THREDDS Data Server",
-        "format_notes": "OPeNDAP, NetCDF Subset, WMS",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "portal",
-        "url": "https://gliders.ioos.us/",
-        "label": "Glider DAC map/portal",
-        "format_notes": null,
-        "auth_required": false
-      }
-    ]
-  },
-  {
-    "dataset_id": "mbon",
-    "name": "Marine Biodiversity Observation Network",
-    "acronym": "MBON",
-    "provider": "U.S. Integrated Ocean Observing System (IOOS)",
-    "program": "IOOS",
-    "parent_dataset_id": null,
-    "category": "observing-system",
-    "description": "A network that coordinates the collection, integration, and sharing of marine biodiversity observations (from microbes to megafauna) to detect and understand change across U.S. and global waters, developed under U.S. IOOS and connected to the global GEO BON and GOOS frameworks. Standardized biodiversity products are served through IOOS-affiliated ERDDAP servers, OBIS/GBIF, and the MBON data portals.",
-    "network_id": "ioos",
-    "spatial_coverage": "U.S. regional MBON sites (e.g., Florida Keys, Santa Barbara Channel, Monterey Bay, Chukchi/Arctic) and global partner network",
-    "temporal_start": 2014,
-    "temporal_end": null,
-    "license": "Varies by contributing project (often CC-BY / Public Domain)",
-    "doi": null,
-    "homepage_url": "https://mbon.ioos.us/",
-    "variables": "biodiversity, species occurrence, productivity, genomics/eDNA, phenology, habitat characterization, satellite-derived variables",
-    "update_frequency": "Varies by project (continuous to periodic)",
-    "source": "manual",
-    "source_url": "https://ioos.noaa.gov/project/mbon/",
-    "retrieved_at": "2026-07-26",
-    "confidence": "high",
-    "notes": "Biological data flow to OBIS/GBIF; the MBON Data Portal (built on the AXIOM Research Workspace) integrates real-time conditions, satellite, and biodiversity layers.",
-    "endpoints": [
-      {
-        "endpoint_type": "portal",
-        "url": "https://mbon.ioos.us/",
-        "label": "MBON Data Portal",
-        "format_notes": "data exploration and layer search",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "rest-api",
-        "url": "https://api.obis.org/",
-        "label": "MBON biological records via OBIS API",
-        "format_notes": "Darwin Core occurrence JSON",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "portal",
-        "url": "https://ioos.noaa.gov/project/mbon/",
-        "label": "U.S. IOOS MBON program",
-        "format_notes": "program overview and regional networks",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "portal",
-        "url": "https://marinebon.org/",
-        "label": "MBON community portal",
         "format_notes": null,
         "auth_required": false
       }
@@ -3494,82 +3162,42 @@
     ]
   },
   {
-    "dataset_id": "edi-lter-coastal",
-    "name": "Coastal LTER Datasets in the Environmental Data Initiative Repository",
-    "acronym": "EDI",
-    "provider": "Environmental Data Initiative (EDI)",
-    "program": "LTER",
-    "parent_dataset_id": null,
-    "category": "archive",
-    "description": "EDI is the trusted repository (built on the PASTA+ software stack, co-developed with the US LTER Network) that curates and disseminates long-term ecological data, including coastal and estuarine LTER sites such as VCR, GCE, PIE, FCE, SBC, CCE, PAL, MCR, and NGA. Data packages are EML-described and served through the PASTA+ Data Package Manager REST API, with the EDI Data Portal as the human interface.",
-    "network_id": "lter",
-    "spatial_coverage": "United States LTER coastal/estuarine and open-ocean sites (global partner sites also present)",
-    "temporal_start": 1980,
-    "temporal_end": null,
-    "license": "typically CC0 or CC-BY per data package (declared in EML)",
-    "doi": null,
-    "homepage_url": "https://portal.edirepository.org/",
-    "variables": "site-dependent: water quality, nutrients, salinity/temperature, primary production, tides/hydrography, community ecology, biogeochemistry",
-    "update_frequency": "ongoing (rolling data package revisions)",
-    "source": "manual",
-    "source_url": "https://portal.edirepository.org/",
-    "retrieved_at": "2026-07-26",
-    "confidence": "high",
-    "notes": null,
-    "endpoints": [
-      {
-        "endpoint_type": "rest-api",
-        "url": "https://pasta.lternet.edu/package",
-        "label": "PASTA+ Data Package Manager REST API",
-        "format_notes": "EML metadata, data entities, and search; e.g. /metadata/eml/{scope}/{id}/{rev}",
-        "auth_required": false
-      },
-      {
-        "endpoint_type": "portal",
-        "url": "https://portal.edirepository.org/",
-        "label": "EDI Data Portal",
-        "format_notes": "human search/browse UI over PASTA+",
-        "auth_required": false
-      }
-    ]
-  },
-  {
-    "dataset_id": "neon-data-portal",
-    "name": "NSF National Ecological Observatory Network Data Portal",
+    "dataset_id": "neon-aquatic",
+    "name": "NEON Aquatic Data (Data Portal)",
     "acronym": "NEON",
-    "provider": "Battelle (operated for the U.S. National Science Foundation)",
+    "provider": "NSF National Ecological Observatory Network (Battelle)",
     "program": "U.S. National Science Foundation",
     "parent_dataset_id": null,
     "category": "observing-system",
     "description": "A continental-scale ecological observatory whose aquatic sites (lakes, wadeable streams, and rivers, some near-coastal) provide standardized sensor and observational data products. The NEON Data API exposes products, sites, and sampling locations for programmatic access.",
     "network_id": "neon",
-    "spatial_coverage": "United States (20 ecoclimatic domains; ~34 aquatic sites among 81 total field sites)",
-    "temporal_start": 2019,
+    "spatial_coverage": "United States aquatic field sites (streams, rivers, lakes; some coastal-influenced)",
+    "temporal_start": 2016,
     "temporal_end": null,
     "license": "Open (NEON data usage policy; free and open, attribution requested)",
     "doi": null,
     "homepage_url": "https://data.neonscience.org/",
-    "variables": "water temperature, dissolved oxygen, specific conductance, pH, turbidity, chlorophyll, nitrate, stream discharge, surface-water chemistry, aquatic biology/taxonomy",
+    "variables": "surface water quality, water temperature, stream discharge/elevation, dissolved gases, nutrients, aquatic organisms (macroinvertebrates, algae, fish), meteorology",
     "update_frequency": "sensor products roughly monthly release; ongoing",
     "source": "manual",
     "source_url": "https://data.neonscience.org/data-api/",
     "retrieved_at": "2026-07-26",
     "confidence": "high",
-    "notes": null,
+    "notes": "As of June 30, 2026, data downloads require a NEON account or API token; all data products released under CC BY 4.0.",
     "endpoints": [
-      {
-        "endpoint_type": "rest-api",
-        "url": "https://data.neonscience.org/api/v0/",
-        "label": "NEON Data API v0",
-        "format_notes": "JSON; endpoints /products, /sites, /locations, /data; optional API token",
-        "auth_required": false
-      },
       {
         "endpoint_type": "portal",
         "url": "https://data.neonscience.org/",
-        "label": "NEON Data Portal (human entry)",
+        "label": "NEON Data Portal",
         "format_notes": null,
-        "auth_required": false
+        "auth_required": true
+      },
+      {
+        "endpoint_type": "rest-api",
+        "url": "https://data.neonscience.org/api/v0/",
+        "label": "NEON Data API (v0)",
+        "format_notes": "JSON metadata; CSV data files; token/account required as of 2026",
+        "auth_required": true
       }
     ]
   },

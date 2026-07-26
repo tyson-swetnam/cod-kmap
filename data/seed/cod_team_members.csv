@@ -47,12 +47,12 @@ George Burba,4.2,Technology and Innovation,University of Nebraska-Lincoln,unl,fa
 Sarah Pennington,5.7,Cyberinfrastructure IPT,Battelle,battelle,false,false,false,,active,,,,,,32,
 Kevin Nitschke,6.0,Prototype Infrastructure Lead,Battelle,battelle,false,false,false,,active,,,,,,33,PMP
 Kevin Nitschke,6.1,Engineering Management,Battelle,battelle,false,false,false,,active,,,,,,34,PMP
-NEON Staff,6.2,"Sensor Assemblies, Calibration and Validation",Battelle / NEON,battelle,false,false,false,,active,,,,,,35,Chart lists the NEON staff pool rather than a named individual
+NEON Staff,6.2,"Sensor Assemblies, Calibration and Validation",Battelle / NEON,battelle,false,false,false,,collective,,,,,,35,Chart lists the NEON staff pool rather than a named individual; not a person, so excluded from the people table
 Eric McLamore,6.5,COD Tech R+D,Clemson University,clemson,false,false,false,,active,,,,,,36,Chart renders the surname as Maclamore
 Hongxu Xiao,6.5,COD Tech R+D,Clemson University,clemson,false,false,false,,active,,,,,,37,
 Christopher Ritz,7.0,Project Management Office / Project Control Manager,Clemson University,clemson,false,false,false,,active,,,,,,38,PMP
 Michael Stewart,7.2,System Engineering,Clemson University,clemson,false,false,false,,active,,,,,,39,
-Rodrigo Vargas,1.4,Science Leadership Committee Co-Chair,University of Delaware,delaware,false,false,true,COD Science Leadership Committee,active,,,,,,50,Chart labels the affiliation Arizona; verify before publishing
+Rodrigo Vargas,1.4,Science Leadership Committee Co-Chair,University of Delaware,delaware,false,false,true,COD Science Leadership Committee,active,,,,,,50,Affiliation per ORCID/institutional record; the 2026 chart prints Arizona
 Ben Bond-Lamberty,1.4,Science Leadership Committee Co-Chair,Pacific Northwest National Laboratory,pnnl,false,false,true,COD Science Leadership Committee,active,,,,,,51,
 Erik Smith,1.4,Science Leadership Committee Member,University of South Carolina / NOAA NERRS,usc,false,false,true,COD Science Leadership Committee,active,,,,,,52,North Inlet-Winyah Bay NERR
 Lilian Alessa,1.4,Science Leadership Committee Member,University of Idaho,uidaho,false,false,true,COD Science Leadership Committee,active,,,,,,53,
@@ -60,7 +60,7 @@ Bill Kleindl,1.4,Science Leadership Committee Member,Montana State University,mo
 Julia Cherry,1.4,Science Leadership Committee Member,University of Alabama,alabama,false,false,true,COD Science Leadership Committee,active,,,,,,55,
 Jim Anderson,1.4,Science Leadership Committee Member,Clemson University,clemson,false,false,true,COD Science Leadership Committee,active,,,,,,56,
 Clarissa Anderson,1.4,Science Leadership Committee Member,Scripps Institution of Oceanography / SCCOOS,other-university,false,false,true,COD Science Leadership Committee,active,,,,,,57,
-Christine Angelini,1.4,Science Leadership Committee Member,University of Florida,florida,false,false,true,COD Science Leadership Committee,active,,,,,,58,Chart labels the affiliation AECOM; verify before publishing
+Christine Angelini,1.4,Science Leadership Committee Member,University of Florida,florida,false,false,true,COD Science Leadership Committee,active,,,,,,58,Affiliation per institutional record; the 2026 chart prints AECOM
 Sheila Lischwe,1.5,Sponsored Research / Contract Management and Government Compliance,Clemson University,clemson,false,false,false,,active,,,,,,60,Administrative function
 Kate Riley,1.5,Accounting,Clemson University,clemson,false,false,false,,active,,,,,,61,Administrative function
 Renee Roux,1.5,Legal,Clemson University,clemson,false,false,false,,active,,,,,,62,Administrative function

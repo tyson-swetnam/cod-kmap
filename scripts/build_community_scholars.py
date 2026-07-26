@@ -29,11 +29,19 @@ Harvest stages (each checkpoints, so --resume is cheap):
   E  write       upsert into community_scholars + refresh parquet.
 
 Identity rules, learned the hard way (see
-scripts/wipe_bad_openalex_attributions.py): candidates are OpenAlex author
-ids from the start, so no name-matching is ever performed. A scholar is
-linked to an existing `people` row only on ORCID or openalex_id equality.
-A coastal-share gate then drops authors whose coastal work is incidental,
-which is what previously let a cardiologist onto a marine-lab page.
+scripts/wipe_bad_openalex_attributions.py):
+
+  * Harvest candidates are OpenAlex author ids from the start, so a person
+    is never *resolved* by name. A coastal-share gate then drops authors
+    whose coastal work is incidental, which is what previously let a
+    cardiologist onto a marine-lab page.
+  * A scholar is linked to an existing `people` row only on ORCID or
+    openalex_id equality — never on a name.
+  * reconcile() does compare names, but only to decide whether two rows
+    already in this roster describe one researcher. That never attributes a
+    publication, so it cannot cause a wrong-person attribution; and
+    same_researcher() requires spelled-out given names to agree, so
+    "Y. Stacy Zhang" and "Y. Joseph Zhang" stay two people.
 
 Usage::
 
@@ -54,6 +62,7 @@ import os
 import re
 import sys
 import time
+import unicodedata
 from datetime import date, datetime
 from pathlib import Path
 
@@ -160,6 +169,64 @@ def clean_orcid(v: str | None) -> str | None:
     return m.group(1) if m else None
 
 
+def scholar_ident(v: str | None) -> str | None:
+    """Reduce a Google Scholar reference to its bare profile id.
+
+    OpenAlex reports `ids.scholar` as a full profile URL
+    (`http://scholar.google.com/citations?user=XXXX&hl=en`), while the
+    curated seed stores the bare id. Comparing the two raw meant the
+    Scholar-id matcher in reconcile() could never fire, so 332 of 346
+    curated scholars would have been appended as duplicates of researchers
+    the harvest had already measured.
+    """
+    if not v:
+        return None
+    v = v.strip()
+    m = re.search(r"[?&]user=([A-Za-z0-9_-]+)", v)
+    return m.group(1) if m else (v or None)
+
+
+def _fold(v: str) -> str:
+    v = unicodedata.normalize("NFKD", v or "")
+    return "".join(ch for ch in v if not unicodedata.combining(ch)).lower()
+
+
+def name_key(name: str | None) -> str:
+    """Surname, accent-folded — a cheap bucket for candidate comparison."""
+    parts = [p for p in re.split(r"[^A-Za-z]+", _fold(name or "")) if p]
+    return parts[-1] if parts else ""
+
+
+def same_researcher(a: str | None, b: str | None) -> bool:
+    """Do these two names describe one researcher?
+
+    Used ONLY to decide whether two roster rows are the same person, never to
+    attribute a publication. Surnames must match, and any given name both
+    spell out in full must agree: a middle initial may be absent from one form
+    ("Sarah Giddings" / "Sarah N. Giddings"), but two different spelled-out
+    names are different people ("Y. Stacy Zhang" / "Y. Joseph Zhang").
+    """
+    def split(v):
+        parts = [p for p in re.split(r"[^A-Za-z]+", _fold(v or "")) if p]
+        return (parts[:-1], parts[-1]) if len(parts) > 1 else ([], parts[0] if parts else "")
+
+    def compatible(x, y):
+        if x == y:
+            return True
+        if len(x) == 1 or len(y) == 1:
+            return x[0] == y[0]
+        short, long = sorted((x, y), key=len)
+        return len(short) >= 3 and long.startswith(short)
+
+    ga, sa = split(a)
+    gb, sb = split(b)
+    if not sa or sa != sb:
+        return False
+    if ga and gb and not compatible(ga[0], gb[0]):
+        return False
+    return all(compatible(ga[i], gb[i]) for i in range(1, min(len(ga), len(gb))))
+
+
 # ── topics ────────────────────────────────────────────────────────────
 
 def read_topics() -> list[dict]:
@@ -215,6 +282,14 @@ def stage_a(session, topics: list[dict], resume: bool) -> list[str]:
                 ids.add(aid)
                 found += 1
         print(f"[A] {tid}: +{found} authors (running total {len(ids)})")
+    if not ids:
+        # Every topic request failed (get() returns None once its retries are
+        # spent, which yields an empty group list). Writing the checkpoint
+        # here would make --resume treat "nothing found" as "already done".
+        print("[error] stage A found no candidates — every topic request "
+              "failed. Not writing a checkpoint; re-run when the API is "
+              "reachable.", file=sys.stderr)
+        raise SystemExit(1)
     CACHE.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(sorted(ids)))
     print(f"[A] {len(ids)} unique candidate authors -> {out.relative_to(ROOT)}")
@@ -242,7 +317,7 @@ def author_record(a: dict) -> dict | None:
         "openalex_id": aid,
         "name": a.get("display_name"),
         "orcid": clean_orcid(a.get("orcid")),
-        "google_scholar_id": ((a.get("ids") or {}).get("scholar") or None),
+        "google_scholar_id": scholar_ident((a.get("ids") or {}).get("scholar")),
         "affiliation": inst.get("display_name"),
         "affiliation_country": inst.get("country_code"),
         "affiliation_ror": inst.get("ror"),
@@ -271,7 +346,11 @@ def stage_b(session, candidates: list[str], resume: bool) -> dict[str, dict]:
     todo = [a for a in candidates if a not in have]
     CACHE.mkdir(parents=True, exist_ok=True)
     batch_ok = True
-    with out.open("a") as fh:
+    # Append only when resuming. Without --resume `have` starts empty and
+    # `todo` is the full candidate list, so appending to an existing cache
+    # wrote every record a second time and the resumed read then counted
+    # duplicates.
+    with out.open("a" if resume else "w") as fh:
         for i in range(0, len(todo), BATCH):
             chunk = todo[i:i + BATCH]
             authors: list[dict] = []
@@ -337,7 +416,8 @@ def stage_c(session, ids: list[str], topics: list[str], resume: bool) -> dict[st
     cutoff = f"{date.today().year - 5}-01-01"
     todo = [a for a in ids if a not in have]
     CACHE.mkdir(parents=True, exist_ok=True)
-    with out.open("a") as fh:
+    with out.open("a" if resume else "w") as fh:   # see stage_b
+
         for n, aid in enumerate(todo, 1):
             all_time = get(session, "works", {
                 "filter": f"author.id:{aid},primary_topic.id:{topic_filter}",
@@ -449,11 +529,42 @@ def reconcile(harvested: list[dict], curated: list[dict]) -> list[dict]:
     measured metrics; an unmatched curated scholar is kept as-is so a
     hand-picked expert is never silently dropped by a threshold."""
     by_orcid = {r["orcid"]: r for r in harvested if r.get("orcid")}
-    by_gs = {r["google_scholar_id"]: r for r in harvested
-             if r.get("google_scholar_id")}
-    matched = 0
+    # No curated row carries an openalex_id today, but the seed invites
+    # maintainers to fill one in, and it is the strongest identifier of the
+    # three — so match on it first when present.
+    by_oa = {r["openalex_id"]: r for r in harvested if r.get("openalex_id")}
+    # Both sides are normalised through scholar_ident() so a bare curated id
+    # can match an OpenAlex payload, which reports ids.scholar as a full
+    # profile URL. Comparing them raw meant this matcher never fired.
+    by_gs = {scholar_ident(r.get("google_scholar_id")): r for r in harvested
+             if scholar_ident(r.get("google_scholar_id"))}
+    # Most curated rows carry neither an ORCID nor a Scholar id — only ~20 of
+    # 346 do — so identifier matching alone would append the other ~326 as
+    # fresh rows even when the harvest had already measured that same person,
+    # listing them twice in the Scholars tab.
+    #
+    # Falling back to a name comparison here is safe in a way that
+    # name-resolving against OpenAlex is NOT: this only decides whether two
+    # rows already in the roster describe one researcher. It never attributes
+    # a publication, so it cannot produce the wrong-person attributions that
+    # scripts/wipe_bad_openalex_attributions.py had to undo. The comparison
+    # also requires spelled-out given names to agree, so "Y. Stacy Zhang" and
+    # "Y. Joseph Zhang" stay separate people.
+    by_name = {}
+    for r in harvested:
+        by_name.setdefault(name_key(r.get("name")), []).append(r)
+
+    matched = matched_by_name = 0
     for c in curated:
-        target = by_orcid.get(c.get("orcid")) or by_gs.get(c.get("google_scholar_id"))
+        target = (by_oa.get(c.get("openalex_id"))
+                  or by_orcid.get(c.get("orcid"))
+                  or by_gs.get(scholar_ident(c.get("google_scholar_id"))))
+        if target is None:
+            for cand in by_name.get(name_key(c.get("name")), []):
+                if same_researcher(c.get("name"), cand.get("name")):
+                    target = cand
+                    matched_by_name += 1
+                    break
         if target:
             matched += 1
             target["source"] = "openalex+curated"
@@ -466,7 +577,8 @@ def reconcile(harvested: list[dict], curated: list[dict]) -> list[dict]:
                     target[fld] = c[fld]
             continue
         harvested.append(c)
-    print(f"[E] reconciled {matched} curated scholar(s) with harvest results; "
+    print(f"[E] reconciled {matched} curated scholar(s) with harvest results "
+          f"({matched_by_name} of them by name after no identifier matched); "
           f"{len(curated) - matched} kept as curated-only")
     return harvested
 
@@ -494,6 +606,32 @@ def finalize(records: list[dict]) -> list[dict]:
             if not row[flag]:
                 row[rank] = None
         out.append(row)
+
+    # Renumber every cohort across the final set. Harvested rows arrive
+    # ranked 1..100 and unmatched curated rows keep the ranks they were
+    # seeded with (also starting at 1), so without this the table ships with
+    # duplicate ranks — which the harvest's own qa.py invariant rejects, and
+    # which would leave the Scholars tab unable to order a cohort.
+    # Measured rows sort ahead of curated-only ones, and each cohort keeps
+    # the ordering its own metric implies.
+    ORDER = {
+        "rank_preeminent": lambda r: (-(r.get("h_index") or 0),
+                                      -(r.get("cited_by_count") or 0)),
+        "rank_most_active": lambda r: (-(r.get("coastal_recent_works") or 0),
+                                       -(r.get("coastal_works_count") or 0)),
+        "rank_rising": lambda r: (-(r.get("two_yr_mean_citedness") or 0.0),
+                                  -(r.get("coastal_recent_works") or 0)),
+    }
+    for flag, rank in (("is_preeminent", "rank_preeminent"),
+                       ("is_most_active", "rank_most_active"),
+                       ("is_rising", "rank_rising")):
+        cohort = [r for r in out if r[flag]]
+        cohort.sort(key=lambda r: (r.get("h_index") is None
+                                   and r.get("coastal_recent_works") is None,
+                                   ORDER[rank](r),
+                                   str(r.get("name") or "")))
+        for i, rec in enumerate(cohort, 1):
+            rec[rank] = i
     return out
 
 
@@ -547,6 +685,9 @@ def main() -> int:
                       help="resolve topic labels to T##### ids and exit")
     ap.add_argument("--stage", choices=["A", "B", "C", "all"], default="all")
     ap.add_argument("--resume", action="store_true", help="reuse cached stage output")
+    ap.add_argument("--allow-unresolved-topics", action="store_true",
+                    help="harvest even if coastal_topics.csv still holds RESOLVE "
+                         "sentinels (resolves at run time; not reproducible)")
     ap.add_argument("--dry-run", action="store_true", help="compute but don't write")
     ap.add_argument("--skip-export", action="store_true", help="don't refresh parquet")
     ap.add_argument("--emit-empty-parquet", action="store_true",
@@ -572,6 +713,11 @@ def main() -> int:
     conn.execute("SET search_path = main;")
 
     if args.emit_empty_parquet:
+        if args.dry_run or args.skip_export:
+            print("[dry-run] --emit-empty-parquet suppressed by "
+                  "--dry-run/--skip-export")
+            conn.close()
+            return 0
         for base in PARQUET_OUT:
             base.mkdir(parents=True, exist_ok=True)
             out = base / "community_scholars.parquet"
@@ -583,12 +729,35 @@ def main() -> int:
 
     if args.harvest:
         session = make_session()
-        topics = resolve_topics(session, read_topics())
+        # Check the CSV as committed, BEFORE any resolution. resolve_topics()
+        # fills the sentinel in on the fly, so checking afterwards could never
+        # fire the guard the docs promise: a harvest would quietly define its
+        # cohorts from whatever a search returned that day, and the committed
+        # topic set would not explain the published roster.
+        topics = read_topics()
+        sentinels = [r["label"] for r in topics
+                     if not TOPIC_ID_RE.match((r.get("openalex_topic_id") or "").strip())]
+        if sentinels and not args.allow_unresolved_topics:
+            print(f"[error] {len(sentinels)} topic(s) still hold the "
+                  f"{SENTINEL} sentinel in {TOPICS_CSV.relative_to(ROOT)}:",
+                  file=sys.stderr)
+            for label in sentinels:
+                print(f"          {label}", file=sys.stderr)
+            print("[error] run --resolve-topics, paste the ids into that file, "
+                  "and re-run, so the published roster stays traceable to an "
+                  "explicit topic set. Use --allow-unresolved-topics to resolve "
+                  "at run time anyway (the roster is then not reproducible).",
+                  file=sys.stderr)
+            return 1
+        if sentinels:
+            print(f"[warn] resolving {len(sentinels)} topic(s) at run time — "
+                  f"this roster will not be reproducible from the committed CSV")
+            topics = resolve_topics(session, topics)
         tids = topic_ids(topics)
         if len(tids) < len(topics):
-            print(f"[error] {len(topics) - len(tids)} topic(s) unresolved — "
-                  f"run --resolve-topics and update {TOPICS_CSV.relative_to(ROOT)} "
-                  f"so the roster stays reproducible", file=sys.stderr)
+            print(f"[error] {len(topics) - len(tids)} topic(s) could not be "
+                  f"resolved against the OpenAlex topics endpoint",
+                  file=sys.stderr)
             return 1
 
         candidates = stage_a(session, topics, args.resume)

@@ -61,17 +61,42 @@ async function fetchTeam() {
   if (!conn) throw new Error('DuckDB connection not ready');
 
   // One statement: org-chart position + scholarly identity + metrics.
-  // The metrics CTE is aggregated separately because person_area_metrics
-  // has one row per (person, research area) and we want a person total.
+  //
+  // Publication and citation totals come from authorship/publications, NOT
+  // from summing person_area_metrics. That table has one row per (person,
+  // research area), so a paper spanning four areas is counted four times:
+  // summing it reported 740 publications for a researcher with 100. Only
+  // h_index is taken from there, where MAX over the person's areas is the
+  // intended reading.
   const sql = `
-    WITH metrics AS (
-      SELECT person_id,
-             SUM(n_publications)  AS n_pubs,
-             SUM(total_citations) AS citations,
-             MAX(h_index)         AS h_index,
-             SUM(n_co_authors)    AS n_coauth
-      FROM person_area_metrics
-      GROUP BY person_id
+    WITH pubs AS (
+      SELECT a.person_id,
+             COUNT(DISTINCT a.publication_id) AS n_pubs,
+             SUM(p.cited_by_count)            AS citations
+      FROM authorship  a
+      JOIN publications p ON p.publication_id = a.publication_id
+      GROUP BY a.person_id
+    ),
+    coauth AS (
+      SELECT person_id, COUNT(DISTINCT other_id) AS n_coauth FROM (
+        SELECT person_a_id AS person_id, person_b_id AS other_id FROM collaborations
+        UNION ALL
+        SELECT person_b_id AS person_id, person_a_id AS other_id FROM collaborations
+      ) GROUP BY person_id
+    ),
+    hidx AS (
+      SELECT person_id, MAX(h_index) AS h_index
+      FROM person_area_metrics GROUP BY person_id
+    ),
+    metrics AS (
+      SELECT COALESCE(pubs.person_id, coauth.person_id, hidx.person_id) AS person_id,
+             pubs.n_pubs      AS n_pubs,
+             pubs.citations   AS citations,
+             hidx.h_index     AS h_index,
+             coauth.n_coauth  AS n_coauth
+      FROM pubs
+      FULL OUTER JOIN coauth ON coauth.person_id = pubs.person_id
+      FULL OUTER JOIN hidx   ON hidx.person_id   = COALESCE(pubs.person_id, coauth.person_id)
     )
     SELECT tm.member_id,
            tm.person_id,
@@ -166,7 +191,9 @@ function heroCard(row, kind) {
 
 function memberRow(row) {
   const links = profileLinks(row);
-  const open = row.status !== 'active';
+  // 'collective' is staffed work (the chart's NEON Staff box), so it is not
+  // dimmed like a vacancy — it just has no individual to link to.
+  const open = row.status === 'tbd' || row.status === 'tbh';
   return `
     <li class="team-member${open ? ' team-member-open' : ''}">
       <div class="team-member-main">
@@ -175,7 +202,9 @@ function memberRow(row) {
       </div>
       <div class="team-member-meta">
         ${instChip(row)}
-        ${open ? `<span class="team-status">${esc(row.status.toUpperCase())}</span>` : ''}
+        ${row.status !== 'active'
+          ? `<span class="team-open-badge">${esc(row.status === 'collective' ? 'GROUP' : row.status.toUpperCase())}</span>`
+          : ''}
         ${hasMetrics(row)
           ? `<span class="team-member-metric">h ${fmtInt(row.h_index)} · ${fmtInt(row.n_pubs)} pubs</span>`
           : ''}

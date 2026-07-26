@@ -52,6 +52,18 @@ function esc(s) {
   return String(s ?? '').replace(/[&<>"]/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
+// The views re-render by replacing container.innerHTML, which throws away the
+// focused element. Put focus and the caret back on the replacement so typing
+// in a search box is not interrupted after every keystroke.
+function restoreFocus(selector, caret) {
+  const el = _container && _container.querySelector(selector);
+  if (!el) return;
+  el.focus();
+  if (caret != null && el.setSelectionRange) {
+    try { el.setSelectionRange(caret, caret); } catch { /* non-text input */ }
+  }
+}
+
 function fmtInt(n) {
   if (n == null) return '—';
   return Math.round(n).toLocaleString();
@@ -270,15 +282,18 @@ async function renderDatasets(targetId) {
 
   _container.querySelector('#ds-cat').addEventListener('change', (ev) => {
     _category = ev.target.value;
-    renderDatasets(targetId);
+    renderDatasets(null);
   });
   _container.querySelector('#ds-prog').addEventListener('change', (ev) => {
     _program = ev.target.value;
-    renderDatasets(targetId);
+    renderDatasets(null);
   });
   _container.querySelector('#ds-q').addEventListener('input', (ev) => {
     _qFilter = ev.target.value;
-    renderDatasets(targetId);
+    const caret = ev.target.selectionStart;
+    // See the note in scholars.js: the re-render destroys this input, so
+    // focus and caret must be restored on its replacement.
+    renderDatasets(null).then(() => restoreFocus('#ds-q', caret));
   });
 
   for (const btn of _container.querySelectorAll('.ds-ep-copy')) {

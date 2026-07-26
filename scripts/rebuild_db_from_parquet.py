@@ -223,9 +223,11 @@ def main() -> int:
             print(f"[skip]   {table:<22} (no {f.name})")
             continue
         try:
+            # Bind the path rather than interpolating it, matching the
+            # LOAD_ORDER loop above.
             conn.execute(
                 f"CREATE OR REPLACE TABLE {table} AS "
-                f"SELECT * FROM read_parquet('{f}')"
+                f"SELECT * FROM read_parquet(?)", [str(f)]
             )
             cnt = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
             print(f"[derive] {table:<22} {cnt:>6} rows  <- {f.name}")

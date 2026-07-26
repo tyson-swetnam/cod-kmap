@@ -27,7 +27,7 @@ The map is the primary entry point. Open it in a new tab:
   style="border:1px solid #d9e2df;border-radius:6px;background:#fafaf7;">
 </iframe>
 
-The live application has seven tabs:
+The live application has ten tabs:
 
 - **Map** — a vector basemap with facility points colour-coded by type
   and twelve overlay layers (NERR reserves, National Estuary Programs,
@@ -40,6 +40,12 @@ The live application has seven tabs:
   Visualization Plan* doc).
 - **People** — the researcher directory with affiliations, publication
   metrics, ORCID, OpenAlex, and Google Scholar links where available.
+- **Team** — the COD project organisational chart: PI and Co-PIs, the
+  Science Leadership Committee, and every work-breakdown track.
+- **Scholars** — a field-wide roster of coastal ocean science researchers
+  across the pre-eminent, most-active, and rising cohorts.
+- **Data** — the curated coastal dataset catalogue, with a copyable badge
+  per access endpoint.
 - **SQL** — an in-browser DuckDB-Wasm query interface against the
   full dataset.
 - **Stats** — bar charts summarising the current filter set.
@@ -51,10 +57,10 @@ The live application has seven tabs:
 |---|---:|
 | Facilities (federal, state, university, NGO, protected area) | 3,500+ |
 | Researchers in the People directory | 240+ |
-| COD project team members (Team tab) | 41 |
-| Coastal ocean science scholars (Scholars tab) | 346 |
-| Curated coastal datasets (Data tab) | 82 |
-| Dataset access endpoints | 258 |
+| COD project team members (Team tab) | 40 |
+| Coastal ocean science scholars (Scholars tab) | 339 |
+| Curated coastal datasets (Data tab) | 72 |
+| Dataset access endpoints | 242 |
 | Networks / consortia | 32+ |
 | Funders | 80+ |
 | Polygon overlays | 12 |

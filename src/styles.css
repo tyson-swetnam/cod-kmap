@@ -1812,7 +1812,10 @@ footer a:hover { color: var(--c-primary); }
   margin-left: auto; font-size: .78rem;
 }
 .team-member-metric { color: #64748b; font-size: .74rem; }
-.team-status-open, .team-status {
+/* Per-member badge on an unfilled position. Distinct from .team-status,
+ * which is the page-level status paragraph — sharing the class meant the
+ * later rule won and the status querySelector could match a badge. */
+.team-open-badge {
   font-size: .66rem; padding: 1px 6px; border-radius: 3px;
   background: #fef3c7; color: #92400e; letter-spacing: .04em;
 }

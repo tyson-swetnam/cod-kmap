@@ -36,6 +36,18 @@ function esc(s) {
   return String(s ?? '').replace(/[&<>"]/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
+// The views re-render by replacing container.innerHTML, which throws away the
+// focused element. Put focus and the caret back on the replacement so typing
+// in a search box is not interrupted after every keystroke.
+function restoreFocus(selector, caret) {
+  const el = _container && _container.querySelector(selector);
+  if (!el) return;
+  el.focus();
+  if (caret != null && el.setSelectionRange) {
+    try { el.setSelectionRange(caret, caret); } catch { /* non-text input */ }
+  }
+}
+
 function fmtInt(n) {
   if (n == null) return '—';
   return Math.round(n).toLocaleString();
@@ -242,16 +254,20 @@ async function renderScholars(targetId) {
       else _cohorts.add(key);
       // Deselecting every chip would show an empty page with no way back.
       if (!_cohorts.size) _cohorts = new Set(Object.keys(COHORT_META));
-      renderScholars(targetId);
+      renderScholars(null);
     });
   }
   _container.querySelector('#sch-q').addEventListener('input', (ev) => {
     _qFilter = ev.target.value;
-    renderScholars(targetId);
+    const caret = ev.target.selectionStart;
+    // renderScholars() replaces the container's innerHTML, which destroys the
+    // very input being typed into — so focus and caret have to be restored on
+    // the replacement or only one character can ever be entered.
+    renderScholars(null).then(() => restoreFocus('#sch-q', caret));
   });
   _container.querySelector('#sch-sort').addEventListener('change', (ev) => {
     _sort = ev.target.value;
-    renderScholars(targetId);
+    renderScholars(null);
   });
 
   if (targetId) {

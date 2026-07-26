@@ -31,6 +31,19 @@ from pathlib import Path
 import duckdb
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def rel(path: Path) -> str:
+    """Repo-relative path for display, tolerating paths outside the repo.
+
+    Path.relative_to raises for a relative argument (ROOT is absolute) and
+    for anything outside the tree, so calling it directly on a user-supplied
+    --json crashed on exactly the invocation the usage text documents.
+    """
+    try:
+        return str(Path(path).resolve().relative_to(ROOT))
+    except ValueError:
+        return str(path)
 DEFAULT_DB = ROOT / "db" / "cod_kmap.duckdb"
 DEFAULT_JSON = ROOT / "data" / "datasets" / "coastal_datasets.json"
 PARQUET_OUT = [ROOT / "db" / "parquet", ROOT / "public" / "parquet"]
@@ -171,7 +184,15 @@ def main() -> int:
     if not isinstance(records, list):
         print(f"[error] {args.json} must contain a JSON array", file=sys.stderr)
         return 2
-    print(f"[read] {len(records)} datasets from {args.json.relative_to(ROOT)}")
+    if not records:
+        # Loading proceeds by DELETE-then-insert, so an empty catalogue would
+        # empty both tables and then fail in executemany, leaving nothing
+        # behind. Refuse instead: emptying the catalogue is never the intent
+        # of running the loader.
+        print(f"[error] {rel(args.json)} contains no datasets — refusing to "
+              f"empty coastal_datasets/dataset_endpoints", file=sys.stderr)
+        return 2
+    print(f"[read] {len(records)} datasets from {rel(args.json)}")
 
     if not args.db.exists():
         print(f"[error] {args.db} not found — run scripts/rebuild_db_from_parquet.py first",
@@ -232,7 +253,7 @@ def main() -> int:
                 out = base / f"{table}.parquet"
                 conn.execute(f"COPY (SELECT * FROM {table}) TO '{out}' (FORMAT PARQUET)")
             print(f"[parquet] {table} -> " + ", ".join(
-                str((b / f'{table}.parquet').relative_to(ROOT)) for b in PARQUET_OUT))
+                rel(b / f"{table}.parquet") for b in PARQUET_OUT))
         print("[note] new parquet files are gitignored; stage them with `git add -f`")
 
     for cat, n in conn.execute(

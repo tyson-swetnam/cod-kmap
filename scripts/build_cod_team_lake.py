@@ -67,7 +67,11 @@ COD_INSTITUTIONS = {
     "alabama", "florida", "coastal-carolina", "charleston",
     "other-university", "agency", "company", "various",
 }
-MEMBER_STATUSES = {"active", "tbd", "tbh"}
+# active = a named individual; tbd/tbh = an unfilled position; collective =
+# work staffed by a group rather than a person (the chart's "NEON Staff"
+# box). Only 'active' rows are synced into `people`, so a staffing pool
+# cannot end up stored as a human.
+MEMBER_STATUSES = {"active", "tbd", "tbh", "collective"}
 
 WBS_COLS = ["wbs_code", "parent_code", "title", "lead_person_id", "sort_order", "notes"]
 MEMBER_COLS = [
@@ -175,7 +179,8 @@ def build_rows(wbs_raw: list[dict], members_raw: list[dict]) -> tuple[list, list
             pid = person_id(name, orcid, email)
             mid = pid
         else:
-            # Unfilled position: no person, but still needs a stable key.
+            # Unfilled position or a staffing pool: no person row, but still
+            # needs a stable key.
             tbd_seq[wbs] = tbd_seq.get(wbs, 0) + 1
             pid = None
             mid = f"{status}-{wbs}-{tbd_seq[wbs]}"
@@ -282,8 +287,17 @@ def write_tables(conn, target: str, wbs_rows: list, member_rows: list) -> None:
         conn.execute(f"CREATE OR REPLACE TEMP TABLE {stage} ({ddl})")
         conn.executemany(
             f"INSERT INTO {stage} VALUES ({', '.join('?' * len(cols))})", rows)
-        conn.execute(f"CREATE OR REPLACE TABLE {target}.{table} ({ddl})")
-        conn.execute(f"INSERT INTO {target}.{table} SELECT * FROM {stage}")
+        if target == "main":
+            # main.* already exist with the PRIMARY KEY and NOT NULL
+            # constraints schema.sql declares. CREATE OR REPLACE here would
+            # silently swap them for unconstrained tables, so the no-DuckLake
+            # path would stop catching duplicate (member, wbs, role) rows that
+            # the DuckLake path still rejects.
+            conn.execute(f"DELETE FROM main.{table}")
+            conn.execute(f"INSERT INTO main.{table} SELECT * FROM {stage}")
+        else:
+            conn.execute(f"CREATE OR REPLACE TABLE {target}.{table} ({ddl})")
+            conn.execute(f"INSERT INTO {target}.{table} SELECT * FROM {stage}")
         conn.execute(f"DROP TABLE {stage}")
     print(f"[{target}] cod_wbs={len(wbs_rows)} cod_team_members={len(member_rows)}")
 
@@ -298,20 +312,31 @@ def write_tables(conn, target: str, wbs_rows: list, member_rows: list) -> None:
         print("[main] mirrored from the lake")
 
 
+def members_raw_aligned(member_rows: list, members_raw: list[dict]) -> list[dict]:
+    """Re-pair each built row with the seed row it came from.
+
+    build_rows() skips malformed seed rows, so the two lists can differ in
+    length and cannot be zipped blind. Matching on (display_name, wbs_code,
+    role) is exact: that triple is the seed's own primary key.
+    """
+    index = {((r.get("display_name") or "").strip(),
+              (r.get("wbs_code") or "").strip(),
+              (r.get("role") or "").strip()): r for r in members_raw}
+    return [index.get((row[2], row[3], row[4]), {}) for row in member_rows]
+
+
 def sync_people(conn, members_raw: list[dict], member_rows: list) -> int:
     """Upsert named members into people. COALESCE on every enrichable
     column so a blank seed cell never clobbers an enriched value."""
-    # (name, email) -> person_id, from the rows we just built.
-    pid_by_name: dict[str, str] = {}
-    for row in member_rows:
-        if row[1]:
-            pid_by_name[row[2]] = row[1]
-
+    # Walk the built rows and their originating seed row together. Resolving
+    # by display_name instead would let two different people who share a name
+    # collapse onto whichever row happened to be last, silently writing one
+    # person's identifiers onto the other.
     seen: set[str] = set()
     n = 0
-    for r in members_raw:
-        name = (r.get("display_name") or "").strip()
-        pid = pid_by_name.get(name)
+    for row, r in zip(member_rows, members_raw_aligned(member_rows, members_raw)):
+        pid = row[1]
+        name = row[2]
         if not pid or pid in seen:
             continue
         seen.add(pid)
@@ -408,10 +433,11 @@ def main() -> int:
         return 1
 
     named = sum(1 for r in member_rows if r[1])
-    open_slots = len(member_rows) - named
+    open_slots = sum(1 for r in member_rows if r[11] in ("tbd", "tbh"))
+    collective = sum(1 for r in member_rows if r[11] == "collective")
     people_ct = len({r[1] for r in member_rows if r[1]})
     print(f"[ok] validated: {people_ct} distinct people across {named} role rows, "
-          f"{open_slots} unfilled position(s)")
+          f"{open_slots} unfilled position(s), {collective} group-staffed")
 
     if args.dry_run:
         print("[dry-run] nothing written")
