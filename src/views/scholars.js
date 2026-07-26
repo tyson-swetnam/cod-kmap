@@ -208,7 +208,9 @@ async function renderScholars(targetId) {
           <a href="#/people">researcher directory</a>, which lists the staff of
           catalogued facilities.
           ${measured === 0
-            ? 'Currently a hand-curated roster: bibliometrics arrive with the OpenAlex harvest.'
+            ? 'Currently a hand-curated candidate pool, deliberately wider than '
+              + 'the final cohorts: the OpenAlex harvest adds bibliometrics and '
+              + 'narrows it to a ranked 100 / 100 / 50.'
             : `<strong>${fmtInt(measured)}</strong> measured against OpenAlex.`}
         </p>
         <div class="sch-controls">
