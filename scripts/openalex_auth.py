@@ -1,0 +1,96 @@
+#!/usr/bin/env python3
+"""Shared OpenAlex authentication for every script that calls the API.
+
+OpenAlex now requires an API key on every request; the older "polite
+pool" convention of passing ``mailto=`` in the query string (or in the
+User-Agent) is no longer sufficient, and anonymous calls come back 403
+or 429. Six scripts in this repo each built their own
+``requests.Session`` with the mailto convention baked in, so the key
+handling lives here rather than being copied six times.
+
+Usage::
+
+    from openalex_auth import openalex_session
+
+    sess = openalex_session()              # OpenAlex-only client
+    sess = openalex_session(mixed=True)    # also used for pub.orcid.org
+
+``OpenAlexSession`` injects ``api_key`` on requests to
+``api.openalex.org`` and on no other host, so a session shared with
+ORCID (``scripts/enrich_people_gscholar.py``) never leaks the key. It
+also strips ``mailto`` from OpenAlex query strings, because OpenAlex
+rejects requests that carry both.
+
+Environment:
+    OPENALEX_API_KEY   required for any OpenAlex call
+"""
+from __future__ import annotations
+
+import os
+import sys
+from urllib.parse import urlparse
+
+import requests
+
+OPENALEX_HOST = "api.openalex.org"
+
+# No mailto: OpenAlex is keyed now, and the key is the identity.
+DEFAULT_UA = "cod-kmap/0.1 (+https://github.com/tyson-swetnam/cod-kmap)"
+
+
+def api_key() -> str:
+    """Return the configured OpenAlex API key, or "" if unset."""
+    return (os.environ.get("OPENALEX_API_KEY") or "").strip()
+
+
+def require_api_key() -> str:
+    """Return the key, or exit with an actionable message.
+
+    Scripts that cannot do anything useful without OpenAlex call this at
+    startup so the failure is one clear line rather than a few hundred
+    403s.
+    """
+    key = api_key()
+    if not key:
+        print(
+            "[error] OPENALEX_API_KEY is not set. OpenAlex requires an API "
+            "key on every request; anonymous calls return 403/429. Get a "
+            "key at https://openalex.org/ and export it before running.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+    return key
+
+
+class OpenAlexSession(requests.Session):
+    """A Session that authenticates api.openalex.org requests.
+
+    Other hosts pass through untouched, which is what lets one session
+    serve both OpenAlex and ORCID.
+    """
+
+    def request(self, method, url, *args, **kwargs):  # noqa: D102
+        if urlparse(str(url)).hostname == OPENALEX_HOST:
+            params = kwargs.get("params")
+            if params is None:
+                params = {}
+            elif isinstance(params, dict):
+                params = dict(params)
+            else:  # list of pairs / str — normalise to a dict of pairs
+                params = dict(params)
+            params.pop("mailto", None)
+            key = api_key()
+            if key:
+                params["api_key"] = key
+            kwargs["params"] = params
+        return super().request(method, url, *args, **kwargs)
+
+
+def openalex_session(user_agent: str | None = None,
+                     accept_json: bool = True) -> OpenAlexSession:
+    """Build a session that keys OpenAlex requests and leaves others alone."""
+    s = OpenAlexSession()
+    s.headers["User-Agent"] = user_agent or DEFAULT_UA
+    if accept_json:
+        s.headers["Accept"] = "application/json"
+    return s

@@ -94,6 +94,12 @@ RISING_MIN_WORKS = 5
 MIN_COASTAL_WORKS = 10
 MIN_COASTAL_SHARE = 0.15
 TOP_AUTHORS_PER_TOPIC = 150
+# Stage A's second pass: top authors per topic over the last
+# RECENT_WINDOW years only, so early-career researchers reach the
+# candidate pool at all. Without it the rising cohort is always empty
+# (see the comment in stage_a).
+RECENT_WINDOW = 6
+TOP_AUTHORS_RECENT = 150
 SHORTLIST_SIZE = 400
 BATCH = 50
 SLEEP = 0.1
@@ -117,15 +123,12 @@ def make_session():
     except ImportError:
         print("[error] harvest needs requests: pip install requests", file=sys.stderr)
         raise SystemExit(2)
-    s = requests.Session()
-    email = os.environ.get("OPENALEX_EMAIL", "")
-    if email:
-        s.headers["User-Agent"] = f"cod-kmap/0.1 (mailto:{email})"
-        print(f"[api] polite pool as {email}")
-    else:
-        s.headers["User-Agent"] = "cod-kmap/0.1 (+https://github.com/tyson-swetnam/cod-kmap)"
-        print("[warn] set OPENALEX_EMAIL to use OpenAlex's polite pool (faster, kinder)")
-    return s
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import openalex_auth
+
+    openalex_auth.require_api_key()
+    print("[api] authenticated with OPENALEX_API_KEY")
+    return openalex_auth.openalex_session()
 
 
 def get(session, path: str, params: dict, tries: int = 4) -> dict | None:
@@ -133,8 +136,8 @@ def get(session, path: str, params: dict, tries: int = 4) -> dict | None:
     retries are spent so the caller can skip one author rather than lose
     the whole run."""
     url = f"{OPENALEX}/{path.lstrip('/')}"
-    if os.environ.get("OPENALEX_EMAIL"):
-        params = {**params, "mailto": os.environ["OPENALEX_EMAIL"]}
+    # The api_key is attached by the session (scripts/openalex_auth.py),
+    # which also strips any stray mailto — OpenAlex rejects both together.
     for attempt in range(tries):
         try:
             r = session.get(url, params=params, timeout=60)
@@ -268,20 +271,36 @@ def stage_a(session, topics: list[dict], resume: bool) -> list[str]:
         print(f"[A] resumed {len(ids)} candidates from cache")
         return ids
     ids: set[str] = set()
+    # Two passes per topic. Grouping /works by author over all time ranks
+    # by lifetime output, which selects long-career authors exclusively:
+    # on the first real run of this harvest the most recent first
+    # publication year among all 509 measured candidates was 2012, so the
+    # rising cohort (first published within RISING_WINDOW years) could not
+    # be filled from that pool no matter how the thresholds were tuned —
+    # stage D returned 0 rising and qa.py failed the cohort invariant. The
+    # recent pass re-runs the same grouping restricted to the last
+    # RECENT_WINDOW years, where an author who started in 2020 can rank.
+    recent_cutoff = f"{date.today().year - RECENT_WINDOW}-01-01"
+    passes = [
+        ("all-time", "1990-01-01", TOP_AUTHORS_PER_TOPIC),
+        ("recent", recent_cutoff, TOP_AUTHORS_RECENT),
+    ]
     for tid in topic_ids(topics):
-        data = get(session, "works", {
-            "filter": f"primary_topic.id:{tid},from_publication_date:1990-01-01",
-            "group_by": "authorships.author.id",
-            "per_page": TOP_AUTHORS_PER_TOPIC,
-        })
-        groups = (data or {}).get("group_by") or []
-        found = 0
-        for g in groups[:TOP_AUTHORS_PER_TOPIC]:
-            aid = short_id(g.get("key"))
-            if aid and AUTHOR_ID_RE.match(aid):
-                ids.add(aid)
-                found += 1
-        print(f"[A] {tid}: +{found} authors (running total {len(ids)})")
+        for label, since, cap in passes:
+            data = get(session, "works", {
+                "filter": f"primary_topic.id:{tid},from_publication_date:{since}",
+                "group_by": "authorships.author.id",
+                "per_page": cap,
+            })
+            groups = (data or {}).get("group_by") or []
+            found = 0
+            for g in groups[:cap]:
+                aid = short_id(g.get("key"))
+                if aid and AUTHOR_ID_RE.match(aid):
+                    ids.add(aid)
+                    found += 1
+            print(f"[A] {tid} {label}: +{found} authors "
+                  f"(running total {len(ids)})")
     if not ids:
         # Every topic request failed (get() returns None once its retries are
         # spent, which yields an empty group list). Writing the checkpoint
@@ -400,7 +419,18 @@ def shortlist(authors: dict[str, dict]) -> list[str]:
         authors.values(),
         key=lambda a: (a.get("two_yr_mean_citedness") or 0.0),
         reverse=True)[:SHORTLIST_SIZE // 2]]
-    return list(dict.fromkeys(by_h + by_recent))
+    # Both rankings above still favour established careers: 2-year mean
+    # citedness rewards authors whose back catalogue is being cited, not
+    # authors who are new. Reserve a slice for the smallest bodies of
+    # work that still clear RISING_MIN_WORKS, ranked by citedness within
+    # that group — an author with 8 works and a good citation rate is the
+    # rising-cohort candidate, and would otherwise never be measured.
+    early = [a for a in authors.values()
+             if RISING_MIN_WORKS <= (a.get("works_count") or 0) <= 60]
+    early.sort(key=lambda a: (a.get("two_yr_mean_citedness") or 0.0,
+                              a.get("cited_by_count") or 0), reverse=True)
+    by_early = [a["openalex_id"] for a in early[:SHORTLIST_SIZE // 2]]
+    return list(dict.fromkeys(by_h + by_recent + by_early))
 
 
 def stage_c(session, ids: list[str], topics: list[str], resume: bool) -> dict[str, dict]:

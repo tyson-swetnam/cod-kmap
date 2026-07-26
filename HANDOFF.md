@@ -2,9 +2,20 @@
 
 **Status:** built and merged to `main` (PRs #8, #9, #10). `scripts/qa.py` passes
 on a clean rebuild.
-**Outstanding:** the bibliometric enrichment has never been run. That is the
-next job, and it needs a machine that can reach `api.openalex.org` and
-`pub.orcid.org`.
+
+**Update 2026-07-26 — the enrichment run in §3 has been executed.** See
+`BIBLIOMETRIC_ENRICHMENT_RUN.md` for what it produced and what it broke on the
+way. Four defects had to be fixed before it would complete: OpenAlex now
+requires an `api_key` rather than the `mailto=` polite pool (all six calling
+scripts rewired through the new `scripts/openalex_auth.py`); the ORCID
+employer matcher accepted unrelated organisations; its name-only fallback
+picked arbitrarily among namesakes; and the harvest's stage A could never
+populate the rising cohort. It also removed 12 pre-existing misattributed
+`openalex_id`s and 8 ORCIDs — see `scripts/wipe_misattributed_identifiers.py`.
+The sections below are kept as written for context; §3's "why it hasn't
+happened" and §5's "the `--harvest` path has never executed" are now historical.
+
+Still outstanding: nobody has rendered the three tabs in a browser (§5).
 
 This file is the working brief for picking that up in a fresh session. It sits
 at the repo root rather than in `docs/` deliberately: `docs/` is copied to the
