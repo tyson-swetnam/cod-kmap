@@ -29,11 +29,19 @@ Harvest stages (each checkpoints, so --resume is cheap):
   E  write       upsert into community_scholars + refresh parquet.
 
 Identity rules, learned the hard way (see
-scripts/wipe_bad_openalex_attributions.py): candidates are OpenAlex author
-ids from the start, so no name-matching is ever performed. A scholar is
-linked to an existing `people` row only on ORCID or openalex_id equality.
-A coastal-share gate then drops authors whose coastal work is incidental,
-which is what previously let a cardiologist onto a marine-lab page.
+scripts/wipe_bad_openalex_attributions.py):
+
+  * Harvest candidates are OpenAlex author ids from the start, so a person
+    is never *resolved* by name. A coastal-share gate then drops authors
+    whose coastal work is incidental, which is what previously let a
+    cardiologist onto a marine-lab page.
+  * A scholar is linked to an existing `people` row only on ORCID or
+    openalex_id equality — never on a name.
+  * reconcile() does compare names, but only to decide whether two rows
+    already in this roster describe one researcher. That never attributes a
+    publication, so it cannot cause a wrong-person attribution; and
+    same_researcher() requires spelled-out given names to agree, so
+    "Y. Stacy Zhang" and "Y. Joseph Zhang" stay two people.
 
 Usage::
 
@@ -54,6 +62,7 @@ import os
 import re
 import sys
 import time
+import unicodedata
 from datetime import date, datetime
 from pathlib import Path
 
@@ -177,6 +186,47 @@ def scholar_ident(v: str | None) -> str | None:
     return m.group(1) if m else (v or None)
 
 
+def _fold(v: str) -> str:
+    v = unicodedata.normalize("NFKD", v or "")
+    return "".join(ch for ch in v if not unicodedata.combining(ch)).lower()
+
+
+def name_key(name: str | None) -> str:
+    """Surname, accent-folded — a cheap bucket for candidate comparison."""
+    parts = [p for p in re.split(r"[^A-Za-z]+", _fold(name or "")) if p]
+    return parts[-1] if parts else ""
+
+
+def same_researcher(a: str | None, b: str | None) -> bool:
+    """Do these two names describe one researcher?
+
+    Used ONLY to decide whether two roster rows are the same person, never to
+    attribute a publication. Surnames must match, and any given name both
+    spell out in full must agree: a middle initial may be absent from one form
+    ("Sarah Giddings" / "Sarah N. Giddings"), but two different spelled-out
+    names are different people ("Y. Stacy Zhang" / "Y. Joseph Zhang").
+    """
+    def split(v):
+        parts = [p for p in re.split(r"[^A-Za-z]+", _fold(v or "")) if p]
+        return (parts[:-1], parts[-1]) if len(parts) > 1 else ([], parts[0] if parts else "")
+
+    def compatible(x, y):
+        if x == y:
+            return True
+        if len(x) == 1 or len(y) == 1:
+            return x[0] == y[0]
+        short, long = sorted((x, y), key=len)
+        return len(short) >= 3 and long.startswith(short)
+
+    ga, sa = split(a)
+    gb, sb = split(b)
+    if not sa or sa != sb:
+        return False
+    if ga and gb and not compatible(ga[0], gb[0]):
+        return False
+    return all(compatible(ga[i], gb[i]) for i in range(1, min(len(ga), len(gb))))
+
+
 # ── topics ────────────────────────────────────────────────────────────
 
 def read_topics() -> list[dict]:
@@ -232,6 +282,14 @@ def stage_a(session, topics: list[dict], resume: bool) -> list[str]:
                 ids.add(aid)
                 found += 1
         print(f"[A] {tid}: +{found} authors (running total {len(ids)})")
+    if not ids:
+        # Every topic request failed (get() returns None once its retries are
+        # spent, which yields an empty group list). Writing the checkpoint
+        # here would make --resume treat "nothing found" as "already done".
+        print("[error] stage A found no candidates — every topic request "
+              "failed. Not writing a checkpoint; re-run when the API is "
+              "reachable.", file=sys.stderr)
+        raise SystemExit(1)
     CACHE.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(sorted(ids)))
     print(f"[A] {len(ids)} unique candidate authors -> {out.relative_to(ROOT)}")
@@ -476,10 +534,32 @@ def reconcile(harvested: list[dict], curated: list[dict]) -> list[dict]:
     # profile URL. Comparing them raw meant this matcher never fired.
     by_gs = {scholar_ident(r.get("google_scholar_id")): r for r in harvested
              if scholar_ident(r.get("google_scholar_id"))}
-    matched = 0
+    # Most curated rows carry neither an ORCID nor a Scholar id — only ~20 of
+    # 346 do — so identifier matching alone would append the other ~326 as
+    # fresh rows even when the harvest had already measured that same person,
+    # listing them twice in the Scholars tab.
+    #
+    # Falling back to a name comparison here is safe in a way that
+    # name-resolving against OpenAlex is NOT: this only decides whether two
+    # rows already in the roster describe one researcher. It never attributes
+    # a publication, so it cannot produce the wrong-person attributions that
+    # scripts/wipe_bad_openalex_attributions.py had to undo. The comparison
+    # also requires spelled-out given names to agree, so "Y. Stacy Zhang" and
+    # "Y. Joseph Zhang" stay separate people.
+    by_name = {}
+    for r in harvested:
+        by_name.setdefault(name_key(r.get("name")), []).append(r)
+
+    matched = matched_by_name = 0
     for c in curated:
         target = (by_orcid.get(c.get("orcid"))
                   or by_gs.get(scholar_ident(c.get("google_scholar_id"))))
+        if target is None:
+            for cand in by_name.get(name_key(c.get("name")), []):
+                if same_researcher(c.get("name"), cand.get("name")):
+                    target = cand
+                    matched_by_name += 1
+                    break
         if target:
             matched += 1
             target["source"] = "openalex+curated"
@@ -492,7 +572,8 @@ def reconcile(harvested: list[dict], curated: list[dict]) -> list[dict]:
                     target[fld] = c[fld]
             continue
         harvested.append(c)
-    print(f"[E] reconciled {matched} curated scholar(s) with harvest results; "
+    print(f"[E] reconciled {matched} curated scholar(s) with harvest results "
+          f"({matched_by_name} of them by name after no identifier matched); "
           f"{len(curated) - matched} kept as curated-only")
     return harvested
 
@@ -627,6 +708,11 @@ def main() -> int:
     conn.execute("SET search_path = main;")
 
     if args.emit_empty_parquet:
+        if args.dry_run or args.skip_export:
+            print("[dry-run] --emit-empty-parquet suppressed by "
+                  "--dry-run/--skip-export")
+            conn.close()
+            return 0
         for base in PARQUET_OUT:
             base.mkdir(parents=True, exist_ok=True)
             out = base / "community_scholars.parquet"

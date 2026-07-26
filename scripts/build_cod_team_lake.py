@@ -312,20 +312,31 @@ def write_tables(conn, target: str, wbs_rows: list, member_rows: list) -> None:
         print("[main] mirrored from the lake")
 
 
+def members_raw_aligned(member_rows: list, members_raw: list[dict]) -> list[dict]:
+    """Re-pair each built row with the seed row it came from.
+
+    build_rows() skips malformed seed rows, so the two lists can differ in
+    length and cannot be zipped blind. Matching on (display_name, wbs_code,
+    role) is exact: that triple is the seed's own primary key.
+    """
+    index = {((r.get("display_name") or "").strip(),
+              (r.get("wbs_code") or "").strip(),
+              (r.get("role") or "").strip()): r for r in members_raw}
+    return [index.get((row[2], row[3], row[4]), {}) for row in member_rows]
+
+
 def sync_people(conn, members_raw: list[dict], member_rows: list) -> int:
     """Upsert named members into people. COALESCE on every enrichable
     column so a blank seed cell never clobbers an enriched value."""
-    # (name, email) -> person_id, from the rows we just built.
-    pid_by_name: dict[str, str] = {}
-    for row in member_rows:
-        if row[1]:
-            pid_by_name[row[2]] = row[1]
-
+    # Walk the built rows and their originating seed row together. Resolving
+    # by display_name instead would let two different people who share a name
+    # collapse onto whichever row happened to be last, silently writing one
+    # person's identifiers onto the other.
     seen: set[str] = set()
     n = 0
-    for r in members_raw:
-        name = (r.get("display_name") or "").strip()
-        pid = pid_by_name.get(name)
+    for row, r in zip(member_rows, members_raw_aligned(member_rows, members_raw)):
+        pid = row[1]
+        name = row[2]
         if not pid or pid in seen:
             continue
         seen.add(pid)

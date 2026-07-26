@@ -119,6 +119,22 @@ def table_rows(conn, table: str) -> int:
         return -1
 
 
+def check_tables_present(conn, failures: list[str]) -> None:
+    """If any of the new tables has rows, they must all exist.
+
+    Every check below no-ops on an empty table so the ingest-only CI stays
+    green, which means an accidentally *dropped* table looked exactly like an
+    empty one and silenced its invariants. Once one of the group is populated
+    we know this is a full database, so a missing sibling is a real fault.
+    """
+    counts = {t: table_rows(conn, t) for t in EXPECTED_COLUMNS}
+    if not any(n > 0 for n in counts.values()):
+        return
+    absent = sorted(t for t, n in counts.items() if n < 0)
+    assert_true(not absent,
+                f"table(s) missing from a populated database: {absent}", failures)
+
+
 def check_columns(conn, failures: list[str]) -> None:
     for table, expected in EXPECTED_COLUMNS.items():
         try:
@@ -246,11 +262,15 @@ def check_scholars(conn, failures: list[str]) -> None:
     assert_true(orphans == 0,
                 f"{orphans} scholars link to a person_id that isn't in people", failures)
 
+    # Two researchers can legitimately share a name, and this repo's identity
+    # rule is that a name is never an identity. So the invariant is a shared
+    # name AND affiliation — which is a record entered twice, not a homonym.
     dup_names = conn.execute(
-        "SELECT COUNT(*) FROM (SELECT lower(name) FROM community_scholars "
-        "GROUP BY 1 HAVING COUNT(*) > 1)").fetchone()[0]
+        "SELECT COUNT(*) FROM (SELECT lower(name), lower(COALESCE(affiliation,'')) "
+        "FROM community_scholars GROUP BY 1, 2 HAVING COUNT(*) > 1)").fetchone()[0]
     assert_true(dup_names == 0,
-                f"{dup_names} scholar names appear more than once", failures)
+                f"{dup_names} scholar name+affiliation pair(s) appear more than once",
+                failures)
 
     # Cohort sizes are pinned only over the rows the harvest actually ranks.
     # Curated-only rows stay flagged on purpose — a hand-picked expert is not
@@ -385,6 +405,7 @@ def main() -> int:
         # COD team / community scholars / dataset catalogue. Each block
         # no-ops when its table is empty or absent, so the ingest-only CI
         # rebuild isn't failed by data it never produces.
+        check_tables_present(conn, failures)
         check_columns(conn, failures)
         check_cod_team(conn, failures)
         check_scholars(conn, failures)
