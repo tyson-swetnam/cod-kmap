@@ -160,6 +160,23 @@ def clean_orcid(v: str | None) -> str | None:
     return m.group(1) if m else None
 
 
+def scholar_ident(v: str | None) -> str | None:
+    """Reduce a Google Scholar reference to its bare profile id.
+
+    OpenAlex reports `ids.scholar` as a full profile URL
+    (`http://scholar.google.com/citations?user=XXXX&hl=en`), while the
+    curated seed stores the bare id. Comparing the two raw meant the
+    Scholar-id matcher in reconcile() could never fire, so 332 of 346
+    curated scholars would have been appended as duplicates of researchers
+    the harvest had already measured.
+    """
+    if not v:
+        return None
+    v = v.strip()
+    m = re.search(r"[?&]user=([A-Za-z0-9_-]+)", v)
+    return m.group(1) if m else (v or None)
+
+
 # ── topics ────────────────────────────────────────────────────────────
 
 def read_topics() -> list[dict]:
@@ -242,7 +259,7 @@ def author_record(a: dict) -> dict | None:
         "openalex_id": aid,
         "name": a.get("display_name"),
         "orcid": clean_orcid(a.get("orcid")),
-        "google_scholar_id": ((a.get("ids") or {}).get("scholar") or None),
+        "google_scholar_id": scholar_ident((a.get("ids") or {}).get("scholar")),
         "affiliation": inst.get("display_name"),
         "affiliation_country": inst.get("country_code"),
         "affiliation_ror": inst.get("ror"),
@@ -271,7 +288,11 @@ def stage_b(session, candidates: list[str], resume: bool) -> dict[str, dict]:
     todo = [a for a in candidates if a not in have]
     CACHE.mkdir(parents=True, exist_ok=True)
     batch_ok = True
-    with out.open("a") as fh:
+    # Append only when resuming. Without --resume `have` starts empty and
+    # `todo` is the full candidate list, so appending to an existing cache
+    # wrote every record a second time and the resumed read then counted
+    # duplicates.
+    with out.open("a" if resume else "w") as fh:
         for i in range(0, len(todo), BATCH):
             chunk = todo[i:i + BATCH]
             authors: list[dict] = []
@@ -337,7 +358,8 @@ def stage_c(session, ids: list[str], topics: list[str], resume: bool) -> dict[st
     cutoff = f"{date.today().year - 5}-01-01"
     todo = [a for a in ids if a not in have]
     CACHE.mkdir(parents=True, exist_ok=True)
-    with out.open("a") as fh:
+    with out.open("a" if resume else "w") as fh:   # see stage_b
+
         for n, aid in enumerate(todo, 1):
             all_time = get(session, "works", {
                 "filter": f"author.id:{aid},primary_topic.id:{topic_filter}",
@@ -449,11 +471,15 @@ def reconcile(harvested: list[dict], curated: list[dict]) -> list[dict]:
     measured metrics; an unmatched curated scholar is kept as-is so a
     hand-picked expert is never silently dropped by a threshold."""
     by_orcid = {r["orcid"]: r for r in harvested if r.get("orcid")}
-    by_gs = {r["google_scholar_id"]: r for r in harvested
-             if r.get("google_scholar_id")}
+    # Both sides are normalised through scholar_ident() so a bare curated id
+    # can match an OpenAlex payload, which reports ids.scholar as a full
+    # profile URL. Comparing them raw meant this matcher never fired.
+    by_gs = {scholar_ident(r.get("google_scholar_id")): r for r in harvested
+             if scholar_ident(r.get("google_scholar_id"))}
     matched = 0
     for c in curated:
-        target = by_orcid.get(c.get("orcid")) or by_gs.get(c.get("google_scholar_id"))
+        target = (by_orcid.get(c.get("orcid"))
+                  or by_gs.get(scholar_ident(c.get("google_scholar_id"))))
         if target:
             matched += 1
             target["source"] = "openalex+curated"
@@ -494,6 +520,32 @@ def finalize(records: list[dict]) -> list[dict]:
             if not row[flag]:
                 row[rank] = None
         out.append(row)
+
+    # Renumber every cohort across the final set. Harvested rows arrive
+    # ranked 1..100 and unmatched curated rows keep the ranks they were
+    # seeded with (also starting at 1), so without this the table ships with
+    # duplicate ranks — which the harvest's own qa.py invariant rejects, and
+    # which would leave the Scholars tab unable to order a cohort.
+    # Measured rows sort ahead of curated-only ones, and each cohort keeps
+    # the ordering its own metric implies.
+    ORDER = {
+        "rank_preeminent": lambda r: (-(r.get("h_index") or 0),
+                                      -(r.get("cited_by_count") or 0)),
+        "rank_most_active": lambda r: (-(r.get("coastal_recent_works") or 0),
+                                       -(r.get("coastal_works_count") or 0)),
+        "rank_rising": lambda r: (-(r.get("two_yr_mean_citedness") or 0.0),
+                                  -(r.get("coastal_recent_works") or 0)),
+    }
+    for flag, rank in (("is_preeminent", "rank_preeminent"),
+                       ("is_most_active", "rank_most_active"),
+                       ("is_rising", "rank_rising")):
+        cohort = [r for r in out if r[flag]]
+        cohort.sort(key=lambda r: (r.get("h_index") is None
+                                   and r.get("coastal_recent_works") is None,
+                                   ORDER[rank](r),
+                                   str(r.get("name") or "")))
+        for i, rec in enumerate(cohort, 1):
+            rec[rank] = i
     return out
 
 
@@ -547,6 +599,9 @@ def main() -> int:
                       help="resolve topic labels to T##### ids and exit")
     ap.add_argument("--stage", choices=["A", "B", "C", "all"], default="all")
     ap.add_argument("--resume", action="store_true", help="reuse cached stage output")
+    ap.add_argument("--allow-unresolved-topics", action="store_true",
+                    help="harvest even if coastal_topics.csv still holds RESOLVE "
+                         "sentinels (resolves at run time; not reproducible)")
     ap.add_argument("--dry-run", action="store_true", help="compute but don't write")
     ap.add_argument("--skip-export", action="store_true", help="don't refresh parquet")
     ap.add_argument("--emit-empty-parquet", action="store_true",
@@ -583,12 +638,35 @@ def main() -> int:
 
     if args.harvest:
         session = make_session()
-        topics = resolve_topics(session, read_topics())
+        # Check the CSV as committed, BEFORE any resolution. resolve_topics()
+        # fills the sentinel in on the fly, so checking afterwards could never
+        # fire the guard the docs promise: a harvest would quietly define its
+        # cohorts from whatever a search returned that day, and the committed
+        # topic set would not explain the published roster.
+        topics = read_topics()
+        sentinels = [r["label"] for r in topics
+                     if not TOPIC_ID_RE.match((r.get("openalex_topic_id") or "").strip())]
+        if sentinels and not args.allow_unresolved_topics:
+            print(f"[error] {len(sentinels)} topic(s) still hold the "
+                  f"{SENTINEL} sentinel in {TOPICS_CSV.relative_to(ROOT)}:",
+                  file=sys.stderr)
+            for label in sentinels:
+                print(f"          {label}", file=sys.stderr)
+            print("[error] run --resolve-topics, paste the ids into that file, "
+                  "and re-run, so the published roster stays traceable to an "
+                  "explicit topic set. Use --allow-unresolved-topics to resolve "
+                  "at run time anyway (the roster is then not reproducible).",
+                  file=sys.stderr)
+            return 1
+        if sentinels:
+            print(f"[warn] resolving {len(sentinels)} topic(s) at run time — "
+                  f"this roster will not be reproducible from the committed CSV")
+            topics = resolve_topics(session, topics)
         tids = topic_ids(topics)
         if len(tids) < len(topics):
-            print(f"[error] {len(topics) - len(tids)} topic(s) unresolved — "
-                  f"run --resolve-topics and update {TOPICS_CSV.relative_to(ROOT)} "
-                  f"so the roster stays reproducible", file=sys.stderr)
+            print(f"[error] {len(topics) - len(tids)} topic(s) could not be "
+                  f"resolved against the OpenAlex topics endpoint",
+                  file=sys.stderr)
             return 1
 
         candidates = stage_a(session, topics, args.resume)

@@ -28,10 +28,20 @@ A person who leads several WBS elements gets one row each, which is how
 the chart's "5.0 / 5.1 / 5.6" pattern survives being flattened into a
 table. The Team tab recombines them into a single card.
 
-The roster covers 41 named people and 16 unfilled positions. Unfilled
-positions carry `status = 'tbd'` or `'tbh'` and no person identity; they
-are rendered muted rather than hidden, because an empty slot is
-information about the project rather than missing data.
+The roster covers 40 named people, 16 unfilled positions, and one
+group-staffed element. `status` distinguishes them:
+
+| status | meaning | synced into `people`? |
+|---|---|---|
+| `active` | a named individual | yes |
+| `tbd` / `tbh` | an unfilled position, rendered muted | no |
+| `collective` | work staffed by a group, not a person — the chart's "NEON Staff" box | no |
+
+Unfilled positions are rendered muted rather than hidden, because an empty
+slot is information about the project rather than missing data. `collective`
+exists so a staffing pool is not stored in `people` as though it were a
+human: it was, briefly, and the enrichment scripts would have gone looking
+for its publications.
 
 ### Institution slugs
 
@@ -45,16 +55,20 @@ delaware  usc  uidaho  montana-state  alabama  florida
 coastal-carolina  charleston  other-university  agency  company  various
 ```
 
-### Two chart labels to confirm
+### Two chart labels worth confirming
 
-The chart's own text disagrees with the affiliations these two people are
-otherwise associated with. Both are recorded in the seed CSV's `notes`
-column and should be confirmed against the award documents:
+For two people the chart's printed affiliation differs from the one they are
+otherwise associated with. The seed records the institutional affiliation and
+notes the chart's text, so the discrepancy is visible rather than silently
+resolved — worth checking against the award documents:
 
-- **Rodrigo Vargas** — the chart says *Arizona*; he is otherwise
-  associated with the University of Delaware.
-- **Christine Angelini** — the chart says *AECOM*; she is otherwise
-  associated with the University of Florida.
+| Person | Recorded here | The 2026 chart prints |
+|---|---|---|
+| Rodrigo Vargas | University of Delaware | Arizona |
+| Christine Angelini | University of Florida | AECOM |
+
+Some names were also read off the chart image, so spellings are worth a pass
+— the chart renders "Maclamore" where Clemson lists Eric McLamore.
 
 ### Building it
 
@@ -156,7 +170,7 @@ so at the foot of the page.
 science, who is publishing most in it right now, and who is coming up.
 
 It is deliberately a **separate table from `people`**. `people` is the
-staff of catalogued facilities; these 346 researchers mostly do not work
+staff of catalogued facilities; these 339 researchers mostly do not work
 at one, and mixing a bibliometric cohort into the facility directory would
 distort every per-facility metric on the Stats tab.
 
@@ -171,8 +185,17 @@ distort every per-facility metric on the Stats tab.
 A scholar can carry more than one flag. Each has its own rank column,
 which is what the Scholars tab orders on.
 
+**A rank is only populated once the scholar has been measured.** The curated
+roster ships with all three rank columns NULL, and the tab renders the cohort
+badge without a number. An earlier version filled them in alphabetically,
+since there was nothing else to sort on — which rendered as "Pre-eminent #1"
+for a surname beginning with A and read as a finding rather than an artifact.
+`scripts/qa.py` enforces the weaker, honest invariant: a rank may not exist
+without its flag, ranks must be unique, and every *measured* row in a cohort
+must be ranked.
+
 **The curated roster is a candidate pool, not the final cohorts.** It holds
-346 names because a wider pool gives the harvest more to rank and makes it
+339 names because a wider pool gives the harvest more to rank and makes it
 less likely that a genuinely leading researcher is missing entirely. The
 harvest then pins the cohorts to the sizes in `COHORTS` — 100 pre-eminent,
 100 most-active, 50 rising — so the measured roster is roughly 250 people,
@@ -181,7 +204,7 @@ then the tab shows the full pool and says so.
 
 ### Two ways the table gets populated
 
-**Curated (what ships).** 346 scholars researched across ten sub-fields —
+**Curated (what ships).** 339 scholars researched across ten sub-fields —
 physical oceanography, estuarine ecology, coastal geomorphology, sea
 level, blue carbon, HABs and water quality, ocean observing, coastal
 hazards and engineering, fisheries and MPAs, and the social dimension —
@@ -271,7 +294,7 @@ python scripts/load_coastal_datasets.py --check-urls   # probe endpoints (needs 
 
 ### What's in it
 
-82 datasets with 258 access endpoints, 72 of them exposing a
+72 datasets with 242 access endpoints, 62 of them exposing a
 machine-readable service:
 
 - the programs named in the Design Flow diagram — MarineGEO, NERRS/CDMO,

@@ -67,7 +67,11 @@ COD_INSTITUTIONS = {
     "alabama", "florida", "coastal-carolina", "charleston",
     "other-university", "agency", "company", "various",
 }
-MEMBER_STATUSES = {"active", "tbd", "tbh"}
+# active = a named individual; tbd/tbh = an unfilled position; collective =
+# work staffed by a group rather than a person (the chart's "NEON Staff"
+# box). Only 'active' rows are synced into `people`, so a staffing pool
+# cannot end up stored as a human.
+MEMBER_STATUSES = {"active", "tbd", "tbh", "collective"}
 
 WBS_COLS = ["wbs_code", "parent_code", "title", "lead_person_id", "sort_order", "notes"]
 MEMBER_COLS = [
@@ -175,7 +179,8 @@ def build_rows(wbs_raw: list[dict], members_raw: list[dict]) -> tuple[list, list
             pid = person_id(name, orcid, email)
             mid = pid
         else:
-            # Unfilled position: no person, but still needs a stable key.
+            # Unfilled position or a staffing pool: no person row, but still
+            # needs a stable key.
             tbd_seq[wbs] = tbd_seq.get(wbs, 0) + 1
             pid = None
             mid = f"{status}-{wbs}-{tbd_seq[wbs]}"
@@ -282,8 +287,17 @@ def write_tables(conn, target: str, wbs_rows: list, member_rows: list) -> None:
         conn.execute(f"CREATE OR REPLACE TEMP TABLE {stage} ({ddl})")
         conn.executemany(
             f"INSERT INTO {stage} VALUES ({', '.join('?' * len(cols))})", rows)
-        conn.execute(f"CREATE OR REPLACE TABLE {target}.{table} ({ddl})")
-        conn.execute(f"INSERT INTO {target}.{table} SELECT * FROM {stage}")
+        if target == "main":
+            # main.* already exist with the PRIMARY KEY and NOT NULL
+            # constraints schema.sql declares. CREATE OR REPLACE here would
+            # silently swap them for unconstrained tables, so the no-DuckLake
+            # path would stop catching duplicate (member, wbs, role) rows that
+            # the DuckLake path still rejects.
+            conn.execute(f"DELETE FROM main.{table}")
+            conn.execute(f"INSERT INTO main.{table} SELECT * FROM {stage}")
+        else:
+            conn.execute(f"CREATE OR REPLACE TABLE {target}.{table} ({ddl})")
+            conn.execute(f"INSERT INTO {target}.{table} SELECT * FROM {stage}")
         conn.execute(f"DROP TABLE {stage}")
     print(f"[{target}] cod_wbs={len(wbs_rows)} cod_team_members={len(member_rows)}")
 
@@ -408,10 +422,11 @@ def main() -> int:
         return 1
 
     named = sum(1 for r in member_rows if r[1])
-    open_slots = len(member_rows) - named
+    open_slots = sum(1 for r in member_rows if r[11] in ("tbd", "tbh"))
+    collective = sum(1 for r in member_rows if r[11] == "collective")
     people_ct = len({r[1] for r in member_rows if r[1]})
     print(f"[ok] validated: {people_ct} distinct people across {named} role rows, "
-          f"{open_slots} unfilled position(s)")
+          f"{open_slots} unfilled position(s), {collective} group-staffed")
 
     if args.dry_run:
         print("[dry-run] nothing written")

@@ -32,6 +32,18 @@ function fmtUsd(n) {
   if (n >= 1e3)  return `$${(n / 1e3).toFixed(0)}K`;
   return `$${Math.round(n)}`;
 }
+// The views re-render by replacing container.innerHTML, which throws away the
+// focused element. Put focus and the caret back on the replacement so typing
+// in a search box is not interrupted after every keystroke.
+function restoreFocus(selector, caret) {
+  const el = _container && _container.querySelector(selector);
+  if (!el) return;
+  el.focus();
+  if (caret != null && el.setSelectionRange) {
+    try { el.setSelectionRange(caret, caret); } catch { /* non-text input */ }
+  }
+}
+
 function fmtInt(n) {
   if (!n && n !== 0) return '—';
   return Math.round(n).toLocaleString();
@@ -58,13 +70,31 @@ async function fetchPeople() {
   // separate area-list CTE, no correlated subqueries inside aggregate
   // arguments, no `COALESCE(x, [])` coercion games.
   const sql = `
-    WITH per_pa AS (
+    WITH per_pub AS (
+      SELECT a.person_id,
+             COUNT(DISTINCT a.publication_id) AS n_pubs,
+             SUM(p.cited_by_count)            AS total_citations
+      FROM authorship   a
+      JOIN publications p ON p.publication_id = a.publication_id
+      GROUP BY a.person_id
+    ),
+    per_coauth AS (
+      SELECT person_id, COUNT(DISTINCT other_id) AS n_coauth FROM (
+        SELECT person_a_id AS person_id, person_b_id AS other_id FROM collaborations
+        UNION ALL
+        SELECT person_b_id AS person_id, person_a_id AS other_id FROM collaborations
+      ) GROUP BY person_id
+    ),
+    -- person_area_metrics has one row per (person, research area), so
+    -- summing n_publications / total_citations / n_co_authors counted a
+    -- paper once per area it touches: it reported 740 publications for a
+    -- researcher with 100, and inflated the dataset total 2.75x. Exact
+    -- counts now come from authorship/publications above; only h_index and
+    -- composite_z are aggregated here, where per-area is the intended read.
+    per_pa AS (
       SELECT person_id,
-             SUM(n_publications)  AS n_pubs,
-             SUM(total_citations) AS total_citations,
-             MAX(h_index)         AS h_index,
-             SUM(n_co_authors)    AS n_coauth,
-             SUM(composite_z)     AS composite_z
+             MAX(h_index)     AS h_index,
+             SUM(composite_z) AS composite_z
       FROM person_area_metrics
       GROUP BY person_id
     ),
@@ -114,10 +144,10 @@ async function fetchPeople() {
            p.bio,
            g.primary_area_id,
            ra.label                            AS primary_area_label,
-           COALESCE(pa.n_pubs, 0)              AS n_pubs,
-           COALESCE(pa.total_citations, 0)     AS total_citations,
+           COALESCE(pub.n_pubs, 0)             AS n_pubs,
+           COALESCE(pub.total_citations, 0)    AS total_citations,
            COALESCE(pa.h_index, 0)             AS h_index,
-           COALESCE(pa.n_coauth, 0)            AS n_coauth,
+           COALESCE(pco.n_coauth, 0)           AS n_coauth,
            COALESCE(pa.composite_z, 0)         AS composite_z,
            COALESCE(pf.facility_funding_usd, 0) AS facility_funding_usd,
            paa.areas                           AS areas,
@@ -126,6 +156,8 @@ async function fetchPeople() {
     LEFT JOIN person_primary_groups g  ON g.person_id  = p.person_id
     LEFT JOIN research_areas       ra  ON ra.area_id   = g.primary_area_id
     LEFT JOIN per_pa               pa  ON pa.person_id = p.person_id
+    LEFT JOIN per_pub              pub ON pub.person_id = p.person_id
+    LEFT JOIN per_coauth           pco ON pco.person_id = p.person_id
     LEFT JOIN per_pa_areas         paa ON paa.person_id = p.person_id
     LEFT JOIN per_fund             pf  ON pf.person_id = p.person_id
     LEFT JOIN per_aff              pa2 ON pa2.person_id = p.person_id
@@ -283,11 +315,14 @@ async function renderDirectory(targetId) {
 
   _container.querySelector('#ppl-q').addEventListener('input', (ev) => {
     _qFilter = ev.target.value;
-    renderDirectory(targetId);  // re-render filtered list
+    const caret = ev.target.selectionStart;
+    // The re-render replaces this input, so focus and caret must be restored
+    // on its replacement or only one character can be typed.
+    renderDirectory(null).then(() => restoreFocus('#ppl-q', caret));
   });
   _container.querySelector('#ppl-sort').addEventListener('change', (ev) => {
     _sort = ev.target.value;
-    renderDirectory(targetId);
+    renderDirectory(null);
   });
 
   if (targetId) {
