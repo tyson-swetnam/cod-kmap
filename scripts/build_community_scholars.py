@@ -529,6 +529,10 @@ def reconcile(harvested: list[dict], curated: list[dict]) -> list[dict]:
     measured metrics; an unmatched curated scholar is kept as-is so a
     hand-picked expert is never silently dropped by a threshold."""
     by_orcid = {r["orcid"]: r for r in harvested if r.get("orcid")}
+    # No curated row carries an openalex_id today, but the seed invites
+    # maintainers to fill one in, and it is the strongest identifier of the
+    # three — so match on it first when present.
+    by_oa = {r["openalex_id"]: r for r in harvested if r.get("openalex_id")}
     # Both sides are normalised through scholar_ident() so a bare curated id
     # can match an OpenAlex payload, which reports ids.scholar as a full
     # profile URL. Comparing them raw meant this matcher never fired.
@@ -552,7 +556,8 @@ def reconcile(harvested: list[dict], curated: list[dict]) -> list[dict]:
 
     matched = matched_by_name = 0
     for c in curated:
-        target = (by_orcid.get(c.get("orcid"))
+        target = (by_oa.get(c.get("openalex_id"))
+                  or by_orcid.get(c.get("orcid"))
                   or by_gs.get(scholar_ident(c.get("google_scholar_id"))))
         if target is None:
             for cand in by_name.get(name_key(c.get("name")), []):
