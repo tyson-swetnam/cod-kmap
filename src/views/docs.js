@@ -30,6 +30,7 @@ const BASE = new URL('./', document.baseURI).href;
 const DOC_PAGES = [
   { title: 'Purpose & MSI Handout',     path: 'docs/cod_purpose_and_msi_handout.md' },
   { title: 'Methods',                   path: 'docs/METHODS.md' },
+  { title: 'Team, Scholars & Data',     path: 'docs/team_scholars_datasets_methods.md' },
   { title: 'References',                path: 'docs/REFERENCES.md' },
   { title: 'Reference Documents Report',path: 'docs/reference_documents_report.md' },
   { title: 'Map Visualization Plan',    path: 'docs/map_visualization_plan.md' },
