@@ -175,7 +175,7 @@ def resolve_topics(session, rows: list[dict]) -> list[dict]:
         if TOPIC_ID_RE.match(tid):
             continue
         label = row["label"].strip()
-        data = get(session, "topics", {"search": label, "per-page": 1})
+        data = get(session, "topics", {"search": label, "per_page": 1})
         results = (data or {}).get("results") or []
         if results:
             row["openalex_topic_id"] = short_id(results[0].get("id"))
@@ -205,7 +205,7 @@ def stage_a(session, topics: list[dict], resume: bool) -> list[str]:
         data = get(session, "works", {
             "filter": f"primary_topic.id:{tid},from_publication_date:1990-01-01",
             "group_by": "authorships.author.id",
-            "per-page": TOP_AUTHORS_PER_TOPIC,
+            "per_page": TOP_AUTHORS_PER_TOPIC,
         })
         groups = (data or {}).get("group_by") or []
         found = 0
@@ -221,6 +221,44 @@ def stage_a(session, topics: list[dict], resume: bool) -> list[str]:
     return sorted(ids)
 
 
+def author_record(a: dict) -> dict | None:
+    """Flatten one OpenAlex author payload into a cache row.
+
+    `last_known_institutions` is the current (plural, list) field — the
+    same one scripts/seed_people_from_openalex.py filters on — but older
+    payloads carry a singular `last_known_institution` object, so accept
+    either rather than silently dropping every affiliation.
+    """
+    aid = short_id(a.get("id"))
+    if not aid:
+        return None
+    insts = a.get("last_known_institutions")
+    if isinstance(insts, list) and insts:
+        inst = insts[0] or {}
+    else:
+        inst = a.get("last_known_institution") or {}
+    stats = a.get("summary_stats") or {}
+    return {
+        "openalex_id": aid,
+        "name": a.get("display_name"),
+        "orcid": clean_orcid(a.get("orcid")),
+        "google_scholar_id": ((a.get("ids") or {}).get("scholar") or None),
+        "affiliation": inst.get("display_name"),
+        "affiliation_country": inst.get("country_code"),
+        "affiliation_ror": inst.get("ror"),
+        "works_count": a.get("works_count"),
+        "cited_by_count": a.get("cited_by_count"),
+        # h_index/i10 live under summary_stats on current payloads and at the
+        # top level on older ones.
+        "h_index": stats.get("h_index", a.get("h_index")),
+        "i10_index": stats.get("i10_index", a.get("i10_index")),
+        "two_yr_mean_citedness": stats.get("2yr_mean_citedness"),
+        "top_topics": "; ".join(
+            t.get("display_name") for t in (a.get("topics") or [])[:5]
+            if t.get("display_name")) or None,
+    }
+
+
 def stage_b(session, candidates: list[str], resume: bool) -> dict[str, dict]:
     out = CACHE / "authors.ndjson"
     have: dict[str, dict] = {}
@@ -232,38 +270,38 @@ def stage_b(session, candidates: list[str], resume: bool) -> dict[str, dict]:
         print(f"[B] resumed {len(have)} hydrated authors")
     todo = [a for a in candidates if a not in have]
     CACHE.mkdir(parents=True, exist_ok=True)
+    batch_ok = True
     with out.open("a") as fh:
         for i in range(0, len(todo), BATCH):
             chunk = todo[i:i + BATCH]
-            data = get(session, "authors", {
-                "filter": "ids.openalex:" + "|".join(chunk),
-                "per-page": BATCH,
-            })
-            for a in (data or {}).get("results") or []:
-                aid = short_id(a.get("id"))
-                if not aid:
-                    continue
-                inst = (a.get("last_known_institutions") or [{}])[0] or {}
-                stats = a.get("summary_stats") or {}
-                rec = {
-                    "openalex_id": aid,
-                    "name": a.get("display_name"),
-                    "orcid": clean_orcid(a.get("orcid")),
-                    "google_scholar_id": ((a.get("ids") or {}).get("scholar") or None),
-                    "affiliation": inst.get("display_name"),
-                    "affiliation_country": inst.get("country_code"),
-                    "affiliation_ror": inst.get("ror"),
-                    "works_count": a.get("works_count"),
-                    "cited_by_count": a.get("cited_by_count"),
-                    "h_index": stats.get("h_index"),
-                    "i10_index": stats.get("i10_index"),
-                    "two_yr_mean_citedness": stats.get("2yr_mean_citedness"),
-                    "top_topics": "; ".join(
-                        t.get("display_name") for t in (a.get("topics") or [])[:5]
-                        if t.get("display_name")) or None,
-                }
-                have[aid] = rec
-                fh.write(json.dumps(rec) + "\n")
+            authors: list[dict] = []
+            # The |-separated id filter is the cheap path (one request per 50
+            # authors) and is the same pattern backfill_publication_topics.py
+            # uses against /works. It is NOT independently confirmed for
+            # /authors, so treat an empty result as "this filter isn't
+            # supported here" and fall back to one request per author rather
+            # than silently hydrating nothing.
+            if batch_ok:
+                data = get(session, "authors", {
+                    "filter": "ids.openalex:" + "|".join(chunk),
+                    "per_page": BATCH,
+                })
+                authors = (data or {}).get("results") or []
+                if not authors:
+                    batch_ok = False
+                    print("[B] batch id filter returned nothing — falling back to "
+                          "per-author requests (slower, same result)")
+            if not authors:
+                for aid in chunk:
+                    one = get(session, f"authors/{aid}", {})
+                    if one and one.get("id"):
+                        authors.append(one)
+
+            for a in authors:
+                rec = author_record(a)
+                if rec:
+                    have[rec["openalex_id"]] = rec
+                    fh.write(json.dumps(rec) + "\n")
             print(f"[B] hydrated {min(i + BATCH, len(todo))}/{len(todo)}")
     print(f"[B] {len(have)} authors hydrated")
     return have
@@ -303,14 +341,14 @@ def stage_c(session, ids: list[str], topics: list[str], resume: bool) -> dict[st
         for n, aid in enumerate(todo, 1):
             all_time = get(session, "works", {
                 "filter": f"author.id:{aid},primary_topic.id:{topic_filter}",
-                "per-page": 1})
+                "per_page": 1})
             recent = get(session, "works", {
                 "filter": (f"author.id:{aid},primary_topic.id:{topic_filter},"
                            f"from_publication_date:{cutoff}"),
-                "per-page": 1})
+                "per_page": 1})
             first = get(session, "works", {
                 "filter": f"author.id:{aid}",
-                "sort": "publication_date:asc", "per-page": 1})
+                "sort": "publication_date:asc", "per_page": 1})
             first_year = None
             fr = (first or {}).get("results") or []
             if fr:
