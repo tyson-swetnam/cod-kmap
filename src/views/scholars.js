@@ -143,12 +143,21 @@ function topicChips(row) {
 // appear in another cohort.
 //
 // Until the person registry existed, community_scholars had no edge into
-// the graph at all — every one of its 339 rows carried a null person_id.
+// the graph at all: on the deployed site every one of its 339 rows carried
+// a null person_id. This branch's table holds 523 rows, of which only 3
+// resolved a person_id by identifier equality — the registry join below is
+// what actually connects them (442 of 523).
 // A scholar with no canonical_id here is one whose identifiers have not
 // been resolved yet, which is different from a scholar with no
 // collaborators; the two render differently.
 function networkHtml(row) {
-  if (!row.canonical_id) return '';
+  // Unresolved identity: no ORCID or OpenAlex id, so this scholar has no
+  // node in the graph and no edge could exist either way.
+  if (!row.canonical_id) {
+    return `<div class="sch-network sch-network-unknown">
+      <span>Identity not resolved — no ORCID or OpenAlex id on file</span>
+    </div>`;
+  }
   const bits = [];
   if (row.reg_degree > 0) {
     bits.push(`<span><strong>${row.reg_degree}</strong> co-authors in the registry</span>`);
@@ -159,7 +168,15 @@ function networkHtml(row) {
   }
   if (row.is_site_personnel) bits.push('<span class="sch-xcohort">also site personnel</span>');
   if (row.is_team) bits.push('<span class="sch-xcohort">also COD team</span>');
-  if (!bits.length) return '';
+  // Resolved but no edges. Distinct from the case above and stated as such:
+  // the co-authorship graph was built over the pre-harvest registry, so most
+  // harvested scholars have no edges *computed*, which is not evidence they
+  // have no collaborators.
+  if (!bits.length) {
+    return `<div class="sch-network sch-network-unknown">
+      <span>No co-publications computed yet within the registry</span>
+    </div>`;
+  }
   return `<div class="sch-network">${bits.join('')}</div>`;
 }
 

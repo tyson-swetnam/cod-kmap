@@ -96,10 +96,15 @@ const NODE_COLORS = {
   facility: '#0d6e6e',
   person:   '#0ea5e9',
   // Registry researchers are a THIRD colour, distinct from the
-  // facility-directory people already on the map (#0ea5e9). Amber
-  // reads clearly against both the teal facility markers and the
-  // low-alpha area fills, and is not used anywhere in AREA_PALETTE.
-  registry: '#b45309',
+  // facility-directory people already on the map (#0ea5e9) and from the
+  // teal facility markers (#0d6e6e).
+  //
+  // This was '#b45309', which IS AREA_PALETTE[15] — the fill for
+  // "Kelp forests" — so registry markers were indistinguishable from that
+  // area. '#7c2d12' is absent from the 33-entry palette and sits 33.5 RGB
+  // units from its nearest member, 158 from the facility teal and 270 from
+  // the person sky. Check any replacement the same way before changing it.
+  registry: '#7c2d12',
   registryEdge: '#c2410c',
 };
 const NODE_RADIUS = { facility: 4, person: 3 };
@@ -1577,9 +1582,15 @@ function renderRegistryPanel(roster, nDrawn, offMapEdges) {
     ? `<p class="mvg-reg-note">${nDrawn} of ${roster.length} plotted on the map;
        the rest are listed here.</p>`
     : '';
+  // n_with_edges counts researchers holding at least one edge, which is NOT
+  // the same as "co-authorship computed": a harvested researcher can be
+  // computed and still have zero edges inside the registry. n_harvested is
+  // the coverage figure; n_with_edges is the result. Reporting them
+  // separately keeps the badge legend ("–" means not harvested) honest.
   const edgeNote = sum.n_with_edges != null
-    ? `<p class="mvg-reg-note">${sum.n_with_edges} of ${roster.length} have
-       co-authorship computed. <span class="mvg-reg-badge is-unknown">–</span>
+    ? `<p class="mvg-reg-note">${sum.n_harvested} of ${roster.length} have
+       co-authorship computed; ${sum.n_with_edges} hold at least one link here.
+       <span class="mvg-reg-badge is-unknown">–</span>
        means not yet harvested, not zero.</p>`
     : '';
   const offNote = offMapEdges
@@ -2027,11 +2038,18 @@ async function render() {
       _dotPersonSel = null;
     }
 
-    // Layer 3.4: REGISTRY layer container. Appended once, at a fixed z
-    // position (above the facility dots, below every text label) so a
-    // focus change only swaps this group's children. stage.innerHTML =
-    // '' above already discarded the previous SVG, so the stale
-    // selections must be dropped before we repopulate.
+    // Layer 3.4: REGISTRY layer container. Appended once, last, so a focus
+    // change only swaps this group's children. stage.innerHTML = '' above
+    // already discarded the previous SVG, so the stale selections must be
+    // dropped before we repopulate.
+    //
+    // Paint order: SVG has no z-index, so document order decides. This group
+    // is appended after the person-label group and therefore paints ABOVE
+    // those labels, not below them. That is the intended reading for the
+    // ribbons and site markers — they are the layer the user just switched
+    // on — but it does mean a marker can occlude a person label beneath it.
+    // Do not "fix" this by reordering without checking the ribbons still
+    // read against the cartogram fill.
     _regSiteLinkSel = null;
     _regNodeSel = null;
     _regNodeLinkSel = null;

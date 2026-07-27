@@ -5,6 +5,12 @@ geopy>=2.4
 pyyaml>=6.0
 requests>=2.31
 shapely>=2.0
+# Parses src/*.js in scripts/qa.py so a JavaScript syntax error cannot reach
+# the deployed site. A pure-pip wheel with no build step, which is what makes
+# it usable under the repo's no-bundler rule. qa.py skips the check with a
+# warning if it is absent, so this is a strong recommendation, not a hard
+# dependency.
+quickjs>=1.19
 
 # Optional: DuckLake support for the COD team layer
 # (scripts/build_cod_team_lake.py). The wheel bundles the extension

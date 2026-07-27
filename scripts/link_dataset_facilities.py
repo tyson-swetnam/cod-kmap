@@ -194,9 +194,16 @@ def derive(conn):
                 put(dataset_id, fid, role, "canonical-name",
                     f"{field} contains '{name}'", source_url)
 
-        for token in set(ACRONYM_TOKEN.findall(provider or "")):
+        # Read the role from the cue words preceding the acronym, the same
+        # way the canonical-name pass does. Hardcoding DEFAULT_ROLE here
+        # meant "archived at NCEI" was recorded as stewardship, which is a
+        # different relationship and the docstring already promised cue
+        # reading applied to every pass.
+        prov_lower = (provider or "").lower()
+        for m in ACRONYM_TOKEN.finditer(provider or ""):
+            token = m.group(0)
             for fid, name, _ac, _ft in by_acronym.get(token.upper(), []):
-                put(dataset_id, fid, DEFAULT_ROLE, "acronym",
+                put(dataset_id, fid, role_for(prov_lower, m.start()), "acronym",
                     f"provider token '{token}' = acronym of '{name}'", source_url)
 
         label = net_label.get(network_id) if network_id else None

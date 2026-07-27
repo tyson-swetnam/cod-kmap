@@ -50,11 +50,18 @@ SLEEP = 0.25
 
 # Facility types that can plausibly hold a ROR. Everything else in the
 # catalogue is a place, not an organisation.
+#
+# 'observatory' was missing from the first version of this set, which
+# silently excluded Ocean Networks Canada — a research organisation that
+# does hold a ROR — from resolution entirely. The omission was invisible in
+# the run output because the skip count (3,310) reads as if it were just
+# the protected areas (3,309). Any type added to the catalogue that names an
+# organisation rather than a place belongs here.
 RESEARCH_TYPES = {
     "federal", "network", "nonprofit", "international-federal",
     "university-marine-lab", "international-university", "state",
-    "international-nonprofit", "foundation", "university", "consortium",
-    "international-network", "tribal", "private",
+    "international-nonprofit", "foundation", "observatory", "university",
+    "consortium", "international-network", "tribal", "private",
 }
 
 
@@ -124,11 +131,23 @@ def main() -> int:
         FROM facilities
         WHERE facility_type IN ({types}) AND (ror IS NULL OR ror = '')
         ORDER BY canonical_name""").fetchall()
-    skipped = conn.execute(f"""
-        SELECT COUNT(*) FROM facilities WHERE facility_type NOT IN ({types})
-    """).fetchone()[0]
+    # Report the skipped set BY TYPE, not as a single number. A bare count
+    # reads as "the protected areas" and hides a research organisation that
+    # fell outside RESEARCH_TYPES by omission — which is exactly how Ocean
+    # Networks Canada went unresolved without anyone noticing.
+    skipped_by_type = conn.execute(f"""
+        SELECT facility_type, COUNT(*) FROM facilities
+        WHERE facility_type NOT IN ({types})
+        GROUP BY 1 ORDER BY 2 DESC""").fetchall()
+    skipped = sum(n for _, n in skipped_by_type)
+    non_place = [(t, n) for t, n in skipped_by_type
+                 if not t.startswith("protected-area")]
     print(f"[ror] {len(targets)} research-organisation facility/ies to resolve "
-          f"({skipped:,} place-type facilities skipped by design)")
+          f"({skipped:,} skipped by design)")
+    if non_place:
+        print(f"[ror] NOTE: skipped types that are not protected areas: "
+              f"{non_place} — if any of these name an organisation rather "
+              f"than a place, add them to RESEARCH_TYPES")
     if args.limit:
         targets = targets[:args.limit]
 

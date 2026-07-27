@@ -413,7 +413,7 @@ ORDER  BY co_pubs DESC;`,
       'OpenAlex affiliation ROR equals `facilities.ror` — identifier equality ' +
       'only, no name matching. Edit the acronym list to pick sites; delete the ' +
       'WHERE clause for all of them. Only 69 of ~209 research organisations carry ' +
-      'a ROR so far, and the 3,310 protected areas never will — a state park is a ' +
+      'a ROR so far, and the 3,309 protected areas never will — a state park is a ' +
       'place, not an organisation.',
     sql: `-- Researchers linked to a catalogued site by ROR equality.
 -- Swap the acronym in the WHERE clause, or delete the clause for all sites.

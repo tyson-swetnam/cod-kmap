@@ -527,7 +527,7 @@ def check_datasets(conn, failures: list[str]) -> None:
 def check_dataset_facilities(conn, failures: list[str]) -> None:
     """The dataset → stewarding-facility edge.
 
-    Partial coverage is expected and is NOT a failure — a third of the
+    Partial coverage is expected and is NOT a failure — 46% (33 of 72) of the
     catalogue names agencies that `facilities` does not carry as rows. What
     would be a failure is an edge to an entity that isn't there, an
     unlabelled method/confidence, or a link to a protected area (a state
@@ -577,6 +577,60 @@ def check_dataset_facilities(conn, failures: list[str]) -> None:
     assert_true(place_edge == 0,
                 f"{place_edge} dataset(s) linked to a protected area rather than a "
                 f"research organisation", failures)
+
+
+def check_frontend_parses(failures: list[str]) -> None:
+    """Every src/*.js must be syntactically valid JavaScript.
+
+    This exists because a SQL comment inside a JS template literal read
+    ``-- OpenAlex metrics that `people` alone does not``. The backticks
+    closed the template literal, the next token was a bare identifier, and
+    the whole site died with "Uncaught SyntaxError: Unexpected identifier
+    'people'" — a blank page behind "Loading data…". Every query in the
+    file still ran correctly when extracted and executed against DuckDB,
+    so SQL-level verification passed while the page was unloadable.
+
+    A character-balance heuristic does NOT catch this: the stray backticks
+    come in pairs, so the file counts as balanced. Only a parser catches
+    it. quickjs is a pure-pip dependency and needs no build step, which is
+    what makes it usable here.
+
+    Skipped, with a warning, if quickjs is not installed — the gate must
+    still run in an environment that only has the Python data stack.
+    """
+    try:
+        import quickjs                                    # noqa: PLC0415
+    except ImportError:
+        print("[qa] quickjs not installed — skipping the JS parse check. "
+              "`pip install quickjs` to enable it.", file=sys.stderr)
+        return
+
+    import re                                             # noqa: PLC0415
+    src_dir = Path(__file__).resolve().parent.parent / "src"
+    files = sorted(src_dir.rglob("*.js"))
+    if not files:
+        failures.append("no .js files found under src/ — is the checkout complete?")
+        return
+
+    ctx = quickjs.Context()
+    for f in files:
+        text = f.read_text()
+        # QuickJS's eval takes a script, not a module. Blank out the module
+        # syntax with same-length whitespace so reported positions still
+        # line up with the real file.
+        blank = lambda m: " " * len(m.group(0))           # noqa: E731
+        s = re.sub(r"^\s*import\s[^;]*;", blank, text, flags=re.M)
+        s = re.sub(r"^\s*export\s+(?=(const|function|async|class|let|var))",
+                   blank, s, flags=re.M)
+        s = re.sub(r"^\s*export\s*\{[^}]*\};", blank, s, flags=re.M)
+        try:
+            # Wrap in a function expression: parses the body without
+            # executing any of it.
+            ctx.eval(f"(function(){{ {s} \n}})")
+        except Exception as e:                            # noqa: BLE001
+            rel = f.relative_to(src_dir.parent)
+            assert_true(False, f"{rel} is not valid JavaScript: "
+                               f"{str(e).splitlines()[0][:160]}", failures)
 
 
 def main() -> int:
@@ -629,6 +683,10 @@ def main() -> int:
         check_datasets(conn, failures)
         check_person_registry(conn, failures)
         check_registry_collaborations(conn, failures)
+
+    # Outside the DB block: this one reads source files, not the database,
+    # and must run even on a checkout with no data.
+    check_frontend_parses(failures)
 
     if failures:
         print("QA FAILED:")

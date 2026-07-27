@@ -2013,6 +2013,7 @@ footer a:hover { color: var(--c-primary); }
   font-size: .72rem; color: #475569; margin: 4px 0 6px;
 }
 .sch-network strong { color: #0f172a; }
+.sch-network-unknown { color: #94a3b8; font-style: italic; }
 .sch-xcohort {
   background: #ede9fe; color: #6d28d9;
   padding: 1px 7px; border-radius: 999px; font-size: .68rem;
@@ -2086,7 +2087,7 @@ footer a:hover { color: var(--c-primary); }
 .ds-desc { margin: 0 0 10px; font-size: .84rem; color: #1e293b; }
 
 /* Producer edges (dataset_facilities). The unresolved case is styled as a
-   deliberate statement, not a blank — a third of the catalogue lands here
+   deliberate statement, not a blank — 46% of the catalogue lands here
    and it must not read as "this dataset has no steward". */
 .ds-producers {
   margin: 0 0 8px; display: flex; flex-wrap: wrap;
