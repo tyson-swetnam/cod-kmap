@@ -31,9 +31,11 @@ magnitude. Measured results:
 OpenAlex does not populate `ids.scholar` for the overwhelming majority of
 author records, and ORCID's external-identifiers block rarely carries one
 either. This is a property of the upstream sources, not a defect in the
-scripts: the field the tiers read is simply empty. The handful of ids
-that exist were hand-entered in the seed CSV for the PI and Co-PIs, not
-resolved.
+scripts: the field the tiers read is simply empty. The 12 ids in
+`person_registry` were all carried in from seed data rather than
+resolved, but not all from the team seed as this page previously
+claimed: 2 came from `people` (Myers-Pigg and Swetnam) and 10 from
+`community_scholars`.
 
 Anything approaching useful coverage would require a different source or a
 hand-curation pass. Until then, treat a missing Scholar link as the

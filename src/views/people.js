@@ -136,7 +136,7 @@ async function fetchPeople() {
     ),
     -- Registry identity for directory people. person_registry resolved the
     -- three human layers onto persistent ids, so it holds identifiers and
-    -- OpenAlex metrics that `people` alone does not — and it says whether
+    -- OpenAlex metrics that the people table alone does not — and it says whether
     -- this person is also on the COD team or in the scholar roster, which
     -- was previously unrepresentable.
     reg AS (

@@ -112,7 +112,7 @@ async function fetchDatasets() {
   // catalogue is one round trip. unwrapRow turns the Arrow vectors into
   // plain arrays/objects.
   //
-  // The producer join is LEFT on purpose and stays LEFT: a third of the
+  // The producer join is LEFT on purpose and stays LEFT: 46% of the
   // catalogue has no matching facility row, and those datasets must still
   // appear. `dataset_facilities` may carry several rows per dataset (a
   // regional association plus its host institution) — that is the answer,

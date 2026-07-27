@@ -99,7 +99,7 @@ async function fetchTeam() {
       FULL OUTER JOIN hidx   ON hidx.person_id   = COALESCE(pubs.person_id, coauth.person_id)
     ),
     -- Registry-side identity and reach. The person_id joins above only
-    -- reach a member who has a `people` row AND publications attributed to
+    -- reach a member who has a people row AND publications attributed to
     -- it, which was true for 13 of 40 members. person_registry resolves the
     -- same humans on ORCID/OpenAlex equality and carries their metrics
     -- directly, so it fills in the rest.
@@ -293,7 +293,8 @@ function memberRow(row) {
           : ''}
         ${hasMetrics(row)
           ? `<span class="team-member-metric">h ${fmtInt(row.h_index)} · ${fmtInt(
-              row.works_count != null ? row.works_count : row.n_pubs)} works${
+              row.works_count != null ? row.works_count : row.n_pubs)} ${
+              row.works_count != null ? 'works' : 'pubs in catalogue'}${
               row.reg_degree != null ? ` · ${fmtInt(row.reg_degree)} co-authors` : ''}</span>`
           : ''}
         ${links.length ? `<span class="team-links">${links.join(' · ')}</span>` : ''}
