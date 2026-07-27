@@ -66,8 +66,8 @@ Three further layers are **CSV/JSON-seeded rather than agent-researched** — th
 
 | Layer | Seed | Build script | Tab |
 |---|---|---|---|
-| COD project org chart | `data/seed/cod_wbs.csv`, `data/seed/cod_team_members.csv` | `scripts/build_cod_team_lake.py` | `/team` |
-| Coastal-science scholar roster | `data/seed/community_scholars_seed.json`, `data/datasets/coastal_topics.csv` | `scripts/build_community_scholars.py` (`--seed` offline / `--harvest` needs OpenAlex) | `/scholars` |
+| COD project org chart | `data/seed/cod_wbs.csv`, `data/seed/cod_team_members.csv` | `scripts/build_cod_team_lake.py` | `/org` |
+| Coastal-science scholar roster | `data/seed/community_scholars_seed.json`, `data/datasets/coastal_topics.csv` | `scripts/build_community_scholars.py` (`--seed` offline / `--harvest` needs OpenAlex) | `/people` (scholar cohort) |
 | Curated dataset catalogue | `data/datasets/coastal_datasets.json` | `scripts/load_coastal_datasets.py` | `/data` |
 
 - **The COD team layer is a real DuckLake.** `scripts/build_cod_team_lake.py` writes `db/cod_team.ducklake` + `db/ducklake_data/` (both gitignored, same rationale as the `.duckdb`) so roster revisions are snapshotted and queryable via `teamlake.snapshots()` / `AT (VERSION => n)`. Install with `pip install duckdb-extensions duckdb-extension-ducklake` — the wheel bundles the binary, so it works without reaching `extensions.duckdb.org`. **If the extension is missing the script falls back to plain tables and the parquet output is identical**, so a fallback run is not a degraded run. Stage rows with one `INSERT … SELECT` per table: DuckLake snapshots per *statement*, so row-by-row inserts bury the real change under a hundred single-row snapshots.
@@ -83,7 +83,7 @@ Three further layers are **CSV/JSON-seeded rather than agent-researched** — th
 - `src/db.js` — DuckDB-Wasm init, parquet view registration, helper views, `query()` (returns GeoJSON Features), and the Arrow→JS unwrap helpers.
 - `src/map.js` — `TYPE_COLORS` is the single source of truth for facility-type colours (must match polygon overlay colours in `public/overlays/manifest.json`).
 - `src/overlays.js` — lazy-loads polygon layers via `public/overlays/manifest.json`. `DEFAULT_OFF` controls first-paint visibility (heavy / cluttering layers default off).
-- `src/views/{list,stats,docs,network,people,sql}.js` — one per top-tab. `/docs` reads markdown from `docs/` at runtime.
+- `src/views/{list,stats,docs,network,people,orgchart,datasets,sql}.js` — one per top-tab. `/docs` reads markdown from `docs/` at runtime. `people.js` is the single human roster (its source is `person_registry`); it replaced the former `people.js` + `team.js` + `scholars.js` trio, and `orgchart.js` (#/org) keeps only the WBS hierarchy that a roster filter cannot express.
 
 The deploy workflow (`.github/workflows/deploy.yml`) only stages `index.html`, `favicon.svg`, `src/`, `public/`, and `docs/`. Anything outside those paths (agents, scripts, schema, data/raw) is **not** on the live site.
 

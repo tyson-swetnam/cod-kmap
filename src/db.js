@@ -161,11 +161,14 @@ export async function initDB() {
     'person_area_metrics', 'facility_area_funding',
     'funder_area_funding', 'area_coverage_matrix',
     // COD project org chart — written by scripts/build_cod_team_lake.py.
-    // Drives src/views/team.js.
+    // Drives src/views/orgchart.js (#/org).
     'cod_wbs', 'cod_team_members',
     // Coastal-science community roster — written by
-    // scripts/build_community_scholars.py. Drives src/views/scholars.js.
-    // Ships curated (metric columns null) until the OpenAlex harvest runs.
+    // scripts/build_community_scholars.py. No longer drives a tab of its own:
+    // person_registry resolved this roster onto persistent ids and the People
+    // view (#/people) reads the registry, with 'Scholar roster' as a cohort
+    // filter. Kept registered because the SQL tab and schema/schema.sql both
+    // still expose it as a table.
     'community_scholars',
     // Curated dataset catalogue + access endpoints — written by
     // scripts/load_coastal_datasets.py. Drives src/views/datasets.js.
@@ -179,6 +182,8 @@ export async function initDB() {
     // over that node set — written by scripts/build_person_registry.py and
     // scripts/compute_registry_collaborations.py. Only the 'core' tier ships
     // here; the full population stays in the local DuckDB.
+    // person_registry is the roster of the People view (src/views/people.js),
+    // not just an enrichment join.
     'person_registry', 'person_identity_source', 'registry_collaborations',
     // Researcher ↔ catalogued-site links, joined on ROR equality — written
     // by scripts/link_registry_facilities.py.

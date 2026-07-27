@@ -409,7 +409,7 @@ synthesis-network  model-output  archive  mapping-product
 ```bash
 python scripts/rebuild_db_from_parquet.py   # committed parquet -> local DB
 python scripts/qa.py                        # must exit 0
-python -m http.server 5173                  # then open /#/team, /#/scholars, /#/data
+python -m http.server 5173                  # then open /#/people, /#/org, /#/data
 ```
 
 `scripts/qa.py` carries 13 invariants for these tables — exactly one PI,

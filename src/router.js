@@ -32,7 +32,8 @@ function navigate(path) {
   const rootSeg = '/' + (path.split('/')[1] || '');
 
   // Update active tab styling. Sub-routes like '/people/<id>' light
-  // up the parent tab '/people'.
+  // up the parent tab '/people'. A retired route ('/team', '/scholars')
+  // matches no tab for the instant before its handler redirects.
   document.querySelectorAll('.tabs a[data-view]').forEach((a) => {
     a.classList.toggle('active', a.dataset.view === rootSeg);
   });
@@ -41,9 +42,11 @@ function navigate(path) {
   // `no-sidebar` class each route handler in main.js sets: this toggle
   // runs on every navigation, so a view missing from this list gets the
   // class stripped straight back off again.
+  // '/team' and '/scholars' are retired routes that redirect to '/people';
+  // they stay listed so the sidebar does not flash in during the redirect.
   const NO_SIDEBAR = new Set([
     '/docs', '/stats', '/network', '/sql', '/people',
-    '/team', '/scholars', '/data',
+    '/org', '/team', '/scholars', '/data',
   ]);
   const noSidebar = NO_SIDEBAR.has(rootSeg);
   document.body.classList.toggle('no-sidebar', noSidebar);

@@ -14,9 +14,8 @@ import { initListView, renderList } from './views/list.js';
 import { initStatsView, renderStats } from './views/stats.js';
 import { initDocsView, renderDocsView } from './views/docs.js';
 import { initNetworkView, renderNetworkView } from './views/network.js';
-import { initPeopleView, renderPeopleView } from './views/people.js';
-import { initTeamView, renderTeamView } from './views/team.js';
-import { initScholarsView, renderScholarsView } from './views/scholars.js';
+import { initPeopleView, renderPeopleView, setPeopleCohort } from './views/people.js';
+import { initOrgChartView, renderOrgChartView } from './views/orgchart.js';
 import { initDatasetsView, renderDatasetsView } from './views/datasets.js';
 import { initSqlView, renderSqlView } from './views/sql.js';
 import { initRouter, currentPath } from './router.js';
@@ -59,8 +58,7 @@ initListView(document.getElementById('browse'));
 initStatsView(document.getElementById('stats'));
 initNetworkView(document.getElementById('network'));
 initPeopleView(document.getElementById('people'));
-initTeamView(document.getElementById('team'));
-initScholarsView(document.getElementById('scholars'));
+initOrgChartView(document.getElementById('orgchart'));
 initDatasetsView(document.getElementById('datasets'));
 initSqlView(document.getElementById('sql'));
 
@@ -204,8 +202,7 @@ const views = {
   '/browse':  document.getElementById('view-browse'),
   '/network': document.getElementById('view-network'),
   '/people':  document.getElementById('view-people'),
-  '/team':    document.getElementById('view-team'),
-  '/scholars': document.getElementById('view-scholars'),
+  '/org':     document.getElementById('view-org'),
   '/data':    document.getElementById('view-data'),
   '/sql':     document.getElementById('view-sql'),
   '/stats':   document.getElementById('view-stats'),
@@ -241,27 +238,42 @@ initRouter({
     // and caches the graph so subsequent visits are fast).
     renderNetworkView();
   },
+  // People, Team and Scholars are one view now (src/views/people.js), whose
+  // roster is person_registry. Cohort is a filter inside it.
   '/people': (path) => {
     showView('/people');
     document.body.classList.add('no-sidebar');
     setDrawer(false);
-    // /people/<person_id> jumps + highlights that researcher's card.
+    // /people/<id> jumps + highlights one person. <id> may be a
+    // canonical_id, or a legacy person_id / scholar_id — the view resolves
+    // all three, so links minted by the Network tab and the org chart, and
+    // any bookmark of the retired routes, still land on the right card.
     const m = path.match(/^\/people\/(.+)$/);
     renderPeopleView(m ? decodeURIComponent(m[1]) : null);
   },
-  '/team': () => {
-    showView('/team');
-    document.body.classList.add('no-sidebar');
-    setDrawer(false);
-    renderTeamView();
+  // Retired routes. #/team and #/scholars are kept as redirects rather than
+  // deleted: they were live links (docs, the map popup, external bookmarks)
+  // and dropping them would 404. Each lands on People with its cohort
+  // preselected. #/team/<x> and #/scholars/<x> keep their target id, which
+  // the view resolves as a person_id / scholar_id.
+  '/team': (path) => {
+    const m = path.match(/^\/team\/(.+)$/);
+    setPeopleCohort('team');
+    location.hash = m ? `#/people/${m[1]}` : '#/people';
   },
   '/scholars': (path) => {
-    showView('/scholars');
+    const m = path.match(/^\/scholars\/(.+)$/);
+    setPeopleCohort('scholar');
+    location.hash = m ? `#/people/${m[1]}` : '#/people';
+  },
+  // The COD work-breakdown structure keeps its own view: wbs_code /
+  // parent_code / roles / committees is a management hierarchy, which is not
+  // expressible as a filter over a flat roster.
+  '/org': () => {
+    showView('/org');
     document.body.classList.add('no-sidebar');
     setDrawer(false);
-    // /scholars/<scholar_id> jumps + highlights that scholar's card.
-    const m = path.match(/^\/scholars\/(.+)$/);
-    renderScholarsView(m ? decodeURIComponent(m[1]) : null);
+    renderOrgChartView();
   },
   '/data': (path) => {
     showView('/data');
