@@ -30,13 +30,13 @@ authorship rows.
 
 Every row carries a `source_url`, a confidence rating, and at least one
 `person_identity_source` assertion naming the rule that produced it. `qa.py`
-enforces all of that plus identifier uniqueness — 11 invariants, each verified by
-injecting the defect it targets.
+enforces all of that plus identifier uniqueness — 14 assertions across two new
+check functions, each verified by injecting the defect it targets.
 
 **Identifier resolution.** 402 rows arrived with no persistent id at all. A
 five-rule resolver (exact family name, compatible given names, shared *distinctive*
 institution token, no conflicting ORCIDs among survivors, no stub records) resolved
-226 and **refused 32**: 20 as ambiguous, 12 as stubs. Rule 5 exists because testing
+226 and **refused 32**: 16 as ambiguous (8 with conflicting ORCIDs, 8 institution-verified duplicates with no ORCID to prove they are one person), 12 as stubs, 3 whose affiliation was absent or too generic to test, and 1 other. Rule 5 exists because testing
 caught "Andrew G. Dickson" resolving to a 2-work shard named `A. DICKSON`, which
 would have attached two papers to a researcher with hundreds and then ranked him
 near the bottom. Negative controls hold: "Y. Stacy Zhang" and "Y. Joseph Zhang" stay
@@ -64,8 +64,9 @@ Cross-cohort census:
 | **Team ↔ Team** | **1** |
 
 Edge counts were validated against OpenAlex's own two-author filter: 13 of 14
-sampled edges exact. A 600-work fetch cap was found undercounting the 49
-highest-output authors by 10–25% and raised to 6,000.
+sampled edges exact. A 600-work fetch cap was found undercounting four of the top six edges by
+4–23% (the two whose endpoints both sat under the cap were already exact) and
+was raised to 6,000.
 
 ### Team blind spots
 
@@ -150,10 +151,14 @@ aquarium. Any ROR claimed by two facilities is now refused and reported.
    over the full population is ~152k works queries; the graph shipped here is the
    COD-relevant subgraph. Degree therefore contributes to tier scoring only for
    nodes that were in the registry before the harvest.
-4. **Two ORCID conflicts are logged, not applied** — cases where OpenAlex reports a
+4. **The `recency` term in tier scoring is a proxy.** It scores
+   `two_yr_mean_citedness` — recent citation impact — not recent output volume.
+   The harvest computes a recent-output count but `person_registry` has no
+   column for it; adding one is the obvious refinement.
+5. **Two ORCID conflicts are logged, not applied** — cases where OpenAlex reports a
    different ORCID than the registry holds. They sit in `person_identity_source`
    with `field='orcid-conflict'` for curation.
-5. **Nothing has been rendered in a browser.** Verification was DuckDB executing the
+6. **Nothing has been rendered in a browser.** Verification was DuckDB executing the
    views' SQL and checking site parquet is self-consistent, not a live page.
 
 ## What ships where
