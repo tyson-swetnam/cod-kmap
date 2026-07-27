@@ -92,7 +92,7 @@ async function fetchRoster() {
     reach AS (
       SELECT e.self_id                                       AS canonical_id,
              COUNT(*)                                        AS reg_degree,
-             SUM(e.co_pub_count)                              AS co_pub_total,
+             CAST(SUM(e.co_pub_count) AS DOUBLE)              AS co_pub_total,
              MAX(e.co_pub_count)                              AS top_co_pubs,
              COUNT(*) FILTER (WHERE o.is_team)                AS to_team,
              COUNT(*) FILTER (WHERE o.is_site_personnel)      AS to_site,

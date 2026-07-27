@@ -404,20 +404,32 @@ async function fetchData() {
       SELECT a.area_id                        AS id,
              a.label                          AS name,
              a.n_facilities                   AS raw_facilities,
-             COALESCE(p.n_org, 0)             AS n_org,
-             COALESCE(p.n_protected, 0)       AS n_protected,
-             COALESCE(p.n_datasets, 0)        AS n_datasets,
-             COALESCE(p.n_data_providers, 0)  AS n_data_providers,
-             COALESCE(p.n_reg_sited, 0)
-               + COALESCE(p.n_directory, 0)
-               + COALESCE(d.n_reg_domain, 0)  AS n_people,
-             COALESCE(p.n_org, 0)
+             -- Every numeric column is cast to a plain SQL type that
+             -- duckdb-wasm hands back as a JS number. This is load-bearing,
+             -- not tidiness: multiplying an integer count by a JS-side
+             -- decimal literal yields DECIMAL(38,2), and duckdb-wasm returns
+             -- DECIMAL as an Arrow structured value, NOT a number. Number()
+             -- on it is NaN, "NaN || 0" is 0, so "weight > 0" was false for
+             -- EVERY area, data.areas came back empty, allNodes was empty,
+             -- and the Voronoi bounds went NaN — "invalid bounds", blank map.
+             -- HUGEINT (from SUM over BIGINT) has the same problem.
+             -- duckdb-python returns a plain float for both, so this is
+             -- invisible to any check that does not run in the browser.
+             CAST(COALESCE(p.n_org, 0) AS INTEGER)            AS n_org,
+             CAST(COALESCE(p.n_protected, 0) AS INTEGER)      AS n_protected,
+             CAST(COALESCE(p.n_datasets, 0) AS INTEGER)       AS n_datasets,
+             CAST(COALESCE(p.n_data_providers, 0) AS INTEGER) AS n_data_providers,
+             CAST(COALESCE(p.n_reg_sited, 0)
+                  + COALESCE(p.n_directory, 0)
+                  + COALESCE(d.n_reg_domain, 0) AS INTEGER)   AS n_people,
+             CAST(
+               COALESCE(p.n_org, 0)
                + ${W_DATA_PROVIDER} * COALESCE(p.n_data_providers, 0)
                + ${W_DATASET}       * COALESCE(p.n_datasets, 0)
                + ${W_PERSON}        * (COALESCE(p.n_reg_sited, 0)
                                        + COALESCE(p.n_directory, 0)
                                        + COALESCE(d.n_reg_domain, 0))
-                                              AS weight
+               AS DOUBLE)                                     AS weight
       FROM   research_areas_active a
       LEFT   JOIN per_area   p ON p.area_id = a.area_id
       LEFT   JOIN reg_domain d ON d.area_id = a.area_id
@@ -486,8 +498,8 @@ async function fetchData() {
     people: `
       WITH per_pa AS (
         SELECT person_id,
-               SUM(n_publications)     AS n_pubs,
-               SUM(n_co_authors)       AS n_coauth,
+               CAST(SUM(n_publications) AS DOUBLE) AS n_pubs,
+               CAST(SUM(n_co_authors)   AS DOUBLE) AS n_coauth,
                SUM(total_citations)    AS total_citations
         FROM person_area_metrics
         GROUP BY person_id
@@ -741,7 +753,7 @@ async function fetchRegistry() {
       )
       SELECT CASE WHEN fa < fb THEN fa ELSE fb END AS source,
              CASE WHEN fa < fb THEN fb ELSE fa END AS target,
-             SUM(w)                                AS co_pubs,
+             CAST(SUM(w) AS DOUBLE)                AS co_pubs,
              COUNT(*)                              AS n_pairs
       FROM   pair
       WHERE  fa <> fb
@@ -806,7 +818,7 @@ async function fetchRegistry() {
         SELECT canonical_id, facility_id FROM registry_facilities
       )
       SELECT a.facility_id       AS facility_id,
-             SUM(e.co_pub_count) AS co_pubs,
+             CAST(SUM(e.co_pub_count) AS DOUBLE) AS co_pubs,
              COUNT(*)            AS n_pairs
       FROM   registry_collaborations e
       JOIN   placed a ON a.canonical_id = e.canonical_id_a

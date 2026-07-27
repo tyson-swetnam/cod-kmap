@@ -192,14 +192,14 @@ async function fetchAll() {
 
     // Cohort composition. Flags are not mutually exclusive, so
     // n_team + n_site + n_scholar overshoots n_total by n_multi.
-    registry_cohorts: `SELECT SUM(CASE WHEN is_team           THEN 1 ELSE 0 END) AS n_team,
-             SUM(CASE WHEN is_site_personnel THEN 1 ELSE 0 END) AS n_site,
-             SUM(CASE WHEN is_scholar        THEN 1 ELSE 0 END) AS n_scholar,
-             SUM(CASE WHEN CAST(is_team AS INT)
+    registry_cohorts: `SELECT CAST(SUM(CASE WHEN is_team      THEN 1 ELSE 0 END) AS DOUBLE) AS n_team,
+             CAST(SUM(CASE WHEN is_site_personnel THEN 1 ELSE 0 END) AS DOUBLE) AS n_site,
+             CAST(SUM(CASE WHEN is_scholar        THEN 1 ELSE 0 END) AS DOUBLE) AS n_scholar,
+             CAST(SUM(CASE WHEN CAST(is_team AS INT)
                          + CAST(is_site_personnel AS INT)
                          + CAST(is_scholar AS INT) > 1
-                      THEN 1 ELSE 0 END)                        AS n_multi,
-             COUNT(*)                                           AS n_total
+                      THEN 1 ELSE 0 END) AS DOUBLE)             AS n_multi,
+             CAST(COUNT(*) AS DOUBLE)                           AS n_total
       FROM   person_registry`,
 
     // The people the pre-registry schema could not represent: one human
@@ -225,8 +225,8 @@ async function fetchAll() {
 
     registry_countries: `SELECT COALESCE(affiliation_country, '(none)') AS country,
              COUNT(*)                                          AS researchers,
-             SUM(CASE WHEN is_team THEN 1 ELSE 0 END)           AS team,
-             SUM(CASE WHEN is_site_personnel THEN 1 ELSE 0 END) AS site_personnel
+             CAST(SUM(CASE WHEN is_team THEN 1 ELSE 0 END) AS DOUBLE)           AS team,
+             CAST(SUM(CASE WHEN is_site_personnel THEN 1 ELSE 0 END) AS DOUBLE) AS site_personnel
       FROM   person_registry
       GROUP  BY country
       ORDER  BY researchers DESC, country`,
@@ -305,7 +305,7 @@ async function fetchAll() {
       )
       SELECT LEAST(role_a, role_b) || ' ↔ ' || GREATEST(role_a, role_b) AS edge_type,
              COUNT(*)          AS edges,
-             SUM(co_pub_count) AS co_pubs,
+             CAST(SUM(co_pub_count) AS DOUBLE) AS co_pubs,
              MAX(co_pub_count) AS strongest
       FROM   labelled
       GROUP  BY edge_type
@@ -317,7 +317,7 @@ async function fetchAll() {
     registry_team_degree: `SELECT pr.display_name          AS researcher,
              pr.affiliation,
              COUNT(e.canonical_id_a)   AS degree,
-             SUM(CASE WHEN o.is_team THEN 1 ELSE 0 END) AS team_links
+             CAST(SUM(CASE WHEN o.is_team THEN 1 ELSE 0 END) AS DOUBLE) AS team_links
       FROM   person_registry pr
       LEFT   JOIN registry_collaborations e
              ON  e.canonical_id_a = pr.canonical_id

@@ -80,7 +80,7 @@ async function fetchTeam() {
     WITH pubs AS (
       SELECT a.person_id,
              COUNT(DISTINCT a.publication_id) AS n_pubs,
-             SUM(p.cited_by_count)            AS citations
+             CAST(SUM(p.cited_by_count) AS DOUBLE) AS citations
       FROM authorship  a
       JOIN publications p ON p.publication_id = a.publication_id
       GROUP BY a.person_id
