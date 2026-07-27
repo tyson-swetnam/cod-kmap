@@ -142,11 +142,18 @@ const NODE_COLORS = {
   // facility-directory people already on the map (#0ea5e9) and from the
   // teal facility markers (#0d6e6e).
   //
-  // This was '#b45309', which IS AREA_PALETTE[15] — the fill for
-  // "Kelp forests" — so registry markers were indistinguishable from that
-  // area. '#7c2d12' is absent from the 33-entry palette and sits 33.5 RGB
-  // units from its nearest member, 158 from the facility teal and 270 from
-  // the person sky. Check any replacement the same way before changing it.
+  // This was '#b45309', which IS AREA_PALETTE[15], so registry markers were
+  // indistinguishable from whichever region drew that fill. Which region
+  // that is depends on the data: colours are assigned by position in the
+  // FILTERED (weight > 0) area list, so it moves whenever the weights move.
+  // On the parquet shipped at the time of writing, index 15 is
+  // ocean-acidification. (An earlier version of this comment named "Kelp
+  // forests"; that region has weight 0, is filtered out before colouring,
+  // and never receives a palette index at all.)
+  //
+  // '#7c2d12' is absent from the 33-entry palette and sits 33.5 RGB units
+  // from its nearest member, 158 from the facility teal and 270 from the
+  // person sky. Check any replacement the same way before changing it.
   registry: '#7c2d12',
   registryEdge: '#c2410c',
   // Protected-area context layer. A muted olive, chosen the same way the
@@ -234,7 +241,7 @@ const W_PERSON        = 0.35;
 // onZoom() divides by the zoom factor k to get the SVG font-size, so the
 // rendered result is the declared px at every k — the old
 // `Math.min(1, 1/max(k,0.5))` clamp collapsed to exactly 1 for all k < 1,
-// which left a mid-range area label at 7.0 px and a mid-range person label
+// which left a mid-range area label at 6.5 px and a mid-range person label
 // at 5.0 px on screen at the initial fit (k = 0.5). Across their full base
 // ranges the old classes rendered 5.0–8.0 px (area, base 10–16) and
 // 4.0–6.0 px (person, base 8–12) at that zoom.
@@ -1559,10 +1566,21 @@ function drawProtectedLayer(root) {
       // Chip text is the count, not a name — the region name is already
       // rendered by the area-label class directly above it.
       display: `▤ ${agg.n_protected} protected`,
+      // Sized within PA_LABEL_PX by how many protected areas the chip
+      // stands for, so a region holding 1,800 of them reads louder than
+      // one holding 3. This used to pin every chip at PA_LABEL_PX.min,
+      // which left the declared .max dead and made a 10.0-12.0 range a
+      // misleading way to write "always 10.0".
       __basePx: PA_LABEL_PX.min,
     });
   }
   if (!chips.length) return;
+  // Ramp against the largest chip in this render, so the scale is relative
+  // to what is actually on screen rather than to a hard-coded maximum.
+  const paMax = chips.reduce((m, c) => Math.max(m, c.n_protected || 0), 0);
+  for (const c of chips) {
+    c.__basePx = rampPx(PA_LABEL_PX, c.n_protected || 0, paMax);
+  }
 
   const g = root.append('g').attr('class', 'mvg-pa-chips');
   _paChipSel = g;
@@ -2706,7 +2724,7 @@ async function render() {
         return {
           id: a.id, name: lab.name, x: lab.x, y: lab.y,
           // SCREEN px, 13.0–20.0. The old range was 10–16 SVG units, which
-          // rendered 5.0–8.0 px at the initial fit (k = 0.5) — 7.0 px at the
+          // rendered 5.0–8.0 px at the initial fit (k = 0.5) — 6.5 px at the
           // middle of the range — because the counter-scale clamped to 1 for
           // every k < 1 and the transform then shrank the text. Sized by the
           // data-and-people weight, so the biggest name belongs to the
