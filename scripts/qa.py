@@ -661,20 +661,23 @@ def check_frontend_parses(failures: list[str]) -> None:
     A character-balance heuristic does NOT catch this: the stray backticks
     come in pairs, so the file counts as balanced. Only a parser catches it.
 
-    The first version of this gate used quickjs, which cannot parse ES
-    modules, so it blanked out import/export lines with a regex and wrapped
-    the remainder in a function expression. That regex assumed each import
-    ended at the first ``;`` — untrue for the multi-line imports in these
-    files — so it left fragments behind, and the mangled text it handed the
-    parser no longer corresponded to the real file. It passed a network.js
-    that contained a live backtick bug: precisely the defect it was written
-    to catch, missed because the check was not parsing what ships.
+    The first version of this gate used quickjs. It DID detect this bug —
+    that is worth stating plainly, because an earlier version of this
+    docstring claimed otherwise. What it could not do is say where the bug
+    was. quickjs has no ES-module parser, so the check blanked out
+    import/export lines with a regex and wrapped the remainder in a function
+    expression; a stray backtick then surfaced as ``SyntaxError: expecting
+    '}'`` with no line number, pointing at the wrapper rather than at the
+    offending comment. Diagnosing one cost a manual bisect. node reported
+    the same defect as ``Unexpected identifier 'NaN'`` at network.js:411 on
+    the first call.
 
-    This version uses node's SourceTextModule, which parses the file as
-    written, as an ES module, exactly as the browser does. No text
-    substitution, so nothing can be masked by the harness. Construction
-    parses without executing and without resolving imports, so bare
-    specifiers ('maplibre-gl') that only an importmap resolves do not
+    So this version is a diagnostics upgrade, not a detection one. It uses
+    node's SourceTextModule, which parses the file as written, as an ES
+    module, exactly as the browser does — no text substitution and no
+    wrapper, so failures carry a real message and a real position.
+    Construction parses without executing and without resolving imports, so
+    bare specifiers ('maplibre-gl') that only an importmap resolves do not
     produce a false failure.
 
     Skipped, with a warning, if node is unavailable — the gate must still

@@ -6,15 +6,16 @@ pyyaml>=6.0
 requests>=2.31
 shapely>=2.0
 # NOTE: the JS parse check in scripts/qa.py no longer uses quickjs. quickjs
-# cannot parse ES modules, so the check had to strip import/export lines with
-# a regex before parsing — and that regex mis-handled multi-line imports,
-# mangling the text it checked. It passed a file containing a live backtick
-# bug, the exact defect it existed to catch. The check now shells out to
-# `node --experimental-vm-modules` and parses each file AS WRITTEN via
-# vm.SourceTextModule. Node is not a Python dependency and not a build step:
-# nothing in src/ is compiled, bundled or transpiled, and the site still loads
-# plain ES modules from an importmap. qa.py skips the check with a warning if
-# node is absent.
+# DID catch the syntax errors it was added for — but it has no ES-module
+# parser, so the check had to blank out import/export lines and wrap the rest
+# in a function expression, and a failure then surfaced as "SyntaxError:
+# expecting '}'" against the wrapper, with no line number. Locating one cost a
+# manual bisect. The check now shells out to `node --experimental-vm-modules`
+# and parses each file AS WRITTEN via vm.SourceTextModule, which reports the
+# real message at the real line. Node is not a Python dependency and not a
+# build step: nothing in src/ is compiled, bundled or transpiled, and the site
+# still loads plain ES modules from an importmap. qa.py skips the check with a
+# warning if node is absent.
 
 # Optional: DuckLake support for the COD team layer
 # (scripts/build_cod_team_lake.py). The wheel bundles the extension
