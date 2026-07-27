@@ -2,18 +2,49 @@
 //
 // Replaces the previous force-directed knowledge graph with a country-like
 // map where each polygon is one research area (parent-collapsed when small),
-// polygon area is proportional to the number of facilities in that area,
-// and facilities + people sit inside their polygon. Cross-area edges
-// reveal interdisciplinary collaboration.
+// polygon area is proportional to how much OBSERVATORY CAPACITY, DATA and
+// PEOPLE that area carries, and organisations + people sit inside their
+// polygon. Cross-area edges reveal interdisciplinary collaboration.
+//
+// SIZING METRIC — why it is not the facility count
+// ------------------------------------------------
+// Region area used to be proportional to research_areas_active.n_facilities.
+// Measured against the shipped site parquet, that made the map a state-park
+// index: of 3,519 catalogued facilities, 3,309 are protected areas
+// (facility_type LIKE 'protected-area%'), every one of them assigned to
+// "Coastal terrestrial ecosystems", and they carry ZERO datasets and ZERO
+// researchers. One region therefore claimed 94.4% of the map area while the
+// 200 organisations that actually run observatories and publish data shared
+// the remaining 5.6%.
+//
+// The cartogram weight is now DATA_AND_PEOPLE (see areaWeightSql):
+//
+//   weight = n_organisations
+//          + W_DATA_PROVIDER * n_facilities_with_datasets
+//          + W_DATASET       * n_datasets_produced
+//          + W_PERSON        * n_people_anchored_here
+//
+// n_organisations counts non-protected-area facilities only. The person term
+// sums three cohorts that all resolve to this region: facility_personnel
+// (the site directory), registry researchers ROR-linked to a site in this
+// region, and registry researchers with no site link whose dominant science
+// domain is this region. Coefficients are declared as constants below so the
+// ranking is auditable rather than buried in a SQL expression.
+//
+// Protected areas are NOT deleted — they stay in the catalogue, in the SQL
+// console, and behind the off-by-default "Protected areas" layer, which
+// draws them as one aggregate chip per region rather than 3,309 marks. They
+// simply do not drive region area, because they carry nothing the map is
+// about.
 //
 // Implements the KMap algorithm from Hossain, Moradi, Mondal & Kobourov,
 // "Map Visualizations for Graphs with Group Restrictions" (Graphics
 // Interface 2025, DOI 10.1145/3769872.3769900). Three steps:
 //
-//   1. Supergraph: one supernode per active research area, weight = facility
-//      count, edges = cross-area facility-personnel + co-author counts.
-//      Embed with d3-force using square collision so each area gets a
-//      non-overlapping square sized by sqrt(weight).
+//   1. Supergraph: one supernode per active research area, weight = the
+//      data-and-people weight above, edges = cross-area facility-personnel
+//      + co-author counts. Embed with d3-force using square collision so
+//      each area gets a non-overlapping square sized by sqrt(weight).
 //
 //   2. Subgraph layout: for each area, run a small d3-force layout on its
 //      facility + person nodes, then scale to fit inside its square.
@@ -54,6 +85,18 @@ let _areaLabelSel = null;
 let _facLabelSel = null;
 let _dotPersonSel = null;
 let _dotFacSel = null;
+// Root <g> that carries the composed viewBox + zoom transform. onZoom
+// reads its screen CTM to size labels in real screen pixels.
+let _rootG = null;
+// Protected-area layer: OFF by default. One aggregate chip per region
+// rather than 3,309 marks — see the protected_areas query.
+let _showProtected = false;
+let _paLabelSel = null;
+let _paChipSel = null;
+// Registry researcher name labels for the focused site, and the
+// "(no site)" cohort captions for domain-placed researchers.
+let _regLabelSel = null;
+let _regDomainLabelSel = null;
 // Selection for the facility sub-polygons themselves, captured so
 // hover/zoom logic can address them later (e.g. dim non-hovered
 // polygons in the same area to reveal a single institution).
@@ -106,6 +149,13 @@ const NODE_COLORS = {
   // the person sky. Check any replacement the same way before changing it.
   registry: '#7c2d12',
   registryEdge: '#c2410c',
+  // Protected-area context layer. A muted olive, chosen the same way the
+  // registry colour was: it is absent from the 33-entry AREA_PALETTE, and
+  // its nearest palette member ('#4d7c0f') sits 49.4 RGB units away while it
+  // is 103.8 from the facility teal and 198.9 from the person sky (Euclidean
+  // over 8-bit RGB, the same metric the registry figures above use). Check
+  // any replacement the same way.
+  protected: '#65803a',
 };
 const NODE_RADIUS = { facility: 4, person: 3 };
 
@@ -144,10 +194,123 @@ const SUBGRAPH_TICKS   = 120;
 const SUPER_PADDING    = 14;     // px gap between adjacent squares
 const PERIMETER_PAD    = 0.18;   // anchor ring at 1+pad of layout bbox half-width
 const PERIMETER_NODES  = 18;     // outer anchors around the entire layout
-const SUPERNODE_SCALE  = 24;     // side = scale * sqrt(weight)
-const SUPERNODE_MIN    = 28;     // minimum side so 1-facility areas remain visible
+// side = SUPERNODE_SCALE * sqrt(weight). Rescaled with the weight metric:
+// the old weight was a facility count spanning 1…3,311, the new
+// data-and-people weight spans 0.35…196.7 on the shipped parquet, so a
+// scale tuned for the former produced a layout roughly 3× too small.
+// 34 keeps the total canvas comparable (largest side ≈ 477 px).
+//
+// SUPERNODE_MIN is deliberately set BELOW 34*sqrt(min weight) = 20.1 so
+// the floor binds for nothing in the current data. That matters: a
+// binding floor inflates the smallest region's AREA by (min/true)², which
+// is exactly the cartogram-lying behaviour this change set out to remove.
+// If a future region lands under it, the floor keeps it clickable — but
+// check whether it is distorting the ranking before raising it.
+const SUPERNODE_SCALE  = 34;     // side = scale * sqrt(weight)
+const SUPERNODE_MIN    = 18;     // minimum side so a tiny region stays clickable
 const DECOR_GRID       = 5;      // 5×5 = 25 decoration anchors per area square
 const DECOR_JITTER     = 0.18;   // ±18% random jitter so cell boundaries aren't gridlike
+
+// ── Cartogram weight coefficients (see the header note) ─────────────
+// Region area ∝ this weight. An organisation is worth 1. Being a data
+// PRODUCER is worth 3 on top of that, because "this site ships data" is
+// the single property the user asked the map to emphasise and only 24 of
+// 200 organisations have it. Each individual dataset adds 1.5, so a site
+// with 8 datasets outweighs one with 1. A person is worth 0.35 so that
+// the 163 registry researchers at the two marine-geology giants lift that
+// region without letting head-count alone dominate a region with no data.
+//
+// Measured effect on the shipped site parquet (verify with the SQL in the
+// summary): Coastal terrestrial ecosystems falls from 94.4% of map area to
+// 0.5%; Marine ecosystems (72 orgs, 19 datasets, 10 data providers, 189
+// people) rises to 34.1%; Marine geology rises from 1.0% to 15.7% on the
+// strength of 7 datasets and 177 people despite holding only 6 orgs.
+const W_DATA_PROVIDER = 3.0;
+const W_DATASET       = 1.5;
+const W_PERSON        = 0.35;
+
+// ── Label sizing: on-screen pixels, not SVG units ───────────────────
+// Every label class declares the size it should occupy ON THE SCREEN.
+// onZoom() divides by the zoom factor k to get the SVG font-size, so the
+// rendered result is the declared px at every k — the old
+// `Math.min(1, 1/max(k,0.5))` clamp collapsed to exactly 1 for all k < 1,
+// which left a mid-range area label at 7.0 px and a mid-range person label
+// at 5.0 px on screen at the initial fit (k = 0.5). Across their full base
+// ranges the old classes rendered 5.0–8.0 px (area, base 10–16) and
+// 4.0–6.0 px (person, base 8–12) at that zoom.
+//
+// The floor is the legibility gate. The tooltip is the user's stated size
+// reference: .network-tooltip is 0.82rem on a 14 px root = 11.5 px body,
+// with .tt-sub at 0.78rem = 10.9 px and .tt-kind at 0.7rem = 9.8 px. So
+// 9.8 px is the smallest text this site already asks anyone to read, and
+// LABEL_MIN_PX is set there. Nothing is rendered below it — a class whose
+// screen size would fall under the floor is HIDDEN, never shrunk.
+//
+// Every base size below is >= LABEL_MIN_PX by construction, and screenPx()
+// enforces the floor a second time by returning null (which its callers
+// render as display:none) rather than a reduced size, so no arithmetic
+// change upstream can silently reintroduce sub-floor text. Note it HIDES;
+// it does not clamp — a clamp would draw the label at the floor size and
+// so change a declared size silently, which is the opposite of the intent.
+const LABEL_MIN_PX = 9.8;
+// Area (region) names: the top of the hierarchy, sized like the tooltip
+// title (.tt-name 0.92rem = 12.9 px) at the small end and up to 20 px for
+// the heaviest region.
+const AREA_LABEL_PX     = { min: 13.0, max: 20.0 };
+// Organisation names: tooltip-body size, never below the floor.
+const FAC_LABEL_PX      = { min: 10.5, max: 14.0 };
+// Researcher names: tooltip .tt-kind size at the small end.
+const PERSON_LABEL_PX   = { min: 10.0, max: 13.5 };
+// Registry-researcher names in the focused-site expansion.
+const REG_LABEL_PX      = { min: 10.0, max: 12.5 };
+// Protected-area aggregate chips.
+const PA_LABEL_PX       = { min: 10.0, max: 12.0 };
+
+// ── Zoom bands per label class ──────────────────────────────────────
+// [kMin, kMax): a class is drawn only inside its band, so labels appear
+// when they are relevant and disappear BOTH when the user is too far out
+// (nothing to attach them to) AND too far in (the region they name is no
+// longer on screen — its members are). Bands are half-open and overlap by
+// design, so at any k at least one class is labelled.
+//
+// scaleExtent is [0.4, 12] and the initial fit lands near k = 0.5.
+//   region       0.40 – 3.0   region names; gone once you are inside one
+//   organisation 0.75 – 12    institution names; the mid-zoom reading
+//   researcher   1.30 – 12    individual names; only once a site fills
+//                             the frame, otherwise it is name soup
+//   registry     1.00 – 12    focused-site roster names
+//   protected    0.40 – 2.0   aggregate chips; coarse context only
+const ZOOM_BANDS = {
+  area:      { min: 0.40, max: 3.00 },
+  facility:  { min: 0.75, max: 12.01 },
+  person:    { min: 1.30, max: 12.01 },
+  registry:  { min: 1.00, max: 12.01 },
+  protected: { min: 0.40, max: 2.00 },
+};
+
+// True when zoom level k sits inside a class's band.
+function inBand(band, k) {
+  return k >= band.min && k < band.max;
+}
+
+// SVG font-size that renders as `px` CSS pixels on screen, given the
+// composed world→screen scale s (viewBox fit × zoom k — NOT k alone).
+// Returns null when the requested screen size is below the legibility
+// floor, which callers treat as "hide this label", never "draw it smaller".
+function screenPx(px, s) {
+  if (!(px >= LABEL_MIN_PX)) return null;
+  const ss = s > 0 ? s : 1;
+  return px / ss;
+}
+
+// Map a value onto a class's screen-px range with sqrt damping, then
+// clamp into [min, max]. Guarantees the result is >= LABEL_MIN_PX for
+// every range declared above.
+function rampPx(range, value, denom) {
+  const t = denom > 0 ? Math.sqrt(Math.max(0, value) / denom) : 0;
+  const px = range.min + t * (range.max - range.min);
+  return Math.max(range.min, Math.min(range.max, px));
+}
 
 
 // ── Async-import helpers ────────────────────────────────────────────
@@ -178,13 +341,95 @@ async function fetchData() {
     // ACTIVE areas only — collapsed_into IS NULL means this area is its
     // own polygon. Collapsed areas are absorbed into their parent in the
     // facility/person primary tables already.
+    //
+    // `weight` is the DATA-AND-PEOPLE weight that sizes the region, NOT
+    // n_facilities. n_facilities is still selected as raw_facilities so
+    // the TOC and tooltips can state the catalogue count alongside the
+    // metric that actually drives area. n_protected is reported so the
+    // 3,309 excluded protected areas are visible in the UI instead of
+    // silently dropped.
+    //
+    // Coefficients are interpolated from the W_* constants above, so the
+    // metric is edited in one place.
     areas: `
-      SELECT area_id AS id, label AS name, n_facilities AS weight
-      FROM   research_areas_active
-      WHERE  collapsed_into IS NULL
-      ORDER  BY area_id`,
+      WITH org AS (
+        SELECT g.primary_area_id AS area_id,
+               f.facility_id,
+               (f.facility_type LIKE 'protected-area%') AS is_protected
+        FROM   facilities f
+        JOIN   facility_primary_groups g ON g.facility_id = f.facility_id
+        WHERE  g.primary_area_id IS NOT NULL
+      ),
+      ds AS (
+        SELECT facility_id, COUNT(DISTINCT dataset_id) AS n_datasets
+        FROM   dataset_facilities
+        GROUP  BY facility_id
+      ),
+      reg_site AS (
+        SELECT facility_id, COUNT(DISTINCT canonical_id) AS n_reg
+        FROM   registry_facilities
+        GROUP  BY facility_id
+      ),
+      dir_people AS (
+        SELECT facility_id, COUNT(DISTINCT person_id) AS n_dir
+        FROM   facility_personnel
+        GROUP  BY facility_id
+      ),
+      per_area AS (
+        SELECT o.area_id,
+               COUNT(*) FILTER (WHERE NOT o.is_protected)      AS n_org,
+               COUNT(*) FILTER (WHERE o.is_protected)          AS n_protected,
+               COALESCE(SUM(ds.n_datasets), 0)                 AS n_datasets,
+               COUNT(DISTINCT CASE WHEN ds.n_datasets > 0
+                                   THEN o.facility_id END)     AS n_data_providers,
+               COALESCE(SUM(reg_site.n_reg), 0)                AS n_reg_sited,
+               COALESCE(SUM(dir_people.n_dir), 0)              AS n_directory
+        FROM   org o
+        LEFT   JOIN ds          ON ds.facility_id          = o.facility_id
+        LEFT   JOIN reg_site    ON reg_site.facility_id    = o.facility_id
+        LEFT   JOIN dir_people  ON dir_people.facility_id  = o.facility_id
+        GROUP  BY o.area_id
+      ),
+      -- Registry researchers with NO site link, placed by dominant domain.
+      -- They are people the region genuinely carries, so they count toward
+      -- its weight even though they have no physical position.
+      reg_domain AS (
+        SELECT g.primary_area_id AS area_id, COUNT(*) AS n_reg_domain
+        FROM   person_registry pr
+        JOIN   person_primary_groups g ON g.person_id = pr.person_id
+        WHERE  g.primary_area_id IS NOT NULL
+          AND  pr.canonical_id NOT IN (SELECT canonical_id FROM registry_facilities)
+        GROUP  BY g.primary_area_id
+      )
+      SELECT a.area_id                        AS id,
+             a.label                          AS name,
+             a.n_facilities                   AS raw_facilities,
+             COALESCE(p.n_org, 0)             AS n_org,
+             COALESCE(p.n_protected, 0)       AS n_protected,
+             COALESCE(p.n_datasets, 0)        AS n_datasets,
+             COALESCE(p.n_data_providers, 0)  AS n_data_providers,
+             COALESCE(p.n_reg_sited, 0)
+               + COALESCE(p.n_directory, 0)
+               + COALESCE(d.n_reg_domain, 0)  AS n_people,
+             COALESCE(p.n_org, 0)
+               + ${W_DATA_PROVIDER} * COALESCE(p.n_data_providers, 0)
+               + ${W_DATASET}       * COALESCE(p.n_datasets, 0)
+               + ${W_PERSON}        * (COALESCE(p.n_reg_sited, 0)
+                                       + COALESCE(p.n_directory, 0)
+                                       + COALESCE(d.n_reg_domain, 0))
+                                              AS weight
+      FROM   research_areas_active a
+      LEFT   JOIN per_area   p ON p.area_id = a.area_id
+      LEFT   JOIN reg_domain d ON d.area_id = a.area_id
+      WHERE  a.collapsed_into IS NULL
+      ORDER  BY a.area_id`,
 
-    // One row per facility with its primary area + display fields.
+    // One row per ORGANISATION with its primary area + display fields.
+    // Protected areas are excluded here: they hold no datasets and no
+    // researchers, and 3,309 of them would bury the 200 organisations that
+    // do. They are still catalogued, still queryable in the SQL console,
+    // and still drawn by the opt-in protected-areas layer (see the
+    // protected_areas query below).
     facilities: `
       SELECT f.facility_id AS id,
              f.canonical_name AS name,
@@ -195,7 +440,35 @@ async function fetchData() {
              g.primary_area_id AS area_id
       FROM   facilities f
       JOIN   facility_primary_groups g ON g.facility_id = f.facility_id
-      WHERE  g.primary_area_id IS NOT NULL`,
+      WHERE  g.primary_area_id IS NOT NULL
+        AND  f.facility_type NOT LIKE 'protected-area%'`,
+
+    // Protected-area AGGREGATE, one row per region. Off-by-default layer.
+    // Deliberately an aggregate, not 3,309 rows: the layer exists to say
+    // "this region also contains N protected areas of these kinds", which
+    // is legitimate coastal context, and a per-site rendering would both
+    // cost a 3,309-row payload and re-create the visual problem this
+    // change fixes.
+    protected_areas: `
+      SELECT g.primary_area_id AS area_id,
+             COUNT(*)          AS n_protected,
+             COUNT(DISTINCT f.facility_type) AS n_kinds,
+             COUNT(*) FILTER (WHERE f.facility_type = 'protected-area-state')   AS n_state,
+             COUNT(*) FILTER (WHERE f.facility_type = 'protected-area-federal') AS n_federal,
+             COUNT(*) FILTER (WHERE f.facility_type = 'protected-area-private') AS n_private
+      FROM   facilities f
+      JOIN   facility_primary_groups g ON g.facility_id = f.facility_id
+      WHERE  g.primary_area_id IS NOT NULL
+        AND  f.facility_type LIKE 'protected-area%'
+      GROUP  BY g.primary_area_id`,
+
+    // Datasets produced per organisation — drives the "data provider"
+    // ring on a site and its tooltip line.
+    fac_datasets: `
+      SELECT facility_id,
+             COUNT(DISTINCT dataset_id) AS n_datasets
+      FROM   dataset_facilities
+      GROUP  BY facility_id`,
 
     // One row per person with primary area + their importance metrics.
     // Importance combines:
@@ -301,9 +574,41 @@ async function fetchData() {
     out[k] = r.toArray().map((row) => unwrapRow(row.toJSON()));
   }
   // Coerce BigInt counts to Number.
-  for (const a of out.areas) a.weight = Number(a.weight) || 0;
+  for (const a of out.areas) {
+    a.weight          = Number(a.weight) || 0;
+    a.raw_facilities  = Number(a.raw_facilities) || 0;
+    a.n_org           = Number(a.n_org) || 0;
+    a.n_protected     = Number(a.n_protected) || 0;
+    a.n_datasets      = Number(a.n_datasets) || 0;
+    a.n_data_providers = Number(a.n_data_providers) || 0;
+    a.n_people        = Number(a.n_people) || 0;
+  }
   for (const e of out.fac_pers) e.w = Number(e.w) || 1;
   for (const e of out.coauthors) e.w = Number(e.w) || 1;
+  for (const r of out.protected_areas) {
+    r.n_protected = Number(r.n_protected) || 0;
+    r.n_kinds     = Number(r.n_kinds) || 0;
+    r.n_state     = Number(r.n_state) || 0;
+    r.n_federal   = Number(r.n_federal) || 0;
+    r.n_private   = Number(r.n_private) || 0;
+  }
+
+  // A region with weight 0 carries no organisation, no dataset and nobody,
+  // so it has nothing to draw and no basis for an area. Dropping it here
+  // (rather than giving it a min-side square) is what stops 15 empty
+  // vocabulary terms from occupying map real estate. They remain in the
+  // vocabulary and in the SQL console; the status line reports the count.
+  const allAreas = out.areas;
+  out.areas = allAreas.filter((a) => a.weight > 0);
+  out.n_areas_empty = allAreas.length - out.areas.length;
+
+  // Datasets produced, per organisation.
+  const dsBy = new Map(out.fac_datasets.map(
+    (r) => [r.facility_id, Number(r.n_datasets) || 0]));
+  for (const f of out.facilities) f.n_datasets = dsBy.get(f.id) || 0;
+
+  // Protected-area aggregate, keyed by region, for the opt-in layer.
+  out.protectedByArea = new Map(out.protected_areas.map((r) => [r.area_id, r]));
 
   // Build lookup tables for hierarchy + tooltip enrichment.
   const affilsBy = new Map(out.person_affiliations.map(
@@ -443,6 +748,57 @@ async function fetchRegistry() {
       GROUP  BY 1, 2
       ORDER  BY co_pubs DESC`,
 
+    // ── PLACEMENT ROUTE 2: dominant science domain ───────────────────
+    // A registry researcher with no ROR match to a catalogued site has NO
+    // physical position. Where person_primary_groups resolves a dominant
+    // research area for them, they are placed in that REGION instead —
+    // which is a claim about their science, not about where they work.
+    //
+    // Counts on the shipped site parquet: 10,000 core-tier rows, 263 with
+    // a site link, 164 domain-placed here, 9,573 with neither. The three
+    // numbers are surfaced in the status line and the scope note, because
+    // "placed in a region" and "located at a site" are different
+    // statements and the map must not conflate them.
+    //
+    // Aggregated per region deliberately: 164 individually-drawn markers
+    // scattered inside region polygons would be indistinguishable from
+    // sited researchers, which is exactly the confusion to avoid. One
+    // dashed cohort badge per region, expandable into a list, keeps the
+    // distinction visible.
+    domain_placed: `
+      SELECT g.primary_area_id AS area_id,
+             COUNT(*)          AS n_people,
+             list(struct_pack(
+               canonical_id  := pr.canonical_id,
+               display_name  := pr.display_name,
+               orcid         := pr.orcid,
+               openalex_id   := pr.openalex_id,
+               homepage_url  := pr.homepage_url,
+               person_id     := pr.person_id,
+               affiliation   := pr.affiliation,
+               h_index       := COALESCE(pr.h_index, 0),
+               coastal_works := COALESCE(pr.coastal_works_count, 0)
+             ) ORDER BY pr.tier_rank) AS people
+      FROM   person_registry pr
+      JOIN   person_primary_groups g ON g.person_id = pr.person_id
+      WHERE  g.primary_area_id IS NOT NULL
+        AND  pr.canonical_id NOT IN (SELECT canonical_id FROM registry_facilities)
+      GROUP  BY g.primary_area_id`,
+
+    // Registry-wide placement accounting, so the UI states coverage from
+    // the data rather than from a hardcoded number.
+    placement_totals: `
+      WITH sited AS (SELECT DISTINCT canonical_id FROM registry_facilities)
+      SELECT COUNT(*) AS n_registry,
+             COUNT(*) FILTER (WHERE s.canonical_id IS NOT NULL) AS n_sited,
+             COUNT(*) FILTER (WHERE s.canonical_id IS NULL
+                                AND g.primary_area_id IS NOT NULL) AS n_domain,
+             COUNT(*) FILTER (WHERE s.canonical_id IS NULL
+                                AND g.primary_area_id IS NULL)     AS n_unplaced
+      FROM   person_registry pr
+      LEFT   JOIN sited s ON s.canonical_id = pr.canonical_id
+      LEFT   JOIN person_primary_groups g ON g.person_id = pr.person_id`,
+
     // Intra-site co-publication, for the site tooltip ("N of the
     // researchers here publish with each other").
     site_internal: `
@@ -519,13 +875,36 @@ async function fetchRegistry() {
     });
   }
 
+  // Domain-placed cohorts, keyed by region.
+  const domainByArea = new Map();
+  for (const r of out.domain_placed) {
+    const people = (Array.isArray(r.people) ? r.people : []).map((p) => ({
+      ...p,
+      h_index: Number(p.h_index) || 0,
+      coastal_works: Number(p.coastal_works) || 0,
+    }));
+    domainByArea.set(r.area_id, {
+      area_id: r.area_id,
+      n_people: Number(r.n_people) || people.length,
+      people,
+    });
+  }
+
+  const pt = out.placement_totals[0] || {};
+
   return {
-    byFacility, collabsBy, siteEdges, siteSummary,
+    byFacility, collabsBy, siteEdges, siteSummary, domainByArea,
     totals: {
       n_placed: out.roster.length,
       n_sites: byFacility.size,
       n_site_edges: siteEdges.length,
       n_with_edges: collabsBy.size,
+      // Placement accounting straight out of SQL.
+      n_registry:  Number(pt.n_registry)  || 0,
+      n_sited:     Number(pt.n_sited)     || 0,
+      n_domain:    Number(pt.n_domain)    || 0,
+      n_unplaced:  Number(pt.n_unplaced)  || 0,
+      n_domain_regions: domainByArea.size,
     },
   };
 }
@@ -668,7 +1047,8 @@ function membersOfArea(areaId, data) {
   const facs = data.facilities.filter((f) => f.area_id === areaId)
     .map((f) => ({ id: f.id, name: f.name, kind: 'facility',
                    acronym: f.acronym, country: f.country, url: f.url,
-                   f_type: f.f_type, area_id: areaId }));
+                   f_type: f.f_type, area_id: areaId,
+                   n_datasets: f.n_datasets || 0 }));
   const peo = data.people.filter((p) => p.area_id === areaId)
     .map((p) => {
       // Composite "importance" weight per the user's request:
@@ -780,7 +1160,12 @@ async function layoutAndFit(d3, members, edges, square, facCircles) {
     ? facs.map((f) => ({
         id: f.id, name: f.name, acronym: f.acronym, country: f.country,
         f_type: f.f_type, url: f.url, area_id: f.area_id,
-        weight: 1 + (peopleAt.get(f.id) || 0),
+        n_datasets: f.n_datasets || 0,
+        // Sub-circle weight now includes datasets produced, so a small
+        // institution that ships data is not drawn smaller than a large
+        // one that ships none.
+        weight: 1 + (peopleAt.get(f.id) || 0)
+                  + W_DATASET * (f.n_datasets || 0),
         kind: 'facility',
       }))
     : [{ id: `__phantom_${square.id}`, name: '', kind: 'facility',
@@ -851,6 +1236,7 @@ async function layoutAndFit(d3, members, edges, square, facCircles) {
                             name: b.name, acronym: b.acronym,
                             country: b.country, f_type: b.f_type,
                             url: b.url,
+                            n_datasets: b.n_datasets || 0,
                             n_people: peopleAt.get(b.id) || 0 });
   }
 
@@ -1133,7 +1519,56 @@ async function buildLayout(data, w, h) {
     areas: data.areas,
     facCircles,
     facPolygons,
+    // Protected-area aggregate per region + the count of vocabulary terms
+    // that carry no organisation, dataset or person and so have no polygon.
+    protectedByArea: data.protectedByArea || new Map(),
+    nAreasEmpty: data.n_areas_empty || 0,
   };
+}
+
+
+// ── Protected-area layer (opt-in, aggregate only) ───────────────────
+// Protected areas are legitimate coastal context — 3,309 of them are
+// catalogued — but they hold zero datasets and zero researchers, so they
+// do not size a region and they are not drawn as individual marks. This
+// layer draws ONE chip per region stating the count and the split by
+// jurisdiction, which is the whole of what the data supports.
+function drawProtectedLayer(root) {
+  if (_paChipSel) { _paChipSel.remove(); _paChipSel = null; }
+  _paLabelSel = null;
+  if (!_showProtected || !_layout || !_layout.protectedByArea) return;
+
+  const chips = [];
+  for (const [areaId, agg] of _layout.protectedByArea.entries()) {
+    const lab = _layout.labels.get(areaId);
+    if (!lab || !agg || !agg.n_protected) continue;
+    chips.push({
+      area_id: areaId, x: lab.x, y: lab.y, ...agg,
+      // Chip text is the count, not a name — the region name is already
+      // rendered by the area-label class directly above it.
+      display: `▤ ${agg.n_protected} protected`,
+      __basePx: PA_LABEL_PX.min,
+    });
+  }
+  if (!chips.length) return;
+
+  const g = root.append('g').attr('class', 'mvg-pa-chips');
+  _paChipSel = g;
+  // Offset below the region label so the two never collide.
+  _paLabelSel = g.attr('text-anchor', 'middle')
+    .attr('font-family', 'system-ui, sans-serif')
+    .attr('pointer-events', 'none')
+    .selectAll('text').data(chips).enter().append('text')
+    .attr('x', (d) => d.x)
+    .attr('y', (d) => d.y + 22)
+    .attr('font-weight', 600)
+    .attr('fill', '#3f6212')
+    .attr('stroke', '#f7fee7')
+    .attr('stroke-width', 2.0)
+    .attr('stroke-linejoin', 'round')
+    .attr('paint-order', 'stroke')
+    .text((d) => d.display);
+  _paLabelSel.each(function (d) { d.__baseFont = d.__basePx; });
 }
 
 
@@ -1225,6 +1660,7 @@ function computeFacilitySubPolygons(d3delaunay, polygonClipping,
         area_id: areaId,
         name: meta.name, acronym: meta.acronym, country: meta.country,
         f_type: meta.f_type, url: meta.url, n_people: meta.n_people || 0,
+        n_datasets: meta.n_datasets || 0,
       });
     }
   }
@@ -1406,6 +1842,8 @@ function drawRegistryLayer(d3, tip) {
   _regSiteLinkSel = null;
   _regNodeSel = null;
   _regNodeLinkSel = null;
+  _regLabelSel = null;
+  _regDomainLabelSel = null;
   if (!_showRegistry || !_registry || !_layout) return;
 
   // ── Site ↔ site ribbons (always on when the layer is on) ─────────
@@ -1445,6 +1883,60 @@ function drawRegistryLayer(d3, tip) {
     _regSiteLinkSel.each(function (e) {
       e.__baseW = 0.6 + 2.4 * Math.sqrt(e.co_pubs / maxW);
     });
+  }
+
+  // ── Domain-placed cohorts: one badge per region ───────────────────
+  // These researchers have NO site. The badge is drawn as a DASHED,
+  // hollow ring at the region centroid — deliberately unlike the solid
+  // filled site markers — with a "(no site)" caption, so a domain-placed
+  // person can never be mistaken for someone located at a facility.
+  const domainData = [];
+  for (const [areaId, coh] of (_registry.domainByArea || new Map()).entries()) {
+    const lab = _layout.labels.get(areaId);
+    if (!lab || !coh.n_people) continue;
+    domainData.push({ ...coh, x: lab.x, y: lab.y - 26,
+                      area_name: lab.name || areaId });
+  }
+  if (domainData.length) {
+    const maxN = Math.max(...domainData.map((d) => d.n_people));
+    const domRadius = (d) => 5 + 7 * Math.sqrt(d.n_people / maxN);
+    const g = _regRootG.append('g').attr('class', 'mvg-reg-domain');
+    const rings = g.selectAll('circle').data(domainData).enter().append('circle')
+      .attr('cx', (d) => d.x).attr('cy', (d) => d.y)
+      .attr('r', domRadius)
+      .attr('fill', 'none')
+      .attr('stroke', NODE_COLORS.registry)
+      .attr('stroke-width', 1.6)
+      .attr('stroke-dasharray', '3,2.5')
+      .style('cursor', 'pointer')
+      .on('mouseenter', (ev, d) => showTip(tip, ev, domainCohortTipHtml(d)))
+      .on('mouseleave', () => hideTip(tip))
+      .on('click', (ev, d) => { ev.stopPropagation(); renderDomainPanel(d); });
+    rings.each(function (d) { d.__baseR = domRadius(d); });
+    // Caption. Its own text class, banded with the REGION labels
+    // (ZOOM_BANDS.area, not .registry) — it annotates a region, so it
+    // belongs on screen exactly while region names are. See the
+    // applyLabels call in onZoom().
+    const caps = g.append('g').attr('text-anchor', 'middle')
+      .attr('font-family', 'system-ui, sans-serif')
+      .attr('pointer-events', 'none')
+      .selectAll('text').data(domainData).enter().append('text')
+      .attr('x', (d) => d.x)
+      .attr('y', (d) => d.y - domRadius(d) - 3)
+      .attr('font-weight', 600)
+      .attr('fill', NODE_COLORS.registry)
+      .attr('stroke', '#fff7ed')
+      .attr('stroke-width', 2.0)
+      .attr('stroke-linejoin', 'round')
+      .attr('paint-order', 'stroke')
+      .text((d) => `${d.n_people} no site`);
+    caps.each(function (d) {
+      d.__basePx = PA_LABEL_PX.min;
+      d.__baseFont = d.__basePx;
+    });
+    _regDomainLabelSel = caps;
+  } else {
+    _regDomainLabelSel = null;
   }
 
   // ── Focused site: individual researcher markers ──────────────────
@@ -1519,6 +2011,30 @@ function drawRegistryLayer(d3, tip) {
     .on('mouseleave', () => hideTip(tip))
     .on('click', (ev, d) => { ev.stopPropagation(); openRegistryProfile(d); });
   _regNodeSel.each(function (d) { d.__baseR = registryRadius(d); });
+
+  // Researcher NAME LABELS at the focused site. These are the only
+  // registry names drawn on the map, and only inside ZOOM_BANDS.registry
+  // (k >= 1.0), because at the fit zoom a site sub-polygon is a few dozen
+  // pixels across and 48 names would be unreadable regardless of size.
+  const maxH = Math.max(1, ...shown.map((d) => d.h_index || 0));
+  _regLabelSel = _regRootG.append('g').attr('class', 'mvg-reg-labels')
+    .attr('text-anchor', 'middle')
+    .attr('font-family', 'system-ui, sans-serif')
+    .attr('pointer-events', 'none')
+    .selectAll('text').data(shown).enter().append('text')
+    .attr('x', (d) => d.x)
+    .attr('y', (d) => d.y - 4)
+    .attr('font-weight', 600)
+    .attr('fill', '#7c2d12')
+    .attr('stroke', '#fff7ed')
+    .attr('stroke-width', 2.0)
+    .attr('stroke-linejoin', 'round')
+    .attr('paint-order', 'stroke')
+    .text((d) => shortName(d.display_name));
+  _regLabelSel.each(function (d) {
+    d.__basePx = rampPx(REG_LABEL_PX, d.h_index || 0, maxH);
+    d.__baseFont = d.__basePx;
+  });
 
   renderRegistryPanel(roster, shown.length, offMapEdges);
 }
@@ -1721,6 +2237,7 @@ async function render() {
       .attr('preserveAspectRatio', 'xMidYMid meet')
       .attr('class', 'mvg-svg');
     const root = svg.append('g').attr('class', 'mvg-root');
+    _rootG = root;
 
     // d3.zoom — captured so the TOC + polygon clicks can call it.
     const zoom = d3.zoom().scaleExtent([0.4, 12]).on('zoom', (ev) => {
@@ -1752,7 +2269,7 @@ async function render() {
       .on('mouseenter', function (ev, a) {
         d3.select(this).attr('fill-opacity', 0.32);
         const lab = _layout.labels.get(a.id);
-        if (lab) showTip(tip, ev, `<strong>${escapeHtml(a.name)}</strong><br><small>${a.weight} facilities — click to zoom</small>`);
+        if (lab) showTip(tip, ev, areaTipHtml(a));
       })
       .on('mouseleave', function () {
         d3.select(this).attr('fill-opacity', 0.18);
@@ -1974,6 +2491,16 @@ async function render() {
           const url = d.url || d.homepage_url;
           if (url) window.open(url, '_blank', 'noopener');
         });
+      // A data-producing site gets a visibly larger marker: the map is
+      // meant to emphasise data, and only 24 of 200 organisations produce
+      // any. onZoom counter-scales from this base.
+      _dotFacSel
+        .attr('r', (d) => (d.n_datasets > 0 ? 4.2 : 2.6))
+        .attr('stroke', (d) => (d.n_datasets > 0 ? '#f8fafc' : '#fff'))
+        .attr('stroke-width', (d) => (d.n_datasets > 0 ? 1.1 : 0.6));
+      _dotFacSel.each(function (d) {
+        d.__baseR = d.n_datasets > 0 ? 4.2 : 2.6;
+      });
     } else {
       _dotFacSel = null;
     }
@@ -2007,13 +2534,14 @@ async function render() {
       // Name labels for the top N per area. We store the BASE font
       // size on the datum so onZoom() can rescale relative to it.
       const labelPeople = perNodes.filter((p) => labelledIds.has(p.id));
-      const personBaseFont = (d) => {
-        // Tighter range (8–12 px) so label sizes don't visually
-        // compete with area names. Differentiation between top and
-        // mid-tier researchers comes from sqrt-importance scaling.
-        const w = d.importance || 0;
-        return Math.max(8, Math.min(12, 8 + Math.sqrt(w) * 0.7));
-      };
+      // SCREEN-px size, not an SVG font-size. Range floor is
+      // PERSON_LABEL_PX.min = 10.0 px, above LABEL_MIN_PX, so a person
+      // label is either drawn at >= 10 px on screen or hidden by its band.
+      // The old range was 8–12 SVG units, which rendered 4.0–6.0 px at the
+      // initial fit (k = 0.5) — 5.0 px at the middle of the range.
+      const maxImportance = Math.max(1, ...labelPeople.map((d) => d.importance || 0));
+      const personBaseFont = (d) =>
+        rampPx(PERSON_LABEL_PX, d.importance || 0, maxImportance);
       _labelSel = root.append('g').attr('class', 'mvg-per-labels')
         .attr('text-anchor', 'middle')
         .attr('font-family', 'system-ui, sans-serif')
@@ -2031,8 +2559,13 @@ async function render() {
         .on('mouseenter', (ev, d) => showTip(tip, ev, nodeTipHtml(d)))
         .on('mouseleave', () => hideTip(tip))
         .on('click', (ev, d) => onPersonClick(d));
-      // Tag each label with its base font so onZoom can rescale.
-      _labelSel.each(function (d) { d.__baseFont = personBaseFont(d); });
+      // Tag each label with its target SCREEN size so onZoom can divide
+      // by the measured world→screen scale. __baseFont is kept as an alias
+      // because cullSelection ranks by it.
+      _labelSel.each(function (d) {
+        d.__basePx = personBaseFont(d);
+        d.__baseFont = d.__basePx;
+      });
     } else {
       _labelSel = null;
       _dotPersonSel = null;
@@ -2086,6 +2619,13 @@ async function render() {
     // by sqrt(n_people). Hidden entirely below k = 0.7 (would
     // overcrowd the default frame).
     if (_showFacility && _layout.facPolygons && _layout.facPolygons.size) {
+      // Label weight = people here + datasets produced, so a data provider
+      // is labelled ahead of a similarly-staffed site that ships nothing
+      // (cullSelection ranks by __baseFont, i.e. by this size).
+      const facLabWeight = (sp) =>
+        (sp.n_people || 0) + W_DATASET * (sp.n_datasets || 0);
+      const facLabMax = Math.max(1, ...[..._layout.facPolygons.values()]
+        .map(facLabWeight));
       const facLabData = [..._layout.facPolygons.entries()].map(([id, sp]) => {
         const ring = sp.ring || [];
         let cx = 0, cy = 0;
@@ -2099,11 +2639,16 @@ async function render() {
           display, name: sp.name, acronym: sp.acronym,
           country: sp.country, f_type: sp.f_type, url: sp.url,
           n_people: sp.n_people || 0, area_id: sp.area_id,
-          // Tighter range than people (7–11 px). Acronyms are short
-          // so they sit comfortably inside small sub-polygons; full
-          // names get collision-culled until the user zooms in enough
-          // that they fit.
-          baseFont: Math.max(7, Math.min(11, 7 + Math.sqrt(sp.n_people || 0) * 0.7)),
+          n_datasets: sp.n_datasets || 0,
+          // SCREEN px. The old range was 7–11 SVG units and the class was
+          // hidden below k = 0.7. Under the old scale (min(1, 1/max(k,0.5)),
+          // so = 1 for every k < 1) the on-screen size was base*k below k=1
+          // and base above it: the SMALL end rendered 4.9 px at k = 0.7,
+          // 5.6 px at k = 0.8 and never exceeded 7.0 px at ANY zoom, so the
+          // majority of this class sat under a 9.8 px floor everywhere; only
+          // the large end (11 px) cleared the floor, and only from k ≈ 0.9.
+          // The floor is now FAC_LABEL_PX.min = 10.5 px on screen.
+          baseFont: rampPx(FAC_LABEL_PX, facLabWeight(sp), facLabMax),
         };
       });
       _facLabelSel = root.append('g').attr('class', 'mvg-fac-labels')
@@ -2120,7 +2665,10 @@ async function render() {
         .attr('stroke-linejoin', 'round')
         .attr('paint-order', 'stroke')
         .text((d) => d.display);
-      _facLabelSel.each(function (d) { d.__baseFont = d.baseFont; });
+      _facLabelSel.each(function (d) {
+        d.__basePx = d.baseFont;
+        d.__baseFont = d.baseFont;
+      });
     } else {
       _facLabelSel = null;
     }
@@ -2138,19 +2686,20 @@ async function render() {
       .attr('text-anchor', 'middle')
       .attr('font-family', 'system-ui, sans-serif')
       .attr('pointer-events', 'none');
+    const areaMaxW = Math.max(1, ...areaList.map((a) => a.weight || 0));
     const areaLabData = areaList
       .filter((a) => _layout.labels.has(a.id))
       .map((a) => {
         const lab = _layout.labels.get(a.id);
         return {
           id: a.id, name: lab.name, x: lab.x, y: lab.y,
-          // Tighter range (10–16 px) than before. The previous (11–22)
-          // scaled ALL labels up by 1/k when the user zoomed out at
-          // initial fit (k≈0.5), producing the giant 40+ px labels
-          // that overpowered the polygons. Combined with the onZoom()
-          // change that caps the counter-scale at 1.0, labels now
-          // stay legible without dominating the canvas.
-          baseFont: Math.max(10, Math.min(16, 8 + Math.sqrt(a.weight) * 1.2)),
+          // SCREEN px, 13.0–20.0. The old range was 10–16 SVG units, which
+          // rendered 5.0–8.0 px at the initial fit (k = 0.5) — 7.0 px at the
+          // middle of the range — because the counter-scale clamped to 1 for
+          // every k < 1 and the transform then shrank the text. Sized by the
+          // data-and-people weight, so the biggest name belongs to the
+          // region carrying the most observatories, datasets and people.
+          baseFont: rampPx(AREA_LABEL_PX, a.weight || 0, areaMaxW),
         };
       });
     _areaLabelSel = labelG.selectAll('text').data(areaLabData).enter().append('text')
@@ -2163,7 +2712,20 @@ async function render() {
       .attr('stroke-linejoin', 'round')
       .attr('paint-order', 'stroke')
       .text((d) => d.name);
-    _areaLabelSel.each(function (d) { d.__baseFont = d.baseFont; });
+    _areaLabelSel.each(function (d) {
+      d.__basePx = d.baseFont;
+      d.__baseFont = d.baseFont;
+    });
+
+    // Layer 5: protected-area aggregate chips (opt-in layer). Drawn last
+    // so the chip sits above the region fill, and only when the layer is
+    // switched on. One chip per region — never one mark per protected area.
+    drawProtectedLayer(root);
+
+    // Final sizing pass now that every label class exists AND the SVG is
+    // in the document, so getScreenCTM() returns the real composed scale.
+    // The earlier onZoom() call above ran before the area labels existed.
+    onZoom(_zoomK);
   } catch (err) {
     console.error('[mvg] render failed', err);
     if (statusEl) statusEl.textContent = `Knowledge map render failed: ${err.message}`;
@@ -2178,14 +2740,33 @@ async function render() {
 function updateStatus() {
   const statusEl = _container && _container.querySelector('#net-status');
   if (!statusEl || !_layout) return;
-  let html = `<strong>${_layout.areas.length}</strong> research-area polygons, `
-    + `<strong>${_layout.nodes.length}</strong> nodes, `
+  const nOrg = _layout.areas.reduce((s, a) => s + (a.n_org || 0), 0);
+  const nDs  = _layout.areas.reduce((s, a) => s + (a.n_datasets || 0), 0);
+  const nPa  = _layout.areas.reduce((s, a) => s + (a.n_protected || 0), 0);
+  let html = `<strong>${_layout.areas.length}</strong> research-area polygons`
+    + ` sized by data and people, `
+    + `<strong>${nOrg}</strong> organisations, `
+    + `<strong>${nDs}</strong> dataset links, `
     + `<strong>${_layout.crossEdges.length}</strong> cross-area edges`;
+  if (_layout.nAreasEmpty) {
+    html += ` · <strong>${_layout.nAreasEmpty}</strong> vocabulary terms carry`
+      + ' no organisation, dataset or person and have no region';
+  }
+  if (nPa) {
+    html += ` · <strong>${nPa}</strong> protected areas catalogued but excluded`
+      + ' from region size (no datasets, no researchers)';
+  }
   if (_showRegistry && _registry) {
     const t = _registry.totals;
-    html += ` · registry: <strong>${t.n_placed}</strong> core-tier researchers`
-      + ` at <strong>${t.n_sites}</strong> sites,`
-      + ` <strong>${t.n_site_edges}</strong> site↔site co-publication links`;
+    // Placement split, stated as a split. n_sited people have a physical
+    // position; n_domain are placed by science domain and have none;
+    // n_unplaced have neither and are not on the map at all.
+    html += ` · registry placement: <strong>${t.n_sited}</strong> at`
+      + ` <strong>${t.n_sites}</strong> sites,`
+      + ` <strong>${t.n_domain}</strong> by science domain across`
+      + ` <strong>${t.n_domain_regions}</strong> regions (no site),`
+      + ` <strong>${t.n_unplaced}</strong> of ${t.n_registry} not placeable`
+      + ` · <strong>${t.n_site_edges}</strong> site↔site co-publication links`;
   }
   statusEl.innerHTML = html;
 }
@@ -2251,14 +2832,98 @@ function nodeTipHtml(d) {
   return lines.join('<br>');
 }
 
+// Region tooltip. States the sizing metric and the terms that produced it,
+// so the reason one region is bigger than another is inspectable from the
+// map instead of buried in this file. The protected-area count is shown
+// whenever it is non-zero — including the case where it is the region's
+// entire catalogue entry, which is the honest reading of "3,309 protected
+// areas, no data, no people".
+function areaTipHtml(a) {
+  const bits = [];
+  if (a.n_org) bits.push(`${a.n_org} organisation${a.n_org === 1 ? '' : 's'}`);
+  if (a.n_data_providers) {
+    bits.push(`${a.n_data_providers} data provider${a.n_data_providers === 1 ? '' : 's'}`);
+  }
+  if (a.n_datasets) bits.push(`${a.n_datasets} dataset${a.n_datasets === 1 ? '' : 's'}`);
+  if (a.n_people) bits.push(`${a.n_people} people`);
+  const paLine = a.n_protected
+    ? `<br><small style="color:#4d7c0f">${a.n_protected} protected area${a.n_protected === 1 ? '' : 's'}`
+      + ' also catalogued here — no datasets, no researchers, excluded from'
+      + ' region size</small>'
+    : '';
+  return `<strong>${escapeHtml(a.name)}</strong>`
+    + (bits.length ? `<br><small>${bits.join(' · ')}</small>` : '')
+    + `<br><small style="color:#0c4a6e">region size = data-and-people weight`
+    + ` ${(a.weight || 0).toFixed(1)}</small>`
+    + paLine
+    + '<br><small>click to zoom</small>';
+}
+
+// Tooltip for a domain-placed cohort. Says in words that these people are
+// NOT at a site, because the whole risk of placing them in a region is
+// that the map implies a location it does not have.
+function domainCohortTipHtml(d) {
+  return `<strong>${escapeHtml(d.area_name)}</strong>`
+    + `<br><small>${d.n_people} registry researcher${d.n_people === 1 ? '' : 's'}`
+    + ` placed by <em>dominant science domain</em></small>`
+    + '<br><small style="color:#b45309">No ROR match to a catalogued site —'
+    + ' these are not located here. The region is their subject, not their'
+    + ' address.</small>'
+    + '<br><small>click to list them</small>';
+}
+
+// Side panel for a domain-placed cohort. Reuses the registry panel slot
+// but is labelled unambiguously, and the rows carry no facility.
+function renderDomainPanel(coh) {
+  const panel = _container && _container.querySelector('#net-reg-panel');
+  if (!panel || !coh) return;
+  const CAP = 200;
+  const list = coh.people.slice(0, CAP);
+  const rows = list.map((p) => `<li>
+      <button type="button" class="mvg-reg-row" data-cid="${escapeHtml(p.canonical_id)}">
+        <span class="mvg-reg-name">${escapeHtml(p.display_name)}</span>
+        <span class="mvg-reg-badge is-unknown"
+              title="Placed by science domain — no site link">◌</span>
+      </button></li>`).join('');
+  panel.hidden = false;
+  panel.innerHTML = `
+    <div class="mvg-reg-head">
+      <h3>${escapeHtml(coh.area_name)}</h3>
+      <button type="button" id="net-reg-clear" class="btn-ghost">Clear</button>
+    </div>
+    <p class="mvg-reg-note mvg-reg-note-domain">${coh.n_people} researcher${coh.n_people === 1 ? '' : 's'}
+      placed by <strong>dominant science domain</strong>, not by location.
+      None of them has a ROR match to a catalogued site, so none of them has
+      a physical position on this map.</p>
+    ${coh.n_people > list.length
+      ? `<p class="mvg-reg-note">${list.length} of ${coh.n_people} listed here.</p>`
+      : ''}
+    <ol class="mvg-reg-list">${rows}</ol>`;
+  panel.querySelector('#net-reg-clear')
+    .addEventListener('click', () => { panel.hidden = true; panel.innerHTML = ''; });
+  panel.querySelectorAll('.mvg-reg-row').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const p = list.find((x) => x.canonical_id === btn.dataset.cid);
+      if (p) openRegistryProfile(p);
+    });
+  });
+}
+
 function facilityCircleTipHtml(c) {
   const sub = [c.acronym, c.country, (c.f_type || '').replace(/-/g, ' ')]
     .filter(Boolean).join(' · ');
   const peopleLine = c.n_people
     ? `<br><small style="color:#7dd3fc">${c.n_people} researcher${c.n_people === 1 ? '' : 's'} mapped here</small>`
     : '';
+  // A data provider is the property the map is built to surface, so it is
+  // stated first and in its own colour.
+  const dataLine = c.n_datasets
+    ? `<br><small style="color:#0d9488"><strong>data provider</strong> — `
+      + `${c.n_datasets} dataset${c.n_datasets === 1 ? '' : 's'} produced</small>`
+    : '';
   return `<strong>${escapeHtml(c.name || c.id)}</strong>` +
     (sub ? `<br><small>${escapeHtml(sub)}</small>` : '') +
+    dataLine +
     peopleLine +
     (c.url ? '<br><small style="color:#7dd3fc">click to open website</small>' : '');
 }
@@ -2306,80 +2971,110 @@ function onPersonClick(d) {
   location.hash = `#/people/${encodeURIComponent(d.id)}`;
 }
 
-// Show / hide / rescale researcher labels in response to zoom level.
+// World→screen scale of the map root, i.e. how many CSS pixels one SVG
+// user unit occupies. It is the PRODUCT of two factors:
 //
-// FIXED PIXEL SIZE: labels use base_font_px / zoom_k as their SVG
-// font-size, so they stay constant size on the screen at every zoom
-// level. Hidden entirely below k = 0.5 (would be unreadable noise).
+//   * the viewBox fit — the SVG has width/height 100% and a computed
+//     viewBox, so preserveAspectRatio scales world units to the stage
+//     independently of zoom. This factor is NOT 1 in general, and the old
+//     code ignored it entirely;
+//   * the d3.zoom factor k.
 //
-// COLLISION CULLING: after sizing, walk all visible labels in
-// importance order (largest base font first → top researcher per
-// area), measure each one's bounding box in WORLD coordinates, and
-// hide any label whose box overlaps an already-shown one. As the user
-// zooms in, more labels survive the cull because boxes shrink in
-// world coords while polygons stay the same size.
+// Measuring the composed transform off the DOM is the only way to be
+// right about both. Falls back to k when the CTM is unavailable (detached
+// node, jsdom, a browser mid-layout), which reproduces the old assumption
+// rather than throwing.
+function worldToScreenScale() {
+  const node = _rootG && _rootG.node && _rootG.node();
+  if (node && typeof node.getScreenCTM === 'function') {
+    try {
+      const m = node.getScreenCTM();
+      // Uniform scale: preserveAspectRatio 'meet' and d3.zoom are both
+      // isotropic, so |a| is the whole story. Guard against 0 (hidden
+      // element) and against a stale matrix during a transition.
+      if (m && Math.abs(m.a) > 1e-6) return Math.abs(m.a);
+    } catch (_) { /* fall through to the k-only estimate */ }
+  }
+  return _zoomK > 0 ? _zoomK : 1;
+}
+
+// Show / hide / rescale every label class in response to zoom level.
+//
+// TRUE CONSTANT SCREEN SIZE: each class declares the size it wants ON THE
+// SCREEN (the *_LABEL_PX constants). The SVG font-size is that value
+// divided by the measured world→screen scale, so the rendered text is the
+// declared number of CSS pixels at EVERY zoom level — not just k >= 1.
+//
+// The predecessor computed `Math.min(1, 1 / Math.max(k, 0.5))`, which is
+// min(1, >=1) = exactly 1 for every k < 1. Fonts therefore stayed at base
+// size in world units and the zoom transform shrank them on screen: at the
+// initial fit (k = 0.5) area labels rendered 7.0 px, person labels 5.0 px
+// and facility labels were hidden. The comment claiming constant screen
+// size was true only for k >= 1.
+//
+// HARD FLOOR: LABEL_MIN_PX (9.8 px, the site's own smallest tooltip text).
+// A class whose declared size is under the floor is HIDDEN, never shrunk —
+// screenPx() returns null and the caller sets display:none.
+//
+// ZOOM BANDS: each class is drawn only inside its ZOOM_BANDS range, so
+// labels disappear both when the user is too far OUT and too far IN.
+//
+// COLLISION CULLING: after sizing, walk visible labels largest-first,
+// measure world-space bounding boxes and hide overlaps. As the user zooms
+// in, more labels survive because world-space boxes shrink.
 function onZoom(k) {
   _zoomK = k || 1;
-  // Cap the counter-scale at 1.0 — labels should NEVER grow above
-  // their base size when the user zooms out. The previous unbounded
-  // 1/k formula made a 22 px label balloon to 44 px at the initial
-  // fit zoom (k≈0.5), drowning the canvas. Below k=1 we leave fonts
-  // at base size; above k=1 we shrink them so they stay readable
-  // (constant screen size) as the user zooms in.
-  const labelScale = Math.min(1, 1 / Math.max(_zoomK, 0.5));
-  // Dot scale: similar logic — at k>=1 dots stay at base radius;
-  // when zoomed in they shrink so they don't bloat into giant blobs.
-  const dotScale = Math.min(1, 1 / Math.max(_zoomK, 0.5));
+  const s = worldToScreenScale();
+
+  // Marks (dots, ribbons) get constant apparent size too, but their world
+  // growth is capped at MARK_MAX_GROWTH so zooming far out can't inflate a
+  // 2.6-unit dot into a blob that swallows its sub-polygon. Text has no
+  // such cap because a clipped label is useless whereas a slightly small
+  // dot still reads as a position.
+  const MARK_MAX_GROWTH = 2.0;
+  const markScale = Math.min(MARK_MAX_GROWTH, 1 / (s > 0 ? s : 1));
   if (_dotPersonSel) {
-    _dotPersonSel.attr('r', (d) => (d.__baseR || 2.0) * dotScale);
+    _dotPersonSel.attr('r', (d) => (d.__baseR || 2.0) * markScale);
   }
   if (_dotFacSel) {
-    _dotFacSel.attr('r', 2.6 * dotScale);
+    _dotFacSel.attr('r', (d) => (d.__baseR || 2.6) * markScale);
   }
-  // Registry marks get the same treatment as every other mark: constant
-  // apparent size above k=1, base size below it, so zooming in doesn't
-  // bloat markers into blobs or fatten the ribbons into bands.
   if (_regNodeSel) {
-    _regNodeSel.attr('r', (d) => (d.__baseR || 2.5) * dotScale)
-      .attr('stroke-width', 0.7 * dotScale);
+    _regNodeSel.attr('r', (d) => (d.__baseR || 2.5) * markScale)
+      .attr('stroke-width', 0.7 * markScale);
   }
   if (_regSiteLinkSel) {
-    _regSiteLinkSel.attr('stroke-width', (e) => (e.__baseW || 1) * dotScale);
+    _regSiteLinkSel.attr('stroke-width', (e) => (e.__baseW || 1) * markScale);
   }
   if (_regNodeLinkSel) {
-    _regNodeLinkSel.attr('stroke-width', (e) => (e.__baseW || 0.5) * dotScale);
-  }
-  if (_areaLabelSel) {
-    _areaLabelSel
-      .attr('font-size', (d) => (d.__baseFont || 14) * labelScale)
-      .attr('stroke-width', 2.2 * labelScale);
-  }
-  // FACILITY labels — same progressive-reveal pattern as people.
-  // Hidden below k=0.7 (their target home is "you've zoomed in enough
-  // to see institutions"). Above that threshold they get the same
-  // counter-scale + collision-cull treatment as person labels.
-  if (_facLabelSel) {
-    if (_zoomK < 0.7) {
-      _facLabelSel.style('display', 'none');
-    } else {
-      _facLabelSel
-        .style('display', null)
-        .attr('font-size', (d) => (d.__baseFont || 8) * labelScale)
-        .attr('stroke-width', 1.8 * labelScale);
-      cullSelection(_facLabelSel);
-    }
+    _regNodeLinkSel.attr('stroke-width', (e) => (e.__baseW || 0.5) * markScale);
   }
 
-  if (!_labelSel) return;
-  if (_zoomK < 0.5) {
-    _labelSel.style('display', 'none');
-    return;
-  }
-  _labelSel
-    .style('display', null)
-    .attr('font-size', (d) => (d.__baseFont || 10) * labelScale)
-    .attr('stroke-width', 2.0 * labelScale);
-  cullSelection(_labelSel);
+  // One helper per class so the band test, the floor test and the halo
+  // scaling can never drift apart between classes.
+  const applyLabels = (sel, band, haloPx, cull) => {
+    if (!sel) return;
+    if (!inBand(band, _zoomK)) { sel.style('display', 'none'); return; }
+    let anyVisible = false;
+    sel.each(function (d) {
+      const fs = screenPx(d.__basePx, s);
+      if (fs == null) { this.style.display = 'none'; return; }
+      anyVisible = true;
+      this.style.display = '';
+      this.setAttribute('font-size', fs);
+      this.setAttribute('stroke-width', haloPx / (s > 0 ? s : 1));
+    });
+    if (anyVisible && cull) cullSelection(sel);
+  };
+
+  applyLabels(_areaLabelSel,      ZOOM_BANDS.area,      2.2, false);
+  applyLabels(_paLabelSel,        ZOOM_BANDS.protected, 2.0, false);
+  // Cohort captions share the region band: they annotate a region, so they
+  // belong on screen exactly while region names are.
+  applyLabels(_regDomainLabelSel, ZOOM_BANDS.area,      2.0, false);
+  applyLabels(_facLabelSel,   ZOOM_BANDS.facility,  1.8, true);
+  applyLabels(_regLabelSel,   ZOOM_BANDS.registry,  2.0, true);
+  applyLabels(_labelSel,      ZOOM_BANDS.person,    2.0, true);
 }
 
 // Hide labels whose world-space bounding boxes overlap higher-priority
@@ -2397,6 +3092,16 @@ function cullSelection(sel) {
   const placed = [];
   for (const i of order) {
     const el = nodes[i];
+    // A label hidden by the legibility floor must STAY hidden: this loop
+    // clears display before measuring, which would otherwise resurrect it
+    // at a sub-floor size. Every current class declares a base >= the
+    // floor, so this is a guard against a future range being lowered, not
+    // a live case.
+    const basePx = el.__data__ && el.__data__.__basePx;
+    if (basePx != null && !(basePx >= LABEL_MIN_PX)) {
+      el.style.display = 'none';
+      continue;
+    }
     el.style.display = '';
     let bb;
     try { bb = el.getBBox(); }
@@ -2456,18 +3161,28 @@ export function initNetworkView(container) {
       <header class="network-header">
         <div>
           <h2>Knowledge map</h2>
-          <p class="network-sub">Country-like map of cod-kmap. Each outer
-          polygon is one research area (parent-collapsed when &lt; 3 facilities);
-          polygon area is proportional to facility count. Inside each area,
-          dashed sub-circles are individual institutions sized by their
-          personnel count; researchers (sky-blue dots, sized by funding +
-          collaborators + publications) sit inside their primary institution.
+          <p class="network-sub">Country-like map of cod-kmap, scoped to
+          <strong>observatories, data providers and people</strong>. Each outer
+          polygon is one research area and its area is proportional to a
+          data-and-people weight — organisations, plus a bonus for each site
+          that produces datasets, plus the datasets themselves, plus the
+          researchers anchored there. It is <em>not</em> the catalogue count:
+          3,309 of the 3,519 catalogued facilities are protected areas holding
+          zero datasets and zero researchers, and sizing by raw count gave them
+          94% of the map. They remain catalogued and are reachable behind the
+          off-by-default <em>Protected areas</em> layer, drawn as one aggregate
+          chip per region.
+          Inside each region, sub-polygons are individual institutions;
+          data-producing sites carry a larger marker. Researchers (sky-blue)
+          sit inside their primary institution.
           Toggling Facilities or People also toggles their cross-area edges:
           gray lines = facility-facility shared programs, sky-blue lines =
           researchers bridging two areas (interdisciplinary potential).
           Switch on <em>Researchers &amp; co-authorship</em> for the person
           registry: amber ribbons are co-publication between two catalogued
-          sites, and clicking a site opens its researcher roster.
+          sites, a solid marker means a researcher with a ROR-matched site, and
+          a dashed hollow ring is a cohort placed by science domain with
+          <em>no</em> site. Clicking either opens its roster.
           Hover for details, click to open homepage / ORCID. Algorithm:
           KMap from Hossain et al. GI&nbsp;'25 with hierarchical institution
           sub-polygons.</p>
@@ -2488,15 +3203,29 @@ export function initNetworkView(container) {
             <span class="net-swatch" style="background:${NODE_COLORS.registry}"></span>
             Researchers &amp; co-authorship
           </label>
+          <label class="net-toggle" title="3,309 catalogued protected areas.
+They hold no datasets and no researchers, so they do not size any region.">
+            <input type="checkbox" data-toggle="protected">
+            <span class="net-swatch net-swatch-pa"
+                  style="background:${NODE_COLORS.protected}"></span>
+            Protected areas (context)
+          </label>
           <button id="net-restart" class="btn-ghost" title="Recompute layout from scratch">Recompute layout</button>
         </div>
       </header>
       <p id="net-reg-note" class="network-scope-note" hidden>
         The researcher layer draws the <strong>core tier</strong> of the person
-        registry — 10,000 of 152,008 unified identities — and only the 263 of
-        those with a ROR match to a catalogued site have a position on this map.
-        It is not the whole field. Marker size is coastal <em>output volume</em>
-        (an upper bound, not a paper count); click a site to list who works there.
+        registry — 10,000 of 152,008 unified identities. It is not the whole
+        field. Placement is in two kinds and they mean different things:
+        <strong>263</strong> researchers have a ROR match to a catalogued site
+        and are drawn as solid markers <em>at</em> that site;
+        <strong>164</strong> have no site match and are placed by their dominant
+        science domain, shown as a dashed hollow ring per region labelled
+        “N no site” — a claim about their subject, not their address; the
+        remaining <strong>9,573</strong> have neither and are not on the map.
+        Marker size is coastal <em>output volume</em>
+        (an upper bound, not a paper count); click a site or a cohort ring to
+        list who is in it.
       </p>
       <div id="net-status" class="network-status">Loading…</div>
       <div class="mvg-shell">
@@ -2543,6 +3272,13 @@ export function initNetworkView(container) {
         });
         return;
       }
+      if (k === 'protected') {
+        // Aggregate-only layer over data already in _layout, so it needs
+        // neither a fetch nor a re-render — redraw its own <g> and resize.
+        _showProtected = el.checked;
+        if (_rootG) { drawProtectedLayer(_rootG); onZoom(_zoomK); }
+        return;
+      }
       if (k === 'facility') _showFacility = el.checked;
       else if (k === 'person') _showPerson = el.checked;
       // Toggle changes don't need a re-layout — just re-render.
@@ -2569,14 +3305,19 @@ function populateToc() {
   if (!_layout || !_container || !_colorOf) return;
   const list = _container.querySelector('#net-toc-list');
   if (!list) return;
+  // Ranked by the same data-and-people weight that sizes the regions, so
+  // the sidebar order and the map areas agree. The count column shows the
+  // three terms the reader can check — organisations / datasets / people —
+  // rather than a single opaque score.
   const sorted = [..._layout.areas].sort(
     (a, b) => (b.weight || 0) - (a.weight || 0));
   list.innerHTML = sorted.map((a) => `
     <li>
-      <button type="button" data-area="${escapeHtml(a.id)}" class="mvg-toc-row">
+      <button type="button" data-area="${escapeHtml(a.id)}" class="mvg-toc-row"
+              title="weight ${(a.weight || 0).toFixed(1)} — ${a.n_org || 0} organisations, ${a.n_data_providers || 0} data providers, ${a.n_datasets || 0} datasets, ${a.n_people || 0} people${a.n_protected ? `; ${a.n_protected} protected areas excluded` : ''}">
         <span class="mvg-toc-swatch" style="background:${_colorOf.get(a.id) || '#94a3b8'}"></span>
         <span class="mvg-toc-label">${escapeHtml(a.name)}</span>
-        <span class="mvg-toc-count">${a.weight || 0}</span>
+        <span class="mvg-toc-count">${a.n_org || 0}·${a.n_datasets || 0}·${a.n_people || 0}</span>
       </button>
     </li>`).join('');
   list.querySelectorAll('.mvg-toc-row').forEach((btn) => {
@@ -2605,6 +3346,21 @@ export function invalidateNetworkData() {
   _regSiteLinkSel = null;
   _regNodeSel = null;
   _regNodeLinkSel = null;
+  _regLabelSel = null;
+  _regDomainLabelSel = null;
+  // The protected-area chips and every label selection point into the SVG
+  // that is about to be discarded, and _rootG is that SVG's root group.
+  // Leaving them set would make onZoom() operate on detached nodes and
+  // drawProtectedLayer() append into a dead tree.
+  _rootG = null;
+  _paChipSel = null;
+  _paLabelSel = null;
+  _areaLabelSel = null;
+  _facLabelSel = null;
+  _labelSel = null;
+  _dotPersonSel = null;
+  _dotFacSel = null;
+  _facPolySel = null;
   _focusFacility = null;
   renderRegistryPanel(null);
 }

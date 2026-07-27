@@ -1207,6 +1207,26 @@ footer a:hover { color: var(--c-primary); }
 .mvg-reg-note {
   margin: 0; font-size: .72rem; line-height: 1.4; color: #92400e;
 }
+/* Domain-placed cohort panel. A distinct dashed treatment because the
+ * claim it makes is weaker than a site roster's: these researchers are
+ * grouped by subject, not located anywhere. */
+.mvg-reg-note-domain {
+  border-left: 3px dashed #c2410c;
+  padding: 4px 0 4px 7px;
+  background: #fffbeb;
+}
+/* Protected-areas layer swatch: hollow + dashed, matching the aggregate
+ * chip on the map, so the legend reads as "context, not a data source". */
+.net-swatch-pa {
+  background: transparent !important;
+  border: 1.5px dashed #65803a;
+}
+/* Region cartogram labels and the aggregate chips are sized in real screen
+ * pixels by onZoom() (see LABEL_MIN_PX in network.js), so nothing here may
+ * set a font-size on them — a CSS font-size would win over the attribute
+ * for specificity-free presentation attributes and silently defeat the
+ * floor. Only non-sizing properties belong here. */
+.mvg-pa-chips text, .mvg-reg-labels text { user-select: none; }
 .mvg-reg-list {
   list-style: none; margin: 4px 0 0; padding: 0;
   flex: 1; min-height: 0; overflow-y: auto; font-size: .8rem;
@@ -1548,111 +1568,125 @@ footer a:hover { color: var(--c-primary); }
   .sql-layout { grid-template-columns: 1fr; }
 }
 
-/* ── People: researcher directory ──────────────────────────────────── */
-.ppl-page { padding: 22px clamp(16px, 3vw, 36px); max-width: 1400px; margin: 0 auto; }
-.ppl-header h1 { margin: 0 0 6px; font-size: clamp(1.1rem, 1.6vw, 1.4rem); color: #0f172a; }
-.ppl-summary { color: #1f2937; font-size: .96rem; margin: 4px 0 8px; max-width: 920px; }
-.ppl-controls {
-  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
-  padding: 8px 0 14px;
-  border-bottom: 1px solid var(--c-border);
-  margin-bottom: 14px;
+/* ── People: unified person registry (#/people) ─────────────────────
+ * One roster for everyone the site ships (person_registry), replacing the
+ * former People / Team / Scholars blocks. Cohort chips filter in place;
+ * the grid is paged, so only PAGE_SIZE cards are ever in the DOM. */
+.reg-page { padding: 22px clamp(16px, 3vw, 36px); max-width: 1400px; margin: 0 auto; }
+.reg-loading { padding: 24px; color: #64748b; }
+.reg-header h1 { margin: 0 0 6px; font-size: clamp(1.1rem, 1.6vw, 1.4rem); color: #0f172a; }
+.reg-summary { color: #1f2937; font-size: .96rem; margin: 4px 0 10px; max-width: 920px; }
+.reg-summary code { font-size: .86em; background: #f1f5f9; padding: 1px 4px; border-radius: 3px; }
+.reg-caveats {
+  margin: 0 0 12px; padding: 10px 12px 10px 28px; max-width: 920px;
+  list-style: disc; font-size: .82rem; color: #475569;
+  background: #f8fafc; border-left: 3px solid #cbd5e1;
+  border-radius: 0 var(--radius) var(--radius) 0;
 }
-.ppl-controls input[type=search] {
-  flex: 0 0 320px; padding: 6px 10px;
-  border: 1px solid var(--c-border); border-radius: 4px; font-size: .92rem;
-}
-.ppl-controls label { font-size: .85rem; color: #475569; }
-.ppl-controls select {
-  margin-left: 6px; padding: 4px 6px;
-  border: 1px solid var(--c-border); border-radius: 4px;
-  font-size: .85rem; background: #fff;
-}
-.ppl-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 14px;
-}
-.ppl-card {
-  border: 1px solid var(--c-border);
-  border-radius: 8px;
-  padding: 12px 14px 14px;
-  background: #fff;
-  scroll-margin-top: 14px;
-}
-.ppl-card-active {
-  border-color: #0ea5e9;
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, .25);
-}
-.ppl-card-head {
-  display: flex; justify-content: space-between; align-items: baseline;
-  gap: 8px; margin-bottom: 6px;
-}
-.ppl-card-head h3 { margin: 0; font-size: 1.02rem; color: #0f172a; }
-.ppl-pchip {
-  font-size: .72rem; padding: 2px 8px;
-  background: #e0f2fe; color: #0369a1;
-  border-radius: 999px; white-space: nowrap;
-}
-/* Cohort membership chips (people.js cohortChips). A directory person who
-   is also on the COD team or in the scholar roster carries a chip per
-   cohort — the registry made that overlap visible for the first time. */
-.ppl-cohort {
-  font-size: .68rem; padding: 2px 7px; border-radius: 999px;
-  white-space: nowrap; margin-left: 4px;
-}
-.ppl-cohort-team    { background: #fee2e2; color: #b91c1c; }
-.ppl-cohort-scholar { background: #ede9fe; color: #6d28d9; }
-.ppl-metrics {
-  display: grid; grid-template-columns: repeat(5, 1fr);
-  gap: 4px; padding: 8px 0; border-top: 1px solid #f1f5f9;
-  border-bottom: 1px solid #f1f5f9; margin-bottom: 8px;
-}
-.ppl-metric { font-size: .7rem; color: #64748b; text-align: center; }
-.ppl-metric strong { font-size: .98rem; color: #0f172a; }
+.reg-caveats li { margin: 3px 0; }
+.reg-caveats code { background: #eef2f7; padding: 1px 4px; border-radius: 3px; }
+.reg-caveats a { color: #0369a1; }
 
-.ppl-cols {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+.reg-controls {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  padding: 8px 0 12px;
+  border-bottom: 1px solid var(--c-border);
 }
-.ppl-cols h4 {
-  margin: 0 0 4px; font-size: .76rem;
-  color: #475569; text-transform: uppercase; letter-spacing: .03em;
+.reg-cohorts { display: flex; gap: 6px; flex-wrap: wrap; }
+.reg-cohort {
+  border: 1px solid var(--c-border); background: #fff; cursor: pointer;
+  border-radius: 999px; padding: 4px 12px; font-size: .82rem; color: #475569;
 }
-.ppl-aff, .ppl-areas {
-  list-style: none; margin: 0; padding: 0;
-  font-size: .82rem;
+.reg-cohort:hover { border-color: #94a3b8; }
+.reg-cohort-on { background: #0369a1; border-color: #0369a1; color: #fff; }
+.reg-cohort-n { font-variant-numeric: tabular-nums; opacity: .75; margin-left: 4px; }
+.reg-controls input[type=search] {
+  flex: 1 1 260px; min-width: 200px; padding: 7px 10px;
+  border: 1px solid var(--c-border); border-radius: var(--radius); font-size: .9rem;
 }
-.ppl-aff li, .ppl-areas li { padding: 3px 0; border-bottom: 1px dotted #e2e8f0; }
-.ppl-aff li:last-child, .ppl-areas li:last-child { border-bottom: none; }
-.ppl-aff strong { font-size: .82rem; color: #1e293b; }
-.ppl-aff small { color: #475569; }
-.ppl-flag {
-  font-size: .68rem; padding: 1px 6px;
-  background: #f1f5f9; border-radius: 3px; color: #475569;
+.reg-controls label { font-size: .85rem; color: #475569; }
+.reg-controls select {
+  padding: 6px 8px; border: 1px solid var(--c-border);
+  border-radius: var(--radius); font-size: .85rem; margin-left: 4px;
 }
-.ppl-area-label { display: block; font-weight: 500; color: #1e293b; }
-.ppl-areas small { color: #64748b; }
-.ppl-more { font-size: .76rem; color: #94a3b8; font-style: italic; }
-.ppl-none { font-size: .82rem; color: #94a3b8; font-style: italic; }
-.ppl-bio, .ppl-interests {
+.reg-count { font-size: .82rem; color: #64748b; margin: 10px 0 12px; }
+
+.reg-grid {
+  display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+}
+.reg-empty { color: #94a3b8; font-style: italic; padding: 24px; }
+.reg-card {
+  border: 1px solid var(--c-border); border-radius: var(--radius);
+  background: #fff; padding: 12px 14px;
+}
+.reg-card-active { border-color: #0369a1; box-shadow: 0 0 0 2px #bae6fd; }
+.reg-card-head {
+  display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+.reg-card-head h3 { margin: 0; font-size: 1rem; color: #0f172a; }
+.reg-rank {
+  font-size: .72rem; color: #64748b; font-variant-numeric: tabular-nums;
+  background: #f1f5f9; border-radius: 3px; padding: 1px 5px;
+}
+.reg-chip {
+  font-size: .66rem; padding: 1px 7px; border-radius: 999px;
+  text-transform: uppercase; letter-spacing: .03em;
+}
+.reg-chip-team    { background: #fee2e2; color: #b91c1c; }
+.reg-chip-site    { background: #dcfce7; color: #15803d; }
+.reg-chip-scholar { background: #ede9fe; color: #6d28d9; }
+.reg-aff { margin: 2px 0 8px; font-size: .84rem; color: #475569; }
+
+.reg-metrics {
+  display: grid; grid-template-columns: repeat(6, 1fr);
+  gap: 6px; padding: 8px 0; border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+}
+.reg-metric { font-size: .64rem; color: #64748b; text-align: center; line-height: 1.25; }
+.reg-metric strong { font-size: .92rem; color: #0f172a; }
+
+.reg-reach, .reg-site {
+  margin: 8px 0 0; font-size: .78rem; color: #475569;
+  display: flex; gap: 10px; flex-wrap: wrap;
+}
+.reg-reach strong, .reg-site strong { color: #0f172a; }
+.reg-reach-split { color: #64748b; }
+.reg-reach-none, .reg-site-none { color: #94a3b8; font-style: italic; display: block; }
+
+.reg-foot {
+  display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;
   margin-top: 10px; padding-top: 8px;
-  border-top: 1px dashed #e2e8f0;
+  border-top: 1px dashed #e2e8f0; font-size: .78rem; color: #475569;
 }
-.ppl-bio h4, .ppl-interests h4 {
-  margin: 0 0 4px; font-size: .76rem;
-  color: #475569; text-transform: uppercase; letter-spacing: .03em;
+.reg-links a { color: #0369a1; }
+.reg-prov { display: flex; gap: 6px; align-items: center; }
+.reg-conf {
+  font-size: .64rem; padding: 1px 6px; border-radius: 3px;
+  text-transform: uppercase; letter-spacing: .03em;
 }
-.ppl-bio p, .ppl-interests p { margin: 0; font-size: .82rem; color: #1e293b; }
-.ppl-links {
-  margin-top: 10px; padding-top: 8px;
-  border-top: 1px dashed #e2e8f0;
-  font-size: .82rem; color: #475569;
+.reg-conf-high    { background: #dcfce7; color: #15803d; }
+.reg-conf-medium  { background: #fef3c7; color: #92400e; }
+.reg-conf-low     { background: #fee2e2; color: #b91c1c; }
+.reg-conf-unknown { background: #f1f5f9; color: #64748b; }
+.reg-source { color: #94a3b8; font-size: .7rem; }
+
+.reg-pager {
+  display: flex; gap: 8px; align-items: center; justify-content: center;
+  flex-wrap: wrap; padding: 20px 0 8px;
 }
-.ppl-links a { color: #0369a1; }
+.reg-pager button {
+  border: 1px solid var(--c-border); background: #fff; cursor: pointer;
+  border-radius: var(--radius); padding: 5px 12px; font-size: .84rem; color: #334155;
+}
+.reg-pager button:hover:not(:disabled) { border-color: #0369a1; color: #0369a1; }
+.reg-pager button:disabled { opacity: .45; cursor: default; }
+.reg-pageno { font-size: .82rem; color: #64748b; font-variant-numeric: tabular-nums; }
+
 @media (max-width: 600px) {
-  .ppl-grid { grid-template-columns: 1fr; }
-  .ppl-metrics { grid-template-columns: repeat(3, 1fr); }
-  .ppl-cols { grid-template-columns: 1fr; }
+  .reg-grid { grid-template-columns: 1fr; }
+  .reg-metrics { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* ── Stats: per-research-area dashboard ────────────────────────────── */
@@ -1811,10 +1845,11 @@ footer a:hover { color: var(--c-primary); }
   .legend-control { max-width: 200px; }
 }
 
-/* ── Team view (#/team) ─────────────────────────────────────────────
- * The COD organisational chart. Institution chips take their colour from
- * an --inst custom property that team.js sets per row, mirroring the
- * source chart's colour legend. */
+/* ── Org chart view (#/org) ─────────────────────────────────────────
+ * The COD work-breakdown structure. Institution chips take their colour
+ * from an --inst custom property that orgchart.js sets per row, mirroring
+ * the source chart's colour legend. The .team-* prefix is kept: these rules
+ * are only used by orgchart.js, which was formerly team.js. */
 .team-page { padding: 22px clamp(16px, 3vw, 36px); max-width: 1400px; margin: 0 auto; }
 .team-header h1 { margin: 0 0 6px; font-size: clamp(1.1rem, 1.6vw, 1.4rem); color: #0f172a; }
 .team-summary { color: #1f2937; font-size: .96rem; margin: 4px 0 14px; max-width: 920px; }
@@ -1933,96 +1968,6 @@ footer a:hover { color: var(--c-primary); }
   font-size: .64rem; padding: 1px 6px; border-radius: 3px;
   background: #ddd6fe; color: #5b21b6; text-transform: uppercase;
 }
-
-/* ── Scholars view (#/scholars) ─────────────────────────────────────── */
-.sch-page { padding: 22px clamp(16px, 3vw, 36px); max-width: 1400px; margin: 0 auto; }
-.sch-header h1 { margin: 0 0 6px; font-size: clamp(1.1rem, 1.6vw, 1.4rem); color: #0f172a; }
-.sch-summary { color: #1f2937; font-size: .96rem; margin: 4px 0 10px; max-width: 920px; }
-.sch-summary a { color: #0369a1; }
-.sch-status { text-align: center; color: #64748b; padding: 14px; font-size: .85rem; }
-.sch-count, .sch-count-line { font-size: .82rem; color: #64748b; margin: 8px 0 12px; }
-
-.sch-controls {
-  display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center;
-  margin: 10px 0 4px;
-}
-.sch-controls input[type="search"] {
-  flex: 1 1 240px; min-width: 180px; padding: 6px 10px;
-  border: 1px solid var(--c-border); border-radius: 4px; font-size: .88rem;
-}
-.sch-controls label { font-size: .85rem; color: #475569; }
-.sch-controls select {
-  margin-left: 6px; padding: 4px 6px;
-  border: 1px solid var(--c-border); border-radius: 4px;
-  font-size: .85rem; background: #fff;
-}
-.sch-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.sch-chip {
-  font-size: .8rem; padding: 5px 12px; cursor: pointer;
-  border: 1px solid var(--c-border); border-radius: 999px;
-  background: #fff; color: #475569;
-}
-.sch-chip:hover { border-color: #94a3b8; }
-.sch-chip-on { background: #0369a1; border-color: #0369a1; color: #fff; }
-.sch-chip-n { opacity: .75; font-size: .74rem; margin-left: 2px; }
-
-.sch-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 14px;
-}
-.sch-card {
-  border: 1px solid var(--c-border); border-radius: 8px;
-  padding: 12px 14px 14px; background: #fff; scroll-margin-top: 14px;
-}
-.sch-card-active { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,.25); }
-.sch-card-head {
-  display: flex; justify-content: space-between; align-items: baseline;
-  gap: 8px; margin-bottom: 4px;
-}
-.sch-card-head h3 { margin: 0; font-size: 1rem; color: #0f172a; }
-.sch-badges { display: flex; flex-wrap: wrap; gap: 4px; }
-.sch-badge {
-  font-size: .66rem; padding: 2px 7px; border-radius: 999px; white-space: nowrap;
-}
-.sch-badge-pre { background: #e0e7ff; color: #3730a3; }
-.sch-badge-act { background: #dcfce7; color: #166534; }
-.sch-badge-ris { background: #fef3c7; color: #92400e; }
-.sch-aff { margin: 0 0 8px; font-size: .84rem; color: #475569; }
-.sch-metrics {
-  display: flex; flex-wrap: wrap; gap: 10px;
-  padding: 8px 0; margin-bottom: 8px;
-  border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;
-  font-size: .72rem; color: #64748b;
-}
-.sch-metrics strong { font-size: .92rem; color: #0f172a; }
-.sch-pending {
-  margin: 8px 0; padding: 6px 8px; font-size: .76rem;
-  background: #f8fafc; border-left: 3px solid #cbd5e1; color: #64748b;
-}
-.sch-topics { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
-.sch-topic {
-  font-size: .7rem; padding: 2px 8px; border-radius: 999px;
-  background: #f1f5f9; color: #475569;
-}
-.sch-rationale { margin: 0; font-size: .78rem; color: #64748b; font-style: italic; }
-/* Network position (scholars.js networkHtml): co-authors, catalogued sites,
-   and cross-cohort membership. Rendered only when the scholar has a
-   resolved registry identity. */
-.sch-network {
-  display: flex; flex-wrap: wrap; gap: 8px;
-  font-size: .72rem; color: #475569; margin: 4px 0 6px;
-}
-.sch-network strong { color: #0f172a; }
-.sch-network-unknown { color: #94a3b8; font-style: italic; }
-.sch-xcohort {
-  background: #ede9fe; color: #6d28d9;
-  padding: 1px 7px; border-radius: 999px; font-size: .68rem;
-}
-.sch-links {
-  margin-top: 10px; padding-top: 8px;
-  border-top: 1px dashed #e2e8f0; font-size: .8rem; color: #475569;
-}
-.sch-links a { color: #0369a1; }
 
 /* ── Data view (#/data) ─────────────────────────────────────────────
  * Endpoint badges colour themselves from an --ep custom property set by
@@ -2170,6 +2115,20 @@ footer a:hover { color: var(--c-primary); }
 .ds-links a { color: #0369a1; }
 
 @media (max-width: 600px) {
-  .team-hero-grid, .team-slc-grid, .sch-grid, .ds-grid { grid-template-columns: 1fr; }
+  .team-hero-grid, .team-slc-grid, .ds-grid { grid-template-columns: 1fr; }
   .team-member-meta { margin-left: 0; flex-basis: 100%; }
 }
+
+/* ── People: deep-link notice ───────────────────────────────────────
+ * Shown when #/people/<id> names someone with no person_registry row —
+ * the registry is keyed on a persistent identifier and not every person
+ * in the narrow source tables resolved one. Lives at the end of the
+ * sheet rather than in the People block above so the People block stays
+ * a single contiguous edit. */
+.reg-notice {
+  margin: 0 0 14px; padding: 10px 14px; font-size: .84rem; color: #92400e;
+  background: #fffbeb; border: 1px solid #fde68a;
+  border-radius: var(--radius); max-width: 920px;
+}
+.reg-notice code { background: #fef3c7; padding: 1px 4px; border-radius: 3px; }
+.reg-notice a { color: #b45309; }

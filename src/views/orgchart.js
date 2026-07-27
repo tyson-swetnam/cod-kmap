@@ -1,9 +1,17 @@
-// team.js — COD project team view (#/team).
+// orgchart.js — COD work-breakdown structure / org chart (#/org).
 //
 // Renders the project organisational chart: the PI and Co-PIs as hero
 // cards, the Science Leadership Committee, then every WBS element with
 // its members. Unfilled positions (TBD / TBH) are shown muted rather
 // than hidden — an empty slot is information about the project.
+//
+// This view was formerly the whole of the #/team tab. The roster half of
+// that tab moved into the single People view (src/views/people.js), which
+// reads person_registry and offers "COD team" as a cohort filter. The WBS
+// hierarchy did not move: wbs_code / parent_code / roles / committees
+// describe a management structure with a parent-child shape, which is not
+// expressible as a filter over a flat roster. #/team now redirects to
+// People filtered to the team cohort; this chart keeps its own route.
 //
 // Data source: cod_team_members + cod_wbs (written by
 // scripts/build_cod_team_lake.py), joined to people for scholarly
@@ -198,7 +206,10 @@ function profileLinks(row) {
   if (row.google_scholar_id) {
     links.push(`<a href="https://scholar.google.com/citations?user=${esc(row.google_scholar_id)}" target="_blank" rel="noopener">Scholar</a>`);
   }
-  if (row.person_id) links.push(`<a href="#/people/${esc(row.person_id)}">Directory</a>`);
+  // The unified People view resolves a deep-link id against canonical_id,
+  // person_id and scholar_id, so this legacy person_id link still lands on
+  // the right card.
+  if (row.person_id) links.push(`<a href="#/people/${esc(row.person_id)}">People</a>`);
   return links;
 }
 
@@ -374,7 +385,7 @@ function wbsSections(rows) {
     }).join('');
 }
 
-async function renderTeam() {
+async function renderOrgChart() {
   if (!_container) return;
   const status = _container.querySelector('.team-status');
   if (status) status.textContent = 'Loading…';
@@ -392,7 +403,7 @@ async function renderTeam() {
   if (!rows.length) {
     _container.innerHTML = `
       <div class="team-page">
-        <header class="team-header"><h1>COD project team</h1></header>
+        <header class="team-header"><h1>COD org chart</h1></header>
         <p class="no-data">
           No team rows yet. Run <code>python scripts/build_cod_team_lake.py</code>
           to load the org chart from <code>data/seed/cod_team_members.csv</code>.
@@ -421,13 +432,17 @@ async function renderTeam() {
   _container.innerHTML = `
     <div class="team-page">
       <header class="team-header">
-        <h1>COD project team</h1>
+        <h1>COD org chart</h1>
         <p class="team-summary">
+          The project work-breakdown structure:
           <strong>${people.size}</strong> named investigators and staff across
           <strong>${new Set(rows.map((r) => String(r.wbs_code).split('.')[0])).size}</strong>
           work-breakdown tracks, plus <strong>${openSlots}</strong> positions
           still to be filled. Transcribed from the project organisational
-          chart; scholarly identifiers come from the researcher directory.
+          chart; scholarly identifiers come from the person registry.
+          This is a management hierarchy, not a roster — for the people
+          themselves, and for everyone else the site knows about, see
+          <a href="#/people">People</a>.
         </p>
       </header>
 
@@ -444,7 +459,7 @@ async function renderTeam() {
 
       <p class="team-status">
         ${withMetrics
-          ? 'Publication metrics from OpenAlex via the researcher directory.'
+          ? 'Publication metrics from OpenAlex via the person registry.'
           : 'Publication metrics appear here once the OpenAlex enrichment scripts have run (see Docs → Team, Scholars &amp; Data Methods).'}
       </p>
     </div>`;
@@ -454,25 +469,25 @@ async function renderTeam() {
       const code = head.dataset.toggle;
       if (_collapsed.has(code)) _collapsed.delete(code);
       else _collapsed.add(code);
-      renderTeam();
+      renderOrgChart();
     });
   }
 }
 
-export function initTeamView(container) {
+export function initOrgChartView(container) {
   _container = container;
   _container.innerHTML = `
     <div class="team-page">
       <p class="team-status" style="padding:24px;color:#64748b">
-        COD project team loading…
+        COD org chart loading…
       </p>
     </div>`;
 }
 
-export function renderTeamView() {
+export function renderOrgChartView() {
   if (!_container) return;
-  renderTeam().catch((e) => {
-    console.error('[team] render failed', e);
+  renderOrgChart().catch((e) => {
+    console.error('[orgchart] render failed', e);
     const s = _container.querySelector('.team-status');
     if (s) s.textContent = `Render failed: ${e.message}`;
   });

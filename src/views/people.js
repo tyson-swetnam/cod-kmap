@@ -1,405 +1,595 @@
-// people.js — Researcher directory view (#/people and #/people/<id>).
+// people.js — the single People view (#/people and #/people/<id>).
 //
-// Shows every researcher in the cod-kmap dataset (~242) as a card
-// listing their affiliations, role(s), publication+citation+co-author
-// metrics, primary research area, and any external profile links
-// (ORCID, OpenAlex, homepage).
+// This view replaces the three former human tabs (People / Team /
+// Scholars). Its roster IS person_registry: every person the site ships,
+// in one list, with cohort as a filter rather than as a separate page.
 //
-// Routes:
-//   #/people            → grid of all researcher cards (sortable)
-//   #/people/<person_id> → that researcher's card scrolled into view
-//                          and visually highlighted
+// What changed and why: person_registry resolved the three old tables
+// (people, cod_team_members, community_scholars) onto persistent
+// identifiers, so the same human no longer appears two or three times
+// with no shared key. Before this view existed the registry was only
+// wired in as an enrichment JOIN, so the ~10k harvested researchers were
+// invisible in the UI — the three tabs each read their original narrow
+// table (people 280 / cod_team_members 67 / community_scholars 523).
 //
-// Data source: DuckDB-Wasm + the parquets we already ship
-// (people, person_primary_groups, person_area_metrics, facility_personnel,
-// facilities, facility_area_funding).
+// Routes handled here:
+//   #/people            → full roster, ranked by tier_rank
+//   #/people/<id>       → jump to and highlight one person. <id> may be a
+//                         canonical_id, or a legacy person_id (old
+//                         #/people/<person_id> links, and the Network
+//                         tab's click-through) or scholar_id (old
+//                         #/scholars/<scholar_id> links).
+// #/team and #/scholars are redirected here with the matching cohort
+// preselected — see the route table in main.js.
+//
+// NOT handled here: the COD work-breakdown org chart. A WBS hierarchy is
+// a management structure, not a roster filter, so it keeps its own view
+// (src/views/orgchart.js, #/org).
+//
+// Data source: DuckDB-Wasm over the shipped parquet — person_registry,
+// registry_collaborations, registry_facilities, facilities.
 
 import { getConn, whenReady, unwrapRow } from '../db.js';
 
+// Rows shipped to the browser are the 'core' tier only. The full registry
+// is far larger and stays in the local DuckDB build; the header says so
+// rather than letting 10,000 read as the whole population.
+const REGISTRY_TOTAL = 152008;
+
+// 10,000 cards cannot all be in the DOM at once, so the roster is paged.
+// Filter and sort run over the whole in-memory roster; only one page is
+// rendered.
+const PAGE_SIZE = 60;
+
+const COHORTS = {
+  all     : { label: 'Everyone',        test: () => true },
+  team    : { label: 'COD team',        test: (r) => !!r.is_team },
+  site    : { label: 'Site personnel',  test: (r) => !!r.is_site_personnel },
+  scholar : { label: 'Scholar roster',  test: (r) => !!r.is_scholar },
+  multi   : { label: 'In 2+ cohorts',   test: (r) => r._nflags > 1 },
+};
+
 let _container = null;
-let _renderedOnce = false;
-let _sort = 'composite';   // 'composite' | 'name' | 'pubs' | 'citations' | 'coauthors' | 'funding'
-let _qFilter = '';
+let _rows = null;          // full roster, fetched once
+let _view = [];            // current filtered + sorted slice source
+let _cohort = 'all';
+let _q = '';
+let _sort = 'rank';
+let _page = 0;
+let _focus = null;         // canonical/person/scholar id to highlight
+let _unresolved = null;    // {id, hit} when a deep link names someone absent
+let _shellBuilt = false;
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"]/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
-function fmtUsd(n) {
-  if (!n && n !== 0) return '—';
-  if (n >= 1e9)  return `$${(n / 1e9).toFixed(2)}B`;
-  if (n >= 1e6)  return `$${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3)  return `$${(n / 1e3).toFixed(0)}K`;
-  return `$${Math.round(n)}`;
-}
-// The views re-render by replacing container.innerHTML, which throws away the
-// focused element. Put focus and the caret back on the replacement so typing
-// in a search box is not interrupted after every keystroke.
-function restoreFocus(selector, caret) {
-  const el = _container && _container.querySelector(selector);
-  if (!el) return;
-  el.focus();
-  if (caret != null && el.setSelectionRange) {
-    try { el.setSelectionRange(caret, caret); } catch { /* non-text input */ }
-  }
-}
-
 function fmtInt(n) {
-  if (!n && n !== 0) return '—';
-  return Math.round(n).toLocaleString();
-}
-// DuckDB-Wasm 1.29 returns BIGINTs as JS bigints and LIST<STRUCT> values
-// as Arrow Vector objects (NOT plain JS arrays — Array.isArray() returns
-// false for them). The People view's affiliations / areas / urls lists
-// rendered empty because the Array.isArray() guards short-circuited.
-// `unwrapRow` (defined in db.js) recursively converts every column so
-// downstream code can treat lists like plain arrays and structs like
-// plain objects.
-function numify(o) {
-  return unwrapRow(o);
+  if (n == null) return '—';
+  return Math.round(Number(n)).toLocaleString();
 }
 
-async function fetchPeople() {
+async function fetchRoster() {
   await whenReady();
   const conn = getConn();
   if (!conn) throw new Error('DuckDB connection not ready');
 
-  // Per-person aggregate row + list of affiliations + list of areas.
-  // Cleaned-up version (DuckDB-Wasm is stricter than CLI DuckDB about
-  // join-alias-shadowing-CTE-name and untyped empty-list literals):
-  // separate area-list CTE, no correlated subqueries inside aggregate
-  // arguments, no `COALESCE(x, [])` coercion games.
+  // One statement: registry identity + metrics, co-authorship reach split
+  // by the partner's cohort, and ROR-matched catalogued sites.
+  //
+  // registry_collaborations stores each edge once with
+  // canonical_id_a < canonical_id_b, so it is unioned both ways to get an
+  // undirected adjacency. The shipped parquet carries only edges whose
+  // BOTH endpoints are core tier.
   const sql = `
-    WITH per_pub AS (
-      SELECT a.person_id,
-             COUNT(DISTINCT a.publication_id) AS n_pubs,
-             SUM(p.cited_by_count)            AS total_citations
-      FROM authorship   a
-      JOIN publications p ON p.publication_id = a.publication_id
-      GROUP BY a.person_id
+    WITH edges AS (
+      SELECT canonical_id_a AS self_id, canonical_id_b AS other_id, co_pub_count
+        FROM registry_collaborations
+      UNION ALL
+      SELECT canonical_id_b, canonical_id_a, co_pub_count
+        FROM registry_collaborations
     ),
-    per_coauth AS (
-      SELECT person_id, COUNT(DISTINCT other_id) AS n_coauth FROM (
-        SELECT person_a_id AS person_id, person_b_id AS other_id FROM collaborations
-        UNION ALL
-        SELECT person_b_id AS person_id, person_a_id AS other_id FROM collaborations
-      ) GROUP BY person_id
-    ),
-    -- person_area_metrics has one row per (person, research area), so
-    -- summing n_publications / total_citations / n_co_authors counted a
-    -- paper once per area it touches: it reported 740 publications for a
-    -- researcher with 100, and inflated the dataset total 2.75x. Exact
-    -- counts now come from authorship/publications above; only h_index and
-    -- composite_z are aggregated here, where per-area is the intended read.
-    per_pa AS (
-      SELECT person_id,
-             MAX(h_index)     AS h_index,
-             SUM(composite_z) AS composite_z
-      FROM person_area_metrics
-      GROUP BY person_id
-    ),
-    per_pa_areas AS (
-      SELECT pam.person_id,
-             list(struct_pack(
-               area_id   := pam.area_id,
-               area      := ra.label,
-               n_pubs    := pam.n_publications,
-               citations := pam.total_citations,
-               h         := pam.h_index
-             ) ORDER BY pam.composite_z DESC) AS areas
-      FROM person_area_metrics pam
-      LEFT JOIN research_areas ra ON ra.area_id = pam.area_id
-      GROUP BY pam.person_id
-    ),
-    per_fund AS (
-      SELECT fp.person_id,
-             SUM(faf.total_usd_nominal) AS facility_funding_usd
-      FROM facility_personnel fp
-      JOIN facility_area_funding faf ON faf.facility_id = fp.facility_id
-      GROUP BY fp.person_id
-    ),
-    per_aff AS (
-      SELECT fp.person_id,
-             list(struct_pack(
-               role        := fp.role,
-               title       := fp.title,
-               facility    := COALESCE(f.acronym || ' — ' || f.canonical_name,
-                                       f.canonical_name),
-               facility_id := f.facility_id,
-               url         := f.url,
-               country     := f.country,
-               is_key      := fp.is_key_personnel
-             ) ORDER BY fp.is_key_personnel DESC, fp.role) AS affiliations
-      FROM facility_personnel fp
-      JOIN facilities f ON f.facility_id = fp.facility_id
-      GROUP BY fp.person_id
-    ),
-    -- Registry identity for directory people. person_registry resolved the
-    -- three human layers onto persistent ids, so it holds identifiers and
-    -- OpenAlex metrics that the people table alone does not — and it says whether
-    -- this person is also on the COD team or in the scholar roster, which
-    -- was previously unrepresentable.
-    reg AS (
-      SELECT person_id, canonical_id, orcid, openalex_id, google_scholar_id,
-             homepage_url, affiliation_ror, affiliation_country,
-             h_index AS reg_h_index, works_count, cited_by_count,
-             coastal_works_count, is_team, is_scholar, tier
-      FROM person_registry
-      WHERE person_id IS NOT NULL
-    ),
-    reg_reach AS (
-      SELECT e.self_id AS canonical_id, COUNT(*) AS reg_degree
-      FROM (
-        SELECT canonical_id_a AS self_id FROM registry_collaborations
-        UNION ALL
-        SELECT canonical_id_b FROM registry_collaborations
-      ) e
+    reach AS (
+      SELECT e.self_id                                       AS canonical_id,
+             COUNT(*)                                        AS reg_degree,
+             SUM(e.co_pub_count)                              AS co_pub_total,
+             MAX(e.co_pub_count)                              AS top_co_pubs,
+             COUNT(*) FILTER (WHERE o.is_team)                AS to_team,
+             COUNT(*) FILTER (WHERE o.is_site_personnel)      AS to_site,
+             COUNT(*) FILTER (WHERE o.is_scholar)             AS to_scholars
+      FROM edges e
+      JOIN person_registry o ON o.canonical_id = e.other_id
       GROUP BY e.self_id
+    ),
+    sites AS (
+      SELECT rf.canonical_id,
+             COUNT(DISTINCT rf.facility_id)                          AS n_sites,
+             string_agg(DISTINCT COALESCE(f.acronym, f.canonical_name), ' · ') AS site_names
+      FROM registry_facilities rf
+      JOIN facilities f ON f.facility_id = rf.facility_id
+      GROUP BY rf.canonical_id
     )
-    SELECT p.person_id  AS id,
-           p.name,
-           COALESCE(r.orcid, p.orcid)                         AS orcid,
-           COALESCE(r.openalex_id, p.openalex_id)             AS openalex_id,
-           COALESCE(r.google_scholar_id, p.google_scholar_id) AS google_scholar_id,
-           COALESCE(r.homepage_url, p.homepage_url)           AS homepage_url,
-           r.canonical_id,
+    SELECT r.canonical_id,
+           r.display_name,
+           r.orcid,
+           r.openalex_id,
+           r.google_scholar_id,
+           r.homepage_url,
+           r.affiliation,
            r.affiliation_ror,
            r.affiliation_country,
+           r.is_team,
+           r.is_site_personnel,
+           r.is_scholar,
+           r.person_id,
+           r.scholar_id,
            r.works_count,
            r.cited_by_count,
+           r.h_index,
+           r.i10_index,
            r.coastal_works_count,
-           r.is_team,
-           r.is_scholar,
-           COALESCE(rr.reg_degree, 0)                         AS reg_degree,
-           p.research_interests,
-           p.bio,
-           g.primary_area_id,
-           ra.label                            AS primary_area_label,
-           COALESCE(pub.n_pubs, 0)             AS n_pubs,
-           COALESCE(pub.total_citations, 0)    AS total_citations,
-           COALESCE(pa.h_index, 0)             AS h_index,
-           COALESCE(pco.n_coauth, 0)           AS n_coauth,
-           COALESCE(pa.composite_z, 0)         AS composite_z,
-           COALESCE(pf.facility_funding_usd, 0) AS facility_funding_usd,
-           paa.areas                           AS areas,
-           pa2.affiliations                    AS affiliations
-    FROM   people p
-    LEFT JOIN person_primary_groups g  ON g.person_id  = p.person_id
-    LEFT JOIN research_areas       ra  ON ra.area_id   = g.primary_area_id
-    LEFT JOIN per_pa               pa  ON pa.person_id = p.person_id
-    LEFT JOIN per_pub              pub ON pub.person_id = p.person_id
-    LEFT JOIN per_coauth           pco ON pco.person_id = p.person_id
-    LEFT JOIN per_pa_areas         paa ON paa.person_id = p.person_id
-    LEFT JOIN per_fund             pf  ON pf.person_id = p.person_id
-    LEFT JOIN per_aff              pa2 ON pa2.person_id = p.person_id
-    LEFT JOIN reg                  r   ON r.person_id  = p.person_id
-    LEFT JOIN reg_reach            rr  ON rr.canonical_id = r.canonical_id
+           r.coastal_share,
+           r.first_pub_year,
+           r.tier,
+           r.tier_rank,
+           r.source,
+           r.source_url,
+           r.confidence,
+           rc.reg_degree,
+           rc.co_pub_total,
+           rc.top_co_pubs,
+           rc.to_team,
+           rc.to_site,
+           rc.to_scholars,
+           s.n_sites,
+           s.site_names
+    FROM person_registry r
+    LEFT JOIN reach rc ON rc.canonical_id = r.canonical_id
+    LEFT JOIN sites s  ON s.canonical_id  = r.canonical_id
+    ORDER BY r.tier_rank
   `;
-  const r = await conn.query(sql);
-  return r.toArray().map((row) => numify(row.toJSON()));
+  const res = await conn.query(sql);
+  return res.toArray().map((row) => {
+    const r = unwrapRow(row.toJSON());
+    r._nflags = (r.is_team ? 1 : 0) + (r.is_site_personnel ? 1 : 0)
+              + (r.is_scholar ? 1 : 0);
+    // Precomputed search haystack: rebuilding this per keystroke over
+    // 10,000 rows is the one thing in this view that would actually be
+    // slow.
+    r._hay = [r.display_name, r.affiliation, r.affiliation_country,
+              r.orcid, r.openalex_id, r.site_names]
+      .filter(Boolean).join(' ').toLowerCase();
+    return r;
+  });
 }
 
-
-// Cohort membership, from person_registry. A directory person can also be
-// on the COD team or in the field-wide scholar roster; before the registry
-// existed those were separate tables with no shared key, so the same human
-// appeared two or three times with no way to tell.
-function cohortChips(p) {
-  const chips = [];
-  if (p.is_team) chips.push('<span class="ppl-cohort ppl-cohort-team">COD team</span>');
-  if (p.is_scholar) chips.push('<span class="ppl-cohort ppl-cohort-scholar">Scholar roster</span>');
-  return chips.join('');
+function cohortChips(r) {
+  const out = [];
+  if (r.is_team) out.push('<span class="reg-chip reg-chip-team">COD team</span>');
+  if (r.is_site_personnel) out.push('<span class="reg-chip reg-chip-site">Site personnel</span>');
+  if (r.is_scholar) out.push('<span class="reg-chip reg-chip-scholar">Scholar roster</span>');
+  return out.join('');
 }
 
-function cardHtml(p) {
-  const urls = [];
-  if (p.homepage_url) urls.push(`<a href="${esc(p.homepage_url)}" target="_blank" rel="noopener">homepage</a>`);
-  if (p.orcid)        urls.push(`<a href="https://orcid.org/${esc(p.orcid)}" target="_blank" rel="noopener">ORCID</a>`);
-  if (p.openalex_id)  urls.push(`<a href="https://openalex.org/${esc(p.openalex_id)}" target="_blank" rel="noopener">OpenAlex</a>`);
-  if (p.google_scholar_id) urls.push(`<a href="https://scholar.google.com/citations?user=${esc(p.google_scholar_id)}" target="_blank" rel="noopener">Google&nbsp;Scholar</a>`);
+function idLinks(r) {
+  const links = [];
+  if (r.homepage_url) {
+    links.push(`<a href="${esc(r.homepage_url)}" target="_blank" rel="noopener">Homepage</a>`);
+  }
+  if (r.orcid) {
+    links.push(`<a href="https://orcid.org/${esc(r.orcid)}" target="_blank" rel="noopener">ORCID</a>`);
+  }
+  if (r.openalex_id) {
+    links.push(`<a href="https://openalex.org/${esc(r.openalex_id)}" target="_blank" rel="noopener">OpenAlex</a>`);
+  }
+  if (r.google_scholar_id) {
+    links.push(`<a href="https://scholar.google.com/citations?user=${esc(r.google_scholar_id)}" target="_blank" rel="noopener">Scholar</a>`);
+  }
+  if (r.affiliation_ror) {
+    links.push(`<a href="https://ror.org/${esc(r.affiliation_ror)}" target="_blank" rel="noopener">ROR</a>`);
+  }
+  if (r.source_url) {
+    links.push(`<a href="${esc(r.source_url)}" target="_blank" rel="noopener">Source</a>`);
+  }
+  return links;
+}
 
-  // affiliations / areas may come back as null when a person has no
-  // facility_personnel or no person_area_metrics rows. unwrapRow in
-  // db.js handles the Arrow → plain JS conversion + drops null list
-  // entries, but we still defend here against partial structs (e.g. a
-  // list element that's an empty {} from a quirky DuckDB-Wasm decode).
-  const affRaw = (Array.isArray(p.affiliations) ? p.affiliations : [])
-    .filter((a) => a && (a.role || a.facility || a.title));
-  const areaRaw = (Array.isArray(p.areas) ? p.areas : [])
-    .filter((a) => a && (a.area || a.area_id));
-  const aff = affRaw.slice(0, 4).map((a) => `
-    <li>
-      <strong>${esc(a.role || '—')}</strong>
-      ${a.title ? ` · ${esc(a.title)}` : ''}
-      <br><small>${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.facility || '')}</a>` : esc(a.facility || '')}${a.country ? ` <span class="ppl-flag">${esc(a.country)}</span>` : ''}</small>
-    </li>`).join('');
-  const moreAff = affRaw.length > 4
-    ? `<li class="ppl-more">+${affRaw.length - 4} more</li>` : '';
+// Co-authorship reach. Three states, deliberately worded apart:
+//   - edges computed and present
+//   - no edges computed for this person (the graph was built over the 618
+//     pre-harvest identities, so most core-tier people fall here)
+// "Not computed" is not the same claim as "has no collaborators", and the
+// UI must not collapse the two.
+function reachHtml(r) {
+  if (r.reg_degree == null) {
+    return `<p class="reg-reach reg-reach-none">
+      Co-authorship not computed for this person — the co-publication graph
+      covers the pre-harvest identities, not the whole shipped roster. This
+      is not a finding that they publish alone.
+    </p>`;
+  }
+  const parts = [
+    `<span><strong>${fmtInt(r.reg_degree)}</strong> co-authors in the registry</span>`,
+  ];
+  if (r.co_pub_total != null) {
+    parts.push(`<span><strong>${fmtInt(r.co_pub_total)}</strong> co-authored works</span>`);
+  }
+  const to = [];
+  if (r.to_team) to.push(`${fmtInt(r.to_team)} on the COD team`);
+  if (r.to_site) to.push(`${fmtInt(r.to_site)} at catalogued sites`);
+  if (r.to_scholars) to.push(`${fmtInt(r.to_scholars)} in the scholar roster`);
+  if (to.length) parts.push(`<span class="reg-reach-split">${esc(to.join(' · '))}</span>`);
+  return `<p class="reg-reach">${parts.join('')}</p>`;
+}
 
-  const areas = areaRaw.slice(0, 6).map((a) => `
-    <li>
-      <span class="ppl-area-label">${esc(a.area || a.area_id || '')}</span>
-      <small>${fmtInt(a.n_pubs)} pubs · ${fmtInt(a.citations)} citations · h ${fmtInt(a.h)}</small>
-    </li>`).join('');
+function siteHtml(r) {
+  if (!r.n_sites) {
+    return `<p class="reg-site reg-site-none">No catalogued site — this
+      person's ROR does not match an organisation in the facilities
+      catalogue, so they cannot be placed at a physical location.</p>`;
+  }
+  return `<p class="reg-site">At <strong>${fmtInt(r.n_sites)}</strong>
+    catalogued site${r.n_sites > 1 ? 's' : ''}: ${esc(r.site_names)}</p>`;
+}
+
+function metricsHtml(r) {
+  const cells = [
+    [fmtInt(r.works_count), 'works'],
+    [fmtInt(r.cited_by_count), 'citations'],
+    [fmtInt(r.h_index), 'h-index'],
+    [fmtInt(r.i10_index), 'i10'],
+    // coastal_works_count is an upper bound, not a distinct-paper count:
+    // OpenAlex lists a work under every topic it carries, so a paper with
+    // three coastal topics is counted three times. Labelled as volume,
+    // never as papers.
+    [fmtInt(r.coastal_works_count), 'coastal output volume'],
+  ];
+  if (r.first_pub_year != null) cells.push([fmtInt(r.first_pub_year), 'first pub.']);
+  return `<div class="reg-metrics">${cells.map(([v, k]) =>
+    `<span class="reg-metric"><strong>${v}</strong><br>${esc(k)}</span>`).join('')}</div>`;
+}
+
+function cardHtml(r) {
+  const links = idLinks(r);
+  const aff = [r.affiliation, r.affiliation_country].filter(Boolean).join(' · ');
+  return `
+    <article class="reg-card" data-cid="${esc(r.canonical_id)}">
+      <header class="reg-card-head">
+        <h3>${esc(r.display_name)}</h3>
+        <span class="reg-rank" title="Composite tier rank">#${fmtInt(r.tier_rank)}</span>
+        ${cohortChips(r)}
+      </header>
+      ${aff ? `<p class="reg-aff">${esc(aff)}</p>` : ''}
+      ${metricsHtml(r)}
+      ${reachHtml(r)}
+      ${siteHtml(r)}
+      <footer class="reg-foot">
+        ${links.length ? `<span class="reg-links">${links.join(' · ')}</span>` : ''}
+        <span class="reg-prov">
+          <span class="reg-conf reg-conf-${esc(r.confidence || 'unknown')}">${esc(r.confidence || 'confidence unrecorded')}</span>
+          ${r.source ? `<span class="reg-source">${esc(r.source)}</span>` : ''}
+        </span>
+      </footer>
+    </article>`;
+}
+
+const SORTS = {
+  rank      : (a, b) => (a.tier_rank || 1e9) - (b.tier_rank || 1e9),
+  name      : (a, b) => String(a.display_name).localeCompare(String(b.display_name)),
+  works     : (a, b) => (b.works_count || 0) - (a.works_count || 0),
+  citations : (a, b) => (b.cited_by_count || 0) - (a.cited_by_count || 0),
+  h_index   : (a, b) => (b.h_index || 0) - (a.h_index || 0),
+  coastal   : (a, b) => (b.coastal_works_count || 0) - (a.coastal_works_count || 0),
+  reach     : (a, b) => (b.reg_degree || 0) - (a.reg_degree || 0),
+};
+
+function recompute() {
+  const test = (COHORTS[_cohort] || COHORTS.all).test;
+  const q = _q.trim().toLowerCase();
+  let out = _rows.filter(test);
+  if (q) out = out.filter((r) => r._hay.includes(q));
+  out.sort(SORTS[_sort] || SORTS.rank);
+  _view = out;
+  const maxPage = Math.max(0, Math.ceil(_view.length / PAGE_SIZE) - 1);
+  if (_page > maxPage) _page = maxPage;
+}
+
+function shellHtml() {
+  const counts = Object.fromEntries(Object.entries(COHORTS)
+    .map(([k, c]) => [k, _rows.filter(c.test).length]));
+  const withReach = _rows.filter((r) => r.reg_degree != null).length;
+  const withSite = _rows.filter((r) => r.n_sites).length;
+
+  const chips = Object.entries(COHORTS).map(([k, c]) => `
+    <button class="reg-cohort${k === _cohort ? ' reg-cohort-on' : ''}" data-cohort="${k}">
+      ${esc(c.label)} <span class="reg-cohort-n">${fmtInt(counts[k])}</span>
+    </button>`).join('');
+
+  const sortOpts = [
+    ['rank', 'Composite rank (default)'],
+    ['name', 'Name (A→Z)'],
+    ['works', 'Works'],
+    ['citations', 'Citations'],
+    ['h_index', 'h-index'],
+    ['coastal', 'Coastal output volume'],
+    ['reach', 'Co-authors in registry'],
+  ].map(([v, label]) =>
+    `<option value="${v}"${_sort === v ? ' selected' : ''}>${esc(label)}</option>`).join('');
 
   return `
-  <article class="ppl-card" id="ppl-${esc(p.id)}" data-id="${esc(p.id)}">
-    <header class="ppl-card-head">
-      <h3>${esc(p.name)}</h3>
-      ${p.primary_area_label
-        ? `<span class="ppl-pchip">${esc(p.primary_area_label)}</span>`
-        : ''}
-      ${cohortChips(p)}
-    </header>
-    <div class="ppl-metrics">
-      <span class="ppl-metric"><strong>${fmtInt(p.n_pubs)}</strong><br>pubs</span>
-      <span class="ppl-metric"><strong>${fmtInt(p.total_citations)}</strong><br>citations</span>
-      <span class="ppl-metric"><strong>${fmtInt(p.h_index)}</strong><br>h-index</span>
-      <span class="ppl-metric"><strong>${fmtInt(p.n_coauth)}</strong><br>co-authors</span>
-      <span class="ppl-metric"><strong>${fmtUsd(p.facility_funding_usd)}</strong><br>funding base</span>
-    </div>
-    <div class="ppl-cols">
-      <div>
-        <h4>Affiliations</h4>
-        <ul class="ppl-aff">${aff || '<li class="ppl-none">No facility roles recorded.</li>'}${moreAff}</ul>
-      </div>
-      <div>
-        <h4>Research areas</h4>
-        <ul class="ppl-areas">${areas || '<li class="ppl-none">No publications mapped to a cod-kmap area.</li>'}</ul>
-      </div>
-    </div>
-    ${p.bio
-      ? `<div class="ppl-bio"><h4>Bio</h4><p>${esc(p.bio)}</p></div>`
-      : ''}
-    ${p.research_interests
-      ? `<div class="ppl-interests"><h4>Research interests</h4><p>${esc(p.research_interests)}</p></div>`
-      : ''}
-    ${urls.length ? `<footer class="ppl-links">${urls.join(' · ')}</footer>` : ''}
-  </article>`;
+    <div class="reg-page">
+      <header class="reg-header">
+        <h1>People</h1>
+        <p class="reg-summary">
+          Every person the site ships, in one list. The roster is
+          <code>person_registry</code>, which resolved the project team, the
+          personnel of catalogued sites, and the coastal-science scholar
+          roster onto persistent identifiers (ORCID / OpenAlex), so one human
+          is one row. Cohort is a filter below, not a separate tab.
+        </p>
+        <ul class="reg-caveats">
+          <li><strong>${fmtInt(_rows.length)}</strong> rows ship to the browser —
+            the <code>core</code> tier. The full registry holds
+            ${fmtInt(REGISTRY_TOTAL)} identities; the remainder exists only in
+            the local DuckDB build and is not queryable here.</li>
+          <li>Co-authorship is computed for <strong>${fmtInt(withReach)}</strong>
+            of ${fmtInt(_rows.length)}. The co-publication graph was built over
+            the pre-harvest identities, so for most people here it is
+            <em>not computed</em> — which is a different statement from
+            <em>none</em>.</li>
+          <li>Only <strong>${fmtInt(withSite)}</strong> have a ROR match to an
+            organisation in the facilities catalogue; the rest cannot be
+            placed at a physical location.</li>
+          <li>&ldquo;Coastal output volume&rdquo; is an upper bound, not a paper
+            count: OpenAlex lists a work under every topic it carries, so a
+            paper with several coastal topics is counted several times.</li>
+          <li>The COD work-breakdown structure is a management hierarchy, not
+            a roster filter — it lives on the
+            <a href="#/org">Org chart</a> tab.</li>
+        </ul>
+        <div class="reg-controls">
+          <div class="reg-cohorts">${chips}</div>
+          <input id="reg-q" type="search" value="${esc(_q)}"
+                 placeholder="Search name, affiliation, country, ORCID, OpenAlex id…">
+          <label>Sort by:
+            <select id="reg-sort">${sortOpts}</select>
+          </label>
+        </div>
+        <p class="reg-count" id="reg-count"></p>
+      </header>
+      <div id="reg-notice-slot"></div>
+      <div class="reg-grid" id="reg-grid"></div>
+      <div class="reg-pager" id="reg-pager"></div>
+    </div>`;
 }
 
+function paint() {
+  const grid = _container.querySelector('#reg-grid');
+  const countEl = _container.querySelector('#reg-count');
+  const pager = _container.querySelector('#reg-pager');
+  if (!grid) return;
 
-function applyFilterSort(people) {
-  const q = _qFilter.trim().toLowerCase();
-  let rows = q
-    ? people.filter((p) => {
-        const aff = (Array.isArray(p.affiliations) ? p.affiliations : [])
-          .filter((a) => a);
-        const hay = [
-          p.name, p.primary_area_label,
-          ...aff.map((a) => a.facility || ''),
-          ...aff.map((a) => a.role || ''),
-        ].join(' ').toLowerCase();
-        return hay.includes(q);
-      })
-    : people.slice();
+  const slot = _container.querySelector('#reg-notice-slot');
+  if (slot) {
+    slot.innerHTML = _unresolved
+      ? unresolvedHtml(_unresolved.id, _unresolved.hit) : '';
+  }
 
-  const cmp = {
-    composite : (a, b) => (b.composite_z || 0) - (a.composite_z || 0),
-    name      : (a, b) => String(a.name).localeCompare(String(b.name)),
-    pubs      : (a, b) => (b.n_pubs || 0) - (a.n_pubs || 0),
-    citations : (a, b) => (b.total_citations || 0) - (a.total_citations || 0),
-    coauthors : (a, b) => (b.n_coauth || 0) - (a.n_coauth || 0),
-    funding   : (a, b) => (b.facility_funding_usd || 0) - (a.facility_funding_usd || 0),
-  }[_sort] || ((a, b) => (b.composite_z || 0) - (a.composite_z || 0));
-  rows.sort(cmp);
-  return rows;
+  const start = _page * PAGE_SIZE;
+  const page = _view.slice(start, start + PAGE_SIZE);
+  grid.innerHTML = page.length
+    ? page.map(cardHtml).join('')
+    : '<p class="reg-empty">No one matches this filter.</p>';
+
+  if (countEl) {
+    const shown = page.length
+      ? `${fmtInt(start + 1)}–${fmtInt(start + page.length)}`
+      : '0';
+    countEl.innerHTML = `Showing <strong>${shown}</strong> of
+      <strong>${fmtInt(_view.length)}</strong>
+      ${_view.length === _rows.length ? '' : `(filtered from ${fmtInt(_rows.length)})`}`;
+  }
+
+  if (pager) {
+    const nPages = Math.max(1, Math.ceil(_view.length / PAGE_SIZE));
+    pager.innerHTML = nPages > 1 ? `
+      <button data-page="first" ${_page === 0 ? 'disabled' : ''}>&laquo; First</button>
+      <button data-page="prev"  ${_page === 0 ? 'disabled' : ''}>&lsaquo; Prev</button>
+      <span class="reg-pageno">Page ${fmtInt(_page + 1)} of ${fmtInt(nPages)}</span>
+      <button data-page="next" ${_page >= nPages - 1 ? 'disabled' : ''}>Next &rsaquo;</button>
+      <button data-page="last" ${_page >= nPages - 1 ? 'disabled' : ''}>Last &raquo;</button>` : '';
+    for (const btn of pager.querySelectorAll('button[data-page]')) {
+      btn.addEventListener('click', () => {
+        const nP = Math.max(1, Math.ceil(_view.length / PAGE_SIZE));
+        const to = { first: 0, prev: _page - 1, next: _page + 1, last: nP - 1 }[btn.dataset.page];
+        _page = Math.min(Math.max(0, to), nP - 1);
+        paint();
+        const head = _container.querySelector('.reg-header');
+        if (head) head.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  }
+
+  if (_focus) {
+    for (const card of grid.querySelectorAll('.reg-card')) {
+      if (card.dataset.cid === _focus) {
+        card.classList.add('reg-card-active');
+        requestAnimationFrame(() => card.scrollIntoView({
+          behavior: 'smooth', block: 'center',
+        }));
+        break;
+      }
+    }
+  }
 }
 
+function wireShell() {
+  for (const btn of _container.querySelectorAll('.reg-cohort')) {
+    btn.addEventListener('click', () => {
+      _cohort = btn.dataset.cohort;
+      _page = 0;
+      _focus = null;
+      _unresolved = null;
+      for (const b of _container.querySelectorAll('.reg-cohort')) {
+        b.classList.toggle('reg-cohort-on', b.dataset.cohort === _cohort);
+      }
+      recompute();
+      paint();
+    });
+  }
+  // Only the grid, the count and the pager are re-rendered on a state
+  // change, so the search input survives and keeps focus and caret — no
+  // focus-restore dance is needed here.
+  const qEl = _container.querySelector('#reg-q');
+  if (qEl) {
+    qEl.addEventListener('input', (ev) => {
+      _q = ev.target.value;
+      _page = 0;
+      _focus = null;
+      _unresolved = null;
+      recompute();
+      paint();
+    });
+  }
+  const sEl = _container.querySelector('#reg-sort');
+  if (sEl) {
+    sEl.addEventListener('change', (ev) => {
+      _sort = ev.target.value;
+      _page = 0;
+      recompute();
+      paint();
+    });
+  }
+}
 
-let _cachedPeople = null;
+// Resolve a deep-link id against every identifier the old routes used:
+// canonical_id (this view), person_id (#/people/<person_id> from the
+// Network tab and the org chart) and scholar_id (#/scholars/<scholar_id>).
+function resolveId(id) {
+  if (!id) return null;
+  const hit = _rows.find((r) => r.canonical_id === id)
+           || _rows.find((r) => r.person_id === id)
+           || _rows.find((r) => r.scholar_id === id);
+  return hit || null;
+}
 
-async function renderDirectory(targetId) {
+// A deep link can name someone who has no registry row. person_registry is
+// keyed on a persistent identifier, and only 185 of the 280 rows in `people`
+// (and 442 of the 523 in community_scholars) resolved one — so the Network
+// tab, which links every node it draws, can hand us a person_id that is
+// genuinely absent here. Look the name up in the narrow source tables and
+// say so, rather than dropping the visitor on an unfiltered roster with no
+// explanation. Parameterised: the id comes out of the URL hash.
+async function lookupUnresolved(id) {
+  const conn = getConn();
+  if (!conn) return null;
+  try {
+    const prepared = await conn.prepare(`
+      SELECT name AS display_name, 'people' AS src FROM people WHERE person_id = ?
+      UNION ALL
+      SELECT name, 'community_scholars' FROM community_scholars WHERE scholar_id = ?
+      LIMIT 1`);
+    const res = await prepared.query(id, id);
+    const rows = res.toArray().map((r) => unwrapRow(r.toJSON()));
+    return rows.length ? rows[0] : null;
+  } catch (e) {
+    console.warn('[people] legacy id lookup failed', e);
+    return null;
+  }
+}
+
+function unresolvedHtml(id, hit) {
+  const who = hit
+    ? `<strong>${esc(hit.display_name)}</strong> is in the
+       <code>${esc(hit.src)}</code> table but`
+    : `The id <code>${esc(id)}</code>`;
+  return `<div class="reg-notice">
+    ${who} has no row in <code>person_registry</code>: no ORCID or OpenAlex
+    identifier was resolved for them, and the registry is keyed on a
+    persistent id. They are therefore not in the roster below — that is a
+    gap in identity resolution, not evidence they do not exist.
+    <a href="#/people">Show the full roster</a>.
+  </div>`;
+}
+
+async function render(target) {
   if (!_container) return;
-  const status = _container.querySelector('.ppl-status');
-  if (status) status.textContent = 'Loading…';
 
-  if (!_cachedPeople) {
+  if (!_rows) {
     try {
-      _cachedPeople = await fetchPeople();
+      _rows = await fetchRoster();
     } catch (e) {
-      if (status) status.textContent = `Failed to load: ${e.message}`;
+      _container.innerHTML = `<div class="reg-page"><p class="no-data">
+        Failed to load the person registry: ${esc(e.message)}</p></div>`;
       console.error(e);
       return;
     }
   }
+  if (!_rows.length) {
+    _container.innerHTML = `<div class="reg-page"><p class="no-data">
+      person_registry is empty. Run
+      <code>python scripts/build_person_registry.py</code> then
+      <code>python scripts/export_parquet.py</code>.</p></div>`;
+    return;
+  }
 
-  const rows = applyFilterSort(_cachedPeople);
-  const cards = rows.map(cardHtml).join('');
-
-  _container.innerHTML = `
-    <div class="ppl-page">
-      <header class="ppl-header">
-        <h1>Researcher directory</h1>
-        <p class="ppl-summary">
-          <strong>${fmtInt(_cachedPeople.length)}</strong> researchers
-          across the cod-kmap dataset.
-          ${rows.length !== _cachedPeople.length
-             ? `Showing <strong>${fmtInt(rows.length)}</strong> after filter.` : ''}
-          Click into the Network knowledge map to see who appears in
-          which research-area polygon, or use search/sort below to drill
-          in here.
-        </p>
-        <div class="ppl-controls">
-          <input id="ppl-q" type="search" placeholder="Search name, affiliation, role…" value="${esc(_qFilter)}">
-          <label>Sort by:
-            <select id="ppl-sort">
-              <option value="composite"${_sort === 'composite' ? ' selected' : ''}>Composite (default)</option>
-              <option value="name"${_sort === 'name' ? ' selected' : ''}>Name (A→Z)</option>
-              <option value="pubs"${_sort === 'pubs' ? ' selected' : ''}>Publications</option>
-              <option value="citations"${_sort === 'citations' ? ' selected' : ''}>Citations</option>
-              <option value="coauthors"${_sort === 'coauthors' ? ' selected' : ''}>Co-authors</option>
-              <option value="funding"${_sort === 'funding' ? ' selected' : ''}>Funding base</option>
-            </select>
-          </label>
-        </div>
-      </header>
-      <div class="ppl-grid">${cards}</div>
-      <p class="ppl-status" style="text-align:center;color:#64748b;padding:14px">Done.</p>
-    </div>`;
-
-  _container.querySelector('#ppl-q').addEventListener('input', (ev) => {
-    _qFilter = ev.target.value;
-    const caret = ev.target.selectionStart;
-    // The re-render replaces this input, so focus and caret must be restored
-    // on its replacement or only one character can be typed.
-    renderDirectory(null).then(() => restoreFocus('#ppl-q', caret));
-  });
-  _container.querySelector('#ppl-sort').addEventListener('change', (ev) => {
-    _sort = ev.target.value;
-    renderDirectory(null);
-  });
-
-  if (targetId) {
-    const el = _container.querySelector(`#ppl-${CSS.escape(targetId)}`);
-    if (el) {
-      el.classList.add('ppl-card-active');
-      requestAnimationFrame(() => el.scrollIntoView({
-        behavior: 'smooth', block: 'start',
-      }));
+  // A deep link has to land on the page the person is actually on, which
+  // depends on the active sort — so resolve the row, clear the cohort
+  // filter (the target may not be in it) and compute the page index.
+  _focus = null;
+  _unresolved = null;
+  if (target) {
+    const hit = resolveId(target);
+    if (hit) {
+      _focus = hit.canonical_id;
+      _cohort = 'all';
+    } else {
+      _unresolved = { id: target, hit: await lookupUnresolved(target) };
     }
   }
-  _renderedOnce = true;
-}
 
+  if (!_shellBuilt) {
+    _container.innerHTML = shellHtml();
+    wireShell();
+    _shellBuilt = true;
+  } else {
+    // Keep the shell (and the search box) but resync the cohort chips,
+    // which a redirected legacy route may have changed.
+    for (const b of _container.querySelectorAll('.reg-cohort')) {
+      b.classList.toggle('reg-cohort-on', b.dataset.cohort === _cohort);
+    }
+  }
+
+  recompute();
+  if (_focus) {
+    const idx = _view.findIndex((r) => r.canonical_id === _focus);
+    if (idx >= 0) _page = Math.floor(idx / PAGE_SIZE);
+  }
+  paint();
+}
 
 export function initPeopleView(container) {
   _container = container;
   _container.innerHTML = `
-    <div class="ppl-page">
-      <p class="ppl-status" style="padding:24px;color:#64748b">
-        Researcher directory loading…
-      </p>
+    <div class="reg-page">
+      <p class="reg-loading">Person registry loading…</p>
     </div>`;
 }
 
-// renderPeopleView(targetId) — call with a person_id when navigating
-// from #/people/<id>; without one for the plain directory view.
+// Preselect a cohort before navigation — used by the retired #/team and
+// #/scholars routes, which redirect here.
+export function setPeopleCohort(name) {
+  if (COHORTS[name]) {
+    _cohort = name;
+    _page = 0;
+  }
+}
+
+// renderPeopleView(targetId) — targetId is a canonical_id, person_id or
+// scholar_id to highlight; pass null for the plain roster.
 export function renderPeopleView(targetId) {
   if (!_container) return;
-  renderDirectory(targetId).catch((e) => {
+  render(targetId).catch((e) => {
     console.error('[people] render failed', e);
-    const s = _container.querySelector('.ppl-status');
-    if (s) s.textContent = `Render failed: ${e.message}`;
   });
 }
