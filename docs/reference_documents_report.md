@@ -172,15 +172,25 @@ filterable via a "COD Team" facet in the People view.
 > **Built, 2026-07-26**, as its own **Team** tab rather than a facet on
 > the People view. The org chart is a hierarchy — seven WBS tracks, a
 > leadership committee, and unfilled positions — and a flat filtered card
-> grid could not show that structure. The 41 named members are still
+> grid could not show that structure. The 40 named members are still
 > synced into `people`, so they appear in the researcher directory too and
 > the existing OpenAlex/ORCID enrichment scripts pick them up.
 >
 > A second, larger roster came out of the same work: `community_scholars`
-> holds 346 coastal-ocean-science researchers across the pre-eminent,
+> holds 523 coastal-ocean-science researchers across the pre-eminent,
 > most-active, and rising cohorts, rendered by the **Scholars** tab. That
 > one is deliberately a separate table from `people` — it is a
 > field-wide bibliometric cohort, not the staff of catalogued facilities.
+>
+> **Updated 2026-07-27.** Being separate tables no longer means being
+> unlinked. `person_registry` resolves the org chart, the facility staff
+> directory and the scholar roster into one identity space keyed on a
+> persistent identifier, so a person who belongs to more than one can be
+> recognised as one human and a co-publication graph can be computed
+> across all three at once. The original ask — the team visible alongside
+> the wider community, with the connections between them legible — is
+> satisfied by that table rather than by a facet on the People view. See
+> [The Person Registry](#/docs/person-registry).
 
 ## Lessons from WATERS
 

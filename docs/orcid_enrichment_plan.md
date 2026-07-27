@@ -28,11 +28,29 @@ A candidate ORCID is accepted only when **all** of the following hold:
 - The first given name matches (handles "Sarah" vs. "Sarah J." vs.
   "Sarah Jane").
 - The candidate's current or past employments include an organisation
-  whose name fuzzy-matches one of our facility records for that
-  person at ≥ 0.85 similarity.
+  that shares at least one **distinctive token** with one of our facility
+  records for that person — a proper noun or domain word, with generic
+  organisation vocabulary ("research", "university", "national",
+  "institute") stripped out first — and then clears the score threshold.
 - If multiple candidates pass the above, prefer the most recent
   employment, then the candidate already linked to one of our
   OpenAlex authors.
+
+The distinctive-token requirement is a gate, not a scoring term, and it
+exists because character-level similarity between two normalised
+organisation names sits in the same band for unrelated organisations as
+it does for the same one. An earlier version scored candidates on
+character similarity alone and accepted several employer-to-facility
+matches between organisations with nothing in common beyond shared
+letters. The character-level score is now averaged in at low weight
+rather than being able to carry a match by itself.
+
+Where only a name matches and no employment can be tested, acceptance
+requires that the name resolve to exactly **one** distinct ORCID. Two or
+more candidates are logged as ambiguous and left null — an earlier
+version promised this in a comment but in fact took the first candidate
+after a sort in which every candidate scored zero, which for common names
+meant picking arbitrarily among dozens of people.
 
 If no candidate satisfies every rule, no ORCID is recorded. A NULL
 identifier is preferable to a wrong one.
@@ -49,15 +67,28 @@ The ORCID Public API is free and requires no key:
 
 ## Coverage
 
-Roughly two thirds of the researchers in the dataset (~160 of 242)
-resolve to a verified ORCID. The remainder are typically:
+Coverage in the facility-staff directory is low: **49 of 280** `people`
+rows carry a verified ORCID. It was briefly higher, before an audit found
+identifiers already in the committed data that pointed at different
+people entirely and cleared them; the strict matcher above then declined
+to re-resolve most of those names. That is the intended trade. The
+un-linked rows are typically:
 
 - Reserve managers, programme directors, and similar administrative
   roles whose work doesn't appear in indexed journals.
 - Researchers who haven't claimed an ORCID record yet.
+- Researchers whose name is shared with enough other people that no
+  candidate can be distinguished safely.
 
 These rows stay un-linked rather than risk a wrong attribution. A
 periodic re-run picks up newly-claimed ORCIDs without manual work.
+
+ORCID coverage is far higher in `person_registry`, which draws
+identifiers from author records rather than resolving names: 86,620 of
+152,008 identities are keyed on an ORCID, 9,309 of the 10,000 rows served
+to the browser. Those are ORCIDs asserted by the bibliographic source on
+an author record, not resolutions this repository performed. See
+[The Person Registry](#/docs/person-registry).
 
 ## Audit trail
 

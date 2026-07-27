@@ -158,8 +158,17 @@ python scripts/compute_primary_groups.py     # MUST precede area_metrics
 python scripts/compute_area_metrics.py       # h-index, citations, composite_z
 python scripts/init_people_tables.py --export-parquet   # publications/authorship/topics
 python scripts/build_cod_team_lake.py        # re-snapshot people.parquet
+python scripts/build_person_registry.py      # unify the three layers on one key
+python scripts/compute_registry_collaborations.py   # cross-cohort co-pub edges
+python scripts/link_registry_facilities.py   # researcher ↔ site, on ROR equality
+python scripts/rank_person_registry.py       # assign core / archive tier
 python scripts/qa.py
 ```
+
+The four registry scripts run last, and in that order: the registry needs
+the three source layers populated before it can unify them, the graph and
+the facility links need the registry's node ids, and tiering scores
+collaboration degree so it has to follow the graph.
 
 Three things about that order are easy to get wrong, and were wrong in an
 earlier version of this page:
@@ -195,9 +204,21 @@ so at the foot of the page.
 science, who is publishing most in it right now, and who is coming up.
 
 It is deliberately a **separate table from `people`**. `people` is the
-staff of catalogued facilities; these 339 researchers mostly do not work
-at one, and mixing a bibliometric cohort into the facility directory would
+staff of catalogued facilities; these researchers mostly do not work at
+one, and mixing a bibliometric cohort into the facility directory would
 distort every per-facility metric on the Stats tab.
+
+**Separate table, but no longer a separate identity space.** Until the
+registry work, being separate tables also meant being unlinked: a
+researcher who was both facility staff and a roster scholar was two rows
+with two keys, and nothing in the schema could say they were one person.
+`person_registry` now resolves `people`, `cod_team_members` and
+`community_scholars` into one node set keyed on a persistent identifier,
+so cross-cohort questions — who on the project team already publishes
+with whom on the roster — are answerable. Eleven people turn out to hold
+more than one cohort flag. The source tables keep their own grain and
+their own columns; the registry adds the shared key. See
+[The Person Registry](#/docs/person-registry).
 
 ### Cohorts
 
@@ -219,17 +240,23 @@ for a surname beginning with A and read as a finding rather than an artifact.
 without its flag, ranks must be unique, and every *measured* row in a cohort
 must be ranked.
 
-**The curated roster is a candidate pool, not the final cohorts.** It holds
-339 names because a wider pool gives the harvest more to rank and makes it
-less likely that a genuinely leading researcher is missing entirely. The
-harvest then pins the cohorts to the sizes in `COHORTS` — 100 pre-eminent,
-100 most-active, 50 rising — so the measured roster is roughly 250 people,
-and `scripts/qa.py` enforces those sizes once measured rows exist. Until
-then the tab shows the full pool and says so.
+**The curated roster is a candidate pool, not the final cohorts.** A wide
+pool gives the harvest more to rank and makes it less likely that a
+genuinely leading researcher is missing entirely. The harvest then pins
+the cohorts to the sizes in `COHORTS` — 100 pre-eminent, 100 most-active,
+50 rising — and `scripts/qa.py` enforces those sizes once measured rows
+exist.
+
+The harvest has now run. The table holds **523 rows**, of which
+**220 carry harvested metrics**; 303 remain curated-only with null metrics.
+The 220 is the cohort total: 100 + 100 + 50 with 30 scholars holding both
+the pre-eminent and most-active designations. Curated-only rows are kept
+rather than dropped, and the tab labels them "bibliometrics pending"
+rather than rendering zeros.
 
 ### Two ways the table gets populated
 
-**Curated (what ships).** 339 scholars researched across ten sub-fields —
+**Curated (the seed).** Scholars researched by hand across ten sub-fields —
 physical oceanography, estuarine ecology, coastal geomorphology, sea
 level, blue carbon, HABs and water quality, ocean observing, coastal
 hazards and engineering, fisheries and MPAs, and the social dimension —
@@ -294,7 +321,9 @@ Two rules, both there because this repo has been burned before:
    total h-index after one coastal paper.
 
 A scholar is linked to an existing `people` row only on ORCID or
-`openalex_id` equality — never on name.
+`openalex_id` equality — never on name. The same rule governs
+`person_registry`, which is where that link is now materialised as a
+shared node id rather than left implicit.
 
 ### Curated and harvested rows reconcile
 

@@ -83,6 +83,9 @@ ENDPOINT_TYPES = {
     "erddap", "thredds", "opendap", "ogc-wms", "ogc-wfs", "ogc-api",
     "rest-api", "s3", "ftp", "portal", "doi", "stac",
 }
+# How a dataset → facility edge was established. Kept in sync with
+# METHOD_CONFIDENCE in scripts/link_dataset_facilities.py.
+DATASET_FACILITY_METHODS = {"canonical-name", "acronym", "network-id"}
 # Columns each new table must still have. Catches the drift that already
 # bit the people tables, where schema.sql and init_people_tables.py
 # disagreed about v_person_areas_enriched.
@@ -102,6 +105,10 @@ EXPECTED_COLUMNS = {
         "parent_dataset_id", "homepage_url",
     },
     "dataset_endpoints": {"dataset_id", "endpoint_type", "url", "auth_required"},
+    "dataset_facilities": {
+        "dataset_id", "facility_id", "role", "method", "confidence",
+        "evidence", "source", "source_url",
+    },
     "person_registry": {
         "canonical_id", "display_name", "orcid", "openalex_id",
         "is_team", "is_site_personnel", "is_scholar",
@@ -513,6 +520,63 @@ def check_datasets(conn, failures: list[str]) -> None:
         "GROUP BY 1 HAVING COUNT(*) > 1)").fetchone()[0]
     assert_true(dup_name == 0,
                 f"{dup_name} dataset name(s) appear more than once", failures)
+
+    check_dataset_facilities(conn, failures)
+
+
+def check_dataset_facilities(conn, failures: list[str]) -> None:
+    """The dataset → stewarding-facility edge.
+
+    Partial coverage is expected and is NOT a failure — a third of the
+    catalogue names agencies that `facilities` does not carry as rows. What
+    would be a failure is an edge to an entity that isn't there, an
+    unlabelled method/confidence, or a link to a protected area (a state
+    park does not steward an ERDDAP server, so such a match means the
+    matcher regressed into fuzzy territory).
+    """
+    if table_rows(conn, "dataset_facilities") <= 0:
+        return
+
+    orphan_ds = conn.execute(
+        "SELECT COUNT(*) FROM dataset_facilities l LEFT JOIN coastal_datasets d "
+        "ON d.dataset_id = l.dataset_id WHERE d.dataset_id IS NULL").fetchone()[0]
+    assert_true(orphan_ds == 0,
+                f"{orphan_ds} dataset_facilities row(s) reference an unknown dataset",
+                failures)
+
+    orphan_fac = conn.execute(
+        "SELECT COUNT(*) FROM dataset_facilities l LEFT JOIN facilities f "
+        "ON f.facility_id = l.facility_id WHERE f.facility_id IS NULL").fetchone()[0]
+    assert_true(orphan_fac == 0,
+                f"{orphan_fac} dataset_facilities row(s) reference an unknown facility",
+                failures)
+
+    bad_method = sorted({r[0] for r in conn.execute(
+        "SELECT DISTINCT method FROM dataset_facilities").fetchall()}
+        - DATASET_FACILITY_METHODS)
+    assert_true(not bad_method,
+                f"dataset_facilities method not in vocab: {bad_method}", failures)
+
+    bad_conf = sorted({r[0] for r in conn.execute(
+        "SELECT DISTINCT confidence FROM dataset_facilities").fetchall()}
+        - {"high", "medium", "low"})
+    assert_true(not bad_conf,
+                f"dataset_facilities confidence not in vocab: {bad_conf}", failures)
+
+    unsourced = conn.execute(
+        "SELECT COUNT(*) FROM dataset_facilities "
+        "WHERE source IS NULL OR evidence IS NULL").fetchone()[0]
+    assert_true(unsourced == 0,
+                f"{unsourced} dataset_facilities row(s) without source + evidence",
+                failures)
+
+    place_edge = conn.execute(
+        "SELECT COUNT(*) FROM dataset_facilities l JOIN facilities f "
+        "ON f.facility_id = l.facility_id "
+        "WHERE f.facility_type LIKE 'protected-area%'").fetchone()[0]
+    assert_true(place_edge == 0,
+                f"{place_edge} dataset(s) linked to a protected area rather than a "
+                f"research organisation", failures)
 
 
 def main() -> int:

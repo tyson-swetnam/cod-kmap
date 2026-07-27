@@ -79,6 +79,7 @@ LOAD_ORDER = [
     "community_scholars",
     "coastal_datasets",
     "dataset_endpoints",
+    "dataset_facilities",   # loads after both its endpoints exist
     # Unified person identity. person_registry loads before its dependants
     # so the qa.py orphan-edge and unsourced-row invariants see a complete
     # picture. All soft-ref, so no FK_FILTERS entries.

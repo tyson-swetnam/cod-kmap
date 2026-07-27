@@ -10,21 +10,41 @@ tiered approach, preferring deterministic sources over scraping.
 
 ## Tiered sources
 
-| Tier | Source            | Method                                | Coverage |
+| Tier | Source            | Method                                | Measured coverage |
 |-----:|-------------------|---------------------------------------|---------:|
-| 1    | OpenAlex          | `external_ids.scholar` field          | ~30–50%  |
-| 2    | ORCID             | `external-identifiers` block          | +10–20%  |
+| 1    | OpenAlex          | `ids.scholar` field                   | ~0%      |
+| 2    | ORCID             | `external-identifiers` block          | ~0%      |
 | 3    | Institutional homepage | Stored in `people.homepage_url`; reader follows the link | indirect |
-| 4    | Paid SerpAPI / scholar_author | JSON; reserved for high-value queries | optional |
+| 4    | Paid SerpAPI / scholar_author | JSON; reserved for high-value queries | not run |
 
-The first two tiers are deterministic, free, and run as part of the
-nightly enrichment pass. They cover roughly half of the researchers
-in the dataset.
+**The first two tiers have now been run, and they return almost nothing.**
+The projected coverage in an earlier version of this page — roughly half
+the directory — was an estimate, and it was wrong by two orders of
+magnitude. Measured results:
+
+| Table | Rows | With a Scholar id |
+|---|---:|---:|
+| `people` (facility staff) | 280 | 4 |
+| `community_scholars` (roster) | 523 | 12 |
+| `person_registry` (unified) | 152,008 | 12 |
+
+OpenAlex does not populate `ids.scholar` for the overwhelming majority of
+author records, and ORCID's external-identifiers block rarely carries one
+either. This is a property of the upstream sources, not a defect in the
+scripts: the field the tiers read is simply empty. The handful of ids
+that exist were hand-entered in the seed CSV for the PI and Co-PIs, not
+resolved.
+
+Anything approaching useful coverage would require a different source or a
+hand-curation pass. Until then, treat a missing Scholar link as the
+default state rather than as a gap to be explained.
 
 ## Schema
 
 ```
-people.google_scholar_id : VARCHAR
+people.google_scholar_id             : VARCHAR
+community_scholars.google_scholar_id : VARCHAR
+person_registry.google_scholar_id    : VARCHAR
 ```
 
 Format: the `user_id` segment of the Scholar URL, e.g.

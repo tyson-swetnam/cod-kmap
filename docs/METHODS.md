@@ -56,9 +56,10 @@ The live application has ten tabs:
 | Item | Count |
 |---|---:|
 | Facilities (federal, state, university, NGO, protected area) | 3,500+ |
-| Researchers in the People directory | 240+ |
-| COD project team members (Team tab) | 40 |
-| Coastal ocean science scholars (Scholars tab) | 339 |
+| Researchers in the People directory | 280 |
+| COD project team members (Team tab) | 40 named |
+| Coastal ocean science scholars (Scholars tab) | 523 |
+| Unified researcher identities served to the browser | 10,000 |
 | Curated coastal datasets (Data tab) | 72 |
 | Dataset access endpoints | 242 |
 | Networks / consortia | 32+ |
@@ -94,7 +95,33 @@ A summary:
   [Team, Scholars & Data](#/docs/team-scholars-datasets-methods).
 - **`community_scholars`** — a field-wide roster of coastal ocean
   science researchers across the pre-eminent, most-active, and rising
-  cohorts. Kept separate from `people`, which is facility staff.
+  cohorts. It remains a separate table from `people`, which is facility
+  staff, because the two have different grain and mixing a bibliometric
+  cohort into the facility directory would distort every per-facility
+  metric. The two are no longer unlinked, though: both resolve into
+  `person_registry` below.
+
+**Person identity**
+
+- **`person_registry`** — one row per human across all three of the
+  layers above (`people`, `cod_team_members`, `community_scholars`),
+  keyed on `canonical_id`, a persistent identifier of the form
+  `orcid:0000-…` or `openalex:A…`. Boolean flags `is_site_personnel`,
+  `is_team` and `is_scholar` record cohort membership, and a person can
+  carry more than one. Two rows merge only on ORCID or OpenAlex-id
+  equality — never on name. The browser receives the 10,000-row `core`
+  tier; the full local population is 152,008. See
+  [The Person Registry](#/docs/person-registry).
+- **`person_identity_source`** — one row per identifier assertion, with
+  the rule that produced it, its evidence, and a confidence rating.
+  Refusals and conflicts are recorded here rather than guessed at.
+- **`registry_collaborations`** — co-publication edges over the registry
+  node set. Unlike `collaborations`, which is keyed on
+  `people(person_id)`, it can express an edge between a team member and
+  a roster scholar. Computed over the 618 pre-harvest identities, so
+  most registry rows have no edge yet.
+- **`registry_facilities`** — researcher ↔ facility links, joined on
+  `facilities.ror` = `person_registry.affiliation_ror`.
 - **`coastal_datasets`** + **`dataset_endpoints`** — the curated
   dataset catalogue and its ERDDAP / THREDDS / OPeNDAP / OGC / REST /
   S3 / STAC access endpoints.
@@ -204,7 +231,18 @@ Parquets loaded into the browser DuckDB:
 `regions`, `region_area_links`, `facility_regions`,
 `people`, `facility_personnel`, `person_areas`, `person_area_metrics`,
 `person_primary_groups`, `publications`, `authorship`,
-`publication_topics`, `collaborations`, `provenance`.
+`publication_topics`, `collaborations`, `provenance`,
+`person_registry`, `person_identity_source`,
+`registry_collaborations`, `registry_facilities`.
+
+Note that the registry parquet in `public/parquet/` is not the whole
+table. Only the 10,000-row `core` tier is served to the browser, along
+with the collaboration edges and facility links whose endpoints are both
+in that tier. The full 152,008-row population lives in `db/parquet/` and
+is queryable only against a local DuckDB — so any count read off the
+site's SQL tab is a count within the core tier, not within the field.
+[The Person Registry](#/docs/person-registry) explains what that
+selection is and is not.
 
 ## Deduplication
 

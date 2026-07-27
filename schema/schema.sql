@@ -726,6 +726,29 @@ CREATE OR REPLACE TABLE dataset_endpoints (
     PRIMARY KEY (dataset_id, endpoint_type, url)
 );
 
+-- Which catalogued facility stewards which dataset. Derived offline by
+-- scripts/link_dataset_facilities.py from coastal_datasets.provider /
+-- .program / .network_id against facilities.canonical_name / .acronym —
+-- no API call, no fuzzy matching. Registered in src/db.js `tables`.
+--
+-- A dataset legitimately has several rows: a regional association and its
+-- host institution both steward the same feed, and `role` distinguishes
+-- them. Only 39 of 72 datasets resolve — the rest name agencies that are
+-- not rows in `facilities` (NASA centres, EPA, EU/UN bodies), so this
+-- table is a partial index of stewardship, never a complete one.
+CREATE OR REPLACE TABLE dataset_facilities (
+    dataset_id      VARCHAR NOT NULL,              -- soft ref coastal_datasets(dataset_id)
+    facility_id     VARCHAR NOT NULL,              -- soft ref facilities(facility_id)
+    role            VARCHAR,                       -- steward | operator | host | archive | distributor | network
+    method          VARCHAR NOT NULL,              -- canonical-name | acronym | network-id
+    confidence      VARCHAR NOT NULL,              -- high | medium | low
+    evidence        VARCHAR,                       -- the matched text, for review
+    source          VARCHAR,                       -- 'derived:link_dataset_facilities'
+    source_url      VARCHAR,                       -- carried from the dataset record
+    retrieved_at    DATE,
+    PRIMARY KEY (dataset_id, facility_id, role)
+);
+
 -- COD team rollup: org-chart position joined to scholarly identity.
 -- Mirrored in src/db.js helperViews (views don't survive parquet export).
 CREATE OR REPLACE VIEW v_cod_team_enriched AS
