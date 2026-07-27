@@ -6,6 +6,27 @@
 // funding_links, region_area_links). Includes a handful of curated
 // queries the user can click to preview interesting slices of the
 // cod-kmap schema.
+//
+// The registry queries at the end of EXAMPLES run over the unified
+// person layer (person_registry, registry_collaborations,
+// registry_facilities, person_identity_source). Two things about those
+// tables shape every query written against them:
+//
+//   1. TIERING. The browser is served only `tier='core'` — 10,000 of
+//      152,008 identities. Every count a registry query returns here is
+//      a count within the core tier, not within the field. The console
+//      surfaces the tier split explicitly (see 'registry-tier-split')
+//      so the number is visible rather than implied.
+//   2. GRAPH SCOPE. `registry_collaborations` was computed over the 618
+//      pre-harvest identities, so most core-tier researchers carry no
+//      edge at all. Degree 0 means "not measured", never "publishes
+//      alone" — 'registry-degree-distribution' names that band as such
+//      rather than folding it in with genuinely low-degree nodes.
+//
+// `coastal_works_count` is an upper bound on distinct coastal papers,
+// not a count: OpenAlex lists a work under every topic it carries, so
+// summing over the coastal topic set double-counts multi-topic papers.
+// Registry queries label the column `coastal_volume` for that reason.
 
 import { getConn, whenReady, unwrapRow } from '../db.js';
 
@@ -246,6 +267,300 @@ GROUP  BY pa.name, pb.name, c.co_pub_count,
 ORDER  BY shared_pubs DESC
 LIMIT  50;`,
   },
+
+  // ── Unified person registry ────────────────────────────────────────
+  //
+  // Everything below runs over person_registry / registry_collaborations /
+  // registry_facilities / person_identity_source. Read the tiering and
+  // graph-scope notes at the top of this file before quoting any count
+  // these return: the browser holds the 10,000-row core tier, and the
+  // co-authorship graph covers 618 nodes, not all 152,008 identities.
+  {
+    id: 'registry-tier-split',
+    title: 'Registry: tier split',
+    description:
+      'The unified person registry holds 152,008 identities, but the browser is ' +
+      'served only the 10,000-row `core` tier — the whole COD roster plus the ' +
+      'highest-scoring coastal authors. Run this in the browser and you get one ' +
+      'row: `core`. Run it against the local DuckDB and you get two. Every other ' +
+      'registry query on this page is scoped to whichever set you are querying, ' +
+      'so this is the first thing worth checking.',
+    sql: `-- Registry tier split: what ships to the browser vs. what stays local
+SELECT tier,
+       COUNT(*)                                   AS identities,
+       ROUND(AVG(h_index), 1)                     AS avg_h_index,
+       ROUND(AVG(coastal_works_count), 1)         AS avg_coastal_volume,
+       COUNT(DISTINCT affiliation_country)        AS countries,
+       COUNT(orcid)                               AS with_orcid
+FROM   person_registry
+GROUP  BY tier
+ORDER  BY identities DESC;`,
+  },
+  {
+    id: 'registry-multi-cohort',
+    title: 'Registry: who spans more than one cohort',
+    description:
+      'The registry merges the three human layers — Team org chart, site ' +
+      'personnel, community scholars — on ORCID or OpenAlex id equality, never on ' +
+      'name. These 11 people hold more than one role at once, a fact the ' +
+      'pre-registry schema could not represent because each layer had its own ' +
+      'key.',
+    sql: `-- Researchers holding more than one cohort role at once
+SELECT pr.display_name                     AS researcher,
+       CONCAT_WS(' + ',
+         CASE WHEN pr.is_team           THEN 'Team'           END,
+         CASE WHEN pr.is_site_personnel THEN 'Site personnel' END,
+         CASE WHEN pr.is_scholar        THEN 'Scholar'        END) AS cohorts,
+       CAST(pr.is_team AS INT)
+     + CAST(pr.is_site_personnel AS INT)
+     + CAST(pr.is_scholar AS INT)          AS n_cohorts,
+       pr.affiliation,
+       pr.affiliation_country              AS country,
+       pr.orcid,
+       pr.h_index,
+       pr.coastal_works_count              AS coastal_volume,
+       pr.canonical_id
+FROM   person_registry pr
+WHERE  CAST(pr.is_team AS INT)
+     + CAST(pr.is_site_personnel AS INT)
+     + CAST(pr.is_scholar AS INT) > 1
+ORDER  BY n_cohorts DESC, pr.h_index DESC NULLS LAST, researcher;`,
+  },
+  {
+    id: 'registry-top-edges',
+    title: 'Registry: strongest co-publication edges',
+    description:
+      'The 50 heaviest co-publication edges over the registry node set, with each ' +
+      'endpoint\'s cohort. `shared_areas` and `shared_facilities` are sparse — ' +
+      'populated for 137 and 14 of 5,300 edges respectively — so most rows show ' +
+      'null there.',
+    sql: `-- Strongest co-publication edges over the registry node set
+SELECT a.display_name   AS person_a,
+       CASE WHEN a.is_team THEN 'Team'
+            WHEN a.is_site_personnel THEN 'Site personnel'
+            ELSE 'Scholar' END AS cohort_a,
+       b.display_name   AS person_b,
+       CASE WHEN b.is_team THEN 'Team'
+            WHEN b.is_site_personnel THEN 'Site personnel'
+            ELSE 'Scholar' END AS cohort_b,
+       e.co_pub_count   AS co_pubs,
+       e.first_year,
+       e.last_year,
+       e.shared_areas,
+       e.shared_facilities
+FROM   registry_collaborations e
+JOIN   person_registry a ON a.canonical_id = e.canonical_id_a
+JOIN   person_registry b ON b.canonical_id = e.canonical_id_b
+ORDER  BY e.co_pub_count DESC, person_a, person_b
+LIMIT  50;`,
+  },
+  {
+    id: 'registry-cohort-edge-census',
+    title: 'Registry: cross-cohort edge census',
+    description:
+      'Every edge classified by the cohort pair at its ends. This is the query ' +
+      'the old `collaborations` table structurally could not answer: it was keyed ' +
+      'on `people(person_id)`, so a Team↔Scholar edge had nowhere to live. Note ' +
+      'the Team↔Team row.',
+    sql: `-- Cross-cohort edge census. LEAST/GREATEST folds each unordered
+-- cohort pair onto one row (canonical_id_a < canonical_id_b orders the
+-- ids, not the roles, so Team<->Scholar and Scholar<->Team are one type).
+WITH labelled AS (
+  SELECT CASE WHEN a.is_team THEN 'Team'
+              WHEN a.is_site_personnel THEN 'Site personnel'
+              ELSE 'Scholar' END AS role_a,
+         CASE WHEN b.is_team THEN 'Team'
+              WHEN b.is_site_personnel THEN 'Site personnel'
+              ELSE 'Scholar' END AS role_b,
+         e.co_pub_count
+  FROM   registry_collaborations e
+  JOIN   person_registry a ON a.canonical_id = e.canonical_id_a
+  JOIN   person_registry b ON b.canonical_id = e.canonical_id_b
+)
+SELECT LEAST(role_a, role_b) || ' <-> ' || GREATEST(role_a, role_b) AS edge_type,
+       COUNT(*)                     AS edges,
+       SUM(co_pub_count)            AS co_pubs_total,
+       MAX(co_pub_count)            AS strongest_edge,
+       ROUND(AVG(co_pub_count), 1)  AS mean_co_pubs
+FROM   labelled
+GROUP  BY edge_type
+ORDER  BY edges DESC;`,
+  },
+  {
+    id: 'registry-team-internal-edges',
+    title: 'Registry: Team-internal co-authorship (all of it)',
+    description:
+      'Fourteen COD Team members share exactly one internal co-publication edge — ' +
+      'Bond-Lamberty↔Myers-Pigg, 18 papers, 2019–2026. One row is the complete ' +
+      'answer, not a truncated one. The Team\'s other 127 edges all reach outward, ' +
+      'to scholars and site personnel.',
+    sql: `-- Every co-authorship edge internal to the COD Team. There is one.
+SELECT a.display_name  AS team_member_a,
+       b.display_name  AS team_member_b,
+       e.co_pub_count  AS co_pubs,
+       e.first_year,
+       e.last_year
+FROM   registry_collaborations e
+JOIN   person_registry a ON a.canonical_id = e.canonical_id_a AND a.is_team
+JOIN   person_registry b ON b.canonical_id = e.canonical_id_b AND b.is_team
+ORDER  BY co_pubs DESC;`,
+  },
+  {
+    id: 'registry-site-roster-by-ror',
+    title: 'Registry: researchers at a given site (via ROR)',
+    description:
+      '`registry_facilities` links a researcher to a catalogued site when their ' +
+      'OpenAlex affiliation ROR equals `facilities.ror` — identifier equality ' +
+      'only, no name matching. Edit the acronym list to pick sites; delete the ' +
+      'WHERE clause for all of them. Only 69 of ~209 research organisations carry ' +
+      'a ROR so far, and the 3,310 protected areas never will — a state park is a ' +
+      'place, not an organisation.',
+    sql: `-- Researchers linked to a catalogued site by ROR equality.
+-- Swap the acronym in the WHERE clause, or delete the clause for all sites.
+SELECT f.canonical_name       AS site,
+       f.acronym,
+       f.ror,
+       pr.display_name        AS researcher,
+       pr.orcid,
+       pr.h_index,
+       pr.coastal_works_count AS coastal_volume,
+       pr.tier,
+       rf.method              AS link_method,
+       rf.confidence
+FROM   registry_facilities rf
+JOIN   facilities      f  ON f.facility_id   = rf.facility_id
+JOIN   person_registry pr ON pr.canonical_id = rf.canonical_id
+WHERE  f.acronym IN ('SIO', 'WHOI', 'MBARI')
+ORDER  BY site, pr.h_index DESC NULLS LAST, researcher;`,
+  },
+  {
+    id: 'registry-sites-ranked',
+    title: 'Registry: sites ranked by resolved researchers',
+    description:
+      'Which catalogued sites have the deepest researcher rosters resolved ' +
+      'through ROR. Counts are a floor, bounded by both ROR coverage on the ' +
+      'facility side and the core tier on the researcher side — the local DuckDB ' +
+      'resolves 1,467 links across 39 sites where the browser sees 263 across 26.',
+    sql: `-- Sites ranked by how many registry researchers resolve to their ROR
+SELECT f.canonical_name                AS site,
+       f.acronym,
+       f.ror,
+       f.country,
+       COUNT(DISTINCT rf.canonical_id) AS researchers,
+       ROUND(AVG(pr.h_index), 1)       AS avg_h_index,
+       SUM(pr.coastal_works_count)     AS coastal_volume_sum
+FROM   registry_facilities rf
+JOIN   facilities      f  ON f.facility_id   = rf.facility_id
+JOIN   person_registry pr ON pr.canonical_id = rf.canonical_id
+GROUP  BY f.canonical_name, f.acronym, f.ror, f.country
+ORDER  BY researchers DESC, site;`,
+  },
+  {
+    id: 'registry-identifier-coverage',
+    title: 'Registry: identifier coverage',
+    description:
+      'How many registry rows carry each persistent identifier. `pct` is against ' +
+      'the rows in scope, so it reads differently in the browser (core tier) than ' +
+      'locally (full population) — core-tier rows are far better identified ' +
+      'because tier scoring rewarded the same bibliometric completeness. Google ' +
+      'Scholar ids are nearly absent: OpenAlex does not populate `ids.scholar` ' +
+      'for most authors.',
+    sql: `-- Persistent-identifier coverage across the registry rows in scope
+SELECT 'ORCID' AS identifier, COUNT(orcid) AS populated, COUNT(*) AS rows_in_scope,
+       ROUND(100.0 * COUNT(orcid) / COUNT(*), 1) AS pct
+FROM   person_registry
+UNION ALL SELECT 'OpenAlex author id', COUNT(openalex_id), COUNT(*),
+       ROUND(100.0 * COUNT(openalex_id) / COUNT(*), 1) FROM person_registry
+UNION ALL SELECT 'ROR-bearing affiliation', COUNT(affiliation_ror), COUNT(*),
+       ROUND(100.0 * COUNT(affiliation_ror) / COUNT(*), 1) FROM person_registry
+UNION ALL SELECT 'Homepage URL', COUNT(homepage_url), COUNT(*),
+       ROUND(100.0 * COUNT(homepage_url) / COUNT(*), 1) FROM person_registry
+UNION ALL SELECT 'Google Scholar id', COUNT(google_scholar_id), COUNT(*),
+       ROUND(100.0 * COUNT(google_scholar_id) / COUNT(*), 1) FROM person_registry
+ORDER  BY populated DESC;`,
+  },
+  {
+    id: 'registry-orcid-conflicts',
+    title: 'Registry: ORCID conflicts awaiting curation',
+    description:
+      'Two cases where OpenAlex reports a different ORCID than the registry ' +
+      'holds. They are logged with `field=\'orcid-conflict\'` and deliberately NOT ' +
+      'applied — auto-merging on a contested identifier is how wrong-person ' +
+      'attributions get made. Both need a human to adjudicate.',
+    sql: `-- ORCID conflicts logged for curation, never auto-applied
+SELECT pis.canonical_id,
+       pr.display_name AS researcher,
+       pr.orcid        AS registry_orcid,
+       pis.value       AS conflicting_orcid,
+       pis.method,
+       pis.evidence,
+       pis.source_url,
+       pis.confidence
+FROM   person_identity_source pis
+LEFT   JOIN person_registry pr ON pr.canonical_id = pis.canonical_id
+WHERE  pis.field = 'orcid-conflict'
+ORDER  BY researcher NULLS LAST;`,
+  },
+  {
+    id: 'registry-identity-provenance',
+    title: 'Registry: identifier provenance by rule',
+    description:
+      'Every identifier in the registry names the rule that produced it. ' +
+      '`openalex-topic-harvest` is the bulk topic-filtered ingest; ' +
+      '`orcid-equality` and `openalex_id-equality` are the only two merge rules, ' +
+      'and they account for 17 assertions across 15 identities — merges are rare ' +
+      'by design.',
+    sql: `-- Provenance: which rule produced each identifier assertion
+SELECT pis.field,
+       pis.method,
+       pis.confidence,
+       COUNT(*)                         AS assertions,
+       COUNT(DISTINCT pis.canonical_id) AS identities
+FROM   person_identity_source pis
+GROUP  BY pis.field, pis.method, pis.confidence
+ORDER  BY assertions DESC;`,
+  },
+  {
+    id: 'registry-degree-distribution',
+    title: 'Registry: co-authorship degree bands',
+    description:
+      'Degree bands over the registry. The first band is the important one: the ' +
+      'co-authorship graph was built over the 618 pre-harvest identities, so the ' +
+      '9,490 core-tier researchers outside it have no edge COMPUTED — that is a ' +
+      'measurement boundary, not a finding about how they publish. Two of ' +
+      'fourteen Team members do sit inside the graph with zero edges, which is a ' +
+      'real zero.',
+    sql: `-- Co-authorship degree bands. The graph was built over the 618
+-- pre-harvest identities, so degree 0 means "no edge computed for this
+-- node", not "this researcher has no collaborators".
+WITH in_graph AS (
+  SELECT canonical_id_a AS canonical_id FROM registry_collaborations
+  UNION
+  SELECT canonical_id_b FROM registry_collaborations
+),
+deg AS (
+  SELECT pr.canonical_id,
+         pr.is_team,
+         g.canonical_id IS NOT NULL AS measured,
+         COUNT(e.canonical_id_a)    AS degree
+  FROM   person_registry pr
+  LEFT   JOIN in_graph g ON g.canonical_id = pr.canonical_id
+  LEFT   JOIN registry_collaborations e
+         ON  e.canonical_id_a = pr.canonical_id
+         OR  e.canonical_id_b = pr.canonical_id
+  GROUP  BY pr.canonical_id, pr.is_team, measured
+)
+SELECT CASE WHEN NOT measured   THEN 'not in graph (no edge computed)'
+            WHEN degree <= 5    THEN '1-5'
+            WHEN degree <= 20   THEN '6-20'
+            WHEN degree <= 50   THEN '21-50'
+            ELSE '51+' END                        AS degree_band,
+       COUNT(*)                                   AS researchers,
+       SUM(CASE WHEN is_team THEN 1 ELSE 0 END)   AS team_members
+FROM   deg
+GROUP  BY degree_band
+ORDER  BY MIN(CASE WHEN measured THEN degree ELSE -1 END);`,
+  },
 ];
 
 // ── State ───────────────────────────────────────────────────────────
@@ -354,10 +669,33 @@ export function initSqlView(container) {
           <ul class="sql-schema">
             <li>facilities · facility_types · locations</li>
             <li>networks · network_membership</li>
-            <li>research_areas · area_links</li>
+            <li>research_areas · research_areas_active · area_links</li>
             <li>regions · region_area_links · facility_regions</li>
-            <li>funders · funding_links</li>
+            <li>funders · funding_links · funding_events</li>
+            <li>people · facility_personnel · person_areas</li>
+            <li>publications · authorship · publication_topics · collaborations</li>
+            <li>cod_wbs · cod_team_members · community_scholars</li>
+            <li>coastal_datasets · dataset_endpoints</li>
+            <li>facility_primary_groups · person_primary_groups</li>
+            <li>person_area_metrics · facility_area_funding ·
+                funder_area_funding · area_coverage_matrix</li>
+            <li><strong>person_registry</strong> · person_identity_source</li>
+            <li><strong>registry_collaborations</strong> · registry_facilities</li>
           </ul>
+          <p class="sql-sub" style="font-size:.76rem">
+            The registry tables unify the Team, site-personnel and scholar
+            layers on one key per human (<code>canonical_id</code>). This
+            browser holds the <code>core</code> tier — <strong>10,000</strong>
+            of 152,008 identities — so registry counts here describe the
+            shipped subset, not the whole field. The co-authorship graph was
+            computed over 618 nodes, so a researcher with no edge is
+            <em>unmeasured</em>, not solitary.
+          </p>
+          <p class="sql-sub" style="font-size:.76rem">
+            Helper views: <code>v_facility_funding_by_year</code>,
+            <code>v_funder_funding_by_year</code>,
+            <code>v_facility_key_personnel</code>.
+          </p>
         </aside>
         <section class="sql-main">
           <p id="sql-description" class="sql-description"></p>

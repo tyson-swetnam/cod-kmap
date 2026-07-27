@@ -169,7 +169,20 @@ export async function initDB() {
     'community_scholars',
     // Curated dataset catalogue + access endpoints — written by
     // scripts/load_coastal_datasets.py. Drives src/views/datasets.js.
-    'coastal_datasets', 'dataset_endpoints',
+    // dataset_facilities is the dataset → stewarding-site edge, derived
+    // offline by scripts/link_dataset_facilities.py; it covers 39 of the
+    // 72 datasets, so the view must treat an absent edge as unresolved
+    // rather than as "no steward".
+    'coastal_datasets', 'dataset_endpoints', 'dataset_facilities',
+    // Unified person identity across the three human layers (people,
+    // cod_team_members, community_scholars) plus the co-publication graph
+    // over that node set — written by scripts/build_person_registry.py and
+    // scripts/compute_registry_collaborations.py. Only the 'core' tier ships
+    // here; the full population stays in the local DuckDB.
+    'person_registry', 'person_identity_source', 'registry_collaborations',
+    // Researcher ↔ catalogued-site links, joined on ROR equality — written
+    // by scripts/link_registry_facilities.py.
+    'registry_facilities',
   ];
   for (const t of tables) {
     const url = `${PARQUET_BASE}${t}.parquet`;

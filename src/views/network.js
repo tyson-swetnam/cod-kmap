@@ -59,6 +59,27 @@ let _dotFacSel = null;
 // polygons in the same area to reveal a single institution).
 let _facPolySel = null;
 
+// ── Registry (researcher) layer state ───────────────────────────────
+// The registry layer is OFF by default and its data is fetched lazily
+// the first time it is switched on, so the initial map paint costs
+// exactly what it costs today. See fetchRegistry() for the payload
+// accounting.
+let _showRegistry = false;
+let _registry = null;            // indexed result of fetchRegistry()
+let _registryPromise = null;     // in-flight fetch, so double-toggle is safe
+// Which catalogued site is currently expanded into individual
+// researcher nodes. null = no site selected (only site↔site ribbons
+// are drawn). Exactly one site is expanded at a time — this is the
+// gate that keeps 10,000 registry rows from ever becoming 10,000
+// markers.
+let _focusFacility = null;
+// Selections owned by the registry layer, captured so onZoom() can
+// counter-scale them and so a focus change can redraw only this layer.
+let _regRootG = null;
+let _regSiteLinkSel = null;
+let _regNodeSel = null;
+let _regNodeLinkSel = null;
+
 // 33-step palette for area polygons. Tuned for distinguishability
 // against a parchment background with low-alpha fills.
 const AREA_PALETTE = [
@@ -74,8 +95,31 @@ const AREA_PALETTE = [
 const NODE_COLORS = {
   facility: '#0d6e6e',
   person:   '#0ea5e9',
+  // Registry researchers are a THIRD colour, distinct from the
+  // facility-directory people already on the map (#0ea5e9). Amber
+  // reads clearly against both the teal facility markers and the
+  // low-alpha area fills, and is not used anywhere in AREA_PALETTE.
+  registry: '#b45309',
+  registryEdge: '#c2410c',
 };
 const NODE_RADIUS = { facility: 4, person: 3 };
+
+// Registry-layer tuning.
+//   FOCUS_NODE_CAP  — hard ceiling on researcher markers drawn for the
+//                     focused site. The largest site in registry_facilities
+//                     (Scripps) has 82 linked researchers; 48 keeps the
+//                     densest sub-polygon legible and the side panel lists
+//                     the remainder.
+//   SITE_LINK_MIN   — minimum co-publication total for a site↔site
+//                     ribbon. Left at 1 deliberately: the aggregate is
+//                     only 18 pairs, so there is no rendering reason to
+//                     drop any, and a threshold would silently delete
+//                     the six weight-1 pairs (six real site links)
+//                     without saying so anywhere in the UI. The knob
+//                     exists for when the registry grows; raising it
+//                     means adding a note to the layer that it is set.
+const FOCUS_NODE_CAP = 48;
+const SITE_LINK_MIN  = 1;
 
 // Layout tuning. Polygon area must be roughly proportional to area
 // weight (n_facilities), so we size the supernode squares as
@@ -266,6 +310,232 @@ async function fetchData() {
     p.primary_facility_id = primaryFacBy.get(p.id) || null;
   }
   return out;
+}
+
+
+// ── Registry data fetch (lazy — only on first layer switch-on) ───────
+//
+// PAYLOAD ACCOUNTING, measured off the shipped parquet footers rather
+// than guessed. person_registry.parquet is 1.00 MB, of which this view
+// reads 14 of 34 columns = 707 KB of column chunks; the 305 KB it does
+// NOT touch is source_url, tier_score, affiliation_ror,
+// two_yr_mean_citedness, i10_index, first_pub_year and the name parts.
+// person_identity_source.parquet is 324 KB but only canonical_id +
+// field are read = 107 KB, for the harvest-coverage flag.
+// registry_collaborations is 41 KB and registry_facilities 5.7 KB, both
+// read whole. Total ≈ 861 KB.
+//
+// That is why the layer is behind a switch instead of loading with the
+// map: it roughly doubles the view's cold-start bytes, and a session
+// that only wants the research-area cartogram should not pay for it.
+// duckdb-wasm requests parquet over HTTP range reads, so the unread
+// columns genuinely stay on the server — this is a column-projection
+// saving, not a hopeful one.
+//
+// ROW COUNTS the browser actually receives (all verified against the
+// rebuilt DuckDB, see the summary):
+//   roster       263 rows — every researcher↔site link that resolves
+//   collabs      771 rows — collaborator rows for the 41 linked
+//                           researchers that have any edge at all
+//   siteEdges     18 rows — after aggregation, pre-threshold
+// Nothing here is 10,000 rows wide, because registry_facilities only
+// links 263 of the shipped 10,000 core-tier researchers to a catalogued
+// site. The rest have no map position to occupy.
+async function fetchRegistry() {
+  await whenReady();
+  const conn = getConn();
+  if (!conn) throw new Error('DuckDB connection not ready');
+
+  const queries = {
+    // Researcher ↔ site roster. `graph_harvested` distinguishes
+    // "no collaborators found" from "this identity was never part of
+    // the co-authorship harvest", which is the difference between a
+    // real zero and a not-yet-computed one. The harvested cohort is
+    // the 618 pre-harvest identities recorded in
+    // person_identity_source under field 'canonical_id' / 'hydrate'.
+    // affiliation is deliberately NOT selected here — it is the
+    // ROR-matched institution, i.e. the site row we already have.
+    roster: `
+      WITH harvested AS (
+        SELECT DISTINCT canonical_id
+        FROM   person_identity_source
+        WHERE  field IN ('canonical_id', 'hydrate')
+      )
+      SELECT rf.facility_id,
+             p.canonical_id,
+             p.display_name,
+             p.orcid,
+             p.openalex_id,
+             p.homepage_url,
+             p.affiliation_country,
+             p.person_id,
+             p.tier_rank,
+             COALESCE(p.works_count, 0)         AS works_count,
+             COALESCE(p.cited_by_count, 0)      AS cited_by_count,
+             COALESCE(p.h_index, 0)             AS h_index,
+             COALESCE(p.coastal_works_count, 0) AS coastal_works_count,
+             p.coastal_share,
+             (h.canonical_id IS NOT NULL)       AS graph_harvested
+      FROM   registry_facilities rf
+      JOIN   person_registry p ON p.canonical_id = rf.canonical_id
+      LEFT   JOIN harvested h  ON h.canonical_id = rf.canonical_id
+      ORDER  BY rf.facility_id, p.tier_rank`,
+
+    // Collaborator rows, densified to one row per (linked researcher,
+    // collaborator) direction so the client never has to test both
+    // orientations of the a<b storage convention.
+    // other_facility_id is NULL when the collaborator has no site link
+    // — they exist in the registry but have no position on this map.
+    collabs: `
+      WITH placed AS (
+        SELECT canonical_id, facility_id FROM registry_facilities
+      ),
+      ends AS (
+        SELECT canonical_id_a AS cid, canonical_id_b AS other,
+               co_pub_count AS w, first_year, last_year
+        FROM   registry_collaborations
+        UNION ALL
+        SELECT canonical_id_b AS cid, canonical_id_a AS other,
+               co_pub_count AS w, first_year, last_year
+        FROM   registry_collaborations
+      )
+      SELECT e.cid,
+             e.other,
+             e.w              AS co_pubs,
+             e.first_year,
+             e.last_year,
+             p2.display_name  AS other_name,
+             p2.affiliation   AS other_affiliation,
+             pl2.facility_id  AS other_facility_id
+      FROM   ends e
+      JOIN   placed pl ON pl.canonical_id = e.cid
+      JOIN   person_registry p2 ON p2.canonical_id = e.other
+      LEFT   JOIN placed pl2 ON pl2.canonical_id = e.other
+      ORDER  BY e.cid, e.w DESC`,
+
+    // Site ↔ site co-publication aggregate: sum co_pub_count over
+    // every researcher pair whose two endpoints sit at DIFFERENT
+    // catalogued sites. This is the map-scale edge — 18 rows, versus
+    // 5,300 researcher-level edges, so it can be drawn unconditionally.
+    site_edges: `
+      WITH placed AS (
+        SELECT canonical_id, facility_id FROM registry_facilities
+      ),
+      pair AS (
+        SELECT a.facility_id AS fa, b.facility_id AS fb,
+               e.co_pub_count AS w,
+               e.canonical_id_a AS ca, e.canonical_id_b AS cb
+        FROM   registry_collaborations e
+        JOIN   placed a ON a.canonical_id = e.canonical_id_a
+        JOIN   placed b ON b.canonical_id = e.canonical_id_b
+      )
+      SELECT CASE WHEN fa < fb THEN fa ELSE fb END AS source,
+             CASE WHEN fa < fb THEN fb ELSE fa END AS target,
+             SUM(w)                                AS co_pubs,
+             COUNT(*)                              AS n_pairs
+      FROM   pair
+      WHERE  fa <> fb
+      GROUP  BY 1, 2
+      ORDER  BY co_pubs DESC`,
+
+    // Intra-site co-publication, for the site tooltip ("N of the
+    // researchers here publish with each other").
+    site_internal: `
+      WITH placed AS (
+        SELECT canonical_id, facility_id FROM registry_facilities
+      )
+      SELECT a.facility_id       AS facility_id,
+             SUM(e.co_pub_count) AS co_pubs,
+             COUNT(*)            AS n_pairs
+      FROM   registry_collaborations e
+      JOIN   placed a ON a.canonical_id = e.canonical_id_a
+      JOIN   placed b ON b.canonical_id = e.canonical_id_b
+      WHERE  a.facility_id = b.facility_id
+      GROUP  BY 1`,
+  };
+
+  const out = {};
+  for (const [k, sql] of Object.entries(queries)) {
+    const r = await conn.query(sql);
+    out[k] = r.toArray().map((row) => unwrapRow(row.toJSON()));
+  }
+
+  // ── Index into the shapes the renderer wants ─────────────────────
+  const byFacility = new Map();
+  for (const r of out.roster) {
+    r.works_count         = Number(r.works_count) || 0;
+    r.cited_by_count      = Number(r.cited_by_count) || 0;
+    r.h_index             = Number(r.h_index) || 0;
+    r.coastal_works_count = Number(r.coastal_works_count) || 0;
+    r.tier_rank           = Number(r.tier_rank) || 0;
+    r.graph_harvested     = !!r.graph_harvested;
+    if (!byFacility.has(r.facility_id)) byFacility.set(r.facility_id, []);
+    byFacility.get(r.facility_id).push(r);
+  }
+  // tier_rank ASC = better rank, so this is "most prominent first".
+  for (const list of byFacility.values()) {
+    list.sort((a, b) => a.tier_rank - b.tier_rank);
+  }
+
+  const collabsBy = new Map();
+  for (const c of out.collabs) {
+    c.co_pubs = Number(c.co_pubs) || 0;
+    if (!collabsBy.has(c.cid)) collabsBy.set(c.cid, []);
+    collabsBy.get(c.cid).push(c);
+  }
+
+  const siteEdges = out.site_edges
+    .map((e) => ({ ...e, co_pubs: Number(e.co_pubs) || 0,
+                   n_pairs: Number(e.n_pairs) || 0 }))
+    .filter((e) => e.co_pubs >= SITE_LINK_MIN);
+
+  const internalBy = new Map(out.site_internal.map((r) => [
+    r.facility_id,
+    { co_pubs: Number(r.co_pubs) || 0, n_pairs: Number(r.n_pairs) || 0 },
+  ]));
+
+  // Per-site rollup for the tooltip + the panel header.
+  const siteSummary = new Map();
+  for (const [fid, list] of byFacility.entries()) {
+    let harvested = 0, coastalVolume = 0, maxH = 0, withEdges = 0;
+    for (const r of list) {
+      if (r.graph_harvested) harvested++;
+      coastalVolume += r.coastal_works_count;
+      if (r.h_index > maxH) maxH = r.h_index;
+      if ((collabsBy.get(r.canonical_id) || []).length) withEdges++;
+    }
+    siteSummary.set(fid, {
+      n_registry: list.length,
+      n_harvested: harvested,
+      n_with_edges: withEdges,
+      coastal_volume: coastalVolume,
+      max_h: maxH,
+      internal: internalBy.get(fid) || null,
+    });
+  }
+
+  return {
+    byFacility, collabsBy, siteEdges, siteSummary,
+    totals: {
+      n_placed: out.roster.length,
+      n_sites: byFacility.size,
+      n_site_edges: siteEdges.length,
+      n_with_edges: collabsBy.size,
+    },
+  };
+}
+
+// Kick off the registry fetch at most once. Concurrent callers (an
+// impatient double-click on the toggle) share the same promise, so we
+// never issue the queries twice or leave a half-populated _registry.
+function ensureRegistry() {
+  if (_registry) return Promise.resolve(_registry);
+  if (!_registryPromise) {
+    _registryPromise = fetchRegistry()
+      .then((r) => { _registry = r; return r; })
+      .catch((err) => { _registryPromise = null; throw err; });
+  }
+  return _registryPromise;
 }
 
 
@@ -986,6 +1256,358 @@ function samplePerimeter(ring, n) {
 }
 
 
+// ── Registry layer geometry + rendering ─────────────────────────────
+//
+// PERFORMANCE POSTURE, stated plainly. The registry ships 10,000
+// core-tier researchers and 5,300 edges. This layer never draws either
+// number:
+//
+//   * Only 263 of those 10,000 have a site link, so only 263 could ever
+//     be placed. The other 9,737 have no coordinate on this map.
+//   * At rest the layer draws ONE ribbon per site pair — 18 of them,
+//     aggregated from the 61 researcher-level edges whose two endpoints
+//     both sit at catalogued sites — and nothing else. That is the whole
+//     map-scale view.
+//   * Individual researcher markers appear only for the ONE site the
+//     user selects, capped at FOCUS_NODE_CAP=48. The largest site
+//     (Scripps, 82 links) therefore draws 48 markers and lists all 82
+//     in the side panel.
+//
+// So the marker count is bounded by 48 + 26 site anchors regardless of
+// how the registry grows, and the SQL that feeds it returns 263 + 771 +
+// 18 + 3 rows. No canvas fallback or worker is needed at this size.
+
+// Where on the map does a catalogued site live? Prefer the centroid of
+// its facility sub-polygon (the same point the facility dot uses), fall
+// back to its packed bubble centre. Returns null for sites that are not
+// on the map at all — a registry link can point at a facility with no
+// primary research area, which means no polygon and no position.
+function siteAnchor(facilityId) {
+  if (!_layout) return null;
+  const sp = _layout.facPolygons && _layout.facPolygons.get(facilityId);
+  if (sp && sp.ring && sp.ring.length) {
+    let cx = 0, cy = 0;
+    for (const [x, y] of sp.ring) { cx += x; cy += y; }
+    return { x: cx / sp.ring.length, y: cy / sp.ring.length, meta: sp };
+  }
+  const c = _layout.facCircles && _layout.facCircles.get(facilityId);
+  if (c) return { x: c.x, y: c.y, r: c.r, meta: c };
+  return null;
+}
+
+// Radius available for scattering researcher markers inside a site's
+// sub-polygon. Uses the smaller bbox half-extent so the spiral stays
+// inside even for elongated Voronoi cells, and clamps to a sane range
+// so a huge cell doesn't fling markers to its corners.
+function siteScatterRadius(facilityId) {
+  const sp = _layout && _layout.facPolygons && _layout.facPolygons.get(facilityId);
+  if (sp && sp.ring && sp.ring.length) {
+    let mnX = Infinity, mnY = Infinity, mxX = -Infinity, mxY = -Infinity;
+    for (const [x, y] of sp.ring) {
+      if (x < mnX) mnX = x; if (y < mnY) mnY = y;
+      if (x > mxX) mxX = x; if (y > mxY) mxY = y;
+    }
+    const half = Math.min(mxX - mnX, mxY - mnY) / 2;
+    return Math.max(8, Math.min(90, half * 0.78));
+  }
+  const c = _layout && _layout.facCircles && _layout.facCircles.get(facilityId);
+  return c ? Math.max(8, c.r * 0.85) : 20;
+}
+
+// Deterministic golden-angle spiral placement inside the focused site.
+// Same construction the people-inside-a-bubble layout already uses, so
+// the two layers look like they belong to the same map.
+function placeFocusNodes(facilityId, rows) {
+  const a0 = siteAnchor(facilityId);
+  if (!a0) return [];
+  const R = siteScatterRadius(facilityId);
+  const PHI = Math.PI * (3 - Math.sqrt(5));
+  const n = rows.length;
+  return rows.map((r, k) => {
+    const t = (k + 0.5) / Math.max(n, 1);
+    const rad = R * Math.sqrt(t);
+    const ang = (k + 1) * PHI;
+    return { ...r,
+             x: a0.x + rad * Math.cos(ang),
+             y: a0.y + rad * Math.sin(ang) };
+  });
+}
+
+// Marker radius from coastal output volume. coastal_works_count is an
+// UPPER BOUND on distinct coastal papers (OpenAlex lists a work under
+// every topic it carries), so it is used only as a monotone size cue
+// and is always labelled "coastal output volume", never "papers".
+function registryRadius(d) {
+  return 2.2 + Math.min(3.4, Math.sqrt(d.coastal_works_count || 0) * 0.22);
+}
+
+function registryTipHtml(d) {
+  const collabs = (_registry && _registry.collabsBy.get(d.canonical_id)) || [];
+  const lines = [`<strong>${escapeHtml(d.display_name)}</strong>`];
+  const sub = [d.affiliation_country, d.h_index ? `h-index ${d.h_index}` : null]
+    .filter(Boolean).join(' · ');
+  if (sub) lines.push(`<small>${escapeHtml(sub)}</small>`);
+  if (d.coastal_works_count) {
+    lines.push(`<small style="color:#b45309">coastal output volume ≤ ${d.coastal_works_count}`
+      + (d.works_count ? ` of ${d.works_count} works` : '') + '</small>');
+  }
+  if (collabs.length) {
+    // collabs is ordered by co_pubs DESC in SQL, so [0] is the strongest
+    // edge. Naming the collaborator's institution is what makes the edge
+    // legible — "who, and where" rather than a bare count.
+    const top = collabs[0];
+    const where = top.other_affiliation
+      ? ` <span style="color:#64748b">at ${escapeHtml(top.other_affiliation)}</span>`
+      : '';
+    lines.push(`<small style="color:#0c4a6e">${collabs.length} registry co-author`
+      + `${collabs.length === 1 ? '' : 's'}</small>`
+      + `<br><small>strongest: ${escapeHtml(top.other_name || '?')}`
+      + ` — ${top.co_pubs} co-publication${top.co_pubs === 1 ? '' : 's'}${where}</small>`);
+  } else if (d.graph_harvested) {
+    lines.push('<small style="color:#64748b">no registry co-authors found</small>');
+  } else {
+    // The honest distinction the caveats demand: this identity was
+    // never part of the co-authorship harvest, so an empty edge list
+    // means "not computed", not "publishes alone".
+    lines.push('<small style="color:#92400e">co-authorship not yet computed '
+      + 'for this identity</small>');
+  }
+  lines.push('<small style="color:#94a3b8">click for ORCID / profile</small>');
+  return lines.join('<br>');
+}
+
+// Site ribbon tooltip: names both endpoints and is explicit that the
+// weight is a summed pair count, not a paper count.
+function siteLinkTipHtml(e) {
+  const a = (_layout.facPolygons && _layout.facPolygons.get(e.source))
+         || (_layout.facCircles && _layout.facCircles.get(e.source)) || {};
+  const b = (_layout.facPolygons && _layout.facPolygons.get(e.target))
+         || (_layout.facCircles && _layout.facCircles.get(e.target)) || {};
+  const nm = (m, id) => escapeHtml(m.acronym || m.name || id);
+  return '<strong>Co-publication between sites</strong>'
+    + `<br>${nm(a, e.source)} ↔ ${nm(b, e.target)}`
+    + `<br><small>${e.co_pubs} co-publication${e.co_pubs === 1 ? '' : 's'}`
+    + ` across ${e.n_pairs} researcher pair${e.n_pairs === 1 ? '' : 's'}</small>`
+    + '<br><small style="color:#94a3b8">click a site to list its researchers</small>';
+}
+
+// Draw (or redraw) everything the registry layer owns into _regRootG.
+// The group itself is created once during render() at a fixed z
+// position, so a focus change only swaps its children — no layer
+// re-append, no z-order drift, no orphaned <g> left behind.
+function drawRegistryLayer(d3, tip) {
+  if (!_regRootG) return;
+  _regRootG.selectAll('*').remove();
+  _regSiteLinkSel = null;
+  _regNodeSel = null;
+  _regNodeLinkSel = null;
+  if (!_showRegistry || !_registry || !_layout) return;
+
+  // ── Site ↔ site ribbons (always on when the layer is on) ─────────
+  const linkData = [];
+  for (const e of _registry.siteEdges) {
+    const a = siteAnchor(e.source);
+    const b = siteAnchor(e.target);
+    if (!a || !b) continue;          // one endpoint has no map position
+    linkData.push({ ...e, x1: a.x, y1: a.y, x2: b.x, y2: b.y });
+  }
+  if (linkData.length) {
+    const maxW = Math.max(...linkData.map((e) => e.co_pubs));
+    const g = _regRootG.append('g').attr('class', 'mvg-reg-links')
+      .attr('fill', 'none');
+    // Wide transparent hit line first, visible ribbon on top — same
+    // two-layer pattern the cross-area edges use, so thin ribbons are
+    // still hoverable.
+    g.append('g')
+      .attr('stroke', 'transparent').attr('stroke-width', 9)
+      .attr('stroke-linecap', 'round')
+      .style('pointer-events', 'stroke').style('cursor', 'help')
+      .selectAll('line').data(linkData).enter().append('line')
+      .attr('x1', (e) => e.x1).attr('y1', (e) => e.y1)
+      .attr('x2', (e) => e.x2).attr('y2', (e) => e.y2)
+      .on('mouseenter', (ev, e) => showTip(tip, ev, siteLinkTipHtml(e)))
+      .on('mousemove', (ev, e) => showTip(tip, ev, siteLinkTipHtml(e)))
+      .on('mouseleave', () => hideTip(tip));
+    _regSiteLinkSel = g.append('g')
+      .attr('stroke', NODE_COLORS.registryEdge)
+      .attr('stroke-opacity', 0.5)
+      .attr('stroke-linecap', 'round')
+      .style('pointer-events', 'none')
+      .selectAll('line').data(linkData).enter().append('line')
+      .attr('x1', (e) => e.x1).attr('y1', (e) => e.y1)
+      .attr('x2', (e) => e.x2).attr('y2', (e) => e.y2)
+      .attr('stroke-width', (e) => 0.6 + 2.4 * Math.sqrt(e.co_pubs / maxW));
+    _regSiteLinkSel.each(function (e) {
+      e.__baseW = 0.6 + 2.4 * Math.sqrt(e.co_pubs / maxW);
+    });
+  }
+
+  // ── Focused site: individual researcher markers ──────────────────
+  if (!_focusFacility) { renderRegistryPanel(null); return; }
+  const roster = _registry.byFacility.get(_focusFacility) || [];
+  const shown = roster.length
+    ? placeFocusNodes(_focusFacility, roster.slice(0, FOCUS_NODE_CAP))
+    : [];
+  if (!shown.length) {
+    // Either the site has no registry links, or it has no position on
+    // this map (a registry link can point at a facility with no primary
+    // research area, hence no polygon). Either way: no markers, and the
+    // panel must not keep showing the previous site's roster.
+    renderRegistryPanel(null);
+    return;
+  }
+  const posBy = new Map(shown.map((d) => [d.canonical_id, d]));
+
+  // Researcher ↔ researcher edges for the focused set. Two cases:
+  //   both endpoints in view → straight line between the two markers
+  //   collaborator at another placed site → line to that site's anchor
+  // Collaborators with no site link are NOT drawn (they have no
+  // position); the panel reports how many were omitted.
+  const nodeLinks = [];
+  let offMapEdges = 0;
+  for (const d of shown) {
+    for (const c of (_registry.collabsBy.get(d.canonical_id) || [])) {
+      const near = posBy.get(c.other);
+      if (near) {
+        // Draw each intra-focus pair once.
+        if (d.canonical_id > c.other) continue;
+        nodeLinks.push({ x1: d.x, y1: d.y, x2: near.x, y2: near.y,
+                         co_pubs: c.co_pubs, kind: 'internal',
+                         a: d.display_name, b: c.other_name });
+      } else if (c.other_facility_id) {
+        const anch = siteAnchor(c.other_facility_id);
+        if (!anch) { offMapEdges++; continue; }
+        nodeLinks.push({ x1: d.x, y1: d.y, x2: anch.x, y2: anch.y,
+                         co_pubs: c.co_pubs, kind: 'external',
+                         a: d.display_name, b: c.other_name });
+      } else {
+        offMapEdges++;
+      }
+    }
+  }
+  if (nodeLinks.length) {
+    _regNodeLinkSel = _regRootG.append('g').attr('class', 'mvg-reg-node-links')
+      .attr('fill', 'none')
+      .attr('stroke', NODE_COLORS.registryEdge)
+      .style('pointer-events', 'none')
+      .selectAll('line').data(nodeLinks).enter().append('line')
+      .attr('x1', (e) => e.x1).attr('y1', (e) => e.y1)
+      .attr('x2', (e) => e.x2).attr('y2', (e) => e.y2)
+      .attr('stroke-opacity', (e) => e.kind === 'internal' ? 0.55 : 0.28)
+      .attr('stroke-dasharray', (e) => e.kind === 'external' ? '2,2' : null)
+      .attr('stroke-width', (e) => 0.4 + Math.log(1 + e.co_pubs) * 0.28);
+    _regNodeLinkSel.each(function (e) {
+      e.__baseW = 0.4 + Math.log(1 + e.co_pubs) * 0.28;
+    });
+  }
+
+  _regNodeSel = _regRootG.append('g').attr('class', 'mvg-reg-nodes')
+    .selectAll('circle').data(shown).enter().append('circle')
+    .attr('cx', (d) => d.x).attr('cy', (d) => d.y)
+    .attr('r', registryRadius)
+    .attr('fill', NODE_COLORS.registry)
+    .attr('fill-opacity', 0.9)
+    .attr('stroke', '#fff')
+    .attr('stroke-width', 0.7)
+    .style('cursor', 'pointer')
+    .on('mouseenter', (ev, d) => showTip(tip, ev, registryTipHtml(d)))
+    .on('mouseleave', () => hideTip(tip))
+    .on('click', (ev, d) => { ev.stopPropagation(); openRegistryProfile(d); });
+  _regNodeSel.each(function (d) { d.__baseR = registryRadius(d); });
+
+  renderRegistryPanel(roster, shown.length, offMapEdges);
+}
+
+// Click-through for a registry researcher. Registry rows are keyed on
+// canonical_id, not people.person_id, so the People directory route
+// only works for the minority that carry a person_id. Everyone else
+// gets their ORCID (or OpenAlex) profile, which is the identifier the
+// registry is actually built on.
+function openRegistryProfile(d) {
+  if (!d) return;
+  if (d.person_id) {
+    location.hash = `#/people/${encodeURIComponent(d.person_id)}`;
+    return;
+  }
+  const url = d.orcid ? `https://orcid.org/${d.orcid}`
+            : d.openalex_id ? `https://openalex.org/${d.openalex_id}`
+            : d.homepage_url || null;
+  if (url) window.open(url, '_blank', 'noopener');
+}
+
+// Focus a site (or clear focus with null) and redraw only the registry
+// layer. Cheap enough to call on every click — it touches one <g>.
+function setFocusFacility(facilityId) {
+  _focusFacility = (_focusFacility === facilityId) ? null : facilityId;
+  if (!_d3Mod) return;
+  drawRegistryLayer(_d3Mod, ensureTooltip());
+  onZoom(_zoomK);
+  if (!_focusFacility) renderRegistryPanel(null);
+}
+
+// Side panel listing the focused site's roster. Shows every linked
+// researcher — including the ones past FOCUS_NODE_CAP that have no
+// marker — so the cap never silently hides people.
+function renderRegistryPanel(roster, nDrawn, offMapEdges) {
+  const panel = _container && _container.querySelector('#net-reg-panel');
+  if (!panel) return;
+  if (!roster || !roster.length || !_focusFacility) {
+    panel.hidden = true;
+    panel.innerHTML = '';
+    return;
+  }
+  const meta = (_layout.facPolygons && _layout.facPolygons.get(_focusFacility))
+            || (_layout.facCircles && _layout.facCircles.get(_focusFacility)) || {};
+  const sum = _registry.siteSummary.get(_focusFacility) || {};
+  const title = escapeHtml(meta.acronym || meta.name || _focusFacility);
+  const rows = roster.map((r, i) => {
+    const collabs = _registry.collabsBy.get(r.canonical_id) || [];
+    const badge = collabs.length
+      ? `<span class="mvg-reg-badge">${collabs.length}</span>`
+      : (r.graph_harvested
+          ? '<span class="mvg-reg-badge is-zero" title="Harvested — no registry co-authors found">0</span>'
+          : '<span class="mvg-reg-badge is-unknown" title="Co-authorship not yet computed for this identity">–</span>');
+    return `<li class="${i < nDrawn ? '' : 'is-unplotted'}">
+      <button type="button" class="mvg-reg-row" data-cid="${escapeHtml(r.canonical_id)}">
+        <span class="mvg-reg-name">${escapeHtml(r.display_name)}</span>
+        ${badge}
+      </button></li>`;
+  }).join('');
+  const capNote = roster.length > nDrawn
+    ? `<p class="mvg-reg-note">${nDrawn} of ${roster.length} plotted on the map;
+       the rest are listed here.</p>`
+    : '';
+  const edgeNote = sum.n_with_edges != null
+    ? `<p class="mvg-reg-note">${sum.n_with_edges} of ${roster.length} have
+       co-authorship computed. <span class="mvg-reg-badge is-unknown">–</span>
+       means not yet harvested, not zero.</p>`
+    : '';
+  const offNote = offMapEdges
+    ? `<p class="mvg-reg-note">${offMapEdges} co-author link${offMapEdges === 1 ? '' : 's'}
+       point outside the catalogued sites and are not drawn.</p>`
+    : '';
+  panel.hidden = false;
+  panel.innerHTML = `
+    <div class="mvg-reg-head">
+      <h3>${title}</h3>
+      <button type="button" id="net-reg-clear" class="btn-ghost">Clear</button>
+    </div>
+    <p class="mvg-reg-note">${roster.length} core-tier researcher${roster.length === 1 ? '' : 's'}
+      linked by ROR match${sum.internal
+        ? ` · ${sum.internal.co_pubs} co-publications among them` : ''}</p>
+    ${capNote}${edgeNote}${offNote}
+    <ol class="mvg-reg-list">${rows}</ol>`;
+  panel.querySelector('#net-reg-clear')
+    .addEventListener('click', () => setFocusFacility(null));
+  panel.querySelectorAll('.mvg-reg-row').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const r = roster.find((x) => x.canonical_id === btn.dataset.cid);
+      if (r) openRegistryProfile(r);
+    });
+  });
+}
+
+
 // ── Render ─────────────────────────────────────────────────────────
 async function render() {
   const statusEl = _container.querySelector('#net-status');
@@ -1001,7 +1623,7 @@ async function render() {
       statusEl.textContent = 'Computing knowledge map (this takes 5-10 s)…';
       _layout = await buildLayout(data, w, h);
     }
-    statusEl.innerHTML = `<strong>${_layout.areas.length}</strong> research-area polygons, <strong>${_layout.nodes.length}</strong> nodes, <strong>${_layout.crossEdges.length}</strong> cross-area edges`;
+    updateStatus();
 
     stage.innerHTML = '';
     // viewBox is computed to focus on the WEIGHTED CORE of the map —
@@ -1174,6 +1796,10 @@ async function render() {
           hideTip(tip);
         })
         .on('click', (ev, d) => {
+          // With the registry layer on, a site click means "show me who
+          // works here" — the map is the navigation surface. With it off
+          // the historical behaviour (open the site's website) stands.
+          if (_showRegistry) { setFocusFacility(d.id); return; }
           if (d.url) window.open(d.url, '_blank', 'noopener');
         });
     } else {
@@ -1333,6 +1959,7 @@ async function render() {
         .on('mouseenter', (ev, d) => showTip(tip, ev, nodeTipHtml(d)))
         .on('mouseleave', () => hideTip(tip))
         .on('click', (ev, d) => {
+          if (_showRegistry) { setFocusFacility(d.id); return; }
           const url = d.url || d.homepage_url;
           if (url) window.open(url, '_blank', 'noopener');
         });
@@ -1398,6 +2025,39 @@ async function render() {
     } else {
       _labelSel = null;
       _dotPersonSel = null;
+    }
+
+    // Layer 3.4: REGISTRY layer container. Appended once, at a fixed z
+    // position (above the facility dots, below every text label) so a
+    // focus change only swaps this group's children. stage.innerHTML =
+    // '' above already discarded the previous SVG, so the stale
+    // selections must be dropped before we repopulate.
+    _regSiteLinkSel = null;
+    _regNodeSel = null;
+    _regNodeLinkSel = null;
+    _regRootG = root.append('g').attr('class', 'mvg-registry');
+    if (_showRegistry) {
+      if (_registry) {
+        drawRegistryLayer(d3, tip);
+      } else {
+        // Data not in yet (first switch-on races the first paint).
+        // Fetch, then draw into the group we just created — but only if
+        // the layer is still on and the group is still the live one.
+        const g = _regRootG;
+        ensureRegistry().then(() => {
+          if (_showRegistry && _regRootG === g) {
+            drawRegistryLayer(d3, tip);
+            onZoom(_zoomK);
+            updateStatus();
+          }
+        }).catch((err) => {
+          console.error('[mvg] registry layer failed', err);
+          const s = _container.querySelector('#net-reg-note');
+          if (s) s.textContent = 'Researcher layer unavailable — registry query failed.';
+        });
+      }
+    } else {
+      renderRegistryPanel(null);
     }
 
     // Layer 3.5: FACILITY NAME LABELS. Same progressive-reveal +
@@ -1490,6 +2150,26 @@ async function render() {
     console.error('[mvg] render failed', err);
     if (statusEl) statusEl.textContent = `Knowledge map render failed: ${err.message}`;
   }
+}
+
+
+// Status line. The registry clause is appended only once the layer's
+// data is in, and it names the tier explicitly — the map shows the
+// 10,000-row core tier of person_registry, of which only the
+// ROR-linkable subset has a position here.
+function updateStatus() {
+  const statusEl = _container && _container.querySelector('#net-status');
+  if (!statusEl || !_layout) return;
+  let html = `<strong>${_layout.areas.length}</strong> research-area polygons, `
+    + `<strong>${_layout.nodes.length}</strong> nodes, `
+    + `<strong>${_layout.crossEdges.length}</strong> cross-area edges`;
+  if (_showRegistry && _registry) {
+    const t = _registry.totals;
+    html += ` · registry: <strong>${t.n_placed}</strong> core-tier researchers`
+      + ` at <strong>${t.n_sites}</strong> sites,`
+      + ` <strong>${t.n_site_edges}</strong> site↔site co-publication links`;
+  }
+  statusEl.innerHTML = html;
 }
 
 
@@ -1638,6 +2318,19 @@ function onZoom(k) {
   if (_dotFacSel) {
     _dotFacSel.attr('r', 2.6 * dotScale);
   }
+  // Registry marks get the same treatment as every other mark: constant
+  // apparent size above k=1, base size below it, so zooming in doesn't
+  // bloat markers into blobs or fatten the ribbons into bands.
+  if (_regNodeSel) {
+    _regNodeSel.attr('r', (d) => (d.__baseR || 2.5) * dotScale)
+      .attr('stroke-width', 0.7 * dotScale);
+  }
+  if (_regSiteLinkSel) {
+    _regSiteLinkSel.attr('stroke-width', (e) => (e.__baseW || 1) * dotScale);
+  }
+  if (_regNodeLinkSel) {
+    _regNodeLinkSel.attr('stroke-width', (e) => (e.__baseW || 0.5) * dotScale);
+  }
   if (_areaLabelSel) {
     _areaLabelSel
       .attr('font-size', (d) => (d.__baseFont || 14) * labelScale)
@@ -1754,6 +2447,9 @@ export function initNetworkView(container) {
           Toggling Facilities or People also toggles their cross-area edges:
           gray lines = facility-facility shared programs, sky-blue lines =
           researchers bridging two areas (interdisciplinary potential).
+          Switch on <em>Researchers &amp; co-authorship</em> for the person
+          registry: amber ribbons are co-publication between two catalogued
+          sites, and clicking a site opens its researcher roster.
           Hover for details, click to open homepage / ORCID. Algorithm:
           KMap from Hossain et al. GI&nbsp;'25 with hierarchical institution
           sub-polygons.</p>
@@ -1769,9 +2465,21 @@ export function initNetworkView(container) {
             <span class="net-swatch" style="background:${NODE_COLORS.person}"></span>
             People
           </label>
+          <label class="net-toggle">
+            <input type="checkbox" data-toggle="registry">
+            <span class="net-swatch" style="background:${NODE_COLORS.registry}"></span>
+            Researchers &amp; co-authorship
+          </label>
           <button id="net-restart" class="btn-ghost" title="Recompute layout from scratch">Recompute layout</button>
         </div>
       </header>
+      <p id="net-reg-note" class="network-scope-note" hidden>
+        The researcher layer draws the <strong>core tier</strong> of the person
+        registry — 10,000 of 152,008 unified identities — and only the 263 of
+        those with a ROR match to a catalogued site have a position on this map.
+        It is not the whole field. Marker size is coastal <em>output volume</em>
+        (an upper bound, not a paper count); click a site to list who works there.
+      </p>
       <div id="net-status" class="network-status">Loading…</div>
       <div class="mvg-shell">
         <aside id="net-toc" class="mvg-toc" aria-label="Research areas">
@@ -1780,12 +2488,43 @@ export function initNetworkView(container) {
           <button id="net-toc-reset" class="btn-ghost" type="button">Reset zoom</button>
         </aside>
         <div id="net-stage" class="network-stage"></div>
+        <aside id="net-reg-panel" class="mvg-reg-panel"
+               aria-label="Researchers at the selected site" hidden></aside>
       </div>
     </div>`;
 
   _container.querySelectorAll('.net-toggle input').forEach((el) => {
     el.addEventListener('change', () => {
       const k = el.dataset.toggle;
+      if (k === 'registry') {
+        // The registry layer owns exactly one <g>, so it never needs the
+        // full re-render the other two toggles trigger — switching it
+        // redraws that group and nothing else.
+        _showRegistry = el.checked;
+        const note = _container.querySelector('#net-reg-note');
+        if (note) note.hidden = !_showRegistry;
+        if (!_showRegistry) {
+          _focusFacility = null;
+          if (_d3Mod) drawRegistryLayer(_d3Mod, ensureTooltip());
+          renderRegistryPanel(null);
+          updateStatus();
+          return;
+        }
+        ensureRegistry().then(() => {
+          if (!_showRegistry || !_d3Mod) return;
+          drawRegistryLayer(_d3Mod, ensureTooltip());
+          onZoom(_zoomK);
+          updateStatus();
+        }).catch((err) => {
+          console.error('[mvg] registry layer failed', err);
+          if (note) {
+            note.hidden = false;
+            note.textContent = 'Researcher layer unavailable — the registry '
+              + 'query failed. See the console for details.';
+          }
+        });
+        return;
+      }
       if (k === 'facility') _showFacility = el.checked;
       else if (k === 'person') _showPerson = el.checked;
       // Toggle changes don't need a re-layout — just re-render.
@@ -1793,7 +2532,9 @@ export function initNetworkView(container) {
     });
   });
   _container.querySelector('#net-restart').addEventListener('click', () => {
-    _layout = null;
+    // Recomputing the layout moves every site anchor, so the registry
+    // layer's geometry and its focus selection are both invalid.
+    invalidateNetworkData();
     render().catch((err) => console.error(err));
   });
   _container.querySelector('#net-toc-reset').addEventListener('click', () => {
@@ -1838,4 +2579,14 @@ export async function renderNetworkView() {
 
 export function invalidateNetworkData() {
   _layout = null;
+  // The registry layer's selections point into an SVG that is about to
+  // be discarded, and its geometry is derived from _layout, so drop
+  // both. The fetched rows themselves stay cached — they don't depend
+  // on the layout and re-querying them would be wasted work.
+  _regRootG = null;
+  _regSiteLinkSel = null;
+  _regNodeSel = null;
+  _regNodeLinkSel = null;
+  _focusFacility = null;
+  renderRegistryPanel(null);
 }

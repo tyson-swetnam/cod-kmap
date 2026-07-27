@@ -12,22 +12,66 @@
 # published roster is always traceable to explicit topic ids.
 #
 # subfield groups topics for reporting only; it does not affect selection.
+#
+# ── Resolution, 2026-07-26 ────────────────────────────────────────────
+# All 18 sentinels resolved against the complete OpenAlex topic list
+# (4,516 topics pulled from /topics and matched on display_name,
+# description and keywords) rather than by accepting the first hit from
+# /topics?search=<label>. Search-ranking alone was checked first and
+# rejected: it returned nothing at all for 13 of the 18 labels, and it
+# mapped both "Coastal and Marine Dynamics" and "Coastal Remote Sensing"
+# onto T10647.
+#
+# OpenAlex's taxonomy is coarser than this label set, so two labels map
+# onto a topic another label already claims. The duplicates are
+# deliberate and harmless — the harvest ORs these ids into one filter —
+# and they are kept as separate rows so the reporting subfields survive:
+#   Blue Carbon and Wetland Carbon Sequestration -> T10779, shared with
+#     Mangrove and Salt Marsh Ecosystems. T10779's own description leads
+#     with mangroves, carbon sequestration and tidal wetlands. The
+#     alternative, T12091 Peatlands and Wetlands Ecology, is boreal
+#     peatland and would not have been coastal.
+#   Sea Level Change and Coastal Flooding -> T10647, shared with Coastal
+#     and Marine Dynamics, whose description leads with sea-level rise
+#     and coastal vulnerability. T11405 is nominally the sea-level topic
+#     but is 305k works of GRACE geodesy, groundwater depletion and
+#     polar ice-sheet mass balance; including it would have counted
+#     geodesists' output as coastal in the stage-C share gate.
+#   Coastal Geomorphology and Shoreline Change -> T10647 as well, which
+#     lists shoreline change and beach erosion among its own keywords.
+#     T10965 Geological formations and processes was the alternative and
+#     was rejected: it is sequence stratigraphy, turbidity currents and
+#     submarine landslides, which would have admitted petroleum
+#     stratigraphers to the coastal pool.
+#
+# Three rows are a genuine approximation — OpenAlex has no cluster for
+# the concept — and should be reviewed before the roster is published:
+#   T10236 (Coastal Hypoxia and Eutrophication) spans freshwater lakes
+#     as well as coastal marine systems.
+#   T11192 (Ocean Observing Systems and Instrumentation) is the
+#     underwater-vehicle / acoustic-sensor-network cluster: gliders,
+#     AUVs, moored sensor networks. Closest available, but engineering-
+#     weighted.
+#   T10747 (Coastal Hazards and Community Resilience) is disaster
+#     resilience generally, not coastal specifically. T10930 Flood Risk
+#     Assessment and Management was the runner-up.
+# ──────────────────────────────────────────────────────────────────────
 openalex_topic_id,label,subfield,include_in
-RESOLVE,Coastal and Marine Dynamics,physical,candidates
-RESOLVE,Oceanographic and Atmospheric Processes,physical,candidates
-RESOLVE,Coastal and Marine Sediment Transport,physical,candidates
-RESOLVE,Sea Level Change and Coastal Flooding,physical,candidates
-RESOLVE,Coastal and Estuarine Ecology,ecology,candidates
-RESOLVE,Seagrass and Macroalgae Ecology,ecology,candidates
-RESOLVE,Mangrove and Salt Marsh Ecosystems,ecology,candidates
-RESOLVE,Marine Biodiversity and Benthic Ecology,ecology,candidates
-RESOLVE,Estuarine and Coastal Biogeochemistry,biogeochemistry,candidates
-RESOLVE,Blue Carbon and Wetland Carbon Sequestration,biogeochemistry,candidates
-RESOLVE,Ocean Acidification and Carbonate Chemistry,biogeochemistry,candidates
-RESOLVE,Coastal Hypoxia and Eutrophication,biogeochemistry,candidates
-RESOLVE,Harmful Algal Blooms,biogeochemistry,candidates
-RESOLVE,Coastal Geomorphology and Shoreline Change,geomorphology,candidates
-RESOLVE,Ocean Observing Systems and Instrumentation,observing,candidates
-RESOLVE,Coastal Hazards and Community Resilience,human-dimensions,candidates
-RESOLVE,Coastal Zone Management and Policy,human-dimensions,candidates
-RESOLVE,Coastal Remote Sensing,remote-sensing,candidates
+T10647,Coastal and Marine Dynamics,physical,candidates
+T10255,Oceanographic and Atmospheric Processes,physical,candidates
+T13785,Coastal and Marine Sediment Transport,physical,candidates
+T10647,Sea Level Change and Coastal Flooding,physical,candidates
+T13485,Coastal and Estuarine Ecology,ecology,candidates
+T10643,Seagrass and Macroalgae Ecology,ecology,candidates
+T10779,Mangrove and Salt Marsh Ecosystems,ecology,candidates
+T10765,Marine Biodiversity and Benthic Ecology,ecology,candidates
+T10032,Estuarine and Coastal Biogeochemistry,biogeochemistry,candidates
+T10779,Blue Carbon and Wetland Carbon Sequestration,biogeochemistry,candidates
+T12806,Ocean Acidification and Carbonate Chemistry,biogeochemistry,candidates
+T10236,Coastal Hypoxia and Eutrophication,biogeochemistry,candidates
+T11985,Harmful Algal Blooms,biogeochemistry,candidates
+T10647,Coastal Geomorphology and Shoreline Change,geomorphology,candidates
+T11192,Ocean Observing Systems and Instrumentation,observing,candidates
+T10747,Coastal Hazards and Community Resilience,human-dimensions,candidates
+T12414,Coastal Zone Management and Policy,human-dimensions,candidates
+T11061,Coastal Remote Sensing,remote-sensing,candidates

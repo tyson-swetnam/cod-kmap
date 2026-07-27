@@ -79,6 +79,13 @@ LOAD_ORDER = [
     "community_scholars",
     "coastal_datasets",
     "dataset_endpoints",
+    "dataset_facilities",   # loads after both its endpoints exist
+    # Unified person identity. person_registry loads before its dependants
+    # so the qa.py orphan-edge and unsourced-row invariants see a complete
+    # picture. All soft-ref, so no FK_FILTERS entries.
+    "person_registry",
+    "person_identity_source",
+    "registry_collaborations",
 ]
 
 # Derived tables that have no DDL in schema/schema.sql — they are computed
@@ -96,6 +103,10 @@ DERIVED_TABLES = [
     "facility_area_funding",
     "funder_area_funding",
     "area_coverage_matrix",
+    # registry_facilities has no schema.sql DDL — scripts/link_registry_facilities.py
+    # creates it with CREATE TABLE IF NOT EXISTS and writes it straight to
+    # parquet, same pattern as the compute_* outputs above.
+    "registry_facilities",
 ]
 
 

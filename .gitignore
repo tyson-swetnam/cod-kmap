@@ -63,6 +63,16 @@ db/ducklake_data/
 # (candidate ids + ndjson response caches; regenerable, and large).
 data/raw/community_scholars/
 
+# Resumable caches for the person-registry pipeline. Both are large ndjson
+# response dumps that any clone can regenerate from the OpenAlex API, and
+# both are what makes an interrupted run cheap to resume:
+#   coastal_authors/  — scripts/harvest_coastal_authors.py (152k author
+#                       records + a paging cursor)
+#   registry_collab/  — scripts/compute_registry_collaborations.py
+#                       (per-author work lists for the co-authorship graph)
+data/raw/coastal_authors/
+data/raw/registry_collab/
+
 # Cowork-mode helper scripts emitted alongside batches of work. They are
 # one-shot commit drivers, not source. Keep on disk for reference; don't
 # track or push.

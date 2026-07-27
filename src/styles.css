@@ -1159,10 +1159,85 @@ footer a:hover { color: var(--c-primary); }
   background:
     radial-gradient(circle at 50% 50%, #fff 0%, #f3f1ec 60%, #e8e4dc 100%);
 }
-/* Two-column shell: TOC on the left, map stage on the right */
+/* Scope note for the registry layer: states the tier boundary right
+ * next to the layer control so the map never implies it shows the whole
+ * 152k-identity registry. Hidden until the layer is switched on. */
+.network-scope-note {
+  margin: 0;
+  padding: 6px 20px 8px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #7c2d12;
+  background: #fff7ed;
+  border-bottom: 1px solid #fed7aa;
+}
+.network-scope-note[hidden] { display: none; }
+
+/* Three-column shell: TOC on the left, map stage centre, and the
+ * focused site's researcher roster on the right. The roster column
+ * collapses to zero width when no site is selected, so the map keeps
+ * the full stage until the user asks for the panel. */
 .mvg-shell {
   flex: 1; min-height: 0;
-  display: grid; grid-template-columns: 220px 1fr; gap: 12px;
+  display: grid; grid-template-columns: 220px 1fr auto; gap: 12px;
+}
+.mvg-reg-panel {
+  width: 232px;
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  background: #fffbeb;
+  padding: 8px;
+  display: flex; flex-direction: column; gap: 4px;
+  overflow: hidden;
+}
+.mvg-reg-panel[hidden] { display: none; }
+.mvg-reg-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
+}
+.mvg-reg-head h3 {
+  margin: 0; font-size: .82rem; color: #7c2d12;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mvg-reg-head .btn-ghost {
+  background: #fff; border: 1px solid #fed7aa; color: #7c2d12;
+  padding: 3px 8px; border-radius: var(--radius-sm);
+  font-size: .72rem; cursor: pointer;
+}
+.mvg-reg-note {
+  margin: 0; font-size: .72rem; line-height: 1.4; color: #92400e;
+}
+.mvg-reg-list {
+  list-style: none; margin: 4px 0 0; padding: 0;
+  flex: 1; min-height: 0; overflow-y: auto; font-size: .8rem;
+}
+.mvg-reg-list li { margin: 0; padding: 0; }
+/* Researchers past the plot cap: listed, but visibly not on the map. */
+.mvg-reg-list li.is-unplotted .mvg-reg-name { color: #a8a29e; }
+.mvg-reg-row {
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 6px; align-items: center; width: 100%;
+  background: transparent; border: none;
+  padding: 3px 6px; border-radius: 4px;
+  font: inherit; color: #1e293b; cursor: pointer; text-align: left;
+}
+.mvg-reg-row:hover { background: #fef3c7; }
+.mvg-reg-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mvg-reg-badge {
+  min-width: 18px; text-align: center;
+  font-size: .7rem; font-weight: 700;
+  color: #7c2d12; background: #fed7aa;
+  border-radius: 8px; padding: 1px 5px;
+}
+/* Harvested, genuinely zero co-authors. */
+.mvg-reg-badge.is-zero { color: #57534e; background: #e7e5e4; }
+/* Not harvested — an unknown, deliberately NOT rendered as a zero. */
+.mvg-reg-badge.is-unknown {
+  color: #78716c; background: transparent;
+  border: 1px dashed #d6d3d1; font-weight: 500;
+}
+@media (max-width: 1100px) {
+  .mvg-reg-panel { width: 190px; }
 }
 .mvg-toc {
   border: 1px solid var(--c-border);
@@ -1199,6 +1274,9 @@ footer a:hover { color: var(--c-primary); }
 @media (max-width: 760px) {
   .mvg-shell { grid-template-columns: 1fr; }
   .mvg-toc { max-height: 200px; }
+  /* Single-column: the roster stacks under the map instead of squeezing
+   * the stage to nothing. */
+  .mvg-reg-panel { width: auto; max-height: 240px; }
 }
 .network-svg, .mvg-svg {
   width: 100%;
@@ -1516,6 +1594,15 @@ footer a:hover { color: var(--c-primary); }
   background: #e0f2fe; color: #0369a1;
   border-radius: 999px; white-space: nowrap;
 }
+/* Cohort membership chips (people.js cohortChips). A directory person who
+   is also on the COD team or in the scholar roster carries a chip per
+   cohort — the registry made that overlap visible for the first time. */
+.ppl-cohort {
+  font-size: .68rem; padding: 2px 7px; border-radius: 999px;
+  white-space: nowrap; margin-left: 4px;
+}
+.ppl-cohort-team    { background: #fee2e2; color: #b91c1c; }
+.ppl-cohort-scholar { background: #ede9fe; color: #6d28d9; }
 .ppl-metrics {
   display: grid; grid-template-columns: repeat(5, 1fr);
   gap: 4px; padding: 8px 0; border-top: 1px solid #f1f5f9;
@@ -1773,6 +1860,16 @@ footer a:hover { color: var(--c-primary); }
   border-top: 1px solid #f1f5f9; font-size: .74rem; color: #64748b;
 }
 .team-metrics strong { font-size: .92rem; color: #0f172a; }
+/* Cross-cohort reach (team.js reachRow): how far a member's co-authorship
+   extends into the registry. The -unknown variant is deliberately distinct
+   from a zero — "not yet resolved" and "no co-publications" are different
+   statements and the UI must not conflate them. */
+.team-reach {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  padding: 6px 0; font-size: .72rem; color: #475569;
+}
+.team-reach strong { font-size: .88rem; color: #0f172a; }
+.team-reach-unknown { color: #94a3b8; font-style: italic; }
 .team-links {
   font-size: .78rem; color: #475569;
   margin-top: 8px; padding-top: 6px; border-top: 1px dashed #e2e8f0;
@@ -1908,6 +2005,18 @@ footer a:hover { color: var(--c-primary); }
   background: #f1f5f9; color: #475569;
 }
 .sch-rationale { margin: 0; font-size: .78rem; color: #64748b; font-style: italic; }
+/* Network position (scholars.js networkHtml): co-authors, catalogued sites,
+   and cross-cohort membership. Rendered only when the scholar has a
+   resolved registry identity. */
+.sch-network {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  font-size: .72rem; color: #475569; margin: 4px 0 6px;
+}
+.sch-network strong { color: #0f172a; }
+.sch-xcohort {
+  background: #ede9fe; color: #6d28d9;
+  padding: 1px 7px; border-radius: 999px; font-size: .68rem;
+}
 .sch-links {
   margin-top: 10px; padding-top: 8px;
   border-top: 1px dashed #e2e8f0; font-size: .8rem; color: #475569;
@@ -1935,6 +2044,15 @@ footer a:hover { color: var(--c-primary); }
   flex: 1 1 260px; min-width: 200px; padding: 6px 10px;
   border: 1px solid var(--c-border); border-radius: 4px; font-size: .88rem;
 }
+
+/* Header fact list — the two catalogue totals broken into counted claims
+   rather than one run-on sentence. */
+.ds-facts {
+  margin: 0 0 10px; padding-left: 18px;
+  font-size: .84rem; color: #334155; line-height: 1.55;
+}
+.ds-facts li { margin: 0 0 3px; }
+.ds-facts em { color: #b45309; font-style: normal; }
 
 .ds-group { margin: 0 0 26px; }
 .ds-group > h2 {
@@ -1967,6 +2085,36 @@ footer a:hover { color: var(--c-primary); }
 .ds-provider { margin: 0 0 6px; font-size: .8rem; color: #475569; }
 .ds-desc { margin: 0 0 10px; font-size: .84rem; color: #1e293b; }
 
+/* Producer edges (dataset_facilities). The unresolved case is styled as a
+   deliberate statement, not a blank — a third of the catalogue lands here
+   and it must not read as "this dataset has no steward". */
+.ds-producers {
+  margin: 0 0 8px; display: flex; flex-wrap: wrap;
+  align-items: center; gap: 4px 6px; font-size: .74rem;
+}
+.ds-label {
+  color: #64748b; text-transform: uppercase; letter-spacing: .04em;
+  font-size: .64rem;
+}
+.ds-prod {
+  display: inline-flex; align-items: stretch; overflow: hidden;
+  border: 1px solid #cbd5e1; border-radius: 4px; background: #f8fafc;
+  cursor: help;
+}
+.ds-prod-role {
+  padding: 2px 5px; background: #e2e8f0; color: #475569;
+  font-size: .64rem; text-transform: uppercase; letter-spacing: .03em;
+}
+.ds-prod-name { padding: 2px 7px; color: #0f172a; }
+/* A medium-confidence edge came from an acronym token, not a full name.
+   Mark it so a reviewer can find the ones worth checking. */
+.ds-prod-medium { border-style: dashed; border-color: #f59e0b; }
+.ds-prod-medium .ds-prod-role { background: #fef3c7; color: #92400e; }
+.ds-prod-low { border-style: dotted; border-color: #dc2626; }
+.ds-producers-none .ds-unresolved {
+  color: #94a3b8; font-style: italic; cursor: help;
+}
+
 .ds-eps { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 .ds-ep {
   display: inline-flex; align-items: stretch;
@@ -1986,6 +2134,13 @@ footer a:hover { color: var(--c-primary); }
   color: color-mix(in srgb, var(--ep, #64748b) 70%, #000); font-size: .74rem;
 }
 .ds-ep-copy:hover { background: color-mix(in srgb, var(--ep, #64748b) 22%, #fff); }
+/* A queryable service outranks a landing page; give it the heavier border
+   so the badge row is scannable without reading every label. */
+.ds-ep-machine { border-width: 2px; font-weight: 500; }
+.ds-ep-note { margin: -4px 0 8px; font-size: .7rem; color: #94a3b8; }
+.ds-empty {
+  margin: 0 0 8px; font-size: .76rem; color: #b45309; font-style: italic;
+}
 
 .ds-coverage {
   display: flex; flex-wrap: wrap; gap: 4px 8px;
@@ -1995,6 +2150,18 @@ footer a:hover { color: var(--c-primary); }
 .ds-vars, .ds-license, .ds-note { margin: 4px 0 0; font-size: .76rem; color: #64748b; }
 .ds-vars strong { color: #475569; }
 .ds-note { font-style: italic; color: #94a3b8; }
+
+/* Record provenance — curator confidence, source tag, retrieval date. */
+.ds-prov {
+  margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 4px 8px;
+  font-size: .68rem; color: #94a3b8;
+}
+.ds-prov span:not(:last-child)::after { content: ' ·'; color: #cbd5e1; }
+.ds-conf { font-weight: 500; cursor: help; }
+.ds-conf-high   { color: #15803d; }
+.ds-conf-medium { color: #b45309; }
+.ds-conf-low    { color: #dc2626; }
+.ds-count-linked { background: #ecfdf5; color: #15803d; cursor: help; }
 .ds-links {
   margin-top: 10px; padding-top: 8px;
   border-top: 1px dashed #e2e8f0; font-size: .8rem; color: #475569;

@@ -150,7 +150,7 @@ themes is reflected directly in the application:
 | Continental-scale design | The Network knowledge map shows research-area cartograms across all US coastal facilities plus Latin American and Caribbean partners — visualising continent-scale coverage at a glance. |
 | Spatial, temporal, and data gaps | The Stats dashboards expose per-research-area coverage by country, by overlay region, and by facility type. The site-suitability roadmap describes the next-phase MEOW + Köppen + GBIF ingestion that will enable a *top-N candidate new sites* ranking. |
 | Inclusion of a social dimension | Funding records cover federal, state, and non-profit sources per facility, with Form-990 totals for the non-profit and foundation organisations in the dataset. |
-| Build on prior workshops and capabilities | The researcher directory includes per-person publication and citation metrics, ORCID, OpenAlex, and Google Scholar linkages where available. |
+| Build on prior workshops and capabilities | The researcher directory includes per-person publication and citation metrics with ORCID and OpenAlex linkage. A unified person registry resolves the project team, facility staff and the field-wide scholar roster onto one persistent identifier each, so an existing collaboration between the team and the wider community is visible rather than implied. Google Scholar linkage is a stated intent, not a delivered one — the free sources for it are effectively empty. |
 | Demonstrate value-added to other networks | Cross-area edges in the Network view make interdisciplinary collaboration visible — the "where are the inter-network connections worth funding?" question. |
 
 ## What's still missing

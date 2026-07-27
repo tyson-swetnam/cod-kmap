@@ -133,13 +133,44 @@ async function fetchPeople() {
       FROM facility_personnel fp
       JOIN facilities f ON f.facility_id = fp.facility_id
       GROUP BY fp.person_id
+    ),
+    -- Registry identity for directory people. person_registry resolved the
+    -- three human layers onto persistent ids, so it holds identifiers and
+    -- OpenAlex metrics that `people` alone does not — and it says whether
+    -- this person is also on the COD team or in the scholar roster, which
+    -- was previously unrepresentable.
+    reg AS (
+      SELECT person_id, canonical_id, orcid, openalex_id, google_scholar_id,
+             homepage_url, affiliation_ror, affiliation_country,
+             h_index AS reg_h_index, works_count, cited_by_count,
+             coastal_works_count, is_team, is_scholar, tier
+      FROM person_registry
+      WHERE person_id IS NOT NULL
+    ),
+    reg_reach AS (
+      SELECT e.self_id AS canonical_id, COUNT(*) AS reg_degree
+      FROM (
+        SELECT canonical_id_a AS self_id FROM registry_collaborations
+        UNION ALL
+        SELECT canonical_id_b FROM registry_collaborations
+      ) e
+      GROUP BY e.self_id
     )
     SELECT p.person_id  AS id,
            p.name,
-           p.orcid,
-           p.openalex_id,
-           p.google_scholar_id,
-           p.homepage_url,
+           COALESCE(r.orcid, p.orcid)                         AS orcid,
+           COALESCE(r.openalex_id, p.openalex_id)             AS openalex_id,
+           COALESCE(r.google_scholar_id, p.google_scholar_id) AS google_scholar_id,
+           COALESCE(r.homepage_url, p.homepage_url)           AS homepage_url,
+           r.canonical_id,
+           r.affiliation_ror,
+           r.affiliation_country,
+           r.works_count,
+           r.cited_by_count,
+           r.coastal_works_count,
+           r.is_team,
+           r.is_scholar,
+           COALESCE(rr.reg_degree, 0)                         AS reg_degree,
            p.research_interests,
            p.bio,
            g.primary_area_id,
@@ -161,11 +192,24 @@ async function fetchPeople() {
     LEFT JOIN per_pa_areas         paa ON paa.person_id = p.person_id
     LEFT JOIN per_fund             pf  ON pf.person_id = p.person_id
     LEFT JOIN per_aff              pa2 ON pa2.person_id = p.person_id
+    LEFT JOIN reg                  r   ON r.person_id  = p.person_id
+    LEFT JOIN reg_reach            rr  ON rr.canonical_id = r.canonical_id
   `;
   const r = await conn.query(sql);
   return r.toArray().map((row) => numify(row.toJSON()));
 }
 
+
+// Cohort membership, from person_registry. A directory person can also be
+// on the COD team or in the field-wide scholar roster; before the registry
+// existed those were separate tables with no shared key, so the same human
+// appeared two or three times with no way to tell.
+function cohortChips(p) {
+  const chips = [];
+  if (p.is_team) chips.push('<span class="ppl-cohort ppl-cohort-team">COD team</span>');
+  if (p.is_scholar) chips.push('<span class="ppl-cohort ppl-cohort-scholar">Scholar roster</span>');
+  return chips.join('');
+}
 
 function cardHtml(p) {
   const urls = [];
@@ -205,6 +249,7 @@ function cardHtml(p) {
       ${p.primary_area_label
         ? `<span class="ppl-pchip">${esc(p.primary_area_label)}</span>`
         : ''}
+      ${cohortChips(p)}
     </header>
     <div class="ppl-metrics">
       <span class="ppl-metric"><strong>${fmtInt(p.n_pubs)}</strong><br>pubs</span>

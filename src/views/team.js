@@ -97,6 +97,39 @@ async function fetchTeam() {
       FROM pubs
       FULL OUTER JOIN coauth ON coauth.person_id = pubs.person_id
       FULL OUTER JOIN hidx   ON hidx.person_id   = COALESCE(pubs.person_id, coauth.person_id)
+    ),
+    -- Registry-side identity and reach. The person_id joins above only
+    -- reach a member who has a `people` row AND publications attributed to
+    -- it, which was true for 13 of 40 members. person_registry resolves the
+    -- same humans on ORCID/OpenAlex equality and carries their metrics
+    -- directly, so it fills in the rest.
+    reg AS (
+      SELECT person_id, canonical_id, orcid, openalex_id, google_scholar_id,
+             homepage_url, affiliation, affiliation_ror, affiliation_country,
+             h_index AS reg_h_index, works_count, cited_by_count,
+             coastal_works_count, is_site_personnel, is_scholar
+      FROM person_registry
+      WHERE is_team AND person_id IS NOT NULL
+    ),
+    -- Who each member co-publishes with, split by which cohort the partner
+    -- belongs to. This is the cross-cohort reach the org chart alone cannot
+    -- show: a Team member's links out to the wider coastal community.
+    reach AS (
+      SELECT e.self_id AS canonical_id,
+             COUNT(*)                                          AS reg_degree,
+             COUNT(*) FILTER (WHERE o.is_scholar AND NOT o.is_team)         AS to_scholars,
+             COUNT(*) FILTER (WHERE o.is_site_personnel AND NOT o.is_team)  AS to_site,
+             COUNT(*) FILTER (WHERE o.is_team)                              AS to_team,
+             MAX(e.co_pub_count)                               AS top_co_pubs
+      FROM (
+        SELECT canonical_id_a AS self_id, canonical_id_b AS other_id, co_pub_count
+          FROM registry_collaborations
+        UNION ALL
+        SELECT canonical_id_b, canonical_id_a, co_pub_count
+          FROM registry_collaborations
+      ) e
+      JOIN person_registry o ON o.canonical_id = e.other_id
+      GROUP BY e.self_id
     )
     SELECT tm.member_id,
            tm.person_id,
@@ -115,19 +148,35 @@ async function fetchTeam() {
            w.title       AS wbs_title,
            w.parent_code AS wbs_parent,
            w.sort_order  AS wbs_sort,
-           p.orcid,
-           p.openalex_id,
-           p.google_scholar_id,
-           p.homepage_url,
+           COALESCE(r.orcid, p.orcid)                         AS orcid,
+           COALESCE(r.openalex_id, p.openalex_id)             AS openalex_id,
+           COALESCE(r.google_scholar_id, p.google_scholar_id) AS google_scholar_id,
+           COALESCE(r.homepage_url, p.homepage_url)           AS homepage_url,
            p.research_interests,
            m.n_pubs,
            m.citations,
-           m.h_index,
-           m.n_coauth
+           COALESCE(m.h_index, r.reg_h_index)                 AS h_index,
+           m.n_coauth,
+           r.canonical_id,
+           r.affiliation          AS reg_affiliation,
+           r.affiliation_ror,
+           r.affiliation_country,
+           r.works_count,
+           r.cited_by_count,
+           r.coastal_works_count,
+           r.is_site_personnel,
+           r.is_scholar,
+           rc.reg_degree,
+           rc.to_scholars,
+           rc.to_site,
+           rc.to_team,
+           rc.top_co_pubs
     FROM cod_team_members tm
     LEFT JOIN cod_wbs w ON w.wbs_code  = tm.wbs_code
     LEFT JOIN people  p ON p.person_id = tm.person_id
     LEFT JOIN metrics m ON m.person_id = tm.person_id
+    LEFT JOIN reg     r ON r.person_id = tm.person_id
+    LEFT JOIN reach   rc ON rc.canonical_id = r.canonical_id
     ORDER BY w.sort_order, tm.sort_order, tm.display_name`;
 
   const res = await conn.query(sql);
@@ -154,18 +203,54 @@ function profileLinks(row) {
 }
 
 function hasMetrics(row) {
-  return row.n_pubs != null || row.citations != null || row.h_index != null;
+  return row.n_pubs != null || row.citations != null || row.h_index != null
+      || row.works_count != null || row.reg_degree != null;
 }
 
 function metricsRow(row) {
   if (!hasMetrics(row)) return '';
+  // works_count is the OpenAlex lifetime total from person_registry;
+  // n_pubs counts only publications attributed inside this catalogue, which
+  // is a much smaller and censored number. Prefer the registry figure and
+  // say which one is shown.
+  const pubs = row.works_count != null ? row.works_count : row.n_pubs;
+  const pubLabel = row.works_count != null ? 'works' : 'pubs in catalogue';
+  const cites = row.cited_by_count != null ? row.cited_by_count : row.citations;
   return `
     <div class="team-metrics">
-      <span><strong>${fmtInt(row.n_pubs)}</strong> pubs</span>
-      <span><strong>${fmtInt(row.citations)}</strong> citations</span>
+      <span><strong>${fmtInt(pubs)}</strong> ${pubLabel}</span>
+      <span><strong>${fmtInt(cites)}</strong> citations</span>
       <span><strong>${fmtInt(row.h_index)}</strong> h-index</span>
-      <span><strong>${fmtInt(row.n_coauth)}</strong> co-authors</span>
+      ${row.coastal_works_count != null
+        ? `<span><strong>${fmtInt(row.coastal_works_count)}</strong> coastal output</span>` : ''}
     </div>`;
+}
+
+// Cross-cohort reach: how far this member's co-authorship extends into the
+// wider registry. This is the question the org chart cannot answer — a WBS
+// code says what someone is responsible for, not who they publish with.
+//
+// A null reg_degree means the member has no registry identity yet (no ORCID
+// or OpenAlex id resolved), which is NOT the same as having no collaborators.
+// The two states are rendered differently on purpose.
+function reachRow(row) {
+  if (!row.canonical_id) {
+    return `<div class="team-reach team-reach-unknown">
+      <span>Co-authorship not yet resolved — no persistent identifier on file</span>
+    </div>`;
+  }
+  if (row.reg_degree == null) {
+    return `<div class="team-reach team-reach-unknown">
+      <span>No co-publications found with anyone else in the registry</span>
+    </div>`;
+  }
+  const parts = [
+    `<span><strong>${fmtInt(row.reg_degree)}</strong> co-authors in the registry</span>`,
+  ];
+  if (row.to_scholars) parts.push(`<span>${fmtInt(row.to_scholars)} in the scholar roster</span>`);
+  if (row.to_site) parts.push(`<span>${fmtInt(row.to_site)} at catalogued sites</span>`);
+  if (row.to_team) parts.push(`<span>${fmtInt(row.to_team)} on the COD team</span>`);
+  return `<div class="team-reach">${parts.join('')}</div>`;
 }
 
 function heroCard(row, kind) {
@@ -183,6 +268,7 @@ function heroCard(row, kind) {
       ${instChip(row)}
       <p class="team-hero-wbs">${roles}</p>
       ${metricsRow(row)}
+      ${reachRow(row)}
       ${row.research_interests
         ? `<p class="team-interests">${esc(row.research_interests)}</p>` : ''}
       ${links.length ? `<footer class="team-links">${links.join(' · ')}</footer>` : ''}
@@ -206,7 +292,9 @@ function memberRow(row) {
           ? `<span class="team-open-badge">${esc(row.status === 'collective' ? 'GROUP' : row.status.toUpperCase())}</span>`
           : ''}
         ${hasMetrics(row)
-          ? `<span class="team-member-metric">h ${fmtInt(row.h_index)} · ${fmtInt(row.n_pubs)} pubs</span>`
+          ? `<span class="team-member-metric">h ${fmtInt(row.h_index)} · ${fmtInt(
+              row.works_count != null ? row.works_count : row.n_pubs)} works${
+              row.reg_degree != null ? ` · ${fmtInt(row.reg_degree)} co-authors` : ''}</span>`
           : ''}
         ${links.length ? `<span class="team-links">${links.join(' · ')}</span>` : ''}
       </div>
