@@ -579,6 +579,74 @@ def check_dataset_facilities(conn, failures: list[str]) -> None:
                 f"research organisation", failures)
 
 
+def check_view_sql_types(failures: list[str]) -> None:
+    """No view query may return DECIMAL or HUGEINT to the browser.
+
+    duckdb-wasm and duckdb-python disagree about these two types, and the
+    disagreement is silent:
+
+      * DECIMAL  -> Arrow structured value in wasm, plain float in python.
+                    ``Number(v)`` on it is NaN. Every ``Number(x) || 0``
+                    guard in the views then yields 0.
+      * HUGEINT  -> BigInt in wasm, int in python. ``Number()`` copes, but
+                    any arithmetic mixing it with a JS number throws
+                    "Cannot mix BigInt and other types".
+
+    This is exactly how the Knowledge Map died with "invalid bounds": the
+    region weight was DECIMAL(38,2) because an integer count was multiplied
+    by a JS-side decimal literal, so ``a.weight = Number(a.weight) || 0``
+    made every weight 0, ``areas.filter(a => a.weight > 0)`` returned
+    nothing, allNodes was empty, and the Voronoi bounding box was NaN.
+
+    Nothing caught it. The SQL executed fine, the file parsed fine, and
+    duckdb-python returned a plain float, so the local run was clean while
+    the browser showed a blank page. Casting at the SQL boundary is the fix
+    that holds regardless of which client reads the parquet.
+    """
+    import glob                                           # noqa: PLC0415
+    import re                                             # noqa: PLC0415
+
+    root = Path(__file__).resolve().parent.parent
+    site = root / "public" / "parquet"
+    views = sorted((root / "src" / "views").glob("*.js"))
+    if not views or not site.is_dir():
+        return
+
+    conn = duckdb.connect()
+    for pq in site.glob("*.parquet"):
+        conn.execute(
+            f"CREATE OR REPLACE VIEW {pq.stem} AS "
+            f"SELECT * FROM read_parquet('{pq.as_posix()}')")
+
+    unsafe = ("DECIMAL", "HUGEINT", "UHUGEINT")
+    for path in views:
+        text = path.read_text()
+        # Views interpolate numeric constants into SQL; substitute them so
+        # the statement parses. Anything still interpolated is skipped.
+        consts = dict(re.findall(r"const (W_[A-Z_]+)\s*=\s*([0-9.]+)", text))
+        for m in re.finditer(r"`(\s*(?:WITH|SELECT)\b.*?)`", text, re.S):
+            sql = m.group(1)
+            for k, v in consts.items():
+                sql = sql.replace("${" + k + "}", v)
+            if "${" in sql or "?" in sql:
+                continue
+            try:
+                rel = conn.sql(sql)
+            except Exception:                             # noqa: BLE001
+                # Type-checking is not this gate's job to enforce parseability;
+                # check_frontend_parses and the view smoke tests cover that.
+                continue
+            for name, typ in zip(rel.columns, rel.types):
+                if any(u in str(typ).upper() for u in unsafe):
+                    assert_true(
+                        False,
+                        f"{path.name} returns column '{name}' as {typ}; "
+                        f"duckdb-wasm hands DECIMAL/HUGEINT to JS as a "
+                        f"non-number. Wrap it in CAST(... AS DOUBLE).",
+                        failures)
+    conn.close()
+
+
 def check_frontend_parses(failures: list[str]) -> None:
     """Every src/*.js must be syntactically valid JavaScript.
 
@@ -591,46 +659,77 @@ def check_frontend_parses(failures: list[str]) -> None:
     so SQL-level verification passed while the page was unloadable.
 
     A character-balance heuristic does NOT catch this: the stray backticks
-    come in pairs, so the file counts as balanced. Only a parser catches
-    it. quickjs is a pure-pip dependency and needs no build step, which is
-    what makes it usable here.
+    come in pairs, so the file counts as balanced. Only a parser catches it.
 
-    Skipped, with a warning, if quickjs is not installed — the gate must
-    still run in an environment that only has the Python data stack.
+    The first version of this gate used quickjs. It DID detect this bug —
+    that is worth stating plainly, because an earlier version of this
+    docstring claimed otherwise. What it could not do is say where the bug
+    was. quickjs has no ES-module parser, so the check blanked out
+    import/export lines with a regex and wrapped the remainder in a function
+    expression; a stray backtick then surfaced as ``SyntaxError: expecting
+    '}'`` with no line number, pointing at the wrapper rather than at the
+    offending comment. Diagnosing one cost a manual bisect. node reported
+    the same defect as ``Unexpected identifier 'NaN'`` at network.js:411 on
+    the first call.
+
+    So this version is a diagnostics upgrade, not a detection one. It uses
+    node's SourceTextModule, which parses the file as written, as an ES
+    module, exactly as the browser does — no text substitution and no
+    wrapper, so failures carry a real message and a real position.
+    Construction parses without executing and without resolving imports, so
+    bare specifiers ('maplibre-gl') that only an importmap resolves do not
+    produce a false failure.
+
+    Skipped, with a warning, if node is unavailable — the gate must still
+    run in an environment that only has the Python data stack.
     """
-    try:
-        import quickjs                                    # noqa: PLC0415
-    except ImportError:
-        print("[qa] quickjs not installed — skipping the JS parse check. "
-              "`pip install quickjs` to enable it.", file=sys.stderr)
+    import json                                           # noqa: PLC0415
+    import shutil                                         # noqa: PLC0415
+    import subprocess                                     # noqa: PLC0415
+
+    node = shutil.which("node")
+    if not node:
+        print("[qa] node not found — skipping the JS parse check. "
+              "Install node to enable it.", file=sys.stderr)
         return
 
-    import re                                             # noqa: PLC0415
     src_dir = Path(__file__).resolve().parent.parent / "src"
     files = sorted(src_dir.rglob("*.js"))
     if not files:
         failures.append("no .js files found under src/ — is the checkout complete?")
         return
 
-    ctx = quickjs.Context()
-    for f in files:
-        text = f.read_text()
-        # QuickJS's eval takes a script, not a module. Blank out the module
-        # syntax with same-length whitespace so reported positions still
-        # line up with the real file.
-        blank = lambda m: " " * len(m.group(0))           # noqa: E731
-        s = re.sub(r"^\s*import\s[^;]*;", blank, text, flags=re.M)
-        s = re.sub(r"^\s*export\s+(?=(const|function|async|class|let|var))",
-                   blank, s, flags=re.M)
-        s = re.sub(r"^\s*export\s*\{[^}]*\};", blank, s, flags=re.M)
-        try:
-            # Wrap in a function expression: parses the body without
-            # executing any of it.
-            ctx.eval(f"(function(){{ {s} \n}})")
-        except Exception as e:                            # noqa: BLE001
-            rel = f.relative_to(src_dir.parent)
-            assert_true(False, f"{rel} is not valid JavaScript: "
-                               f"{str(e).splitlines()[0][:160]}", failures)
+    script = """
+const fs = require('fs');
+const vm = require('vm');
+const out = [];
+for (const f of process.argv.slice(1)) {
+  try {
+    new vm.SourceTextModule(fs.readFileSync(f, 'utf8'), { identifier: f });
+  } catch (e) {
+    out.push({ file: f, error: String(e && e.message || e).slice(0, 200) });
+  }
+}
+process.stdout.write(JSON.stringify(out));
+"""
+    proc = subprocess.run(                                # noqa: S603
+        [node, "--experimental-vm-modules", "-e", script, "--",
+         *[str(f) for f in files]],
+        capture_output=True, text=True, timeout=120, check=False)
+    if proc.returncode != 0 and not proc.stdout.strip():
+        failures.append(f"JS parse check could not run: "
+                        f"{proc.stderr.strip().splitlines()[-1][:160]}"
+                        if proc.stderr.strip() else "JS parse check failed to run")
+        return
+    try:
+        problems = json.loads(proc.stdout or "[]")
+    except json.JSONDecodeError:
+        failures.append("JS parse check produced unreadable output")
+        return
+    for p in problems:
+        rel = Path(p["file"]).relative_to(src_dir.parent)
+        assert_true(False, f"{rel} is not valid JavaScript: {p['error']}",
+                    failures)
 
 
 def main() -> int:
@@ -687,6 +786,7 @@ def main() -> int:
     # Outside the DB block: this one reads source files, not the database,
     # and must run even on a checkout with no data.
     check_frontend_parses(failures)
+    check_view_sql_types(failures)
 
     if failures:
         print("QA FAILED:")
