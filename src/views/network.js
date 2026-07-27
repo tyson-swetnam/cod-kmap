@@ -518,21 +518,49 @@ async function fetchData() {
         JOIN facility_area_funding faf ON faf.facility_id = fp.facility_id
         GROUP BY fp.person_id
       )
+      -- A person is drawn INSIDE the circle of the site they work at, so
+      -- the region they land in must be the region that holds that site,
+      -- not the region of their own research domain. Those disagree for a
+      -- substantial minority: a fisheries scientist based at a marine-
+      -- ecosystems observatory has a personal domain of fisheries and a
+      -- site in marine-ecosystems.
+      --
+      -- Placing by personal domain put such people in a square that does
+      -- not contain their facility's circle, layoutAndFit's
+      -- facCircles.get(fid) missed, and the code fell back to bubbles[0] --
+      -- an arbitrary unrelated institution in the wrong region. That is
+      -- worse than leaving them unplaced: it draws a false affiliation.
+      --
+      -- So: prefer the site's region, fall back to the person's own domain
+      -- only when they have no catalogued site at all.
       SELECT p.person_id AS id,
              p.name,
              p.orcid,
              p.openalex_id,
              p.homepage_url,
-             g.primary_area_id        AS area_id,
+             COALESCE(fg.primary_area_id, g.primary_area_id) AS area_id,
+             (fg.primary_area_id IS NOT NULL)                AS placed_at_site,
              COALESCE(pa.n_pubs, 0)   AS n_pubs,
              COALESCE(pa.n_coauth, 0) AS n_coauth,
              COALESCE(pa.total_citations, 0) AS total_citations,
              COALESCE(pf.facility_funding_usd, 0) AS facility_funding_usd
       FROM   people p
-      JOIN   person_primary_groups g ON g.person_id = p.person_id
+      LEFT  JOIN person_primary_groups g ON g.person_id = p.person_id
+      -- The person's PRIMARY site, chosen the same way as
+      -- person_primary_facility below so the two can never disagree.
+      LEFT  JOIN (
+        SELECT person_id, facility_id FROM (
+          SELECT person_id, facility_id,
+                 ROW_NUMBER() OVER (
+                   PARTITION BY person_id
+                   ORDER BY is_key_personnel DESC, role, facility_id) rk
+          FROM facility_personnel
+        ) WHERE rk = 1
+      ) pfac ON pfac.person_id = p.person_id
+      LEFT  JOIN facility_primary_groups fg ON fg.facility_id = pfac.facility_id
       LEFT  JOIN per_pa  pa ON pa.person_id = p.person_id
       LEFT  JOIN per_fund pf ON pf.person_id = p.person_id
-      WHERE  g.primary_area_id IS NOT NULL`,
+      WHERE  COALESCE(fg.primary_area_id, g.primary_area_id) IS NOT NULL`,
 
     // Facility ↔ person via facility_personnel (intra+inter polygon).
     fac_pers: `
@@ -1273,13 +1301,34 @@ async function layoutAndFit(d3, members, edges, square, facCircles) {
   const peoPerFac = new Map();
   for (const p of peo) {
     const fid = p.primary_facility_id;
-    const b = (fid && facCircles.get(fid)) || facCircles.get(bubbles[0].id);
+    // Only fall back to the first bubble for someone who has NO catalogued
+    // site. Doing it for a person who has one but whose circle is missing
+    // from this square drew them inside an arbitrary unrelated institution
+    // — a positional claim the data does not support. With the people
+    // query now grouping people by their SITE's region rather than their
+    // own research domain, a sited person's circle is always in this
+    // square, so this branch should not fire; the guard makes a regression
+    // visible instead of silent.
+    let b = fid ? facCircles.get(fid) : null;
+    if (!b && fid) {
+      console.warn('[mvg] site', fid, 'not in region', square.id,
+                   '— leaving', p.name, 'unplaced rather than guessing');
+      continue;
+    }
+    if (!b) b = facCircles.get(bubbles[0].id);
     if (!b) continue;
     const k = peoPerFac.get(b) || 0;
     peoPerFac.set(b, k + 1);
-    const n = (peopleAt.get(fid) || 1);
+    // n must be the number of people actually indexed into THIS bubble, not
+    // peopleAt's count. peopleAt counts only those whose PRIMARY facility it
+    // is, so when anyone else lands here (a fallback placement, or a bubble
+    // serving more people than it is primary for) k outruns n, t exceeds 1,
+    // and 0.88*sqrt(t) exceeds 1 — the spiral walks outside the circle it is
+    // meant to fill. Clamping t is what keeps the person inside the site
+    // they are being drawn as belonging to.
+    const n = Math.max(peopleAt.get(fid) || 1, k + 1);
     // Deterministic spiral up to bubble's inner 88%.
-    const t = (k + 0.5) / Math.max(n, 1);
+    const t = Math.min(1, (k + 0.5) / Math.max(n, 1));
     const r = b.r * 0.88 * Math.sqrt(t);
     const a = (k + 1) * PHI;
     p.x = b.x + r * Math.cos(a);
@@ -2875,6 +2924,15 @@ function nodeTipHtml(d) {
     if (affils.length > shown.length) {
       lines.push(`<small style="color:#94a3b8">+${affils.length - shown.length} more affiliation${affils.length - shown.length === 1 ? '' : 's'}</small>`);
     }
+  }
+
+  // Say which claim the position makes. A person drawn inside a site
+  // circle is asserted to work there; a person with no catalogued site
+  // sits in their research domain's region instead, which is a much
+  // weaker statement and must not be read as a location.
+  if (!d.placed_at_site) {
+    lines.push('<small style="color:#94a3b8">no catalogued site — '
+             + 'positioned by research domain</small>');
   }
 
   const metrics = [];
