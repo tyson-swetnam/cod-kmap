@@ -36,6 +36,7 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+import unicodedata
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -71,6 +72,21 @@ def clean_oa(v) -> str | None:
     return s if OA_RE.match(s) else None
 
 
+def name_slug(full: str) -> str:
+    """Stable, ASCII, lowercase slug of a person's name.
+
+    Used only for the site-scoped canonical_id, so it must be deterministic
+    across rebuilds and across machines: NFKD-fold accents rather than
+    depending on locale, keep only [a-z0-9-], and never hash. A hash would
+    be shorter but would make the id opaque and untraceable back to the
+    person, which is the opposite of what a registry key is for.
+    """
+    s = unicodedata.normalize("NFKD", (full or "").strip().lower())
+    s = "".join(ch for ch in s if not unicodedata.combining(ch))
+    s = re.sub(r"[^a-z0-9]+", "-", s).strip("-")
+    return s or "unnamed"
+
+
 def split_name(full: str) -> tuple[str, str]:
     parts = [p for p in re.split(r"\s+", (full or "").strip()) if p]
     if len(parts) < 2:
@@ -102,6 +118,8 @@ class Registry:
         self.rows: list[dict] = []
         self.by_orcid: dict[str, dict] = {}
         self.by_oa: dict[str, dict] = {}
+        self.by_site: dict[str, dict] = {}
+        self.by_person: dict[str, dict] = {}
         self.prov: list[dict] = []
         self.unresolvable: list[tuple[str, str]] = []
         self.merges = 0
@@ -114,23 +132,72 @@ class Registry:
             evidence=evidence, source_url=source_url, confidence=confidence,
             retrieved_at=date.today().isoformat()))
 
+    def _drop_site_key(self, row: dict) -> None:
+        """Retire a row's site-scoped index entry when it gains a real id.
+
+        Without this the promoted row stays reachable under its old
+        `site:` key, so a later source with no identifier would merge into
+        a row whose canonical_id no longer matches that key — a silent
+        inconsistency between the index and the data it indexes.
+        """
+        old = row.get("canonical_id", "")
+        if old.startswith("site:") and self.by_site.get(old) is row:
+            del self.by_site[old]
+
     def add(self, *, name: str, orcid: str | None, openalex_id: str | None,
             cohort: str | None, source: str, source_url: str, confidence: str,
-            extra: dict | None = None) -> dict | None:
-        """Insert or merge one source row. Returns the registry row, or None
-        when the row carries no persistent identifier."""
+            extra: dict | None = None,
+            site_scope: str | None = None) -> dict | None:
+        """Insert or merge one source row.
+
+        Returns the registry row, or None when the row has no identifier and
+        no ``site_scope`` to fall back on.
+
+        ``site_scope`` is a catalogued facility_id. Passing it admits a
+        person who has neither an ORCID nor an OpenAlex id, keyed
+        ``site:<facility_id>:<name-slug>``. It is deliberately an explicit
+        opt-in rather than an automatic fallback: it must only be used for
+        people whose presence is attested by a facility_personnel row with a
+        citable source, never to rescue an unresolved scholar. See the
+        identity_class note in schema/schema.sql.
+        """
         orcid = clean_orcid(orcid)
         openalex_id = clean_oa(openalex_id)
-        if not orcid and not openalex_id:
+        if not orcid and not openalex_id and not site_scope:
             self.unresolvable.append((source, name))
             return None
 
+        site_key = (f"site:{site_scope}:{name_slug(name)}"
+                    if site_scope and not orcid and not openalex_id else None)
+        person_id = (extra or {}).get("person_id")
+        # Three lookup routes, in descending order of strength.
+        #
+        # by_person_id is what makes a site-scoped row promotable. A
+        # site-scoped row is in neither by_orcid nor by_oa (it has no
+        # identifier to index), and by_site is consulted only when the
+        # INCOMING row also has no identifier — so without this third route
+        # a later source carrying an ORCID for the same human matched
+        # nothing and created a SECOND row, splitting their cohort flags
+        # across two identities. That is the exact failure the registry
+        # exists to prevent.
+        #
+        # people.person_id is a safe join key here precisely because it is
+        # NOT a name: it is the directory's own primary key, and the team
+        # and scholar ingests both carry it as a back-reference. Matching on
+        # it is identifier equality, not name matching.
         existing = (self.by_orcid.get(orcid) if orcid else None) \
-            or (self.by_oa.get(openalex_id) if openalex_id else None)
+            or (self.by_oa.get(openalex_id) if openalex_id else None) \
+            or (self.by_person.get(person_id) if person_id else None) \
+            or (self.by_site.get(site_key) if site_key else None)
 
         if existing is not None:
             self.merges += 1
-            matched_on = "orcid" if (orcid and orcid in self.by_orcid) else "openalex_id"
+            if orcid and orcid in self.by_orcid:
+                matched_on = "orcid"
+            elif openalex_id and openalex_id in self.by_oa:
+                matched_on = "openalex_id"
+            else:
+                matched_on = "site-scoped id"
             self._record(existing, "merge", name, f"{matched_on}-equality",
                          f"{source} row '{name}' merged into "
                          f"{existing['canonical_id']} on {matched_on} equality",
@@ -140,20 +207,38 @@ class Registry:
             if orcid and not row.get("orcid"):
                 row["orcid"] = orcid
                 self.by_orcid[orcid] = row
-                # Re-key: an ORCID outranks an OpenAlex id for canonical_id.
-                if row["canonical_id"].startswith("openalex:"):
+                # Re-key: an ORCID outranks both an OpenAlex id and a
+                # site-scoped id. Promoting a site-scoped row also upgrades
+                # its identity_class, so "we later found out who this is"
+                # is recorded rather than silently assumed.
+                if row["canonical_id"].startswith(("openalex:", "site:")):
+                    self._drop_site_key(row)
                     row["canonical_id"] = f"orcid:{orcid}"
+                    row["identity_class"] = "persistent"
                 self._record(row, "orcid", orcid, "seed",
                              f"supplied by {source}", source_url, "high")
             if openalex_id and not row.get("openalex_id"):
                 row["openalex_id"] = openalex_id
                 self.by_oa[openalex_id] = row
+                # Same promotion for a site-scoped row gaining an OpenAlex
+                # id — but never demote an orcid: key.
+                if row["canonical_id"].startswith("site:"):
+                    self._drop_site_key(row)
+                    row["canonical_id"] = f"openalex:{openalex_id}"
+                    row["identity_class"] = "persistent"
                 self._record(row, "openalex_id", openalex_id, "seed",
                              f"supplied by {source}", source_url, "high")
         else:
             given, family = split_name(name)
-            cid = f"orcid:{orcid}" if orcid else f"openalex:{openalex_id}"
+            if orcid:
+                cid, klass = f"orcid:{orcid}", "persistent"
+            elif openalex_id:
+                cid, klass = f"openalex:{openalex_id}", "persistent"
+            else:
+                cid = f"site:{site_scope}:{name_slug(name)}"
+                klass = "site-scoped"
             row = dict(canonical_id=cid, display_name=name,
+                       identity_class=klass,
                        name_given=given, name_family=family,
                        orcid=orcid, openalex_id=openalex_id,
                        google_scholar_id=None, scopus_author_id=None,
@@ -175,6 +260,10 @@ class Registry:
                 self.by_orcid[orcid] = row
             if openalex_id:
                 self.by_oa[openalex_id] = row
+            if site_key:
+                self.by_site[site_key] = row
+            if person_id:
+                self.by_person[person_id] = row
             self._record(row, "canonical_id", cid, "seed",
                          f"created from {source} row '{name}'",
                          source_url, confidence)
@@ -184,6 +273,12 @@ class Registry:
         for k, v in (extra or {}).items():
             if v is not None and row.get(k) in (None, ""):
                 row[k] = v
+        # Index by person_id however the row was reached, including on the
+        # merge path where a row created from an identifier-only source
+        # first learns its directory person_id here. Without this a row
+        # merged on ORCID would stay invisible to a later person_id lookup.
+        if person_id and self.by_person.get(person_id) is not row:
+            self.by_person[person_id] = row
         return row
 
 
@@ -201,6 +296,11 @@ def main() -> int:
     ap.add_argument("--db", type=Path, default=DEFAULT_DB)
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--export-parquet", action="store_true")
+    ap.add_argument("--merge", action="store_true",
+                    help="Rewrite only the rows this script derives from the "
+                         "source tables, leaving harvested rows in place. Use "
+                         "this on any registry that harvest_coastal_authors.py "
+                         "has written to — a full rebuild drops those rows.")
     args = ap.parse_args()
 
     if not args.db.exists():
@@ -217,6 +317,15 @@ def main() -> int:
                   "homepage_url")
     staffed = {r[0] for r in conn.execute(
         "SELECT DISTINCT person_id FROM facility_personnel").fetchall()}
+    # Primary catalogued facility per person, ranked the same way the map's
+    # person_primary_facility is, so the site-scoped id and the map position
+    # are anchored to the SAME facility and cannot drift apart.
+    primary_site = {r[0]: r[1] for r in conn.execute("""
+        SELECT person_id, facility_id FROM (
+          SELECT person_id, facility_id,
+                 ROW_NUMBER() OVER (PARTITION BY person_id
+                   ORDER BY is_key_personnel DESC, role, facility_id) rk
+          FROM facility_personnel) WHERE rk = 1""").fetchall()}
     # `people` is the facility directory, but not every row actually staffs a
     # catalogued facility (242 of 280 do). is_site_personnel means "staffs a
     # site", so it is set from facility_personnel rather than from mere
@@ -230,6 +339,11 @@ def main() -> int:
                              else None,
                       source="people", source_url="cod-kmap:people",
                       confidence="high",
+                      # Site-scoped identity, but ONLY for someone who
+                      # actually staffs a catalogued facility. A directory
+                      # row with no facility and no identifier still yields
+                      # None: there is nothing to anchor an id to.
+                      site_scope=primary_site.get(p["person_id"]),
                       extra=dict(person_id=p["person_id"],
                                  google_scholar_id=p["google_scholar_id"],
                                  homepage_url=p["homepage_url"]))
@@ -310,8 +424,38 @@ def main() -> int:
         conn.close()
         return 0
 
-    conn.execute("DELETE FROM person_registry")
-    conn.execute("DELETE FROM person_identity_source")
+    # DESTRUCTIVE BY DESIGN, AND EASY TO REGRET. This script rebuilds the
+    # registry from the three SOURCE tables only (people, cod_team_members,
+    # community_scholars). The ~151k rows added by
+    # scripts/harvest_coastal_authors.py exist in NEITHER, so a plain re-run
+    # silently drops them: 152,008 rows in, 687 out. Recovery is
+    # `git checkout db/parquet/person_registry.parquet && python
+    # scripts/rebuild_db_from_parquet.py`, because the committed parquet is
+    # the durable artifact -- but only if you notice.
+    #
+    # --merge adds and updates the source-derived rows while leaving
+    # harvested ones alone. Use it on a registry that has been harvested
+    # into; use the full rebuild only to recreate one from scratch.
+    if args.merge:
+        existing = conn.execute("SELECT COUNT(*) FROM person_registry").fetchone()[0]
+        cids = [r["canonical_id"] for r in reg.rows]
+        conn.execute(
+            "DELETE FROM person_registry WHERE canonical_id IN "
+            f"({','.join('?' * len(cids))})", cids) if cids else None
+        conn.execute(
+            "DELETE FROM person_identity_source WHERE canonical_id IN "
+            f"({','.join('?' * len(cids))})", cids) if cids else None
+        print(f"[registry] merge mode: {existing:,} existing row(s) preserved "
+              f"except the {len(cids):,} being rewritten")
+    else:
+        n_before = conn.execute("SELECT COUNT(*) FROM person_registry").fetchone()[0]
+        if n_before > len(reg.rows) * 2:
+            print(f"[registry] WARNING: replacing {n_before:,} rows with "
+                  f"{len(reg.rows):,}. If this registry was harvested into, "
+                  f"you want --merge; the harvested rows are about to be "
+                  f"dropped.")
+        conn.execute("DELETE FROM person_registry")
+        conn.execute("DELETE FROM person_identity_source")
     cols = list(reg.rows[0].keys()) if reg.rows else []
     if reg.rows:
         conn.executemany(
@@ -325,8 +469,25 @@ def main() -> int:
             f"INSERT INTO person_identity_source ({','.join(pcols)}) "
             f"VALUES ({','.join('?' * len(pcols))})",
             [[p[c] for c in pcols] for p in reg.prov])
-    print(f"[db] person_registry {n} rows, "
-          f"person_identity_source {len(reg.prov)} rows")
+
+    # AFTER the inserts, never before: a row promoted from openalex:/site:
+    # to orcid: leaves provenance under its OLD canonical_id, which now
+    # matches no registry row. The targeted delete above cannot catch those
+    # (it only knows the NEW ids). Sweeping before the inserts would delete
+    # provenance for rows that are about to come back.
+    orphans = conn.execute(
+        "DELETE FROM person_identity_source WHERE canonical_id NOT IN "
+        "(SELECT canonical_id FROM person_registry) RETURNING 1").fetchall()
+    if orphans:
+        print(f"[registry] swept {len(orphans):,} orphaned provenance row(s) "
+              f"left behind by re-keyed identities")
+
+    total = conn.execute("SELECT COUNT(*) FROM person_registry").fetchone()[0]
+    prov_total = conn.execute(
+        "SELECT COUNT(*) FROM person_identity_source").fetchone()[0]
+    print(f"[db] person_registry {n} rows written "
+          f"({total:,} total), person_identity_source {len(reg.prov)} written "
+          f"({prov_total:,} total)")
 
     if args.export_parquet:
         for base in PARQUET_OUT:

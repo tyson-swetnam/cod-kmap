@@ -805,16 +805,36 @@ LEFT JOIN people  p ON p.person_id = tm.person_id;
 
 CREATE OR REPLACE TABLE person_registry (
     canonical_id        VARCHAR PRIMARY KEY,       -- 'orcid:0000-…' when an ORCID is known,
-                                                   -- else 'openalex:A…'; stable across rebuilds
-                                                   -- because it is derived from the identifier,
-                                                   -- not from a hash of mutable fields.
+                                                   -- else 'openalex:A…', else
+                                                   -- 'site:<facility_id>:<name-slug>'. Stable
+                                                   -- across rebuilds because it is derived from
+                                                   -- an identifier or a catalogued facility row,
+                                                   -- never from a hash of mutable fields.
     display_name        VARCHAR NOT NULL,
     name_family         VARCHAR,
     name_given          VARCHAR,
 
-    -- Persistent identifiers. At least one of orcid / openalex_id is
-    -- required — qa.py enforces it — because a registry row with neither
-    -- cannot be re-resolved or de-duplicated later.
+    -- Identity. At least one of orcid / openalex_id / a site-scoped
+    -- canonical_id is required — qa.py enforces it — because a row with
+    -- none of those cannot be re-resolved or de-duplicated later.
+    --
+    -- The site-scoped class exists for people who staff a catalogued
+    -- facility but do not publish: Executive Directors, Reserve Managers,
+    -- Superintendents. They will never hold an ORCID, so requiring one
+    -- excluded the entire site-leadership layer of the network by
+    -- construction while they were being drawn on the Knowledge Map --
+    -- the map and the roster disagreed about who exists.
+    --
+    -- A site-scoped id is anchored to a verified facility_personnel row
+    -- (citable source_url + confidence), so it is evidence-backed rather
+    -- than a bare name. It is NOT globally persistent: it identifies "this
+    -- person at this site", and a director who moves institutions gets a
+    -- new id. identity_class records which kind of id keys the row so a
+    -- consumer can tell a globally-resolvable identity from a local one.
+    -- If an ORCID is later discovered, the builder re-keys the row exactly
+    -- as it already promotes openalex: -> orcid:.
+    identity_class      VARCHAR NOT NULL DEFAULT 'persistent',
+                                                   -- 'persistent' | 'site-scoped'
     orcid               VARCHAR,
     openalex_id         VARCHAR,
     google_scholar_id   VARCHAR,

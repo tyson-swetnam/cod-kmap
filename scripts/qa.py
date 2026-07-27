@@ -110,7 +110,8 @@ EXPECTED_COLUMNS = {
         "evidence", "source", "source_url",
     },
     "person_registry": {
-        "canonical_id", "display_name", "orcid", "openalex_id",
+        "canonical_id", "display_name", "identity_class",
+        "orcid", "openalex_id",
         "is_team", "is_site_personnel", "is_scholar",
         "person_id", "scholar_id", "tier", "tier_rank",
         "source_url", "confidence",
@@ -325,12 +326,62 @@ def check_person_registry(conn, failures: list[str]) -> None:
     # it would silently fork into a second row the next time the harvest
     # sees the same person. This is also the invariant that stops a
     # name-only resolver from ever writing here.
+    #
+    # The site-scoped class is the one permitted exception: someone who
+    # staffs a catalogued facility but does not publish (Executive Director,
+    # Reserve Manager, Superintendent) is keyed 'site:<facility_id>:<slug>'.
+    # That id is still derived and reproducible, and it is anchored to a
+    # facility_personnel row with a citable source — so it does not reopen
+    # the name-only hole. Three things are checked below: the id shape, that
+    # the facility it names really exists, and that identity_class agrees
+    # with the key. A row with no identifier AND no site anchor still fails.
     bare = conn.execute(
         "SELECT COUNT(*) FROM person_registry "
         "WHERE (orcid IS NULL OR orcid = '') "
-        "  AND (openalex_id IS NULL OR openalex_id = '')").fetchone()[0]
+        "  AND (openalex_id IS NULL OR openalex_id = '') "
+        "  AND canonical_id NOT LIKE 'site:%'").fetchone()[0]
     assert_true(bare == 0,
-                f"{bare} person_registry row(s) carry neither orcid nor openalex_id",
+                f"{bare} person_registry row(s) carry neither orcid, "
+                f"openalex_id, nor a site-scoped canonical_id",
+                failures)
+
+    # A site-scoped id must name a facility that exists, or it is no better
+    # than a bare name with a prefix.
+    orphan_site = conn.execute("""
+        SELECT COUNT(*) FROM person_registry r
+        WHERE r.canonical_id LIKE 'site:%'
+          AND split_part(r.canonical_id, ':', 2) NOT IN
+              (SELECT facility_id FROM facilities)""").fetchone()[0]
+    assert_true(orphan_site == 0,
+                f"{orphan_site} site-scoped person_registry row(s) name a "
+                f"facility_id that is not in facilities",
+                failures)
+
+    # One human, one row. person_id is the directory's primary key, so two
+    # registry rows carrying the same one are the same person split in two —
+    # which is exactly what happens when a site-scoped row fails to be
+    # promoted and a later source with an ORCID creates a second identity
+    # instead of merging. That bug shipped once; this is its signature.
+    split = conn.execute("""
+        SELECT COUNT(*) FROM (
+          SELECT person_id FROM person_registry
+          WHERE person_id IS NOT NULL
+          GROUP BY person_id HAVING COUNT(*) > 1)""").fetchone()[0]
+    assert_true(split == 0,
+                f"{split} person_id(s) appear on more than one "
+                f"person_registry row — the same human split across two "
+                f"identities (a site-scoped row that was not promoted?)",
+                failures)
+
+    # identity_class must agree with the key, so a consumer can filter on
+    # the column instead of pattern-matching the id.
+    mislabelled = conn.execute("""
+        SELECT COUNT(*) FROM person_registry
+        WHERE (canonical_id LIKE 'site:%') <> (identity_class = 'site-scoped')
+        """).fetchone()[0]
+    assert_true(mislabelled == 0,
+                f"{mislabelled} person_registry row(s) whose identity_class "
+                f"disagrees with their canonical_id prefix",
                 failures)
 
     for col in ("source_url", "confidence"):

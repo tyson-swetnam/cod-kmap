@@ -531,11 +531,20 @@ function unresolvedHtml(id, hit) {
     ? `<strong>${esc(hit.display_name)}</strong> is in the
        <code>${esc(hit.src)}</code> table but`
     : `The id <code>${esc(id)}</code>`;
+  // Reaching this now means something narrower than it used to. People who
+  // staff a catalogued facility but hold no ORCID or OpenAlex id — reserve
+  // managers, directors, superintendents — are in the registry under a
+  // site-scoped canonical_id, so they are no longer excluded. What is left
+  // here is a directory row with no identifier AND no catalogued facility
+  // to anchor a site-scoped id to: nothing to key the person on at all.
   return `<div class="reg-notice">
     ${who} has no row in <code>person_registry</code>: no ORCID or OpenAlex
-    identifier was resolved for them, and the registry is keyed on a
-    persistent id. They are therefore not in the roster below — that is a
-    gap in identity resolution, not evidence they do not exist.
+    identifier was resolved for them, and they are not linked to a
+    catalogued facility, so there is no site-scoped identity to fall back
+    on either. Every registry row must be keyed on something that survives
+    a rebuild — a persistent identifier, or a verified position at a known
+    site. They are therefore not in the roster below; that is a gap in
+    identity resolution, not evidence they do not exist.
     <a href="#/people">Show the full roster</a>.
   </div>`;
 }
