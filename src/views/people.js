@@ -321,32 +321,60 @@ function shellHtml() {
       <header class="reg-header">
         <h1>People</h1>
         <p class="reg-summary">
-          Every person the site ships, in one list. The roster is
-          <code>person_registry</code>, which resolved the project team, the
-          personnel of catalogued sites, and the coastal-science scholar
-          roster onto persistent identifiers (ORCID / OpenAlex), so one human
-          is one row. Cohort is a filter below, not a separate tab.
+          Who works in coastal science, in one searchable list — the project
+          team, the people who run catalogued sites, and the wider scholar
+          community, all as one row per person. Filter by cohort, sort to
+          rank, and search a name, institution, country or identifier.
+          Cards link out to ORCID, OpenAlex and the institution&rsquo;s ROR
+          record wherever those are known, so a row can be checked at
+          source rather than taken on trust.
         </p>
-        <ul class="reg-caveats">
-          <li><strong>${fmtInt(_rows.length)}</strong> rows ship to the browser —
-            the <code>core</code> tier. The full registry holds
-            ${fmtInt(REGISTRY_TOTAL)} identities; the remainder exists only in
-            the local DuckDB build and is not queryable here.</li>
-          <li>Co-authorship is computed for <strong>${fmtInt(withReach)}</strong>
-            of ${fmtInt(_rows.length)}. The co-publication graph was built over
-            the pre-harvest identities, so for most people here it is
-            <em>not computed</em> — which is a different statement from
-            <em>none</em>.</li>
-          <li>Only <strong>${fmtInt(withSite)}</strong> have a ROR match to an
-            organisation in the facilities catalogue; the rest cannot be
-            placed at a physical location.</li>
-          <li>&ldquo;Coastal output volume&rdquo; is an upper bound, not a paper
-            count: OpenAlex lists a work under every topic it carries, so a
-            paper with several coastal topics is counted several times.</li>
-          <li>The COD work-breakdown structure is a management hierarchy, not
-            a roster filter — it lives on the
-            <a href="#/org">Org chart</a> tab.</li>
+        <ul class="reg-howto">
+          <li><strong>Find a collaborator.</strong> Search an institution or
+            country, then sort by <em>Coastal output volume</em> to see who
+            publishes most in the domain, or by <em>h-index</em> for
+            career-scale standing.</li>
+          <li><strong>Find who bridges cohorts.</strong> The
+            <em>In 2+ cohorts</em> filter is the short list of people who are
+            simultaneously on the team, running a site, or in the scholar
+            roster — the existing connective tissue of the network.</li>
+          <li><strong>Find where the team is thin.</strong> Filter to
+            <em>Scholar roster</em> and sort by
+            <em>Co-authors in registry</em>: high-output researchers with few
+            or no links are the people the project is not yet connected to.</li>
+          <li><strong>Follow a person into the network.</strong> A card
+            showing a site means that person is placed at a physical
+            observatory on the <a href="#/network">Knowledge Map</a>;
+            cohort chips link across to the rest of their record.</li>
         </ul>
+        <details class="reg-caveats-wrap">
+          <summary>How to read these numbers (${fmtInt(_rows.length)} of
+            ${fmtInt(REGISTRY_TOTAL)} shown)</summary>
+          <ul class="reg-caveats">
+            <li><strong>${fmtInt(_rows.length)}</strong> rows ship to the browser —
+              the <code>core</code> tier, ranked by coastal output, citation
+              impact and connectivity. The full registry holds
+              ${fmtInt(REGISTRY_TOTAL)} identities; the remainder exists only in
+              the local DuckDB build and is not queryable here.</li>
+            <li>Co-authorship is computed for <strong>${fmtInt(withReach)}</strong>
+              of ${fmtInt(_rows.length)}. The co-publication graph was built over
+              the pre-harvest identities, so for most people here it is
+              <em>not computed</em> — which is a different statement from
+              <em>none</em>. Sorting by co-authors ranks only those
+              ${fmtInt(withReach)}.</li>
+            <li>Only <strong>${fmtInt(withSite)}</strong> have a ROR match to an
+              organisation in the facilities catalogue; the rest cannot be
+              placed at a physical location, so absence of a site on a card
+              is not evidence the person works nowhere catalogued.</li>
+            <li>&ldquo;Coastal output volume&rdquo; is an upper bound, not a paper
+              count: OpenAlex lists a work under every topic it carries, so a
+              paper with several coastal topics is counted several times. Use
+              it to rank, not to quote.</li>
+            <li>The COD work-breakdown structure is a management hierarchy, not
+              a roster filter — it lives on the
+              <a href="#/org">Org chart</a> tab.</li>
+          </ul>
+        </details>
         <div class="reg-controls">
           <div class="reg-cohorts">${chips}</div>
           <input id="reg-q" type="search" value="${esc(_q)}"

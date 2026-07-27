@@ -1577,6 +1577,29 @@ footer a:hover { color: var(--c-primary); }
 .reg-header h1 { margin: 0 0 6px; font-size: clamp(1.1rem, 1.6vw, 1.4rem); color: #0f172a; }
 .reg-summary { color: #1f2937; font-size: .96rem; margin: 4px 0 10px; max-width: 920px; }
 .reg-summary code { font-size: .86em; background: #f1f5f9; padding: 1px 4px; border-radius: 3px; }
+/* How-to list (people.js): what a reader can DO with this page. Sits above
+   the fold and carries the same visual weight as body copy, because it is
+   the page description — the provenance caveats below are reference. */
+.reg-howto {
+  margin: 0 0 10px; padding: 0 0 0 20px; max-width: 920px;
+  list-style: disc; font-size: .88rem; color: #334155;
+}
+.reg-howto li { margin: 5px 0; }
+.reg-howto strong { color: #0f172a; }
+.reg-howto em { font-style: normal; font-weight: 600; color: #0369a1; }
+.reg-howto a { color: #0369a1; }
+
+/* Provenance caveats, collapsed by default. They are load-bearing for
+   anyone quoting a number off this page, and noise for everyone else, so
+   they are one click away rather than five lines of preamble. */
+.reg-caveats-wrap { margin: 0 0 12px; max-width: 920px; }
+.reg-caveats-wrap > summary {
+  cursor: pointer; font-size: .82rem; color: #475569;
+  padding: 4px 0; user-select: none;
+}
+.reg-caveats-wrap > summary:hover { color: #0369a1; }
+.reg-caveats-wrap[open] > summary { color: #0f172a; font-weight: 600; }
+
 .reg-caveats {
   margin: 0 0 12px; padding: 10px 12px 10px 28px; max-width: 920px;
   list-style: disc; font-size: .82rem; color: #475569;
