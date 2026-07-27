@@ -1207,6 +1207,26 @@ footer a:hover { color: var(--c-primary); }
 .mvg-reg-note {
   margin: 0; font-size: .72rem; line-height: 1.4; color: #92400e;
 }
+/* Domain-placed cohort panel. A distinct dashed treatment because the
+ * claim it makes is weaker than a site roster's: these researchers are
+ * grouped by subject, not located anywhere. */
+.mvg-reg-note-domain {
+  border-left: 3px dashed #c2410c;
+  padding: 4px 0 4px 7px;
+  background: #fffbeb;
+}
+/* Protected-areas layer swatch: hollow + dashed, matching the aggregate
+ * chip on the map, so the legend reads as "context, not a data source". */
+.net-swatch-pa {
+  background: transparent !important;
+  border: 1.5px dashed #65803a;
+}
+/* Region cartogram labels and the aggregate chips are sized in real screen
+ * pixels by onZoom() (see LABEL_MIN_PX in network.js), so nothing here may
+ * set a font-size on them — a CSS font-size would win over the attribute
+ * for specificity-free presentation attributes and silently defeat the
+ * floor. Only non-sizing properties belong here. */
+.mvg-pa-chips text, .mvg-reg-labels text { user-select: none; }
 .mvg-reg-list {
   list-style: none; margin: 4px 0 0; padding: 0;
   flex: 1; min-height: 0; overflow-y: auto; font-size: .8rem;
