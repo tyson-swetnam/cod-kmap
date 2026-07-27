@@ -11,15 +11,24 @@ db/parquet mirror) for analysis.
 Scoring
 -------
 Four components, each converted to a percentile within the scored
-population so that a citation count in the tens of thousands cannot swamp
-a coastal-share fraction bounded at 1.0. Ranking on raw values put
-generalists with vast non-coastal output above coastal specialists, which
-inverts what this catalogue is for.
+population. Percentiles rather than raw values because the components have
+incomparable ranges — cited_by_count runs to six figures while
+coastal_share is bounded at 1.0 — so a raw-weighted sum would be decided
+almost entirely by the citation term.
 
   coastal_output   coastal_works_count       — how much coastal work
   impact           h_index                   — how well cited
-  recency          recent 5-year coastal rate — still active
+  recency          two_yr_mean_citedness     — recent citation rate
   connectivity     registry co-author degree — embedded in the community
+
+Note on `recency`: two_yr_mean_citedness is OpenAlex's 2-year mean
+citedness, i.e. how heavily the author's recent work is being cited. It is
+a recency-weighted *impact* measure, not a measure of recent output
+volume. A recent-output rate would be the better signal here — the harvest
+already computes one from counts_by_year — but person_registry has no
+column for it yet, so this is the best proxy the stored schema supports.
+Adding a recent_works column and switching this term is the obvious next
+refinement.
 
 Weights are a parameter, not a constant, because "most important" is an
 editorial judgement the project owns. The defaults weight coastal output

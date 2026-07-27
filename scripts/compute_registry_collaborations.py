@@ -53,10 +53,12 @@ SLEEP = 0.05
 PER_PAGE = 200
 # Truncating an author's work list silently undercounts their strongest
 # edges, and the authors who exceed a low cap are exactly the high-degree
-# nodes whose centrality the blind-spot analysis depends on. At 600 the
-# top six edges were all short by 10-25% against OpenAlex's own pair count
-# (Jeppesen<->Søndergaard read 212 vs a true 261). 6,000 covers every
-# member of the current registry; the most prolific holds 5,177 works.
+# nodes whose centrality the blind-spot analysis depends on. At a 600-work
+# cap, four of the top six edges were short by 4-23% against OpenAlex's own
+# two-author filter — Jeppesen<->Søndergaard read 212 against a true 261 —
+# while the two whose endpoints both sat under the cap were already exact.
+# 6,000 covers every member of the current registry; the most prolific
+# holds 5,177 works.
 MAX_WORKS_PER_AUTHOR = 6000
 
 

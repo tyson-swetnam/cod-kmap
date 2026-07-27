@@ -16,10 +16,19 @@ dangerous half, so it is gated hard.
 Resolution rules (ALL must hold)
 --------------------------------
   1. Family name matches exactly, case- and diacritic-insensitive.
-  2. Given names are compatible: the first given name matches in full, or
-     one side abbreviates the other to an initial ("A. Randall Hughes" vs
-     "Randall Hughes" is compatible; "Y. Stacy Zhang" vs "Y. Joseph Zhang"
-     is not — that exact pair merged wrongly once already).
+  2. Given names are compatible position by position: at each position an
+     initial matches a spelled-out name with the same first letter, but two
+     spelled-out names must be equal. "Randall Hughes" vs "Randall A.
+     Hughes" is compatible; "Y. Stacy Zhang" vs "Y. Joseph Zhang" is not —
+     that exact pair merged wrongly once already.
+
+     This comparison is positional, so it also rejects a *dropped* given
+     name: "A. Randall Hughes" and "Randall Hughes" are refused, because
+     position 0 compares "A." against "Randall". That is stricter than
+     necessary for the person who publishes under a middle name, and it
+     costs some true matches. It is deliberate — the failure it avoids is
+     merging two people, and the failure it causes is leaving a row
+     unresolved for a human to curate.
   3. The candidate's institution shares a DISTINCTIVE token with the
      affiliation on file — a proper noun or domain word, never "research",
      "university" or "national". Reuses distinctive_tokens() from
@@ -31,6 +40,12 @@ Resolution rules (ALL must hold)
      an ORCID collapse to the one with the most works. If two survivors
      carry DIFFERENT ORCIDs, that is genuine ambiguity and the row is left
      unresolved.
+
+  5. The winner must not be a stub. An OpenAlex record with no ORCID and
+     fewer than MIN_STUB_WORKS works is a disambiguation shard, not a
+     person: "Andrew G. Dickson" resolved to a 2-work record named
+     "A. DICKSON" before this rule existed, which would have attached two
+     papers to a researcher with hundreds.
 
 A row resolved this way is written with confidence 'medium', never 'high':
 rules 1-3 are strong evidence, but they are not an identifier the source
