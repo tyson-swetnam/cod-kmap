@@ -102,6 +102,19 @@ EXPECTED_COLUMNS = {
         "parent_dataset_id", "homepage_url",
     },
     "dataset_endpoints": {"dataset_id", "endpoint_type", "url", "auth_required"},
+    "person_registry": {
+        "canonical_id", "display_name", "orcid", "openalex_id",
+        "is_team", "is_site_personnel", "is_scholar",
+        "person_id", "scholar_id", "tier", "tier_rank",
+        "source_url", "confidence",
+    },
+    "person_identity_source": {
+        "canonical_id", "field", "value", "method", "confidence",
+    },
+    "registry_collaborations": {
+        "canonical_id_a", "canonical_id_b", "co_pub_count",
+        "first_year", "last_year",
+    },
 }
 
 
@@ -290,6 +303,146 @@ def check_scholars(conn, failures: list[str]) -> None:
                         f"expected {lo}-{hi}", failures)
 
 
+def check_person_registry(conn, failures: list[str]) -> None:
+    """Invariants for the unified identity space.
+
+    No-ops on an empty table, like every other block here, so the
+    ingest-only CI rebuild stays green.
+    """
+    n = table_rows(conn, "person_registry")
+    if n <= 0:
+        return
+
+    # The load-bearing rule. A registry row with neither an ORCID nor an
+    # OpenAlex id cannot be re-resolved or de-duplicated on a later run, so
+    # it would silently fork into a second row the next time the harvest
+    # sees the same person. This is also the invariant that stops a
+    # name-only resolver from ever writing here.
+    bare = conn.execute(
+        "SELECT COUNT(*) FROM person_registry "
+        "WHERE (orcid IS NULL OR orcid = '') "
+        "  AND (openalex_id IS NULL OR openalex_id = '')").fetchone()[0]
+    assert_true(bare == 0,
+                f"{bare} person_registry row(s) carry neither orcid nor openalex_id",
+                failures)
+
+    for col in ("source_url", "confidence"):
+        missing = conn.execute(
+            f"SELECT COUNT(*) FROM person_registry "
+            f"WHERE {col} IS NULL OR {col} = ''").fetchone()[0]
+        assert_true(missing == 0,
+                    f"{missing} person_registry row(s) with no {col}", failures)
+
+    bad_conf = conn.execute(
+        "SELECT COUNT(*) FROM person_registry "
+        "WHERE confidence NOT IN ('high','medium','low')").fetchone()[0]
+    assert_true(bad_conf == 0,
+                f"{bad_conf} person_registry row(s) with a confidence outside high/medium/low",
+                failures)
+
+    # canonical_id is derived from the identifier it is keyed on, so a row
+    # claiming 'orcid:…' must actually carry that ORCID. A mismatch means
+    # something rewrote the identifier without re-keying, which is how a
+    # merge silently attaches to the wrong person.
+    mismatched = conn.execute(
+        "SELECT COUNT(*) FROM person_registry "
+        "WHERE canonical_id LIKE 'orcid:%' "
+        "  AND ('orcid:' || orcid) <> canonical_id").fetchone()[0]
+    assert_true(mismatched == 0,
+                f"{mismatched} person_registry row(s) whose canonical_id "
+                f"disagrees with their orcid", failures)
+
+    dup_orcid = conn.execute(
+        "SELECT COUNT(*) FROM (SELECT orcid FROM person_registry "
+        "WHERE orcid IS NOT NULL AND orcid <> '' "
+        "GROUP BY orcid HAVING COUNT(*) > 1)").fetchone()[0]
+    assert_true(dup_orcid == 0,
+                f"{dup_orcid} ORCID(s) appear on more than one registry row", failures)
+
+    dup_oa = conn.execute(
+        "SELECT COUNT(*) FROM (SELECT openalex_id FROM person_registry "
+        "WHERE openalex_id IS NOT NULL AND openalex_id <> '' "
+        "GROUP BY openalex_id HAVING COUNT(*) > 1)").fetchone()[0]
+    assert_true(dup_oa == 0,
+                f"{dup_oa} OpenAlex id(s) appear on more than one registry row", failures)
+
+    bad_tier = conn.execute(
+        "SELECT COUNT(*) FROM person_registry "
+        "WHERE tier NOT IN ('core','archive')").fetchone()[0]
+    assert_true(bad_tier == 0,
+                f"{bad_tier} person_registry row(s) with a tier outside core/archive",
+                failures)
+
+    # Every row must belong to at least one cohort, or it is an orphan the
+    # UI has no place to show.
+    orphan = conn.execute(
+        "SELECT COUNT(*) FROM person_registry "
+        "WHERE NOT is_team AND NOT is_site_personnel AND NOT is_scholar").fetchone()[0]
+    assert_true(orphan == 0,
+                f"{orphan} person_registry row(s) carry no cohort flag", failures)
+
+    # Back-references must resolve. A dangling person_id means the registry
+    # is pointing at a people row that no longer exists.
+    if table_rows(conn, "people") > 0:
+        dangling = conn.execute(
+            "SELECT COUNT(*) FROM person_registry r WHERE r.person_id IS NOT NULL "
+            "AND r.person_id NOT IN (SELECT person_id FROM people)").fetchone()[0]
+        assert_true(dangling == 0,
+                    f"{dangling} person_registry row(s) reference a missing people row",
+                    failures)
+
+    # Provenance: every registry row needs at least one recorded assertion.
+    # Deliberately NOT gated on person_identity_source being non-empty — an
+    # empty provenance table alongside a populated registry is the failure,
+    # not a reason to skip the check. (Gating on it meant deleting every
+    # provenance row silenced this invariant, which the injection test for
+    # "unsourced row" caught.)
+    if table_rows(conn, "person_identity_source") >= 0:
+        unsourced = conn.execute(
+            "SELECT COUNT(*) FROM person_registry r WHERE r.canonical_id NOT IN "
+            "(SELECT canonical_id FROM person_identity_source)").fetchone()[0]
+        assert_true(unsourced == 0,
+                    f"{unsourced} person_registry row(s) with no person_identity_source entry",
+                    failures)
+
+
+def check_registry_collaborations(conn, failures: list[str]) -> None:
+    """Edges must be undirected-normalised and reference real nodes."""
+    n = table_rows(conn, "registry_collaborations")
+    if n <= 0:
+        return
+
+    unordered = conn.execute(
+        "SELECT COUNT(*) FROM registry_collaborations "
+        "WHERE canonical_id_a >= canonical_id_b").fetchone()[0]
+    assert_true(unordered == 0,
+                f"{unordered} registry_collaborations row(s) not stored with a < b "
+                f"(an undirected edge would be counted twice)", failures)
+
+    nonpos = conn.execute(
+        "SELECT COUNT(*) FROM registry_collaborations WHERE co_pub_count < 1").fetchone()[0]
+    assert_true(nonpos == 0,
+                f"{nonpos} registry_collaborations row(s) with co_pub_count < 1", failures)
+
+    backwards = conn.execute(
+        "SELECT COUNT(*) FROM registry_collaborations "
+        "WHERE first_year IS NOT NULL AND last_year IS NOT NULL "
+        "AND first_year > last_year").fetchone()[0]
+    assert_true(backwards == 0,
+                f"{backwards} registry_collaborations row(s) with first_year > last_year",
+                failures)
+
+    if table_rows(conn, "person_registry") > 0:
+        orphan = conn.execute(
+            "SELECT COUNT(*) FROM registry_collaborations c "
+            "WHERE c.canonical_id_a NOT IN (SELECT canonical_id FROM person_registry) "
+            "   OR c.canonical_id_b NOT IN (SELECT canonical_id FROM person_registry)"
+        ).fetchone()[0]
+        assert_true(orphan == 0,
+                    f"{orphan} registry_collaborations edge(s) reference an unknown "
+                    f"canonical_id", failures)
+
+
 def check_datasets(conn, failures: list[str]) -> None:
     if table_rows(conn, "coastal_datasets") <= 0:
         return
@@ -410,6 +563,8 @@ def main() -> int:
         check_cod_team(conn, failures)
         check_scholars(conn, failures)
         check_datasets(conn, failures)
+        check_person_registry(conn, failures)
+        check_registry_collaborations(conn, failures)
 
     if failures:
         print("QA FAILED:")

@@ -15,7 +15,29 @@ populate the rising cohort. It also removed 12 pre-existing misattributed
 The sections below are kept as written for context; §3's "why it hasn't
 happened" and §5's "the `--harvest` path has never executed" are now historical.
 
-Still outstanding: nobody has rendered the three tabs in a browser (§5).
+**Update 2026-07-27 — person identity is unified and the roster is scaled.** See
+`PERSON_REGISTRY_RUN.md`. The three human layers shared 1 ORCID and 6 names
+across 843 rows, so "who works with whom" was unanswerable; `person_registry`
+now resolves them into one identity space (merging only on identifier equality,
+never on names) and the roster is harvested to 152,008 identities across 202
+countries, tiered into a 10k `core` tier that ships to the browser and a local
+`archive` tier. `registry_collaborations` holds 5,300 co-publication edges — the
+first structure able to express a Team↔Scholar link — and `registry_facilities`
+links researchers to sites on ROR equality. New scripts:
+`build_person_registry.py`, `enrich_registry_identifiers.py`,
+`compute_registry_collaborations.py`, `harvest_coastal_authors.py`,
+`rank_person_registry.py`, `link_registry_facilities.py`.
+
+Still outstanding:
+  * Nobody has rendered the three tabs in a browser (§5). No view yet reads
+    `person_registry` — the tables are registered in `src/db.js` and queryable
+    from the SQL tab, but `people.js`, `team.js` and `scholars.js` still read
+    their original tables. Wiring them to the registry is the next front-end job.
+  * 138 facilities were never attempted for a ROR because the OpenAlex API
+    budget ran out mid-run (resets midnight UTC). Re-run
+    `scripts/link_registry_facilities.py` to extend coverage; it is idempotent.
+  * The co-authorship graph covers the 618 pre-harvest identities, not all
+    152,008. Extending it is ~152k works queries and a budget decision.
 
 This file is the working brief for picking that up in a fresh session. It sits
 at the repo root rather than in `docs/` deliberately: `docs/` is copied to the

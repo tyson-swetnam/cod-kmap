@@ -50,6 +50,13 @@ CREATE OR REPLACE TABLE facilities (
     url             VARCHAR,
     contact         VARCHAR,
     established     INTEGER,
+    -- Research Organization Registry id, for the ~200 facilities that are
+    -- research organisations. This is what joins a facility to a
+    -- researcher's OpenAlex affiliation (person_registry.affiliation_ror);
+    -- see scripts/link_registry_facilities.py. Null for the 3,300+
+    -- protected areas in the catalogue — a state park is a place, not an
+    -- organisation, and will never hold a ROR.
+    ror             VARCHAR,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -747,3 +754,118 @@ SELECT
 FROM cod_team_members tm
 LEFT JOIN cod_wbs w ON w.wbs_code  = tm.wbs_code
 LEFT JOIN people  p ON p.person_id = tm.person_id;
+
+-------------------------------------------------------------------------------
+-- Unified person identity
+-------------------------------------------------------------------------------
+--
+-- The three human-facing layers — people (facility staff), cod_team_members
+-- (the COD org chart) and community_scholars (the field-wide roster) — grew
+-- independently and share almost no identifiers: an audit on 2026-07-26 found
+-- 1 shared ORCID and 6 shared names across 843 rows. That makes "who works
+-- with whom" unanswerable, because the same researcher can be three rows with
+-- three keys and no edge between them.
+--
+-- person_registry is the single identity space those layers resolve into. One
+-- row per human, keyed on a persistent identifier, carrying a role flag per
+-- cohort. It does not replace the three tables — they keep their own columns
+-- and grain (a team member still has a WBS code; a scholar still has cohort
+-- ranks) — it gives them a common node id so the co-authorship graph can be
+-- computed once over one node set.
+--
+-- Hard rule inherited from three separate wrong-person incidents in this repo
+-- (see scripts/wipe_bad_openalex_attributions.py, wipe_medicine_attributions.py
+-- and wipe_misattributed_identifiers.py): a row is merged into an existing
+-- registry entry ONLY on ORCID or openalex_id equality. Name similarity never
+-- merges. Every row carries a source_url and a confidence, and every merge
+-- decision is recorded in person_identity_source.
+
+CREATE OR REPLACE TABLE person_registry (
+    canonical_id        VARCHAR PRIMARY KEY,       -- 'orcid:0000-…' when an ORCID is known,
+                                                   -- else 'openalex:A…'; stable across rebuilds
+                                                   -- because it is derived from the identifier,
+                                                   -- not from a hash of mutable fields.
+    display_name        VARCHAR NOT NULL,
+    name_family         VARCHAR,
+    name_given          VARCHAR,
+
+    -- Persistent identifiers. At least one of orcid / openalex_id is
+    -- required — qa.py enforces it — because a registry row with neither
+    -- cannot be re-resolved or de-duplicated later.
+    orcid               VARCHAR,
+    openalex_id         VARCHAR,
+    google_scholar_id   VARCHAR,
+    scopus_author_id    VARCHAR,
+    wos_researcher_id   VARCHAR,
+    homepage_url        VARCHAR,                   -- institutional or personal page
+
+    -- Current affiliation as OpenAlex reports it. ror is what links a
+    -- researcher to a catalogued facility (see facilities.ror).
+    affiliation         VARCHAR,
+    affiliation_ror     VARCHAR,
+    affiliation_country VARCHAR,                   -- ISO-2
+
+    -- Cohort membership. A person can be in all three at once; that is the
+    -- point of the table.
+    is_team             BOOLEAN DEFAULT false,     -- on the COD org chart
+    is_site_personnel   BOOLEAN DEFAULT false,     -- staffs a catalogued facility
+    is_scholar          BOOLEAN DEFAULT false,     -- in the field-wide roster
+
+    -- Source-table back-references, so a registry row can be walked back to
+    -- the layer(s) it came from without a crosswalk table.
+    person_id           VARCHAR,                   -- soft ref people(person_id)
+    scholar_id          VARCHAR,                   -- soft ref community_scholars(scholar_id)
+
+    -- Bibliometrics, denormalised from the OpenAlex author record so the
+    -- registry alone can rank and tier without a join.
+    works_count         INTEGER,
+    cited_by_count      BIGINT,
+    h_index             INTEGER,
+    i10_index           INTEGER,
+    two_yr_mean_citedness DOUBLE,
+    coastal_works_count INTEGER,                   -- sum of topics[].count over the coastal set
+    coastal_share       DOUBLE,                    -- coastal_works_count / works_count
+    first_pub_year      INTEGER,
+
+    -- Tiering. 'core' ships to public/parquet for the browser; 'archive'
+    -- stays in the local catalogue. See scripts/rank_person_registry.py.
+    tier                VARCHAR DEFAULT 'archive', -- core | archive
+    tier_rank           INTEGER,
+    tier_score          DOUBLE,
+
+    source              VARCHAR,                   -- openalex-harvest | people | cod-team | curated
+    source_url          VARCHAR NOT NULL,
+    confidence          VARCHAR NOT NULL,          -- high | medium | low
+    retrieved_at        VARCHAR,
+    notes               VARCHAR
+);
+
+-- Provenance for every identifier attached to a registry row, and for every
+-- merge. One row per (canonical_id, field) assertion, so a wrong id can be
+-- traced to the rule that produced it rather than being silently overwritten.
+CREATE OR REPLACE TABLE person_identity_source (
+    canonical_id        VARCHAR NOT NULL,          -- soft ref person_registry
+    field               VARCHAR NOT NULL,          -- orcid | openalex_id | merge | homepage_url | …
+    value               VARCHAR,
+    method              VARCHAR NOT NULL,          -- orcid-equality | openalex-equality |
+                                                   -- openalex-author-record | seed | manual-audit
+    evidence            VARCHAR,                   -- what made this defensible
+    source_url          VARCHAR,
+    confidence          VARCHAR,                   -- high | medium | low
+    retrieved_at        VARCHAR
+);
+
+-- Co-publication edges over the registry node set. Distinct from
+-- `collaborations`, which is keyed on people(person_id) and therefore cannot
+-- express a Team↔Scholar edge. Undirected, stored once with
+-- canonical_id_a < canonical_id_b.
+CREATE OR REPLACE TABLE registry_collaborations (
+    canonical_id_a      VARCHAR NOT NULL,
+    canonical_id_b      VARCHAR NOT NULL,
+    co_pub_count        INTEGER NOT NULL,
+    first_year          INTEGER,
+    last_year           INTEGER,
+    shared_areas        VARCHAR,                   -- comma-separated area_id list
+    shared_facilities   VARCHAR,                   -- comma-separated facility_id list
+    PRIMARY KEY (canonical_id_a, canonical_id_b)
+);
