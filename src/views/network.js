@@ -1344,6 +1344,19 @@ async function computePolygons(d3delaunay, polygonClipping, allNodes,
     });
   }
 
+  // Fail here, not three frames down inside d3-delaunay. With no nodes the
+  // min/max scan above leaves ±Infinity, every derived bound is NaN, and
+  // d3's guard throws a bare "invalid bounds" that names neither this file
+  // nor the actual problem. That cost a full debugging session once; the
+  // condition is cheap to state directly.
+  if (!allNodes.length) {
+    throw new Error(
+      'no map nodes to lay out — every region was filtered out before '
+      + 'layout. Check that the areas query returns rows with weight > 0 '
+      + '(a DECIMAL weight reads as NaN through duckdb-wasm and zeroes '
+      + 'them all).');
+  }
+
   // Voronoi clip extent only slightly beyond the anchor ring.
   const all = [...allNodes, ...anchors];
   const points = all.map((n) => [n.x, n.y]);
@@ -2758,7 +2771,22 @@ async function render() {
     onZoom(_zoomK);
   } catch (err) {
     console.error('[mvg] render failed', err);
-    if (statusEl) statusEl.textContent = `Knowledge map render failed: ${err.message}`;
+    if (statusEl) {
+      // "invalid bounds" specifically means the layout received no nodes,
+      // which in every observed case so far has been a stale cached copy of
+      // this file: GitHub Pages serves src/*.js with max-age=600 and no
+      // cache-busting query string, so a browser that loaded the page while
+      // a broken build was live keeps that build for ten minutes, and
+      // indefinitely if the tab is never hard-reloaded. Say so, because
+      // "invalid bounds" on its own gives the reader nowhere to go.
+      const stale = /invalid bounds/i.test(err.message || '');
+      statusEl.innerHTML = stale
+        ? `Knowledge map render failed: ${escapeHtml(err.message)}. This is usually a
+           cached copy of an older build — <strong>hard-reload</strong> the page
+           (Cmd-Shift-R / Ctrl-F5). If it persists after a hard reload, the
+           deployed data really is empty and this is a genuine bug.`
+        : `Knowledge map render failed: ${escapeHtml(err.message)}`;
+    }
   }
 }
 
