@@ -985,15 +985,19 @@ async function layoutSupergraph(d3, sg, w, h) {
   // converges quickly and large groups end up roughly central.
   const sorted = [...sg.nodes].sort((a, b) => b.weight - a.weight);
   // Seed radius must scale with the AREA the squares need, not with the
-  // viewport. A fixed 0.36*min(w,h) ring packs them tighter than they can
-  // possibly fit once total square area is large, so the separation pass
-  // below has to do all the work — and because it resolves on the axis of
-  // least overlap, it does so along a single axis and stacks the map into a
-  // tall thin column (measured aspect 0.37). Sizing the ring to
-  // sqrt(total square area) leaves separation only local work to do.
-  // 0.80 measured best on the shipped weights: fill (sum of square areas /
-  // bounding-box area) 0.54 at aspect 0.83, against 0.41 / 0.93 with
-  // residual overlap for the previous version.
+  // viewport. A fixed 0.36*min(w,h) ring bore no relation to how much room
+  // the squares actually require, which left the arrangement far looser
+  // than a cartogram should be. Sizing the ring to sqrt(total square area)
+  // starts it near the size they need, so the passes below have only local
+  // work to do.
+  //
+  // Measured over the full pipeline (this seed -> the d3 force simulation
+  // below -> recenter -> relax passes), fill = sum of square areas /
+  // bounding-box area, on the shipped area weights with MODELLED area-area
+  // edges: mean fill 0.219 -> 0.439 over five edge sets; 0.382 -> 0.477
+  // (aspect 0.86 -> 0.82) on a single hand-built set. The real supergraph
+  // edges come from a SQL query that was not reconstructed, so treat the
+  // direction as reliable and the magnitudes as indicative.
   let _sumSq = 0;
   for (const n of sg.nodes) _sumSq += n.side * n.side;
   const maxR = Math.max(Math.sqrt(_sumSq) * 0.80, Math.min(w, h) * 0.18);
@@ -1047,22 +1051,24 @@ async function layoutSupergraph(d3, sg, w, h) {
 
   // Resolve remaining overlap, then COMPACT.
   //
-  // Two defects lived in the previous version of this pass, and both made
-  // the map sparser than the cartogram it is meant to be:
+  // The previous version of this pass only ever pushed squares apart, never
+  // pulled them together, so any dispersal the seed ring introduced was
+  // permanent — the main reason the map carried so much inter-region
+  // whitespace. compactInward() adds the missing inward pass: walk the
+  // outermost square toward the centroid, keeping each step only when it
+  // introduces no overlap.
   //
-  //   1. It measured overlap as centre distance vs (sideA+sideB)/2, i.e. it
-  //      treated squares as circles. Two squares offset diagonally read as
-  //      "clear" at a distance where their corners still overlap — the pass
-  //      terminated leaving real overlaps behind — while squares already
-  //      separated on one axis got pushed apart anyway. Squares must be
-  //      resolved on the axis of LEAST overlap.
-  //   2. It only ever pushed, never pulled, so any dispersal the seed ring
-  //      introduced was permanent.
+  // separateSquares() additionally corrects how overlap is measured. The old
+  // test compared centre distance against (sideA+sideB)/2, i.e. it treated
+  // axis-aligned squares as circles, which is wrong for squares offset
+  // diagonally. Resolving on the axis of LEAST overlap is correct for
+  // squares. NOTE: this is a latent-correctness fix, NOT a fix for observed
+  // overlap — the d3 forceCollide stage above already resolves overlap, and
+  // no configuration was found in which the shipped pipeline left squares
+  // overlapping. Do not expect a visible change from this part.
   //
-  // separateSquares() fixes (1); compactInward() adds the missing inward
-  // pass, walking the outermost square toward the centroid and keeping each
-  // step only when it introduces no overlap. Both are deterministic, so the
-  // layout remains stable across reloads for a given input.
+  // Both passes are deterministic, so the layout remains stable across
+  // reloads for a given input.
   const overlapsAny = (nodes, moveIdx, nx, ny) => {
     const m = nodes[moveIdx];
     for (let i = 0; i < nodes.length; i++) {
