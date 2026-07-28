@@ -1100,6 +1100,32 @@ footer a:hover { color: var(--c-primary); }
   color: var(--c-muted);
   max-width: 720px;
 }
+/* "How to read this map" — collapsed by default. The full explanation runs
+   to four paragraphs; inline it pushed the map below the fold. */
+.network-help-toggle {
+  margin-left: 6px;
+  font-size: 0.82rem;
+  color: var(--c-primary-d);
+  text-decoration: underline;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.network-help {
+  margin: 8px 0 0;
+  max-width: 760px;
+  padding: 10px 12px;
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  background: var(--c-bg);
+}
+.network-help p {
+  margin: 0 0 7px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--c-muted);
+}
+.network-help p:last-child { margin-bottom: 0; }
+.network-help[hidden] { display: none; }
 .network-actions { display: flex; gap: 8px; }
 .network-actions .btn-ghost {
   background: #fff;
