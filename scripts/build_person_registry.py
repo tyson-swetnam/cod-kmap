@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
 """Resolve people, cod_team_members and community_scholars into one identity space.
 
+WARNING -- THIS SCRIPT IS DESTRUCTIVE FOR THE ARCHIVE TIER.
+It DELETEs person_registry and rebuilds it from three local tables only
+(people, cod_team_members, community_scholars), yielding ~713 rows. The
+~142,000 archive-tier identities harvested from OpenAlex by
+scripts/harvest_coastal_authors.py are NOT reconstructed by any script in
+the documented chain (docs/team_scholars_datasets_methods.md runs
+build_person_registry -> compute_registry_collaborations ->
+link_registry_facilities -> rank_person_registry -> qa; harvest is not in
+it). Re-run harvest_coastal_authors.py explicitly, or restore
+db/parquet/person_registry.parquet, if you need the archive tier back.
+
+
 The three human-facing layers grew independently. An audit on 2026-07-26
 found they share 1 ORCID and 6 exact names across 843 rows, which makes
 "who works with whom" unanswerable: the same researcher can be three rows
@@ -104,6 +116,10 @@ class Registry:
         self.by_oa: dict[str, dict] = {}
         self.prov: list[dict] = []
         self.unresolvable: list[tuple[str, str]] = []
+        # Index on the project's own person_id, so a COD-internal person who
+        # has no ORCID/OpenAlex id still resolves to exactly one identity
+        # across `people` and `cod_team_members`.
+        self.by_pid: dict[str, dict] = {}
         self.merges = 0
 
     def _record(self, row: dict, field: str, value, method: str,
@@ -116,17 +132,29 @@ class Registry:
 
     def add(self, *, name: str, orcid: str | None, openalex_id: str | None,
             cohort: str | None, source: str, source_url: str, confidence: str,
-            extra: dict | None = None) -> dict | None:
+            extra: dict | None = None,
+            local_id: str | None = None) -> dict | None:
         """Insert or merge one source row. Returns the registry row, or None
-        when the row carries no persistent identifier."""
+        when the row carries no usable identifier.
+
+        `local_id` is the project's own person_id, supplied for COD-INTERNAL
+        sources only (`people`, `cod_team_members`). Those rosters are curated
+        by hand rather than harvested, so person_id is already a stable
+        identity within this project — requiring an ORCID or OpenAlex id of
+        them dropped real, named COD staff from the registry entirely,
+        including the PI and Co-PI. External sources (community_scholars) do
+        NOT pass local_id: for a harvested identity a persistent public
+        identifier is the whole basis of the claim, and minting a local key
+        for one would assert an identity we cannot substantiate."""
         orcid = clean_orcid(orcid)
         openalex_id = clean_oa(openalex_id)
-        if not orcid and not openalex_id:
+        if not orcid and not openalex_id and not local_id:
             self.unresolvable.append((source, name))
             return None
 
         existing = (self.by_orcid.get(orcid) if orcid else None) \
-            or (self.by_oa.get(openalex_id) if openalex_id else None)
+            or (self.by_oa.get(openalex_id) if openalex_id else None) \
+            or (self.by_pid.get(local_id) if local_id else None)
 
         if existing is not None:
             self.merges += 1
@@ -140,19 +168,33 @@ class Registry:
             if orcid and not row.get("orcid"):
                 row["orcid"] = orcid
                 self.by_orcid[orcid] = row
-                # Re-key: an ORCID outranks an OpenAlex id for canonical_id.
-                if row["canonical_id"].startswith("openalex:"):
+                # Re-key: an ORCID outranks an OpenAlex id, which in turn
+                # outranks a local codp: key, for canonical_id.
+                if row["canonical_id"].startswith(("openalex:", "codp:")):
                     row["canonical_id"] = f"orcid:{orcid}"
                 self._record(row, "orcid", orcid, "seed",
                              f"supplied by {source}", source_url, "high")
             if openalex_id and not row.get("openalex_id"):
                 row["openalex_id"] = openalex_id
                 self.by_oa[openalex_id] = row
+                if row["canonical_id"].startswith("codp:"):
+                    row["canonical_id"] = f"openalex:{openalex_id}"
                 self._record(row, "openalex_id", openalex_id, "seed",
                              f"supplied by {source}", source_url, "high")
+            if local_id and local_id not in self.by_pid:
+                self.by_pid[local_id] = row
         else:
             given, family = split_name(name)
-            cid = f"orcid:{orcid}" if orcid else f"openalex:{openalex_id}"
+            if orcid:
+                cid = f"orcid:{orcid}"
+            elif openalex_id:
+                cid = f"openalex:{openalex_id}"
+            else:
+                # COD-internal identity with no public identifier. The codp:
+                # prefix marks it as project-local so downstream code can tell
+                # it apart from a resolved public identity; it is replaced by
+                # an orcid:/openalex: key above if one is ever supplied.
+                cid = f"codp:{local_id}"
             row = dict(canonical_id=cid, display_name=name,
                        name_given=given, name_family=family,
                        orcid=orcid, openalex_id=openalex_id,
@@ -175,6 +217,8 @@ class Registry:
                 self.by_orcid[orcid] = row
             if openalex_id:
                 self.by_oa[openalex_id] = row
+            if local_id:
+                self.by_pid[local_id] = row
             self._record(row, "canonical_id", cid, "seed",
                          f"created from {source} row '{name}'",
                          source_url, confidence)
@@ -230,6 +274,7 @@ def main() -> int:
                              else None,
                       source="people", source_url="cod-kmap:people",
                       confidence="high",
+                      local_id=p["person_id"],
                       extra=dict(person_id=p["person_id"],
                                  google_scholar_id=p["google_scholar_id"],
                                  homepage_url=p["homepage_url"]))
@@ -250,6 +295,7 @@ def main() -> int:
                 orcid=src.get("orcid"), openalex_id=src.get("openalex_id"),
                 cohort="team", source="cod-team",
                 source_url="cod-kmap:cod_team_members", confidence="high",
+                local_id=pid,
                 extra=dict(person_id=pid, affiliation=t.get("institution")))
 
     # ── community scholars (field-wide roster) ─────────────────────────
