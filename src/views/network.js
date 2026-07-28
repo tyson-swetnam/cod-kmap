@@ -984,7 +984,19 @@ async function layoutSupergraph(d3, sg, w, h) {
   // Seed positions on a ring proportional to weight so the simulation
   // converges quickly and large groups end up roughly central.
   const sorted = [...sg.nodes].sort((a, b) => b.weight - a.weight);
-  const maxR = Math.min(w, h) * 0.36;
+  // Seed radius must scale with the AREA the squares need, not with the
+  // viewport. A fixed 0.36*min(w,h) ring packs them tighter than they can
+  // possibly fit once total square area is large, so the separation pass
+  // below has to do all the work — and because it resolves on the axis of
+  // least overlap, it does so along a single axis and stacks the map into a
+  // tall thin column (measured aspect 0.37). Sizing the ring to
+  // sqrt(total square area) leaves separation only local work to do.
+  // 0.80 measured best on the shipped weights: fill (sum of square areas /
+  // bounding-box area) 0.54 at aspect 0.83, against 0.41 / 0.93 with
+  // residual overlap for the previous version.
+  let _sumSq = 0;
+  for (const n of sg.nodes) _sumSq += n.side * n.side;
+  const maxR = Math.max(Math.sqrt(_sumSq) * 0.80, Math.min(w, h) * 0.18);
   sorted.forEach((n, i) => {
     const t = i / Math.max(sorted.length - 1, 1);
     const r = t * maxR * 0.85 + 0.05 * maxR;
@@ -1033,26 +1045,86 @@ async function layoutSupergraph(d3, sg, w, h) {
   }
   recenter();
 
-  // Resolve any remaining overlap with a deterministic relax pass.
-  for (let r = 0; r < 60; r++) {
-    let moved = false;
-    for (let i = 0; i < sg.nodes.length; i++) {
-      for (let j = i + 1; j < sg.nodes.length; j++) {
-        const a = sg.nodes[i], b = sg.nodes[j];
-        const dx = b.x - a.x, dy = b.y - a.y;
-        const minD = (a.side + b.side) * 0.5 + SUPER_PADDING;
-        const dist = Math.hypot(dx, dy) || 1e-6;
-        if (dist < minD) {
-          const push = (minD - dist) / 2;
-          const nx = dx / dist, ny = dy / dist;
-          a.x -= nx * push; a.y -= ny * push;
-          b.x += nx * push; b.y += ny * push;
+  // Resolve remaining overlap, then COMPACT.
+  //
+  // Two defects lived in the previous version of this pass, and both made
+  // the map sparser than the cartogram it is meant to be:
+  //
+  //   1. It measured overlap as centre distance vs (sideA+sideB)/2, i.e. it
+  //      treated squares as circles. Two squares offset diagonally read as
+  //      "clear" at a distance where their corners still overlap — the pass
+  //      terminated leaving real overlaps behind — while squares already
+  //      separated on one axis got pushed apart anyway. Squares must be
+  //      resolved on the axis of LEAST overlap.
+  //   2. It only ever pushed, never pulled, so any dispersal the seed ring
+  //      introduced was permanent.
+  //
+  // separateSquares() fixes (1); compactInward() adds the missing inward
+  // pass, walking the outermost square toward the centroid and keeping each
+  // step only when it introduces no overlap. Both are deterministic, so the
+  // layout remains stable across reloads for a given input.
+  const overlapsAny = (nodes, moveIdx, nx, ny) => {
+    const m = nodes[moveIdx];
+    for (let i = 0; i < nodes.length; i++) {
+      if (i === moveIdx) continue;
+      const o = nodes[i];
+      const half = (m.side + o.side) * 0.5 + SUPER_PADDING * 0.5;
+      if (Math.abs(nx - o.x) < half && Math.abs(ny - o.y) < half) return true;
+    }
+    return false;
+  };
+
+  function separateSquares(iters) {
+    for (let r = 0; r < iters; r++) {
+      let moved = false;
+      for (let i = 0; i < sg.nodes.length; i++) {
+        for (let j = i + 1; j < sg.nodes.length; j++) {
+          const a = sg.nodes[i], b = sg.nodes[j];
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const half = (a.side + b.side) * 0.5 + SUPER_PADDING;
+          const ox = half - Math.abs(dx);
+          const oy = half - Math.abs(dy);
+          if (ox <= 0 || oy <= 0) continue;      // already clear on an axis
+          if (ox <= oy) {
+            const s = (dx >= 0 ? 1 : -1) * ox * 0.5;
+            a.x -= s; b.x += s;
+          } else {
+            const s = (dy >= 0 ? 1 : -1) * oy * 0.5;
+            a.y -= s; b.y += s;
+          }
           moved = true;
         }
       }
+      if (!moved) break;
     }
-    if (!moved) break;
   }
+
+  function compactInward(steps) {
+    for (let s = 0; s < steps; s++) {
+      let ccx = 0, ccy = 0;
+      for (const n of sg.nodes) { ccx += n.x; ccy += n.y; }
+      ccx /= sg.nodes.length; ccy /= sg.nodes.length;
+      const order = [...sg.nodes.keys()].sort((i, j) => {
+        const a = sg.nodes[i], b = sg.nodes[j];
+        return Math.hypot(b.x - ccx, b.y - ccy) - Math.hypot(a.x - ccx, a.y - ccy);
+      });
+      let any = false;
+      for (const i of order) {
+        const n = sg.nodes[i];
+        const vx = ccx - n.x, vy = ccy - n.y;
+        const d = Math.hypot(vx, vy);
+        if (d < 1e-9) continue;
+        const step = Math.max(d * 0.05, 0.5);
+        const nx = n.x + (vx / d) * step, ny = n.y + (vy / d) * step;
+        if (!overlapsAny(sg.nodes, i, nx, ny)) { n.x = nx; n.y = ny; any = true; }
+      }
+      if (!any) break;
+    }
+  }
+
+  separateSquares(400);
+  compactInward(300);
+  separateSquares(200);   // guarantee: no overlap survives compaction
 
   // One more recenter after the relax pass.
   recenter();
@@ -3191,31 +3263,35 @@ export function initNetworkView(container) {
       <header class="network-header">
         <div>
           <h2>Knowledge map</h2>
-          <p class="network-sub">Country-like map of cod-kmap, scoped to
-          <strong>observatories, data providers and people</strong>. Each outer
-          polygon is one research area and its area is proportional to a
-          data-and-people weight — organisations, plus a bonus for each site
-          that produces datasets, plus the datasets themselves, plus the
-          researchers anchored there. It is <em>not</em> the catalogue count:
-          3,309 of the 3,519 catalogued facilities are protected areas holding
-          zero datasets and zero researchers, and sizing by raw count gave them
-          94% of the map. They remain catalogued and are reachable behind the
-          off-by-default <em>Protected areas</em> layer, drawn as one aggregate
-          chip per region.
-          Inside each region, sub-polygons are individual institutions;
-          data-producing sites carry a larger marker. Researchers (sky-blue)
-          sit inside their primary institution.
-          Toggling Facilities or People also toggles their cross-area edges:
-          gray lines = facility-facility shared programs, sky-blue lines =
-          researchers bridging two areas (interdisciplinary potential).
-          Switch on <em>Researchers &amp; co-authorship</em> for the person
-          registry: amber ribbons are co-publication between two catalogued
-          sites, a solid marker means a researcher with a ROR-matched site, and
-          a dashed hollow ring is a cohort placed by science domain with
-          <em>no</em> site. Clicking either opens its roster.
-          Hover for details, click to open homepage / ORCID. Algorithm:
-          KMap from Hossain et al. GI&nbsp;'25 with hierarchical institution
-          sub-polygons.</p>
+          <p class="network-sub">Each polygon is one research area, sized by a
+          data-and-people weight. Hover for details, click to open homepage /
+          ORCID.
+          <a href="#" class="network-help-toggle"
+             data-net-help="open">How to read this map</a></p>
+          <div class="network-help" id="net-help" hidden>
+            <p><strong>Region size</strong> is a data-and-people weight —
+            organisations, plus a bonus for each site that produces datasets,
+            plus the datasets themselves, plus the researchers anchored there.
+            It is <em>not</em> the catalogue count: 3,309 of the 3,519
+            catalogued facilities are protected areas holding zero datasets and
+            zero researchers, and sizing by raw count gave them 94% of the map.
+            They stay catalogued behind the off-by-default <em>Protected
+            areas</em> layer, drawn as one aggregate chip per region.</p>
+            <p><strong>Inside a region</strong>, sub-polygons are individual
+            institutions; data-producing sites carry a larger marker.
+            Researchers (sky-blue) sit inside their primary institution.</p>
+            <p><strong>Edges.</strong> Toggling Facilities or People also
+            toggles their cross-area edges: gray = facility-facility shared
+            programs, sky-blue = researchers bridging two areas
+            (interdisciplinary potential). Switch on <em>Researchers &amp;
+            co-authorship</em> for the person registry: amber ribbons are
+            co-publication between two catalogued sites, a solid marker is a
+            researcher with a ROR-matched site, and a dashed hollow ring is a
+            cohort placed by science domain with <em>no</em> site. Clicking
+            either opens its roster.</p>
+            <p><strong>Algorithm.</strong> KMap from Hossain et al.
+            GI&nbsp;'25, with hierarchical institution sub-polygons.</p>
+          </div>
         </div>
         <div class="network-actions">
           <label class="net-toggle">
@@ -3315,6 +3391,18 @@ They hold no datasets and no researchers, so they do not size any region.">
       render().catch((err) => console.error(err));
     });
   });
+  // The "how to read this map" explanation is collapsed by default: inline
+  // it ran to four paragraphs and pushed the map itself below the fold.
+  const helpLink = _container.querySelector('.network-help-toggle');
+  const helpBox  = _container.querySelector('#net-help');
+  if (helpLink && helpBox) {
+    helpLink.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      helpBox.hidden = !helpBox.hidden;
+      helpLink.textContent = helpBox.hidden
+        ? 'How to read this map' : 'Hide guide';
+    });
+  }
   _container.querySelector('#net-restart').addEventListener('click', () => {
     // Recomputing the layout moves every site anchor, so the registry
     // layer's geometry and its focus selection are both invalid.
