@@ -1,0 +1,330 @@
+@prefix cod:   <https://tyson-swetnam.github.io/cod-kmap/ns/cod#> .
+@prefix ex:    <https://tyson-swetnam.github.io/cod-kmap/id/> .
+@prefix exare:  <https://tyson-swetnam.github.io/cod-kmap/id/area/> .
+@prefix exass:  <https://tyson-swetnam.github.io/cod-kmap/id/assignment/> .
+@prefix excan:  <https://tyson-swetnam.github.io/cod-kmap/id/candidate/> .
+@prefix exedg:  <https://tyson-swetnam.github.io/cod-kmap/id/edge/> .
+@prefix exmem:  <https://tyson-swetnam.github.io/cod-kmap/id/membership/> .
+@prefix exorg:  <https://tyson-swetnam.github.io/cod-kmap/id/org/> .
+@prefix exper:  <https://tyson-swetnam.github.io/cod-kmap/id/person/> .
+@prefix exval:  <https://tyson-swetnam.github.io/cod-kmap/id/validation/> .
+@prefix exwor:  <https://tyson-swetnam.github.io/cod-kmap/id/work/> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix foaf:  <http://xmlns.com/foaf/0.1/> .
+@prefix org:   <http://www.w3.org/ns/org#> .
+@prefix bibo:  <http://purl.org/ontology/bibo/> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+
+#############################################################################
+# Worked example for cod-shapes.ttl.
+#
+# Two halves, both deliberate:
+#   PART A — nodes that CONFORM. Everything a real registry row should look
+#            like, including the codp:%-style local-identity case.
+#   PART B — nodes that VIOLATE, one per non-negotiable, each annotated with
+#            the shape and message expected to fire.
+#
+# Run:  pyshacl -s cod-shapes.ttl -f human cod-example.ttl
+# Expect: non-conforming, with exactly the violations listed in PART B.
+# scripts/validate_shapes.py asserts that set, so a shape that stops working
+# fails loudly instead of silently passing everything.
+#############################################################################
+
+#############################################################################
+# PART A — conforming
+#############################################################################
+
+# Shared vocabulary and organization nodes.
+exare:estuarine-processes
+    a            cod:ResearchArea , skos:Concept ;
+    skos:prefLabel "Estuarine processes"@en .
+
+exorg:ror-03m2x1q45
+    a            org:Organization ;
+    rdfs:label   "Example Coastal Institute" ;
+    cod:rorId    "https://ror.org/03m2x1q45" .
+
+# --- A1: a fully-conforming registry person, public identifiers -------------
+exper:orcid-0000-0002-1825-0097
+    a                       cod:RegistryPerson , foaf:Person ;
+    foaf:name               "Josiah Carberry" ;
+    cod:canonicalId         "orcid:0000-0002-1825-0097" ;
+    cod:orcidId             "0000-0002-1825-0097" ;
+    cod:openAlexAuthorId    "A5023888391" ;
+    cod:rorId               "https://ror.org/03m2x1q45" ;
+    org:memberOf            exorg:ror-03m2x1q45 ;
+    cod:tier                "core" ;
+    cod:hasCohortMembership exmem:A1-scholar ;
+    cod:hasAreaAssignment   exass:A1-estuarine ;
+    cod:hasValidationResult exval:A1-orcid ;
+    cod:hasCoauthorEdge     exedg:A1-A2 ;
+    cod:coauthorOf          exper:orcid-0000-0003-1613-5981 ;
+    cod:sourceUrl           "https://api.openalex.org/authors/A5023888391"^^xsd:anyURI ;
+    cod:retrievedAt         "2026-07-29"^^xsd:date ;
+    cod:confidence          "high" .
+
+exmem:A1-scholar
+    a               cod:CohortMembership ;
+    cod:cohort      cod:ScholarCohort ;
+    cod:sourceUrl   "https://api.openalex.org/authors/A5023888391"^^xsd:anyURI ;
+    cod:retrievedAt "2026-07-29"^^xsd:date ;
+    cod:confidence  "high" .
+
+exass:A1-estuarine
+    a                 cod:AreaAssignment ;
+    cod:area          exare:estuarine-processes ;
+    cod:isPrimaryArea true ;
+    cod:areaWeight    0.42 ;
+    cod:evidenceCount 37 ;
+    cod:sourceUrl     "https://api.openalex.org/authors/A5023888391"^^xsd:anyURI ;
+    cod:retrievedAt   "2026-07-29"^^xsd:date ;
+    cod:confidence    "high" .
+
+exval:A1-orcid
+    a                    cod:ValidationResult ;
+    cod:checkId          "orcid-resolves" ;
+    cod:validatedValue   "0000-0002-1825-0097" ;
+    cod:verdict          cod:Pass ;
+    cod:sourceUrl        "https://pub.orcid.org/v3.0/0000-0002-1825-0097/record"^^xsd:anyURI ;
+    cod:retrievedAt      "2026-07-29"^^xsd:date ;
+    cod:confidence       "high" ;
+    cod:validationRun    "val-2026-07-29" .
+
+# --- A2: second endpoint of the conforming edge -----------------------------
+exper:orcid-0000-0003-1613-5981
+    a                    cod:RegistryPerson , foaf:Person ;
+    foaf:name            "Alice Marina" ;
+    cod:canonicalId      "orcid:0000-0003-1613-5981" ;
+    cod:orcidId          "0000-0003-1613-5981" ;
+    cod:openAlexAuthorId "A5017898742" ;
+    cod:tier             "core" ;
+    cod:hasCoauthorEdge  exedg:A1-A2 ;
+    cod:coauthorOf       exper:orcid-0000-0002-1825-0097 ;
+    cod:sourceUrl        "https://api.openalex.org/authors/A5017898742"^^xsd:anyURI ;
+    cod:retrievedAt      "2026-07-29"^^xsd:date ;
+    cod:confidence       "high" .
+
+# --- A3: a COD-internal person with NO public identifier --------------------
+# This is the 95-row codp:% case. It conforms: cod:localIdentifier satisfies
+# the persistent-identifier requirement without asserting a false ORCID,
+# OpenAlex id or ROR. A shape run that flagged this node would be wrong.
+exper:codp-065ae200269c6713
+    a                       cod:RegistryPerson , foaf:Person ;
+    foaf:name               "Programme Coordinator (COD-internal)" ;
+    cod:canonicalId         "codp:065ae200269c6713" ;
+    cod:localIdentifier     "065ae200269c6713" ;
+    cod:tier                "core" ;
+    cod:hasCohortMembership exmem:A3-team ;
+    cod:hasValidationResult exval:A3-orcid-na ;
+    cod:sourceUrl           "https://example-coastal-institute.org/staff/programme-office"^^xsd:anyURI ;
+    cod:retrievedAt         "2026-07-29"^^xsd:date ;
+    cod:confidence          "high" .
+
+# --- A7: a seed-derived person whose provenance is an internal repo file -----
+# Conforms with a WARNING, not a violation. 630 of the 10,095 core-tier rows
+# carry this 'cod-kmap:<seed_table>' form (measured 2026-07-29); it names a
+# committed, diffable seed file rather than an external record. A shape run that
+# rejected this node would fail every seed-derived row in the catalogue.
+exper:orcid-0000-0002-3333-4444
+    a                    cod:RegistryPerson , foaf:Person ;
+    foaf:name            "Seeded Scholar" ;
+    cod:canonicalId      "orcid:0000-0002-3333-4444" ;
+    cod:orcidId          "0000-0002-3333-4444" ;
+    cod:tier             "core" ;
+    cod:sourceUrl        "cod-kmap:community_scholars" ;
+    cod:retrievedAt      "2026-07-29"^^xsd:date ;
+    cod:confidence       "medium" .
+
+exmem:A3-team
+    a               cod:CohortMembership ;
+    cod:cohort      cod:TeamCohort ;
+    cod:sourceUrl   "https://example-coastal-institute.org/staff/programme-office"^^xsd:anyURI ;
+    cod:retrievedAt "2026-07-29"^^xsd:date ;
+    cod:confidence  "high" .
+
+# The ORCID check on a codp person is NotApplicable, never Fail.
+exval:A3-orcid-na
+    a                  cod:ValidationResult ;
+    cod:checkId        "orcid-resolves" ;
+    cod:verdict        cod:NotApplicable ;
+    cod:sourceUrl      "https://example-coastal-institute.org/staff/programme-office"^^xsd:anyURI ;
+    cod:retrievedAt    "2026-07-29"^^xsd:date ;
+    cod:confidence     "high" ;
+    cod:validationRun  "val-2026-07-29" .
+
+# --- A4: a conforming co-author edge with a full provenance path ------------
+exedg:A1-A2
+    a                      cod:CoauthorEdge ;
+    cod:edgeParticipant    exper:orcid-0000-0002-1825-0097 ,
+                           exper:orcid-0000-0003-1613-5981 ;
+    cod:coPublicationCount 3 ;
+    cod:exemplarWork       exwor:W2741809807 ;
+    cod:evidenceWork       exwor:W2741809807 , exwor:W3011223344 ;
+    cod:matchMethod        cod:OpenAlexAuthorIdEquality ;
+    cod:sourceUrl          "https://api.openalex.org/works?filter=author.id:A5023888391"^^xsd:anyURI ;
+    cod:retrievedAt        "2026-07-29"^^xsd:date ;
+    cod:confidence         "high" .
+
+exwor:W2741809807
+    a                   bibo:Document ;
+    cod:openAlexWorkId  "W2741809807" ;
+    cod:doi             "10.1029/2021jc017428" .
+
+exwor:W3011223344
+    a                   bibo:Document ;
+    cod:openAlexWorkId  "W3011223344" .
+
+# --- A5: a conforming candidate (pending, so no evidence note required) -----
+excan:openalex-A5099887766
+    a                    cod:CoauthorCandidate , foaf:Person ;
+    foaf:name            "Bo Nguyen" ;
+    cod:openAlexAuthorId "A5099887766" ;
+    cod:seenWith         exper:orcid-0000-0002-1825-0097 ;
+    cod:decision         "pending" ;
+    cod:sourceUrl        "https://api.openalex.org/works/W2741809807"^^xsd:anyURI ;
+    cod:retrievedAt      "2026-07-29"^^xsd:date ;
+    cod:confidence       "high" .
+
+# --- A6: a conforming REJECTED candidate — carries the reason ---------------
+excan:orcid-0000-0001-2345-6789
+    a                          cod:CoauthorCandidate , foaf:Person ;
+    foaf:name                  "Sam Rivers" ;
+    cod:orcidId                "0000-0001-2345-6789" ;
+    cod:seenWith               exper:orcid-0000-0002-1825-0097 ;
+    cod:decision               "rejected" ;
+    cod:disambiguationEvidence "Shares a surname with an existing registry row but ORCIDs differ; OpenAlex topics are clinical cardiology with no coastal output. Distinct person, out of scope." ;
+    cod:sourceUrl              "https://api.openalex.org/works/W2741809807"^^xsd:anyURI ;
+    cod:retrievedAt            "2026-07-29"^^xsd:date ;
+    cod:confidence             "high" .
+
+
+#############################################################################
+# PART B — deliberate violations, one per non-negotiable
+#############################################################################
+
+# --- B1: no persistent identifier at all ------------------------------------
+# EXPECT cod:RegistryPersonShape — "must carry at least one persistent
+# identifier". A name and a URL is not an identity.
+exper:bad-no-identifier
+    a               cod:RegistryPerson , foaf:Person ;
+    foaf:name       "Anonymous Coastal Scientist" ;
+    cod:canonicalId "name:anonymous-coastal-scientist" ;
+    cod:sourceUrl   "https://example.org/directory/staff/42"^^xsd:anyURI ;
+    cod:retrievedAt "2026-07-29"^^xsd:date ;
+    cod:confidence  "medium" .
+
+# --- B2: no source_url, and a confidence outside the closed vocabulary ------
+# EXPECT two violations on cod:RegistryPersonShape: missing cod:sourceUrl,
+# and cod:confidence not in {high, medium, low}.
+exper:bad-no-source-url
+    a                    cod:RegistryPerson , foaf:Person ;
+    foaf:name            "Uncited Researcher" ;
+    cod:canonicalId      "orcid:0000-0002-9999-8888" ;
+    cod:orcidId          "0000-0002-9999-8888" ;
+    cod:retrievedAt      "2026-07-29"^^xsd:date ;
+    cod:confidence       "probably-fine" .
+
+# --- B3: malformed ORCID (a URL pasted into the bare-id slot) ---------------
+# EXPECT cod:RegistryPersonShape sh:pattern on cod:orcidId.
+exper:bad-orcid-syntax
+    a               cod:RegistryPerson , foaf:Person ;
+    foaf:name       "Url In The Id Field" ;
+    cod:canonicalId "orcid:0000-0002-1111-2222" ;
+    cod:orcidId     "https://orcid.org/0000-0002-1111-2222" ;
+    cod:sourceUrl   "https://orcid.org/0000-0002-1111-2222"^^xsd:anyURI ;
+    cod:retrievedAt "2026-07-29"^^xsd:date ;
+    cod:confidence  "high" .
+
+# --- B4: half-finished promotion — public id AND a local identity -----------
+# EXPECT cod:LocalIdentityExclusivityShape (SPARQL constraint).
+exper:bad-double-identity
+    a                   cod:RegistryPerson , foaf:Person ;
+    foaf:name           "Half Promoted" ;
+    cod:canonicalId     "orcid:0000-0002-7777-6666" ;
+    cod:orcidId         "0000-0002-7777-6666" ;
+    cod:localIdentifier "aaaabbbbccccdddd" ;
+    cod:sourceUrl       "https://api.openalex.org/authors/A5000000001"^^xsd:anyURI ;
+    cod:retrievedAt     "2026-07-29"^^xsd:date ;
+    cod:confidence      "high" .
+
+# --- B5: co-author edge with NO provenance path back to a work --------------
+# EXPECT cod:CoauthorEdgeShape — "must cite at least one work". This is the
+# central co-authorship non-negotiable.
+exedg:bad-no-evidence
+    a                      cod:CoauthorEdge ;
+    cod:edgeParticipant    exper:orcid-0000-0002-1825-0097 ,
+                           exper:orcid-0000-0003-1613-5981 ;
+    cod:coPublicationCount 2 ;
+    cod:matchMethod        cod:OrcidEquality ;
+    cod:sourceUrl          "https://api.openalex.org/works?filter=author.id:A5023888391"^^xsd:anyURI ;
+    cod:retrievedAt        "2026-07-29"^^xsd:date ;
+    cod:confidence         "high" .
+
+# --- B6: edge whose evidence work is unidentified ---------------------------
+# EXPECT cod:EvidenceWorkShape — the path dead-ends at a work with no
+# cod:openAlexWorkId and no cod:doi, so the edge cannot be re-checked.
+exedg:bad-unidentified-evidence
+    a                      cod:CoauthorEdge ;
+    cod:edgeParticipant    exper:orcid-0000-0002-1825-0097 ,
+                           exper:orcid-0000-0003-1613-5981 ;
+    cod:coPublicationCount 1 ;
+    cod:evidenceWork       exwor:bad-untitled-preprint ;
+    cod:matchMethod        cod:OrcidEquality ;
+    cod:sourceUrl          "https://api.openalex.org/works?filter=author.id:A5023888391"^^xsd:anyURI ;
+    cod:retrievedAt        "2026-07-29"^^xsd:date ;
+    cod:confidence         "high" .
+
+exwor:bad-untitled-preprint
+    a           bibo:Document ;
+    rdfs:label  "A preprint someone typed in by hand" .
+
+# --- B7: candidate proposed on a bare name ----------------------------------
+# EXPECT cod:CoauthorCandidateShape — no ORCID, no OpenAlex author id. This is
+# the exact shape of the wrong-person incidents in this repo's history.
+excan:bad-bare-name
+    a            cod:CoauthorCandidate , foaf:Person ;
+    foaf:name    "J. Smith" ;
+    cod:seenWith exper:orcid-0000-0002-1825-0097 ;
+    cod:decision "pending" ;
+    cod:sourceUrl "https://api.openalex.org/works/W2741809807"^^xsd:anyURI ;
+    cod:retrievedAt "2026-07-29"^^xsd:date ;
+    cod:confidence "low" .
+
+# --- B8: rejected candidate with no reason recorded -------------------------
+# EXPECT cod:CoauthorCandidateShape SPARQL constraint — a dropped person must
+# leave a reason behind.
+excan:bad-silent-rejection
+    a                    cod:CoauthorCandidate , foaf:Person ;
+    foaf:name            "Quietly Dropped" ;
+    cod:openAlexAuthorId "A5088776655" ;
+    cod:seenWith         exper:orcid-0000-0002-1825-0097 ;
+    cod:decision         "rejected" ;
+    cod:sourceUrl        "https://api.openalex.org/works/W2741809807"^^xsd:anyURI ;
+    cod:retrievedAt      "2026-07-29"^^xsd:date ;
+    cod:confidence       "medium" .
+
+# --- B9: cod:coauthorOf shortcut with no backing edge -----------------------
+# EXPECT cod:CoauthorShortcutShape — an unevidenced collaboration asserted
+# through the traversal property.
+exper:bad-shortcut-only
+    a               cod:RegistryPerson , foaf:Person ;
+    foaf:name       "Shortcut Only" ;
+    cod:canonicalId "orcid:0000-0002-5555-4444" ;
+    cod:orcidId     "0000-0002-5555-4444" ;
+    cod:coauthorOf  exper:orcid-0000-0002-1825-0097 ;
+    cod:sourceUrl   "https://api.openalex.org/authors/A5000000002"^^xsd:anyURI ;
+    cod:retrievedAt "2026-07-29"^^xsd:date ;
+    cod:confidence  "high" .
+
+# --- B10: a Fail verdict with no mismatch detail ---------------------------
+# EXPECT cod:ValidationResultShape SPARQL constraint.
+exval:bad-fail-no-detail
+    a                 cod:ValidationResult ;
+    cod:checkId       "openalex-author-resolves" ;
+    cod:verdict       cod:Fail ;
+    cod:sourceUrl     "https://api.openalex.org/authors/A5000000003"^^xsd:anyURI ;
+    cod:retrievedAt   "2026-07-29"^^xsd:date ;
+    cod:confidence    "high" ;
+    cod:validationRun "val-2026-07-29" .

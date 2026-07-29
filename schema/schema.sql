@@ -892,3 +892,274 @@ CREATE OR REPLACE TABLE registry_collaborations (
     shared_facilities   VARCHAR,                   -- comma-separated facility_id list
     PRIMARY KEY (canonical_id_a, canonical_id_b)
 );
+
+-------------------------------------------------------------------------------
+-- Registry validation & provenanced co-authorship
+-------------------------------------------------------------------------------
+--
+-- Append to schema/schema.sql after the registry_collaborations block (the
+-- current end of file). Three tables, all soft-ref (no FK) so they can be
+-- bulk-loaded in any order by scripts/rebuild_db_from_parquet.py:
+--
+--   person_validation    one row per (registry row, check) — did this row's
+--                        ORCID / OpenAlex id / ROR actually resolve?
+--   coauthor_edges       accepted co-authorship edges, each carrying the work
+--                        that proves it
+--   coauthor_candidates  co-authors seen on registry members' works who are
+--                        NOT yet registry rows — a staging queue, reviewed
+--                        before anything is promoted into person_registry
+--
+-- Why not just extend person_registry / registry_collaborations: both are
+-- one-row-per-entity tables rebuilt wholesale by their build scripts, so a
+-- verdict written into them is destroyed on the next rebuild and cannot be
+-- diffed run-over-run. Validation is a time series over an identifier, not
+-- an attribute of it — hence its own table keyed on (canonical_id, check_id,
+-- run_id).
+
+-- Per-identifier resolution verdicts. Long form — one row per check per
+-- registry row — rather than a wide person_validation with an
+-- orcid_ok/openalex_ok/ror_ok column trio, because the check set grows
+-- (ORCID, OpenAlex author, ROR, source_url reachability, cohort-flag
+-- agreement, name/affiliation agreement) and a wide table needs a schema
+-- migration for each addition while a long table needs none.
+--
+-- `verdict` deliberately separates "we asked and it said no" from "the
+-- question does not apply to this row". The 95 codp:% rows are COD-internal
+-- people with no public identifier by construction (see the canonical_id
+-- comment on person_registry): for them the ORCID and OpenAlex checks are
+-- 'not_applicable', NOT 'fail'. Counting them as failures would make the
+-- registry look permanently ~1% broken and would pressure someone into
+-- inventing an identifier to clear the number, which is the exact failure the
+-- wipe_* scripts were written to undo.
+CREATE OR REPLACE TABLE person_validation (
+    validation_id       VARCHAR PRIMARY KEY,       -- hash(canonical_id||check_id||run_id)
+    canonical_id        VARCHAR NOT NULL,          -- soft ref person_registry(canonical_id)
+    check_id            VARCHAR NOT NULL,          -- orcid-resolves | openalex-author-resolves |
+                                                   -- ror-resolves | source-url-citable |
+                                                   -- name-agreement | affiliation-agreement |
+                                                   -- cohort-flag-agreement
+    -- The identifier the check was run against, copied in so a verdict is
+    -- readable without joining back to a registry row that may since have
+    -- been re-harvested with a different value.
+    subject_id_type     VARCHAR,                   -- orcid | openalex_id | ror | source_url | none
+    subject_id_value    VARCHAR,
+
+    verdict             VARCHAR NOT NULL,          -- pass | fail | not_applicable | unresolved
+                                                   --   pass           id resolved and agrees
+                                                   --   fail           id resolved to nothing, or to
+                                                   --                  someone else
+                                                   --   not_applicable no such id exists for this row by
+                                                   --                  construction (all codp:% rows)
+                                                   --   unresolved     check could not be run (API error,
+                                                   --                  rate limit, network refusal) — never
+                                                   --                  collapse this into 'fail'
+    http_status         INTEGER,                   -- as returned by the resolver, when the check was an HTTP GET
+    -- What made this verdict defensible. Same intent as
+    -- person_identity_source.evidence: a human reading one row should be able
+    -- to tell whether to trust it without re-running the check.
+    evidence            VARCHAR,                   -- 'ORCID record 0000-0002-…: name "…", 41 works'
+    mismatch_detail     VARCHAR,                   -- populated only on verdict='fail'
+
+    -- Provenance (project non-negotiable: source_url + retrieved_at on every
+    -- assertion, and a confidence rating on every assertion).
+    method              VARCHAR NOT NULL,          -- orcid-public-api | openalex-authors-batch |
+                                                   -- ror-api | http-head | manual-audit
+    source              VARCHAR,                   -- orcid | openalex | ror | manual
+    source_url          VARCHAR NOT NULL,          -- the exact URL queried, not the service homepage
+    retrieved_at        VARCHAR NOT NULL,          -- ISO-8601 date, matching person_registry.retrieved_at
+    confidence          VARCHAR NOT NULL,          -- high | medium | low
+    run_id              VARCHAR NOT NULL,          -- soft ref ingest_runs(run_id); groups a sweep so two
+                                                   -- sweeps of the same row are both retained and diffable
+    notes               VARCHAR,
+    CHECK (verdict IN ('pass', 'fail', 'not_applicable', 'unresolved')),
+    CHECK (confidence IN ('high', 'medium', 'low'))
+);
+
+-- Accepted co-authorship edges over the person_registry node set.
+--
+-- This is registry_collaborations plus a provenance path and a match method.
+-- registry_collaborations stays as-is (the network view reads it and its shape
+-- is baked into src/views/network.js); coauthor_edges is the auditable layer
+-- underneath it. The distinction that matters: an edge here cannot exist
+-- without naming at least one work both people are on (exemplar_work_id is
+-- NOT NULL), so any edge can be checked by hand against OpenAlex in one
+-- request.
+--
+-- Undirected, stored once with canonical_id_a < canonical_id_b — same
+-- convention as collaborations and registry_collaborations, enforced by the
+-- CHECK below and re-checked in scripts/qa.py.
+--
+-- match_method is restricted to identifier equality. There is no
+-- 'name-similarity' value and one must never be added: three separate
+-- wrong-person incidents in this repo (scripts/wipe_bad_openalex_attributions.py,
+-- wipe_medicine_attributions.py and wipe_misattributed_identifiers.py) all
+-- trace to name-only resolution. A co-author who cannot be tied to a registry
+-- row by ORCID or OpenAlex author id belongs in coauthor_candidates, not here.
+CREATE OR REPLACE TABLE coauthor_edges (
+    edge_id             VARCHAR PRIMARY KEY,       -- hash(canonical_id_a||canonical_id_b)
+    canonical_id_a      VARCHAR NOT NULL,          -- soft ref person_registry(canonical_id)
+    canonical_id_b      VARCHAR NOT NULL,          -- soft ref person_registry(canonical_id)
+
+    co_pub_count        INTEGER NOT NULL,          -- number of works both are credited on
+    first_year          INTEGER,
+    last_year           INTEGER,
+    -- Symmetric-normalised edge weight, so a pair of prolific authors with 3
+    -- shared papers does not outrank a pair whose entire output is together:
+    --   co_pub_count / sqrt(works_a * works_b)
+    weight              DOUBLE,
+
+    -- Provenance path back to a work. exemplar_work_id is required: it is the
+    -- single OpenAlex Work id a reviewer can fetch to confirm the edge.
+    -- evidence_work_ids carries up to 20 more as a comma-separated list —
+    -- deliberately VARCHAR rather than a LIST, because Arrow LIST columns are
+    -- not plain JS arrays in DuckDB-Wasm and every consumer would otherwise
+    -- have to go through arrowToPlain() (see the trap documented in src/db.js).
+    exemplar_work_id    VARCHAR NOT NULL,          -- 'W2741809807'
+    exemplar_work_doi   VARCHAR,
+    exemplar_work_year  INTEGER,
+    evidence_work_ids   VARCHAR,                   -- comma-separated OpenAlex Work ids, capped at 20
+    evidence_truncated  BOOLEAN DEFAULT false,     -- true when co_pub_count exceeds the 20 listed
+
+    match_method        VARCHAR NOT NULL,          -- orcid-equality | openalex-author-id-equality |
+                                                   -- sameas-closure (OWL-RL over the
+                                                   -- InverseFunctional identity properties in cod.owl)
+    -- Denormalised context the network view would otherwise recompute per edge.
+    shared_areas        VARCHAR,                   -- comma-separated research_areas.area_id
+    shared_facilities   VARCHAR,                   -- comma-separated facilities.facility_id
+    same_institution    BOOLEAN,                   -- affiliation_ror equality at harvest time
+
+    source              VARCHAR,                   -- openalex-works
+    source_url          VARCHAR NOT NULL,          -- the works query that produced the edge
+    retrieved_at        VARCHAR NOT NULL,
+    confidence          VARCHAR NOT NULL,          -- high | medium | low
+    run_id              VARCHAR,                   -- soft ref ingest_runs(run_id)
+    CHECK (canonical_id_a < canonical_id_b),
+    CHECK (co_pub_count >= 1),
+    CHECK (match_method IN ('orcid-equality', 'openalex-author-id-equality',
+                            'sameas-closure')),
+    CHECK (confidence IN ('high', 'medium', 'low'))
+);
+
+-- Co-authors observed on registry members' works who are not (yet) registry
+-- rows. A staging queue, not a roster: nothing here is a personnel record and
+-- nothing here is drawn by the frontend.
+--
+-- The CHECK is the point of the table. A candidate must arrive with at least
+-- one persistent identifier — a bare name is not admissible even as a
+-- proposal, because a named-but-unidentified candidate is precisely what an
+-- eager resolver later "matches" to the wrong person. `decision` starts at
+-- 'pending'; promotion into person_registry writes 'accepted' here and a
+-- matching person_identity_source row there, so the decision survives the
+-- next registry rebuild.
+--
+-- ambiguity_note carries the disambiguation evidence and is required to be
+-- non-empty when decision is 'rejected' or 'deferred' (enforced in
+-- scripts/qa.py, not by a CHECK, so a partially-reviewed queue still loads),
+-- so a rejection records *why* rather than silently dropping a person.
+CREATE OR REPLACE TABLE coauthor_candidates (
+    candidate_id        VARCHAR PRIMARY KEY,       -- 'orcid:0000-…' or 'openalex:A…', same minting
+                                                   -- rule as person_registry.canonical_id, so an
+                                                   -- accepted candidate keeps its key
+    display_name        VARCHAR NOT NULL,
+    orcid               VARCHAR,
+    openalex_id         VARCHAR,
+    affiliation         VARCHAR,
+    affiliation_ror     VARCHAR,
+    affiliation_country VARCHAR,                   -- ISO-2
+
+    -- How this candidate was reached: which registry member, on which work.
+    seen_with_canonical_id VARCHAR NOT NULL,       -- soft ref person_registry(canonical_id)
+    seen_on_work_id     VARCHAR NOT NULL,          -- OpenAlex Work id
+    n_registry_coauthors INTEGER,                  -- how many distinct registry rows they co-author with
+    n_shared_works      INTEGER,                   -- total works shared with the registry
+
+    -- Why they might belong in the registry at all.
+    works_count         INTEGER,
+    coastal_works_count INTEGER,
+    coastal_share       DOUBLE,                    -- gate inherited from the scholar harvest:
+                                                   -- >=10 works and >=15% coastal share
+    h_index             INTEGER,
+
+    decision            VARCHAR NOT NULL DEFAULT 'pending',  -- pending | accepted | rejected | deferred
+    decided_by          VARCHAR,                   -- script name or a human
+    decided_at          VARCHAR,
+    -- Disambiguation evidence. Required on a non-accept so the reasoning is
+    -- recoverable: 'two OpenAlex authors share this ORCID', 'name matches a
+    -- registry row but ORCIDs differ — distinct people', 'cardiology topics,
+    -- no coastal output'.
+    ambiguity_note      VARCHAR,
+
+    source              VARCHAR,                   -- openalex-works
+    source_url          VARCHAR NOT NULL,
+    retrieved_at        VARCHAR NOT NULL,
+    confidence          VARCHAR NOT NULL,          -- high | medium | low — in the IDENTITY, not in
+                                                   -- the decision to admit them
+    run_id              VARCHAR,
+    notes               VARCHAR,
+    CHECK (orcid IS NOT NULL OR openalex_id IS NOT NULL),
+    CHECK (decision IN ('pending', 'accepted', 'rejected', 'deferred')),
+    CHECK (confidence IN ('high', 'medium', 'low'))
+);
+
+-------------------------------------------------------------------------------
+-- Validation & co-authorship helper views
+-------------------------------------------------------------------------------
+-- Reminder (CLAUDE.md): views do not survive the parquet export. All three
+-- views below are also defined in the `helperViews` array in src/db.js so the
+-- SQL tab keeps them in the browser. Change one, change both.
+
+-- Latest verdict per (row, check) — a validation sweep appends rather than
+-- overwrites, so almost every consumer wants this rather than the raw table.
+CREATE OR REPLACE VIEW v_person_validation_latest AS
+SELECT canonical_id, check_id, subject_id_type, subject_id_value,
+       verdict, http_status, evidence, mismatch_detail,
+       method, source_url, retrieved_at, confidence, run_id
+FROM (
+    SELECT v.*,
+           ROW_NUMBER() OVER (PARTITION BY canonical_id, check_id
+                              ORDER BY retrieved_at DESC, run_id DESC) AS rn
+    FROM person_validation v
+)
+WHERE rn = 1;
+
+-- One row per registry row: does it currently satisfy the non-negotiables?
+-- pass_rate excludes not_applicable from the denominator, so the 95 codp:%
+-- rows are not penalised for lacking public identifiers they were never
+-- supposed to have.
+CREATE OR REPLACE VIEW v_person_validation_summary AS
+SELECT r.canonical_id,
+       r.display_name,
+       r.tier,
+       COUNT(*) FILTER (WHERE l.verdict = 'pass')           AS n_pass,
+       COUNT(*) FILTER (WHERE l.verdict = 'fail')           AS n_fail,
+       COUNT(*) FILTER (WHERE l.verdict = 'not_applicable') AS n_not_applicable,
+       COUNT(*) FILTER (WHERE l.verdict = 'unresolved')     AS n_unresolved,
+       CASE WHEN COUNT(*) FILTER (WHERE l.verdict IN ('pass', 'fail')) = 0 THEN NULL
+            ELSE COUNT(*) FILTER (WHERE l.verdict = 'pass')::DOUBLE
+                 / COUNT(*) FILTER (WHERE l.verdict IN ('pass', 'fail'))
+       END                                                  AS pass_rate,
+       -- The non-negotiables, restated as booleans over the registry row
+       -- itself so a caller does not have to know the check_id vocabulary.
+       (r.orcid IS NOT NULL OR r.openalex_id IS NOT NULL
+        OR r.affiliation_ror IS NOT NULL)                   AS has_persistent_id,
+       (r.source_url IS NOT NULL AND r.source_url <> '')    AS has_source_url,
+       (r.confidence IN ('high', 'medium', 'low'))          AS has_valid_confidence,
+       r.canonical_id LIKE 'codp:%'                         AS is_local_identity
+FROM person_registry r
+LEFT JOIN v_person_validation_latest l ON l.canonical_id = r.canonical_id
+GROUP BY r.canonical_id, r.display_name, r.tier, r.orcid, r.openalex_id,
+         r.affiliation_ror, r.source_url, r.confidence;
+
+-- Co-author edges with both endpoints resolved to display names — what the
+-- network view needs to label an edge without two extra joins per row.
+CREATE OR REPLACE VIEW v_coauthor_edges_enriched AS
+SELECT e.edge_id,
+       e.canonical_id_a, ra.display_name AS name_a, ra.affiliation AS affiliation_a,
+       e.canonical_id_b, rb.display_name AS name_b, rb.affiliation AS affiliation_b,
+       e.co_pub_count, e.first_year, e.last_year, e.weight,
+       e.exemplar_work_id, e.exemplar_work_doi, e.exemplar_work_year,
+       e.match_method, e.shared_areas, e.shared_facilities, e.same_institution,
+       e.source_url, e.retrieved_at, e.confidence
+FROM coauthor_edges e
+JOIN person_registry ra ON ra.canonical_id = e.canonical_id_a
+JOIN person_registry rb ON rb.canonical_id = e.canonical_id_b;
