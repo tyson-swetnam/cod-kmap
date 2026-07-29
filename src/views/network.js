@@ -102,6 +102,32 @@ let _regDomainLabelSel = null;
 // polygons in the same area to reveal a single institution).
 let _facPolySel = null;
 
+// ── Edge-reveal selection state ─────────────────────────────────────
+// Individual cross-area edges are NO LONGER drawn at load. On the shipped
+// parquet the full set is 80 deduplicated cross-area pairs, and drawEdges
+// emits TWO <line> elements per edge (a wide transparent hit line for
+// hover precision plus the visible line) = 160 elements, every one of them
+// crossing the middle of the map. The result read as a hairball that hid
+// the cartogram the layout exists to show.
+//
+// Instead exactly ONE node is selected at a time and only ITS incident
+// edges exist in the DOM. null = nothing selected = zero edge elements.
+// Held as a bare node id — facility_id or person_id, the same key space
+// _layout.nodes uses — so render() can re-validate it against the freshly
+// built layout and drop it if that node is no longer drawn.
+let _selectedNodeId = null;
+// Closure installed by render(): wipes the edge container and redraws the
+// current selection's incident edges into it. It CAPTURES the live SVG
+// group, so invalidateNetworkData() must null it — calling a stale one
+// appends into a detached tree, the same class of bug the registry
+// selections below are nulled for.
+let _redrawEdgeReveal = null;
+// The Escape-to-clear listener is attached once per page, not once per
+// render(): render() re-runs on every People/Facilities toggle and on
+// "Recompute layout", and re-attaching there would stack duplicate
+// listeners for the lifetime of the tab.
+let _escBound = false;
+
 // ── Registry (researcher) layer state ───────────────────────────────
 // The registry layer is OFF by default and its data is fetched lazily
 // the first time it is switched on, so the initial map paint costs
@@ -217,6 +243,14 @@ const SUPERNODE_SCALE  = 34;     // side = scale * sqrt(weight)
 const SUPERNODE_MIN    = 18;     // minimum side so a tiny region stays clickable
 const DECOR_GRID       = 5;      // 5×5 = 25 decoration anchors per area square
 const DECOR_JITTER     = 0.18;   // ±18% random jitter so cell boundaries aren't gridlike
+
+// Fraction of a facility's sub-circle radius that a person marker may
+// occupy. Named rather than inlined because the person spiral and the
+// containment clamp that follows it MUST use the same number — when they
+// were separate literals the clamp could not actually enforce the spiral's
+// own bound. A facility sub-circle is a membership claim, so "inside the
+// circle" is a correctness property of this map, not a spacing preference.
+const PERSON_R_FRAC    = 0.88;
 
 // ── Cartogram weight coefficients (see the header note) ─────────────
 // Region area ∝ this weight. An organisation is worth 1. Being a data
@@ -1222,6 +1256,146 @@ function decorationAnchors(square, areaId) {
   return out;
 }
 
+// Positions for people the area holds but no facility circle in it does:
+// people with no primary_facility_id at all, and people whose primary
+// facility is drawn in a DIFFERENT area's square. They belong to this
+// research area — that is what person_primary_groups says — but the map
+// must not put them inside an institution, because no record says they
+// are in one here.
+//
+// Built on the same gap region decorationAnchors() already samples: the
+// jittered grid over the square. The difference is that these points are
+// VISIBLE nodes, so they additionally have to (a) miss every facility
+// circle by a margin and (b) sit far enough inside the square edge that
+// the marker and its label are not clipped by the polygon boundary. So
+// this rejects grid cells instead of emitting all of them, and falls back
+// to a perimeter ring when the circles leave too few free cells.
+//
+// Deterministic: same jitter PRNG, same seeding scheme, no Math.random.
+// The layout must not reshuffle between reloads (see the SEED_PHI note).
+function interstitialSlots(square, circles, count) {
+  const cx = square.x, cy = square.y;
+  // Keep clear of the square edge by the same fraction the facility
+  // packing insets by (innerR = 0.84 * half), so a gap person is never
+  // drawn outside the region polygon after the Voronoi clip.
+  const half = (square.side / 2) * 0.88;
+  const out = [];
+  if (count <= 0) return out;
+
+  // Margin scales with the square: a small region's whole square can be
+  // narrower than a fixed pixel margin, which would reject every cell.
+  const clearance = Math.max(2, square.side * 0.012);
+  const free = (x, y) => {
+    for (const c of circles) {
+      if (Math.hypot(x - c.x, y - c.y) < c.r + clearance) return false;
+    }
+    return true;
+  };
+
+  // Denser than DECOR_GRID because we are rejecting most cells: the grid
+  // has to yield `count` survivors after the circles take their bite.
+  // Grows with demand so a 16-person gap list still gets distinct slots.
+  const N = Math.max(DECOR_GRID * 2, Math.ceil(Math.sqrt(count * 6)) + 2);
+  const seedBase = (square.id.charCodeAt(0) || 0) * 31;
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      const fx = (i + 0.5) / N - 0.5;
+      const fy = (j + 0.5) / N - 0.5;
+      const seed = seedBase + i * 7 + j * 13;
+      const jx = (((seed * 9301 + 49297) % 233280) / 233280 - 0.5) * 2;
+      const jy = (((seed * 4391 + 12347) % 233280) / 233280 - 0.5) * 2;
+      const x = cx + (fx + jx * DECOR_JITTER / N * DECOR_GRID) * 2 * half;
+      const y = cy + (fy + jy * DECOR_JITTER / N * DECOR_GRID) * 2 * half;
+      if (Math.abs(x - cx) > half || Math.abs(y - cy) > half) continue;
+      if (free(x, y)) out.push({ x, y });
+    }
+  }
+
+  // Fallback: an area whose circles nearly fill the square (marine
+  // ecosystems packs 72 of them) can starve the grid. Walk a golden-angle
+  // ring inward from the square edge and take the first free points. If
+  // even that starves — circles covering essentially everything — we place
+  // the remainder ON the square's inner edge rather than inside a circle,
+  // because a slightly crowded edge marker still tells the truth and a
+  // marker inside a circle does not.
+  const RING_PHI = Math.PI * (3 - Math.sqrt(5));
+  for (let s = 0; out.length < count && s < count * 60; s++) {
+    const a = (s + 1) * RING_PHI;
+    // Sweep the radius over the outer 45% of the square, where the gap
+    // between the packed circles (innerR = 0.84 * half) and the edge is.
+    const frac = 0.98 - 0.45 * ((s % 9) / 8);
+    const x = cx + half * frac * Math.cos(a);
+    const y = cy + half * frac * Math.sin(a);
+    if (Math.abs(x - cx) > half || Math.abs(y - cy) > half) continue;
+    if (free(x, y)) out.push({ x, y });
+  }
+  // Last resort. If the grid AND the ring both starve, do NOT fall back to a
+  // blind point on the square edge: measured on a synthetic 200-circle / 20 px
+  // square (radii hit the 5 px floor, so the circles spill past the square
+  // and neither sampler finds a free cell), a blind edge ring put 48 of 200
+  // gap markers inside a facility circle even though 18.8% of the region was
+  // free. Instead pick the point of MAXIMUM clearance from the circles over a
+  // dense scan — the same "as far from any institution as this square allows"
+  // rule, just searched rather than guessed. Successive picks perturb the
+  // start index so repeated calls do not stack on one point.
+  const clearanceAt = (x, y) => {
+    let m = Infinity;
+    for (const c of circles) {
+      const d = Math.hypot(x - c.x, y - c.y) - c.r;
+      if (d < m) m = d;
+    }
+    return m;
+  };
+  const M = 24;                      // 24 x 24 scan; 576 probes, negligible here
+  while (out.length < count) {
+    let bx = cx, by = cy, bc = -Infinity;
+    const skew = out.length * 0.37;   // decorrelate consecutive picks
+    for (let i = 0; i < M; i++) {
+      for (let j = 0; j < M; j++) {
+        const x = cx + (((i + 0.5 + skew) % M) / M - 0.5) * 2 * half;
+        const y = cy + (((j + 0.5 + skew) % M) / M - 0.5) * 2 * half;
+        // Penalise re-using a point another gap person already holds, so a
+        // starved area spreads its markers instead of stacking them.
+        let cl = clearanceAt(x, y);
+        for (const o of out) {
+          const d = Math.hypot(x - o.x, y - o.y);
+          if (d < cl) cl = d;
+        }
+        if (cl > bc) { bc = cl; bx = x; by = y; }
+      }
+    }
+    out.push({ x: bx, y: by });
+  }
+  if (out.length <= count) return out;
+
+  // The grid scan above emits survivors in row-major order, so simply
+  // taking the first `count` puts them in adjacent cells — measured on the
+  // shipped parquet, the closest pair of gap markers came out 2.71 px apart
+  // (mangroves, 3 people in a 34.8 px square), i.e. overlapping dots.
+  // Farthest-point subsampling instead spreads them over the whole free
+  // region: same measurement, 25.02 px. Deterministic (always seeded from
+  // candidate 0, no randomness) and O(candidates × count), which at these
+  // sizes — 16 people is the largest gap list in the data — is trivial.
+  const picked = [out[0]];
+  const dmin = out.map((c) => Math.hypot(c.x - out[0].x, c.y - out[0].y));
+  dmin[0] = -1;      // the seed is taken; -1 excludes it from re-selection
+  while (picked.length < count) {
+    let bi = -1, bd = -1;
+    for (let i = 0; i < out.length; i++) {
+      if (dmin[i] > bd) { bd = dmin[i]; bi = i; }
+    }
+    if (bi < 0) break;
+    picked.push(out[bi]);
+    dmin[bi] = -1;                       // -1 marks "already taken"
+    for (let i = 0; i < out.length; i++) {
+      if (dmin[i] < 0) continue;
+      const d = Math.hypot(out[i].x - out[bi].x, out[i].y - out[bi].y);
+      if (d < dmin[i]) dmin[i] = d;
+    }
+  }
+  return picked;
+}
+
 // Pack facility sub-circles inside an area's square, then scatter
 // each facility's people inside the corresponding circle. Returns a
 // flat list of (facility nodes + person nodes + decoration anchors)
@@ -1368,20 +1542,97 @@ async function layoutAndFit(d3, members, edges, square, facCircles) {
   // don't crowd the centre, and the spacing scales with the bubble's
   // actual size so dense institutions get equally-spaced names.
   const PHI = Math.PI * (3 - Math.sqrt(5));   // golden angle
-  const peoPerFac = new Map();
+
+  // STEP 1: resolve each person to a bubble THAT EXISTS IN THIS AREA, or
+  // to no bubble at all. Two things are deliberately different from the
+  // previous version, and both were wrong-membership bugs:
+  //
+  //   (a) The lookup is against this area's own bubbles, not against the
+  //       global facCircles map. facCircles is filled as buildLayout walks
+  //       the areas in area_id order, so `facCircles.get(fid)` could return
+  //       a circle sitting in a DIFFERENT area's square, and the person was
+  //       then drawn there — outside their own region's polygon entirely.
+  //       Measured on the shipped parquet: 48 of the 243 people that reach
+  //       the layout have a primary facility whose own primary area is not
+  //       the person's primary area, and 21 of those 48 resolved to a
+  //       foreign square because that facility's area sorts earlier.
+  //
+  //   (b) There is no `|| facCircles.get(bubbles[0].id)` fallback. Falling
+  //       back to the FIRST bubble in the area asserted an institutional
+  //       membership the data does not record, for 38 people (11 with no
+  //       facility_personnel row at all, plus the 27 off-area cases whose
+  //       lookup missed). Showing nothing is better than showing a wrong
+  //       affiliation; these people now go to the interstitial space below.
+  const localBubbles = new Map(bubbles.map((b) => [b.id, b]));
+  const inside = [];      // [{ p, b }] — person has an institution drawn here
+  const gap = [];         // people this polygon holds but no circle here does
   for (const p of peo) {
     const fid = p.primary_facility_id;
-    const b = (fid && facCircles.get(fid)) || facCircles.get(bubbles[0].id);
-    if (!b) continue;
-    const k = peoPerFac.get(b) || 0;
-    peoPerFac.set(b, k + 1);
-    const n = (peopleAt.get(fid) || 1);
-    // Deterministic spiral up to bubble's inner 88%.
-    const t = (k + 0.5) / Math.max(n, 1);
-    const r = b.r * 0.88 * Math.sqrt(t);
+    const b = fid ? localBubbles.get(fid) : null;
+    if (b) { inside.push({ p, b }); continue; }
+    // Kept as two separate flags because they are two different statements
+    // and the renderer marks them differently: "no affiliation on record"
+    // vs "affiliation on record, but that institution is drawn in another
+    // region". Neither is "member of an institution in this region".
+    p.unaffiliated = !fid;
+    p.offAreaAffil = !!fid;
+    gap.push(p);
+  }
+
+  // STEP 2: affiliated people spiral inside their own circle. The index k
+  // and the count n now come from THE SAME pass over `inside`. That is the
+  // fix for markers escaping their circle: k used to come from a counter
+  // keyed on the bubble OBJECT while n came from peopleAt, keyed on the
+  // facility ID, so for anyone reaching the bubbles[0] fallback the two
+  // disagreed — k could exceed n, t = (k + 0.5) / n went above 1, and
+  // r = b.r * 0.88 * sqrt(t) put the marker outside the circle the map
+  // captions it as being inside.
+  const nPerBubble = new Map();
+  for (const rec of inside) nPerBubble.set(rec.b, (nPerBubble.get(rec.b) || 0) + 1);
+  const kPerBubble = new Map();
+  for (const rec of inside) {
+    const p = rec.p, b = rec.b;
+    const k = kPerBubble.get(b) || 0;
+    kPerBubble.set(b, k + 1);
+    const n = nPerBubble.get(b) || 1;
+    // t is in (0, 1] by construction now. The clamp stays anyway: this
+    // radius must never leave the circle, and a future edit to either
+    // counter should degrade the spacing, not the containment.
+    const t = Math.min(1, Math.max(0, (k + 0.5) / Math.max(n, 1)));
+    const r = b.r * PERSON_R_FRAC * Math.sqrt(t);
     const a = (k + 1) * PHI;
     p.x = b.x + r * Math.cos(a);
     p.y = b.y + r * Math.sin(a);
+  }
+  // Hard containment invariant, independent of the arithmetic above: a
+  // person the map places in an institution's circle is inside it. The
+  // sub-circle IS the membership claim, so this is not cosmetic.
+  for (const rec of inside) {
+    const p = rec.p, b = rec.b;
+    const dx = p.x - b.x, dy = p.y - b.y;
+    const d = Math.hypot(dx, dy);
+    const rMax = b.r * PERSON_R_FRAC;
+    if (d > rMax && d > 0) {
+      p.x = b.x + dx * (rMax / d);
+      p.y = b.y + dy * (rMax / d);
+    }
+  }
+
+  // STEP 3: everyone else goes in the interstitial space — inside the area
+  // square, outside every facility circle. They read as "this region's
+  // researcher, no institution recorded here", which is what the data says.
+  //
+  // Obstacles are the REAL facility circles only. The phantom bubble is not
+  // an institution, so in a facility-less area there is nothing to avoid and
+  // gap people may use the whole square; its stated purpose ("so people
+  // still get placed") no longer applies now that nobody is placed in it.
+  if (gap.length) {
+    const obstacles = facs.length ? bubbles : [];
+    const slots = interstitialSlots(square, obstacles, gap.length);
+    for (let i = 0; i < gap.length; i++) {
+      gap[i].x = slots[i].x;
+      gap[i].y = slots[i].y;
+    }
   }
 
   // ── 3. Append decoration anchors so Voronoi tiles the area square ──
@@ -2184,6 +2435,16 @@ function openRegistryProfile(d) {
   if (url) window.open(url, '_blank', 'noopener');
 }
 
+// Drop the revealed-edge subset and take it out of the DOM. Module-level
+// so the non-render() call sites (the registry panel's Clear button) can
+// reach it without duplicating the two-line dance, and so it is a no-op
+// rather than a crash when there is no live SVG to redraw into.
+function clearNodeSelection() {
+  if (!_selectedNodeId) return;
+  _selectedNodeId = null;
+  if (_redrawEdgeReveal) _redrawEdgeReveal();
+}
+
 // Focus a site (or clear focus with null) and redraw only the registry
 // layer. Cheap enough to call on every click — it touches one <g>.
 function setFocusFacility(facilityId) {
@@ -2252,8 +2513,14 @@ function renderRegistryPanel(roster, nDrawn, offMapEdges) {
         ? ` · ${sum.internal.co_pubs} co-publications among them` : ''}</p>
     ${capNote}${edgeNote}${offNote}
     <ol class="mvg-reg-list">${rows}</ol>`;
+  // Clear drops BOTH selections the map can be holding: the focused site
+  // (which owns this panel) and the revealed edge subset. They are set by
+  // different gestures — shift-click focuses a site, plain click reveals a
+  // node's edges — but "Clear" is the only always-visible reset in the UI,
+  // so it must not leave edges on screen with nothing on the page
+  // explaining what they belong to.
   panel.querySelector('#net-reg-clear')
-    .addEventListener('click', () => setFocusFacility(null));
+    .addEventListener('click', () => { clearNodeSelection(); setFocusFacility(null); });
   panel.querySelectorAll('.mvg-reg-row').forEach((btn) => {
     btn.addEventListener('click', () => {
       const r = roster.find((x) => x.canonical_id === btn.dataset.cid);
@@ -2452,18 +2719,43 @@ async function render() {
           hideTip(tip);
         })
         .on('click', (ev, d) => {
-          // With the registry layer on, a site click means "show me who
-          // works here" — the map is the navigation surface. With it off
-          // the historical behaviour (open the site's website) stands.
-          if (_showRegistry) { setFocusFacility(d.id); return; }
-          if (d.url) window.open(d.url, '_blank', 'noopener');
+          // The sub-polygon IS the institution's territory, so clicking it
+          // selects the same node the facility dot at its centroid does —
+          // the dot is a ~4 px target and the polygon is the forgiving
+          // version of it. Same modifier convention as the dot handler
+          // below: plain click reveals that facility's incident edges,
+          // shift-click keeps the two historical destinations
+          // ("show me who works here" with the registry layer on, the
+          // site's website with it off).
+          //
+          // toggleNodeSelection is declared further down in this same
+          // function scope; it is initialised long before any click can
+          // fire, so the forward reference is safe.
+          ev.stopPropagation();
+          if (ev.shiftKey) {
+            if (_showRegistry) { setFocusFacility(d.id); return; }
+            if (d.url) window.open(d.url, '_blank', 'noopener');
+            return;
+          }
+          toggleNodeSelection(d.id);
         });
     } else {
       _facPolySel = null;
     }
 
-    // Layer 2: cross-area edges. THREE visibility buckets so edges
-    // don't dangle into invisible nodes:
+    // Layer 2: cross-area edges — CLICK TO REVEAL, nothing at rest.
+    //
+    // These used to be drawn in full at every paint. drawEdges emits TWO
+    // <line> elements per edge (see its comment), so the shipped 80
+    // cross-area pairs put 160 line elements across the middle of the map
+    // before the user had asked for a single one, and the cartogram the
+    // whole layout exists to communicate was read as a hairball. The edge
+    // set is now scoped to ONE selected node: click a facility, a
+    // researcher dot or a researcher label to reveal its incident edges,
+    // click it again / click the background / press Escape to remove them.
+    //
+    // The three visibility buckets below are UNCHANGED and still do the
+    // same job — they keep an edge from dangling into an invisible node:
     //   - facility ↔ facility       → Facilities ON
     //   - person ↔ facility         → BOTH ON  (person-bridging that
     //                                  terminates on a facility dot)
@@ -2479,11 +2771,24 @@ async function render() {
       if (ak === 'person' || bk === 'person') return 'pf';
       return 'ff';
     };
-    const buckets = { ff: [], pf: [], pp: [] };
+    // Incident-edge index: node id → every cross-area edge that touches
+    // it. Built once per paint (80 edges on the shipped parquet, so the
+    // cost is nil) so a click never walks the whole edge list, and so the
+    // reveal cannot accidentally become O(edges) per mousedown if the
+    // graph grows.
+    const incident = new Map();
     for (const e of _layout.crossEdges) {
-      const k = edgeKind(e);
-      if (buckets[k]) buckets[k].push(e);
+      if (!incident.has(e.source)) incident.set(e.source, []);
+      incident.get(e.source).push(e);
+      if (!incident.has(e.target)) incident.set(e.target, []);
+      incident.get(e.target).push(e);
     }
+    // Container for the revealed subset. Appended HERE, at the z position
+    // the three edge groups used to occupy, so revealed edges still paint
+    // BELOW the facility dots, person dots and labels that follow. Its
+    // children are created and destroyed by redrawEdgeReveal() below; it
+    // is empty at first paint.
+    const edgeRevealG = root.append('g').attr('class', 'mvg-edge-reveal');
     // Area-id → display name lookup for the edge tooltip.
     const areaName = new Map(_layout.areas.map((a) => [a.id, a.name]));
     // Tooltip HTML for an edge — describes the two endpoints, the
@@ -2513,9 +2818,12 @@ async function render() {
     // line for hover precision (thin strokes are otherwise nearly
     // impossible to hover with a mouse), and the visible coloured
     // line on top. Hover handlers live on the hit line.
+    // Appends into edgeRevealG rather than root: the group is wiped on
+    // every selection change, which is what removes revealed edges from
+    // the DOM instead of merely hiding them.
     const drawEdges = (cls, arr, stroke, opacity, baseW, kind) => {
       if (!arr.length) return;
-      const g = root.append('g').attr('class', cls).attr('fill', 'none');
+      const g = edgeRevealG.append('g').attr('class', cls).attr('fill', 'none');
 
       // Invisible hit line — wide, transparent, clickable.
       g.append('g').attr('class', `${cls}-hit`)
@@ -2559,9 +2867,131 @@ async function render() {
         .attr('y2', (e) => (nodeIdx.get(e.target) || {}).y)
         .attr('stroke-width', (e) => baseW + Math.log(1 + e.w) * 0.3);
     };
-    if (_showFacility) drawEdges('mvg-edges-ff', buckets.ff, '#94a3b8', 0.18, 0.35, 'ff');
-    if (_showFacility && _showPerson) drawEdges('mvg-edges-pf', buckets.pf, '#7dd3fc', 0.30, 0.45, 'pf');
-    if (_showPerson) drawEdges('mvg-edges-pp', buckets.pp, '#0ea5e9', 0.55, 0.6, 'pp');
+    // Wipe the reveal group and rebuild it for whatever _selectedNodeId
+    // currently is. Called on every selection change and re-entrant by
+    // design: selectAll('*').remove() takes the previous subset OUT of the
+    // DOM, so with no selection this layer costs exactly zero elements
+    // rather than a set of opacity-0 lines still being hit-tested.
+    //
+    // The three bucket calls below keep the ORIGINAL gating verbatim, so
+    // the People / Facilities toggles still decide what may be revealed:
+    // a pf edge needs BOTH layers on (its endpoints are one of each), ff
+    // needs Facilities, pp needs People. An edge whose far endpoint is a
+    // hidden node kind therefore still cannot appear — the same ghost-line
+    // bug the buckets were introduced for.
+    const redrawEdgeReveal = () => {
+      edgeRevealG.selectAll('*').remove();
+      if (!_selectedNodeId) return;
+      const mine = incident.get(_selectedNodeId);
+      if (!mine || !mine.length) return;
+      const sub = { ff: [], pf: [], pp: [] };
+      for (const e of mine) {
+        const k = edgeKind(e);
+        if (sub[k]) sub[k].push(e);
+      }
+      // Same class names, colours, opacities and widths as before, so the
+      // revealed lines read identically to the old always-on layer and
+      // any CSS keyed on mvg-edges-* still applies. drawEdges installs the
+      // hit-line + tooltip pair, so edgeTipHtml hover works on the
+      // revealed subset unchanged.
+      if (_showFacility) drawEdges('mvg-edges-ff', sub.ff, '#94a3b8', 0.18, 0.35, 'ff');
+      if (_showFacility && _showPerson) drawEdges('mvg-edges-pf', sub.pf, '#7dd3fc', 0.30, 0.45, 'pf');
+      if (_showPerson) drawEdges('mvg-edges-pp', sub.pp, '#0ea5e9', 0.55, 0.6, 'pp');
+    };
+    // Publish the closure so the node click handlers further down, the
+    // background/Escape clear, and the registry panel's Clear button can
+    // all drive the same single code path.
+    _redrawEdgeReveal = redrawEdgeReveal;
+
+    // A selection surviving from the previous paint must be re-validated:
+    // "Recompute layout" and the People/Facilities toggles both re-enter
+    // render(), and a node id that is no longer in _layout.nodes (or whose
+    // kind is now hidden) would leave a selection that can never be
+    // cleared by clicking the node again, because the node is not there to
+    // click. Drop it rather than carry a dangling reference.
+    if (_selectedNodeId) {
+      const selNode = nodeIdx.get(_selectedNodeId);
+      const kindVisible = selNode
+        && ((selNode.kind === 'person' && _showPerson)
+            || (selNode.kind === 'facility' && _showFacility));
+      if (!kindVisible) _selectedNodeId = null;
+    }
+    redrawEdgeReveal();
+
+    // Toggle selection for a node datum. Clicking the selected node again
+    // clears it, which is the "click the same node again" affordance; any
+    // other node moves the selection. Only one node is ever selected, so
+    // the DOM never holds more than that node's incident edges.
+    const toggleNodeSelection = (id) => {
+      _selectedNodeId = (_selectedNodeId === id) ? null : id;
+      redrawEdgeReveal();
+      // Deliberately NO onZoom() call. Cross-area edge stroke-widths are
+      // world-space (baseW + log(1+w)*0.3) and were never counter-scaled
+      // by onZoom even when this layer was always on — only the registry
+      // ribbons are. Revealed edges keep that behaviour so a reveal looks
+      // the same as the old layer did at the same zoom.
+    };
+
+    // Researcher dots and researcher name labels share this handler.
+    // Plain click = reveal that person's incident edges (and clear on a
+    // second click); shift-click = the previous behaviour, navigate to
+    // their card in the People directory. Both marks are small targets
+    // and a stray click used to change route, which made exploring the
+    // map hostile; the reveal has to be the default gesture and the
+    // navigation the deliberate one.
+    const onNodeClick = (ev, d) => {
+      if (!d || !d.id) return;
+      ev.stopPropagation();
+      if (ev.shiftKey) { onPersonClick(d); return; }
+      toggleNodeSelection(d.id);
+    };
+
+    // Background click clears the selection. Bound on the SVG (not the
+    // stage div) so it fires for the parchment between polygons; the
+    // polygon path itself has its own click handler that calls
+    // zoomToArea, and clicking a polygon is not "clicking a node", so it
+    // should also drop the edge subset — hence the clear lives here and
+    // catches the bubbled polygon click too. Node handlers below call
+    // ev.stopPropagation() so their own click does not immediately
+    // undo itself via this listener.
+    //
+    // DRAG GUARD. d3.zoom pans on mousedown-drag, and the browser still
+    // fires a 'click' on mouseup at the end of that gesture. Without a
+    // guard, panning the map to look at the revealed edges would clear
+    // them. So record where the pointer went down and only treat the
+    // click as a deliberate background click if it barely moved. 4 px is
+    // the usual click-vs-drag threshold and is well under the distance
+    // any intentional pan covers.
+    //
+    // Named 'click.mvgclear' / 'mousedown.mvgclear' so this registration
+    // can never displace another unnamed listener on the same element,
+    // and so svg.call(zoom)'s own typenames stay untouched.
+    const CLICK_SLOP_PX = 4;
+    let downX = 0, downY = 0;
+    svg.on('mousedown.mvgclear', (ev) => { downX = ev.clientX; downY = ev.clientY; });
+    svg.on('click.mvgclear', (ev) => {
+      if (!_selectedNodeId) return;
+      if (Math.hypot(ev.clientX - downX, ev.clientY - downY) > CLICK_SLOP_PX) return;
+      _selectedNodeId = null;
+      redrawEdgeReveal();
+    });
+
+    // Escape clears the selection. Bound to the document once per page,
+    // NOT once per render(): render() re-enters on both node toggles and
+    // on "Recompute layout", so binding here without the guard would stack
+    // one listener per toggle for the lifetime of the tab. The listener
+    // reads the module-level _redrawEdgeReveal rather than closing over
+    // this paint's redrawEdgeReveal, so it always drives the LIVE SVG
+    // instead of a detached one from a superseded paint.
+    if (!_escBound) {
+      _escBound = true;
+      document.addEventListener('keydown', (ev) => {
+        if (ev.key !== 'Escape') return;
+        if (!_selectedNodeId) return;
+        _selectedNodeId = null;
+        if (_redrawEdgeReveal) _redrawEdgeReveal();
+      });
+    }
 
     // Layer 3: nodes. Researchers now render as NAME LABELS (top-N
     // per area by composite importance) so the map looks like the
@@ -2615,9 +3045,26 @@ async function render() {
         .on('mouseenter', (ev, d) => showTip(tip, ev, nodeTipHtml(d)))
         .on('mouseleave', () => hideTip(tip))
         .on('click', (ev, d) => {
-          if (_showRegistry) { setFocusFacility(d.id); return; }
-          const url = d.url || d.homepage_url;
-          if (url) window.open(url, '_blank', 'noopener');
+          // A facility dot is a NODE, so a plain click now reveals its
+          // incident cross-area edges instead of navigating away — the
+          // map is unreadable if every click leaves the page. stopPropagation
+          // keeps the svg background handler from clearing the selection
+          // this click just made.
+          //
+          // The two pre-existing destinations are preserved but demoted to
+          // modifier-clicks, because a click that opens a new tab and a
+          // click that reveals edges cannot share the same gesture:
+          //   * registry layer on → shift-click focuses the site roster
+          //     (what setFocusFacility did on a plain click);
+          //   * otherwise        → shift-click opens the site's homepage.
+          ev.stopPropagation();
+          if (ev.shiftKey) {
+            if (_showRegistry) { setFocusFacility(d.id); return; }
+            const url = d.url || d.homepage_url;
+            if (url) window.open(url, '_blank', 'noopener');
+            return;
+          }
+          toggleNodeSelection(d.id);
         });
       // A data-producing site gets a visibly larger marker: the map is
       // meant to emphasise data, and only 24 of 200 organisations produce
@@ -2644,20 +3091,36 @@ async function render() {
         const w = d.importance || 0;
         return 1.6 + Math.min(2.2, Math.sqrt(w) * 0.55);
       };
+      // A person the layout could not put inside an institution drawn in
+      // this region gets a HOLLOW marker: no fill, the person colour as a
+      // dashed outline. The filled dot means "inside this institution's
+      // circle"; a hollow one has to look different or the map still reads
+      // as asserting a membership. Dashed rather than merely unfilled so the
+      // distinction survives at the ~2 px sizes these dots sit at.
+      const isGap = (d) => !!(d.unaffiliated || d.offAreaAffil);
       _dotPersonSel = root.append('g').attr('class', 'mvg-per-dots')
         .selectAll('circle').data(dotPeople).enter().append('circle')
+        .attr('class', (d) => (isGap(d) ? 'mvg-per-dot mvg-per-dot-gap' : 'mvg-per-dot'))
         .attr('cx', (d) => d.x).attr('cy', (d) => d.y)
         .attr('r', dotRadius)
-        .attr('fill', NODE_COLORS.person)
+        .attr('fill', (d) => (isGap(d) ? 'none' : NODE_COLORS.person))
         .attr('fill-opacity', 0.75)
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 0.5)
+        .attr('stroke', (d) => (isGap(d) ? NODE_COLORS.person : '#fff'))
+        .attr('stroke-width', (d) => (isGap(d) ? 0.9 : 0.5))
+        .attr('stroke-dasharray', (d) => (isGap(d) ? '1.6 1.2' : null))
         .style('cursor', 'pointer')
         .on('mouseenter', (ev, d) => showTip(tip, ev, nodeTipHtml(d)))
         .on('mouseleave', () => hideTip(tip))
-        .on('click', (ev, d) => onPersonClick(d));
-      // Tag base radius so onZoom can counter-scale per-dot.
-      _dotPersonSel.each(function (d) { d.__baseR = dotRadius(d); });
+        // Click reveals this researcher's incident edges (edge-on-demand);
+        // shift-click keeps the old navigation to #/people/<id>.
+        .on('click', (ev, d) => onNodeClick(ev, d));
+      // Tag base radius so onZoom can counter-scale per-dot. __gapDot is
+      // cached on the datum for the same reason: onZoom re-derives the
+      // outline and must not re-run the classification.
+      _dotPersonSel.each(function (d) {
+        d.__baseR = dotRadius(d);
+        d.__gapDot = isGap(d);
+      });
 
       // Name labels for the top N per area. We store the BASE font
       // size on the datum so onZoom() can rescale relative to it.
@@ -2677,6 +3140,11 @@ async function render() {
         .attr('x', (d) => d.x).attr('y', (d) => d.y)
         .attr('font-size', personBaseFont)
         .attr('font-weight', 500)
+        // Named people in the interstitial space are italicised for the same
+        // reason their dot is hollow: a label sitting in the gap between two
+        // institutions would otherwise read as belonging to whichever circle
+        // it happens to land nearest.
+        .attr('font-style', (d) => (isGap(d) ? 'italic' : null))
         .attr('fill', '#0c4a6e')
         .attr('stroke', '#fff')
         .attr('stroke-width', 2.4)
@@ -2686,7 +3154,7 @@ async function render() {
         .text((d) => shortName(d.name))
         .on('mouseenter', (ev, d) => showTip(tip, ev, nodeTipHtml(d)))
         .on('mouseleave', () => hideTip(tip))
-        .on('click', (ev, d) => onPersonClick(d));
+        .on('click', (ev, d) => onNodeClick(ev, d));
       // Tag each label with its target SCREEN size so onZoom can divide
       // by the measured world→screen scale. __baseFont is kept as an alias
       // because cullSelection ranks by it.
@@ -2947,6 +3415,17 @@ function nodeTipHtml(d) {
     }
   }
 
+  // Say why this marker is hollow. The two cases are genuinely different
+  // claims about the data and the tooltip is the only place the map can
+  // distinguish them, so do not collapse them into one message.
+  if (d.unaffiliated) {
+    lines.push('<small style="color:#94a3b8">no institutional affiliation recorded' +
+      '<br>placed in this research area only</small>');
+  } else if (d.offAreaAffil) {
+    lines.push('<small style="color:#94a3b8">affiliated institution is mapped to a' +
+      '<br>different research area — shown here by domain</small>');
+  }
+
   const metrics = [];
   if (d.n_pubs)   metrics.push(`${d.n_pubs} pubs`);
   if (d.n_coauth) metrics.push(`${d.n_coauth} co-authors`);
@@ -3163,6 +3642,14 @@ function onZoom(k) {
   const markScale = Math.min(MARK_MAX_GROWTH, 1 / (s > 0 ? s : 1));
   if (_dotPersonSel) {
     _dotPersonSel.attr('r', (d) => (d.__baseR || 2.0) * markScale);
+    // The hollow "no institution here" markers are read by their outline,
+    // so the outline has to keep a constant apparent width the way the
+    // registry markers' does — otherwise the dashes close up when zoomed
+    // out and the marker reads as a filled dot, i.e. as an affiliation.
+    _dotPersonSel
+      .attr('stroke-width', (d) => (d.__gapDot ? 0.9 : 0.5) * markScale)
+      .attr('stroke-dasharray', (d) => (d.__gapDot
+        ? `${1.6 * markScale} ${1.2 * markScale}` : null));
   }
   if (_dotFacSel) {
     _dotFacSel.attr('r', (d) => (d.__baseR || 2.6) * markScale);
@@ -3306,10 +3793,16 @@ export function initNetworkView(container) {
             <p><strong>Inside a region</strong>, sub-polygons are individual
             institutions; data-producing sites carry a larger marker.
             Researchers (sky-blue) sit inside their primary institution.</p>
-            <p><strong>Edges.</strong> Toggling Facilities or People also
-            toggles their cross-area edges: gray = facility-facility shared
+            <p><strong>Edges are hidden until you click a node.</strong>
+            Drawing all of them at once buried the regions under a thousand
+            crossing lines. Click a researcher or an institution to reveal
+            just that node&rsquo;s cross-area edges; click it again, click
+            the background, or press <kbd>Esc</kbd> to put them away.
+            Shift-click instead of clicking to open the homepage / ORCID.
+            Colour is unchanged: gray = facility-facility shared
             programs, sky-blue = researchers bridging two areas
-            (interdisciplinary potential). Switch on <em>Researchers &amp;
+            (interdisciplinary potential). Toggling Facilities or People
+            still gates which edges a click can reveal. Switch on <em>Researchers &amp;
             co-authorship</em> for the person registry: amber ribbons are
             co-publication between two catalogued sites, a solid marker is a
             researcher with a ROR-matched site, and a dashed hollow ring is a
@@ -3506,5 +3999,14 @@ export function invalidateNetworkData() {
   _dotFacSel = null;
   _facPolySel = null;
   _focusFacility = null;
+  // The revealed-edge subset lives inside the SVG that is about to be
+  // discarded, and _redrawEdgeReveal closes over that SVG's <g>. Keeping
+  // the closure would let a later Escape press or Clear click append into
+  // a detached tree — the same failure mode the registry selections above
+  // are nulled for. The selected id goes too: "Recompute layout" moves
+  // every node, so re-validating a carried-over id against the new
+  // _layout would be re-validating against different geometry.
+  _redrawEdgeReveal = null;
+  _selectedNodeId = null;
   renderRegistryPanel(null);
 }
