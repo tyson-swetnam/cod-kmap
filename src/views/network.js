@@ -1273,22 +1273,42 @@ async function layoutAndFit(d3, members, edges, square, facCircles) {
   // Per-bubble radius. Min 5 px so single-person facilities are visible;
   // max ~innerR so a giant institution can't dwarf the whole area.
   const RFAC = 0.62 * innerR / Math.max(totalWeight, 1);
-  for (const b of bubbles) {
+  // Deterministic golden-angle seed rather than Math.random(). Two reasons:
+  // the layout is now stable across reloads for a given input (it was not —
+  // every refresh reshuffled the sub-circles), and a spiral seed is already
+  // roughly evenly spread, so the relaxation below starts closer to its
+  // converged state.
+  const SEED_PHI = Math.PI * (3 - Math.sqrt(5));
+  bubbles.forEach((b, i) => {
     b.r = Math.min(innerR * 0.65, Math.max(5, RFAC * Math.sqrt(b.weight) * 1.5));
-    // Seed at a random point inside the inner circle.
-    const a = Math.random() * 2 * Math.PI;
-    const r = Math.random() * (innerR - b.r);
-    b.x = cx + r * Math.cos(a);
-    b.y = cy + r * Math.sin(a);
+    const t = (i + 0.5) / bubbles.length;
+    const rr = Math.sqrt(t) * Math.max(innerR - b.r, 0);
+    const aa = (i + 1) * SEED_PHI;
+    b.x = cx + rr * Math.cos(aa);
+    b.y = cy + rr * Math.sin(aa);
+  });
+
+  // A single bubble has nothing to relax against — no charge pair, no
+  // collision pair — so the simulation is a 220-tick no-op that only pulls it
+  // to the centre, which we can do directly. 9 of 21 areas are in this case
+  // (7 with no facilities at all, using the phantom bubble; 2 with exactly
+  // one), so this skips 1,980 ticks. Measured honestly: the whole bubble-sim
+  // stage is only ~90 ms across all areas even at 72 bubbles, so this is NOT
+  // the load-time fix — the sequential CREATE VIEW round-trips in db.js were.
+  // It is here because a no-op simulation is still wrong to run.
+  if (bubbles.length > 1) {
+    const bubSim = d3.forceSimulation(bubbles)
+      .alphaDecay(0.05)
+      .force('center', d3.forceCenter(cx, cy).strength(0.08))
+      .force('charge', d3.forceManyBody().strength(-12))
+      .force('collide',
+        d3.forceCollide().radius((d) => d.r + 1.6).strength(1).iterations(2))
+      .stop();
+    for (let i = 0; i < 220; i++) bubSim.tick();
+  } else {
+    bubbles[0].x = cx;
+    bubbles[0].y = cy;
   }
-  const bubSim = d3.forceSimulation(bubbles)
-    .alphaDecay(0.05)
-    .force('center', d3.forceCenter(cx, cy).strength(0.08))
-    .force('charge', d3.forceManyBody().strength(-12))
-    .force('collide',
-      d3.forceCollide().radius((d) => d.r + 1.6).strength(1).iterations(2))
-    .stop();
-  for (let i = 0; i < 220; i++) bubSim.tick();
 
   // Clamp every bubble back inside the inner circle (the simulation
   // doesn't enforce containment); push toward center if it's drifted

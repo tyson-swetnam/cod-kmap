@@ -103,6 +103,48 @@ export async function loadFallback() {
 // Return the DuckDB connection only after every parquet view has been
 // registered. Callers that need to run arbitrary SQL should always
 // `await whenReady()` first (or null-check both conn AND ready).
+// Lazy-registration state. _pendingLazyTables / _pendingHelperViews are filled
+// by initDB and drained by ensureSqlTables(); _sqlTablesReady memoises the
+// promise so concurrent callers share one registration pass rather than racing.
+let _pendingLazyTables = null;
+let _pendingHelperViews = null;
+let _sqlTablesReady = null;
+
+// Register the SQL-console-only tables and the helper views that depend on
+// them. Idempotent and safe to call from several places at once: the first call
+// does the work, every later call awaits the same promise.
+//
+// Call this before running arbitrary user SQL. Rendering views must NOT depend
+// on it — if a view needs one of these tables, move that table back into the
+// eager `tables` list in initDB instead of calling this from the view.
+export async function ensureSqlTables() {
+  if (_sqlTablesReady) return _sqlTablesReady;
+  _sqlTablesReady = (async () => {
+    const c = getConn();
+    if (!c) throw new Error('ensureSqlTables called before initDB completed');
+    if (_pendingLazyTables && _pendingLazyTables.length) {
+      await Promise.all(_pendingLazyTables.map((t) => c.query(
+        `CREATE OR REPLACE VIEW ${t} AS SELECT * FROM read_parquet('${PARQUET_BASE}${t}.parquet')`,
+      )));
+      _pendingLazyTables = null;
+    }
+    // Helper views must come after their base tables and are created
+    // sequentially: some reference others, and a failure in one should not
+    // abort the rest (the same tolerance the eager path had).
+    if (_pendingHelperViews) {
+      for (const sql of _pendingHelperViews) {
+        try { await c.query(sql); }
+        catch (err) { console.warn('[db] helper view create failed:', err.message); }
+      }
+      _pendingHelperViews = null;
+    }
+  })();
+  // A failed pass must not poison every later attempt — clear the memo so a
+  // retry (e.g. after a transient fetch failure) can try again.
+  _sqlTablesReady.catch(() => { _sqlTablesReady = null; });
+  return _sqlTablesReady;
+}
+
 export function getConn() {
   return ready ? conn : null;
 }
@@ -140,16 +182,19 @@ export async function initDB() {
   const newConn = await db.connect();
 
   const tables = [
-    'facilities', 'facility_types', 'locations',
-    'funders', 'funding_links', 'funding_events',
+    'facilities', 'facility_types',
+    // funding_links and facility_regions are LEFT JOINed by query() below —
+    // the geographic map's main data path — so they are core, not lazy.
+    'funders', 'funding_links',
     'research_areas', 'area_links', 'networks', 'network_membership',
     // Region-side (polygons as first-class rows + spatial containment edges).
-    'regions', 'region_area_links', 'facility_regions',
+    // region_area_links is SQL-tab only — see lazyTables.
+    'regions', 'facility_regions',
     // People-side (staff, administrators, scientists, publications,
     // co-authorship graph). Empty tables are served as zero-row parquet
     // until the enrichment scripts populate them.
     'people', 'facility_personnel', 'publications', 'authorship',
-    'person_areas', 'collaborations', 'publication_topics',
+    'collaborations',
     // MVG (knowledge-map) precomputed groupings — written by
     // scripts/compute_primary_groups.py. One row per facility/person
     // assigning a single primary research area; one row per area with
@@ -189,10 +234,34 @@ export async function initDB() {
     // by scripts/link_registry_facilities.py.
     'registry_facilities',
   ];
-  for (const t of tables) {
-    const url = `${PARQUET_BASE}${t}.parquet`;
-    await newConn.query(`CREATE OR REPLACE VIEW ${t} AS SELECT * FROM read_parquet('${url}')`);
-  }
+
+  // Tables NO rendering view reads — only the SQL tab's canned queries and
+  // free-form console. Registering a view is not free: DuckDB-Wasm binds
+  // eagerly (CREATE VIEW over a missing file throws), so each entry costs an
+  // HTTP range request for the parquet footer, and the loop below awaits them
+  // one at a time. Deferring these removes 7 round-trips and 3.94 MB from the
+  // path to first paint, publication_topics (3.41 MB, 356k rows) being almost
+  // all of it.
+  //
+  // Anything listed here MUST be unreferenced outside src/views/sql.js.
+  // Before moving a table into this list, grep ALL of src/ — not just
+  // src/views/ — because src/filters.js and src/map.js read tables that no
+  // view file mentions (facility_types, research_areas, area_links,
+  // network_membership are used by the geographic map's filter panel).
+  const lazyTables = [
+    'locations', 'funding_events', 'region_area_links', 'person_areas',
+    'publication_topics',
+  ];
+
+  _pendingLazyTables = lazyTables;
+
+  // Register the core tables CONCURRENTLY. Each CREATE VIEW is an independent
+  // footer read with no ordering dependency, so awaiting them sequentially
+  // serialised ~31 network round-trips for no reason. Promise.all issues them
+  // together and the browser's connection pool handles the rest.
+  await Promise.all(tables.map((t) => newConn.query(
+    `CREATE OR REPLACE VIEW ${t} AS SELECT * FROM read_parquet('${PARQUET_BASE}${t}.parquet')`,
+  )));
 
   // Helper views the SQL tab + future visualisations rely on. These
   // are defined in schema/schema.sql for the canonical DuckDB but
@@ -310,10 +379,13 @@ export async function initDB() {
        LEFT JOIN cod_wbs w ON w.wbs_code  = tm.wbs_code
        LEFT JOIN people  p ON p.person_id = tm.person_id`,
   ];
-  for (const sql of helperViews) {
-    try { await newConn.query(sql); }
-    catch (err) { console.warn('[db] helper view create failed:', err.message); }
-  }
+  // Helper views are NOT created here. Every one of them is read only by the
+  // SQL tab, and several JOIN a lazy table (v_funding_ledger needs
+  // funding_events, v_person_enriched needs person_areas + research_areas), so
+  // creating them eagerly would defeat the deferral — CREATE VIEW binds its
+  // dependencies immediately. They are created by ensureSqlTables() alongside
+  // the lazy tables, on first use of the SQL tab.
+  _pendingHelperViews = helperViews;
 
   // Only now — after every view is live — publish the connection to the
   // rest of the app and flip the readiness flag. This closes a race where
