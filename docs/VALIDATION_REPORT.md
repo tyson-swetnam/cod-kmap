@@ -280,51 +280,49 @@ the 60 mapped ones.
 
 ---
 
-## 8. Figure provenance — what was re-derived, and from what
+## 8. Figure provenance — checkable, not asserted
 
-This section exists because three earlier drafts claimed a broader verification
-than had been run. It is written to be checkable rather than believed.
+Successive drafts of this report claimed broader verification than had been
+performed. This section is written so a reader never has to take a count on trust.
 
-**49 figures re-derived from files tracked in this repository** — zero
-mismatches. Every count in §1 and §2, including the ones earlier drafts skipped:
-the `not_applicable` columns (99 / 786 / 648), the `fail` and `unresolved` counts
-(2 / 4 / 9 / 1), the per-organisation ROR row counts (38 CSIRO / 23 ICCC / 6
-NIWA), the 28 distinct inactive organisations, the 462 ORCID-only matches, and
-the 9,805 / 71,471 tier split. The queries and results are in
-`db/derived/report_audit_full.json`.
+**Run the check yourself:**
 
-Two inputs were **added to the repo specifically so these figures could be
-re-derived by a reader**, having previously existed only outside it:
+```
+python scripts/verify_report_figures.py
+```
+
+It re-executes the SQL behind every derivable figure and exits non-zero if any
+disagrees. `db/derived/report_audit_full.json` holds one entry per figure with the
+reported value, the derived value, and the **exact SQL** that produces it from
+files tracked in this repository.
+
+**49 figures re-derived, zero mismatches**, verified against a clean git worktree
+at HEAD rather than a working copy. That covers every count in §1 and §2,
+including the ones earlier drafts skipped: the `not_applicable` columns (99 / 786
+/ 648), the `fail` and `unresolved` counts (2 / 4 / 9 / 1), the per-organisation
+ROR row counts (38 CSIRO / 23 ICCC / 6 NIWA), the 28 distinct inactive
+organisations, the 462 ORCID-only matches, and the 9,805 / 71,471 tier split.
+
+Two inputs were **committed specifically so these figures could be re-derived**,
+having previously existed only outside the repository:
 
 - `db/parquet/ror_resolution_cache.parquet` — 5,270 resolved RORs with registry
-  status. Without it the largest defect class (114 inactive/withdrawn rows over
-  28 organisations) was uncheckable, because no tracked table carried ROR status;
-  `person_validation.evidence` records only the verdict, not the status.
-- `db/parquet/coauthor_pairs_raw.parquet` — the 3,446,537 harvested co-author
-  pair rows, consolidated from 48 untracked shards under `db/derived/`. Without
-  it the harvest coverage, tier split and ORCID-only match count could not be
-  reproduced.
+  status. No tracked table carried ROR status (`person_validation.evidence`
+  records the verdict only), so the largest defect class — 114 inactive/withdrawn
+  rows over 28 organisations — was uncheckable.
+- `db/parquet/coauthor_pairs_raw.parquet` — the 3,446,537 harvested pair rows,
+  consolidated from 48 shards under an untracked path. Harvest coverage, the tier
+  split and the ORCID-only match count all depend on it.
 
-Corrections made while writing this section, each of which had reached a
-committed artifact:
-
-- **462 was hardcoded**, not derived — an audit cell literally assigned it from
-  remembered stdout while counting it among "re-derived" figures. It now comes
-  from a query and equals 462.
-- **The 9,805 / 71,471 tier split was computed against a copy of the gitignored
-  local DuckDB**, not shipped data, while being reported as parquet-derived. It
-  now derives from the tracked full registry joined to the tracked pair table.
-- **38 and 23 were declared un-derivable** ("run log / API header") when they are
-  row counts of a shipped table; they are now derived.
-
-**29 figures cannot be re-derived from any artifact** and are labelled at the
-point of use: the delegated parallel run's totals (1,945,450 pair rows, 2,793
-researchers, batch 85 of 200), the live quota reading at that run's exit (1,640
-of 10,000), the OWL closure's in-session triple counts (56,188 → 225,217 and
-9,015 bridges, over the core-only slice), the 434 initial SHACL violations, the
-per-topic OpenAlex `works_count` (358,880), and ORCID digit fragments quoted in
-the conflict table. These are run-log and API-header observations; the honest
-statement is that a reader must take them on trust or re-run the pipeline.
+**12 figures cannot be re-derived from anything in the repository** and are
+labelled at the point of use rather than counted as verified: the delegated
+parallel run's totals (1,945,450 pair rows, 2,793 researchers, batch 85 of 200),
+the live quota reading at that run's exit (1,640 of 10,000), the OWL closure's
+in-session triple counts (56,188 → 225,217, and 9,015 bridges over the core-only
+slice), the 434 initial SHACL violations, the per-topic OpenAlex `works_count`
+(358,880), the measured throughput ceiling (~62 works/s), and the 521 either-side
+ROR match computed while withdrawing the figure below. These are run-log and
+API-header observations; re-running the pipeline is the only way to confirm them.
 
 **One figure was withdrawn.** An earlier draft reported 413 researchers resolving
 to a catalogued COD facility. It came from an intermediate in-memory column and is
@@ -332,6 +330,15 @@ not reproducible from any table: stored-ROR equality gives 263,
 OpenAlex-returned-ROR equality gives 263, either-side gives 521. The report states
 263, matching the committed `registry_facilities` table.
 
-The remainder of the numbers in this report are dates, section numbers, tuning
-parameters (per-page 200, batch size 50), the measured throughput ceiling
-(~62 works/s), ontology term counts, and prose quantities.
+Corrections made while building this section, each of which had already reached a
+committed artifact:
+
+- **462 was hardcoded**, assigned from remembered stdout by a cell that counted it
+  among "re-derived" figures. It now comes from a query.
+- **The tier split was computed against a copy of the gitignored local DuckDB**
+  while being reported as parquet-derived.
+- **38 and 23 were declared un-derivable** when they are plain row counts of a
+  shipped table.
+
+The remaining numbers in this report are dates, section numbers, tuning parameters
+(per-page 200, batch size 50), ontology term counts, and prose quantities.
