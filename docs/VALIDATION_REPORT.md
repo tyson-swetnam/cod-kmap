@@ -234,9 +234,10 @@ the 60 mapped ones.
 3. **Batch-shared page budget.** Authors are batched 50 per cursor, so a batch's
    page budget is shared: an author far more prolific than their batch peers can
    be truncated below 200.
-4. **Facility linkage is thin.** Only 413 of 10,095 researchers (4.1%) resolve to
-   a catalogued COD facility, reaching 36 of 69 facilities. 33 catalogued
-   facilities have no core-tier researcher attached by ROR.
+4. **Facility linkage is thin.** Only 263 of 10,095 researchers (2.6%) resolve to
+   a catalogued COD facility by ROR equality. The earlier 413 figure came from an
+   intermediate in-memory column and is not reproducible from the shipped tables;
+   it is withdrawn.
 5. **95 codp: rows carry no public identifier** by construction. All their
    public-identifier checks are `not_applicable`, sourced to the repo's own
    curated record. They are not defects.
@@ -276,3 +277,37 @@ the 60 mapped ones.
   all measured 60–87 works/s. The key is quota-limited (10,000 requests/day, one
   credit per request), so budget in requests, not seconds. Batch authors 50 per
   cursor: same per-work cost, one cursor instead of 50.
+
+---
+
+## 8. Figure provenance — what was re-derived, and what was not
+
+This section exists because earlier drafts of this report claimed a broader
+verification than had been run. The report contains 99 distinct numeric tokens.
+They fall into three classes:
+
+**35 figures re-derived from the shipped parquet** (zero mismatches):
+every count in §1 and §2 — pair rows, researchers covered, distinct co-authors,
+matched/core/archive split, edges, candidates and their confidence bands, public
+subsets, verdict counts per check, distinct stored RORs, inactive/withdrawn rows,
+split identities and the people they affect, registry sizes, facility linkage.
+The derivation queries and results are in `handoff/report_audit_full.json`.
+
+**29 figures whose source is a run log or an API response header**, not a shipped
+table, and which therefore cannot be re-derived from the artifacts: the delegated
+parallel run's totals (1,945,450 pair rows, 2,793 researchers, batch 85), the
+live quota reading at that run's exit (1,640 of 10,000), the OWL closure's
+in-session triple counts (56,188 → 225,217, 9,015 bridges over the core-only
+slice), the 434 initial SHACL violations, per-topic OpenAlex `works_count`, and
+ORCID digit fragments quoted in the conflict table. Each is stated at the point
+of use with its scope.
+
+**35 remaining tokens** are dates, section numbers, parameters (per-page 200,
+batch size 50), measured throughput (~62 works/s), ontology term counts, and
+prose quantities.
+
+**One figure was withdrawn.** An earlier draft reported 413 researchers resolving
+to a catalogued COD facility. That value came from an intermediate in-memory
+column and is not reproducible from any shipped table: stored-ROR equality gives
+263, OpenAlex-returned-ROR equality gives 263, either-side gives 521. The report
+now states 263, which matches the committed `registry_facilities` table exactly.
