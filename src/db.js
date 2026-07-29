@@ -233,6 +233,28 @@ export async function initDB() {
     // Researcher ↔ catalogued-site links, joined on ROR equality — written
     // by scripts/link_registry_facilities.py.
     'registry_facilities',
+    // Identifier-validation verdicts over person_registry — written by
+    // scripts/validate_registry.py. One row per (registry row, check, run),
+    // so a re-validation appends rather than overwrites and two runs can be
+    // diffed. Only the core tier ships here, matching person_registry: 4
+    // checks x 10,095 core rows is ~1.7 MB of parquet. Read through
+    // v_person_validation_latest rather than the raw table — the raw table
+    // has one row per run.
+    'person_validation',
+    // Provenanced co-authorship edges over the registry node set — written by
+    // scripts/validate_registry.py. Distinct from registry_collaborations:
+    // every row here names the OpenAlex Work that proves the edge
+    // (exemplar_work_id) and the identifier-equality rule that matched it
+    // (match_method). ONLY the core-to-core subset ships to public/parquet;
+    // the full-population edge list is db/parquet only because it runs to
+    // hundreds of MB and the browser cannot render an edge whose endpoint is
+    // an archive-tier person absent from public person_registry.
+    'coauthor_edges',
+    // Review queue of co-authors seen on registry members' works who are NOT
+    // registry rows yet. Registered so the SQL tab can query the backlog; no
+    // view draws it, and nothing here is a personnel record until a curator
+    // promotes it into person_registry.
+    'coauthor_candidates',
   ];
 
   // Tables NO rendering view reads — only the SQL tab's canned queries and

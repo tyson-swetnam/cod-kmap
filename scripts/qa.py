@@ -122,6 +122,27 @@ EXPECTED_COLUMNS = {
         "canonical_id_a", "canonical_id_b", "co_pub_count",
         "first_year", "last_year",
     },
+    # Identifier-validation verdicts. Long form — one row per
+    # (canonical_id, check_id, run_id) — so a re-validation appends and two
+    # runs can be diffed rather than one silently overwriting the other.
+    "person_validation": {
+        "validation_id", "canonical_id", "check_id", "verdict",
+        "method", "source_url", "retrieved_at", "confidence", "run_id",
+    },
+    # Provenanced co-authorship edges: exemplar_work_id is the work that
+    # proves the edge, match_method the identifier rule that matched it.
+    "coauthor_edges": {
+        "edge_id", "canonical_id_a", "canonical_id_b", "co_pub_count",
+        "exemplar_work_id", "match_method", "source_url", "retrieved_at",
+        "confidence", "run_id",
+    },
+    # Co-authors not yet in the registry. A staging queue, not personnel
+    # records: nothing here is a registry row until a curator promotes it.
+    "coauthor_candidates": {
+        "candidate_id", "display_name", "openalex_id",
+        "seen_with_canonical_id", "seen_on_work_id", "n_registry_coauthors",
+        "decision", "source_url", "retrieved_at", "confidence", "run_id",
+    },
 }
 
 
@@ -474,6 +495,236 @@ def check_registry_collaborations(conn, failures: list[str]) -> None:
                     f"canonical_id", failures)
 
 
+def check_person_validation(conn, failures: list[str]) -> None:
+    """Verdicts must be from the closed vocabulary, provenanced, and non-vacuous."""
+    n = table_rows(conn, "person_validation")
+    if n <= 0:
+        return
+
+    bad_verdict = conn.execute(
+        "SELECT COUNT(*) FROM person_validation "
+        "WHERE verdict NOT IN ('pass','fail','not_applicable','unresolved')").fetchone()[0]
+    assert_true(bad_verdict == 0,
+                f"{bad_verdict} person_validation row(s) with a verdict outside "
+                f"pass/fail/not_applicable/unresolved", failures)
+
+    bad_conf = conn.execute(
+        "SELECT COUNT(*) FROM person_validation "
+        "WHERE confidence NOT IN ('high','medium','low')").fetchone()[0]
+    assert_true(bad_conf == 0,
+                f"{bad_conf} person_validation row(s) with a confidence outside "
+                f"high/medium/low", failures)
+
+    for col in ("source_url", "retrieved_at", "run_id", "method"):
+        missing = conn.execute(
+            f"SELECT COUNT(*) FROM person_validation "
+            f"WHERE {col} IS NULL OR {col} = ''").fetchone()[0]
+        assert_true(missing == 0,
+                    f"{missing} person_validation row(s) with no {col}", failures)
+
+    # A failure with no detail cannot be acted on.
+    silent = conn.execute(
+        "SELECT COUNT(*) FROM person_validation "
+        "WHERE verdict = 'fail' AND (mismatch_detail IS NULL OR mismatch_detail = '')"
+    ).fetchone()[0]
+    assert_true(silent == 0,
+                f"{silent} person_validation row(s) with verdict='fail' and no "
+                f"mismatch_detail", failures)
+
+    # The load-bearing rule: a codp:% row has no public identifier BY
+    # CONSTRUCTION, so an ORCID/OpenAlex check on one is 'not_applicable'.
+    # Recording it as 'fail' makes the registry look permanently broken and
+    # invites someone to invent an identifier to clear the number.
+    codp_failed = conn.execute(
+        "SELECT COUNT(*) FROM person_validation "
+        "WHERE canonical_id LIKE 'codp:%' "
+        "  AND check_id IN ('orcid-resolves','openalex-author-resolves','ror-resolves') "
+        "  AND verdict = 'fail'").fetchone()[0]
+    assert_true(codp_failed == 0,
+                f"{codp_failed} person_validation row(s) mark a codp: (COD-internal, "
+                f"no public identifier by construction) row as 'fail' on a public-id "
+                f"check; the correct verdict is 'not_applicable'", failures)
+
+    # Conversely, a row WITH a public identifier must not get a free pass.
+    wrong_na = conn.execute(
+        "SELECT COUNT(*) FROM person_validation v "
+        "JOIN person_registry r ON r.canonical_id = v.canonical_id "
+        "WHERE v.check_id = 'orcid-resolves' AND v.verdict = 'not_applicable' "
+        "  AND r.orcid IS NOT NULL").fetchone()[0]
+    assert_true(wrong_na == 0,
+                f"{wrong_na} person_validation row(s) mark the ORCID check "
+                f"'not_applicable' for a registry row that HAS an orcid", failures)
+
+    if table_rows(conn, "person_registry") > 0:
+        orphan = conn.execute(
+            "SELECT COUNT(*) FROM person_validation v WHERE v.canonical_id NOT IN "
+            "(SELECT canonical_id FROM person_registry)").fetchone()[0]
+        assert_true(orphan == 0,
+                    f"{orphan} person_validation row(s) reference an unknown "
+                    f"canonical_id", failures)
+
+
+def check_coauthor_edges(conn, failures: list[str]) -> None:
+    """Every edge: canonical ordering, >=1 co-pub, a work that proves it, and
+    an identifier-based match method."""
+    n = table_rows(conn, "coauthor_edges")
+    if n <= 0:
+        return
+
+    unordered = conn.execute(
+        "SELECT COUNT(*) FROM coauthor_edges "
+        "WHERE canonical_id_a >= canonical_id_b").fetchone()[0]
+    assert_true(unordered == 0,
+                f"{unordered} coauthor_edges row(s) not stored with a < b "
+                f"(each undirected pair must appear once)", failures)
+
+    nonpos = conn.execute(
+        "SELECT COUNT(*) FROM coauthor_edges WHERE co_pub_count < 1").fetchone()[0]
+    assert_true(nonpos == 0,
+                f"{nonpos} coauthor_edges row(s) with co_pub_count < 1", failures)
+
+    backwards = conn.execute(
+        "SELECT COUNT(*) FROM coauthor_edges "
+        "WHERE first_year IS NOT NULL AND last_year IS NOT NULL "
+        "  AND first_year > last_year").fetchone()[0]
+    assert_true(backwards == 0,
+                f"{backwards} coauthor_edges row(s) with first_year > last_year",
+                failures)
+
+    # THE provenance requirement: an edge must name the work that proves it.
+    no_evidence = conn.execute(
+        "SELECT COUNT(*) FROM coauthor_edges "
+        "WHERE exemplar_work_id IS NULL OR exemplar_work_id = ''").fetchone()[0]
+    assert_true(no_evidence == 0,
+                f"{no_evidence} coauthor_edges row(s) with no exemplar_work_id — "
+                f"an edge with no provenance path back to a work is not admissible",
+                failures)
+
+    # Identifier equality only. A name-similarity match method would reopen the
+    # failure mode that wipe_bad_openalex_attributions.py exists to undo.
+    bad_method = conn.execute(
+        "SELECT COUNT(*) FROM coauthor_edges WHERE match_method NOT IN "
+        "('orcid-equality','openalex-author-id-equality','sameas-closure')"
+    ).fetchone()[0]
+    assert_true(bad_method == 0,
+                f"{bad_method} coauthor_edges row(s) with a match_method outside "
+                f"the identifier-equality set; name similarity is never admissible",
+                failures)
+
+    for col in ("source_url", "retrieved_at"):
+        missing = conn.execute(
+            f"SELECT COUNT(*) FROM coauthor_edges "
+            f"WHERE {col} IS NULL OR {col} = ''").fetchone()[0]
+        assert_true(missing == 0,
+                    f"{missing} coauthor_edges row(s) with no {col}", failures)
+
+    bad_conf = conn.execute(
+        "SELECT COUNT(*) FROM coauthor_edges "
+        "WHERE confidence NOT IN ('high','medium','low')").fetchone()[0]
+    assert_true(bad_conf == 0,
+                f"{bad_conf} coauthor_edges row(s) with a confidence outside "
+                f"high/medium/low", failures)
+
+    selfloop = conn.execute(
+        "SELECT COUNT(*) FROM coauthor_edges "
+        "WHERE canonical_id_a = canonical_id_b").fetchone()[0]
+    assert_true(selfloop == 0,
+                f"{selfloop} coauthor_edges self-loop(s)", failures)
+
+    if table_rows(conn, "person_registry") > 0:
+        orphan = conn.execute(
+            "SELECT COUNT(*) FROM coauthor_edges c "
+            "WHERE c.canonical_id_a NOT IN (SELECT canonical_id FROM person_registry) "
+            "   OR c.canonical_id_b NOT IN (SELECT canonical_id FROM person_registry)"
+        ).fetchone()[0]
+        assert_true(orphan == 0,
+                    f"{orphan} coauthor_edges edge(s) reference an unknown "
+                    f"canonical_id", failures)
+
+        # A codp: person has no public identifier, so no identifier-equality
+        # rule can match them to a co-author. An edge touching one means
+        # something matched on a name.
+        codp_edge = conn.execute(
+            "SELECT COUNT(*) FROM coauthor_edges "
+            "WHERE canonical_id_a LIKE 'codp:%' OR canonical_id_b LIKE 'codp:%'"
+        ).fetchone()[0]
+        assert_true(codp_edge == 0,
+                    f"{codp_edge} coauthor_edges edge(s) touch a codp: row, which "
+                    f"carries no public identifier — no identifier-equality rule "
+                    f"could have produced these, so they were matched by name",
+                    failures)
+
+
+def check_coauthor_candidates(conn, failures: list[str]) -> None:
+    """A candidate must carry a public identifier, and a rejection must say why."""
+    n = table_rows(conn, "coauthor_candidates")
+    if n <= 0:
+        return
+
+    bare = conn.execute(
+        "SELECT COUNT(*) FROM coauthor_candidates "
+        "WHERE orcid IS NULL AND openalex_id IS NULL").fetchone()[0]
+    assert_true(bare == 0,
+                f"{bare} coauthor_candidates row(s) carry neither orcid nor "
+                f"openalex_id; a bare name is not an admissible proposal", failures)
+
+    bad_decision = conn.execute(
+        "SELECT COUNT(*) FROM coauthor_candidates WHERE decision NOT IN "
+        "('pending','accepted','rejected','deferred')").fetchone()[0]
+    assert_true(bad_decision == 0,
+                f"{bad_decision} coauthor_candidates row(s) with a decision outside "
+                f"pending/accepted/rejected/deferred", failures)
+
+    # A dropped person must leave a reason behind, or the same candidate is
+    # re-proposed next sweep and eventually accepted by attrition.
+    silent = conn.execute(
+        "SELECT COUNT(*) FROM coauthor_candidates "
+        "WHERE decision IN ('rejected','deferred') "
+        "  AND (ambiguity_note IS NULL OR ambiguity_note = '')").fetchone()[0]
+    assert_true(silent == 0,
+                f"{silent} coauthor_candidates row(s) rejected or deferred with no "
+                f"ambiguity_note recording why", failures)
+
+    bad_conf = conn.execute(
+        "SELECT COUNT(*) FROM coauthor_candidates "
+        "WHERE confidence NOT IN ('high','medium','low')").fetchone()[0]
+    assert_true(bad_conf == 0,
+                f"{bad_conf} coauthor_candidates row(s) with a confidence outside "
+                f"high/medium/low", failures)
+
+    for col in ("source_url", "retrieved_at", "seen_with_canonical_id",
+                "seen_on_work_id"):
+        missing = conn.execute(
+            f"SELECT COUNT(*) FROM coauthor_candidates "
+            f"WHERE {col} IS NULL OR {col} = ''").fetchone()[0]
+        assert_true(missing == 0,
+                    f"{missing} coauthor_candidates row(s) with no {col}", failures)
+
+    # An accepted candidate must actually be in the registry, or the promotion
+    # was recorded but never carried out.
+    if table_rows(conn, "person_registry") > 0:
+        unpromoted = conn.execute(
+            "SELECT COUNT(*) FROM coauthor_candidates c "
+            "WHERE c.decision = 'accepted' AND c.candidate_id NOT IN "
+            "(SELECT canonical_id FROM person_registry)").fetchone()[0]
+        assert_true(unpromoted == 0,
+                    f"{unpromoted} coauthor_candidates row(s) marked 'accepted' with "
+                    f"no matching person_registry row", failures)
+
+        # A candidate that is still pending but already in the registry means
+        # the queue is stale and a curator is reviewing something already done.
+        already = conn.execute(
+            "SELECT COUNT(*) FROM coauthor_candidates c "
+            "WHERE c.decision = 'pending' AND c.candidate_id IN "
+            "(SELECT canonical_id FROM person_registry)").fetchone()[0]
+        assert_true(already == 0,
+                    f"{already} coauthor_candidates row(s) still 'pending' although "
+                    f"already present in person_registry", failures)
+
+
+# ---------------------------------------------------------------------------
+
+
 def check_datasets(conn, failures: list[str]) -> None:
     if table_rows(conn, "coastal_datasets") <= 0:
         return
@@ -806,6 +1057,9 @@ def main() -> int:
         check_datasets(conn, failures)
         check_person_registry(conn, failures)
         check_registry_collaborations(conn, failures)
+        check_person_validation(conn, failures)
+        check_coauthor_edges(conn, failures)
+        check_coauthor_candidates(conn, failures)
 
     # Outside the DB block: this one reads source files, not the database,
     # and must run even on a checkout with no data.
