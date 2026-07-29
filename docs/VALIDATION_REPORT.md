@@ -83,8 +83,8 @@ rather than wall time.
 
 | | |
 |---|---:|
-| co-author pair rows harvested | 2,667,253 |
-| researchers covered | 2,000 of 9,996 |
+| co-author pair rows harvested | 3,446,537 |
+| researchers covered | 3,000 of 9,996 (30.0%) |
 | distinct co-authors surfaced | 335,070 |
 | matched into `person_registry` | 81,276 |
 | registry-to-registry edges | 626,200 |
@@ -212,8 +212,8 @@ confidence).
 
 ## 5. Coverage limits — read before citing these numbers
 
-1. **The harvest is partial.** 2,000 of 9,996 researchers
-   have harvested co-author edges. Batches were ordered most-prolific-first, so
+1. **The harvest is partial.** 3,000 of 9,996 researchers (30.0%, batches 0-59
+   of 200) have harvested co-author edges. Batches were ordered most-prolific-first, so
    the covered fraction holds a disproportionate share of total output, but the
    co-author graph is **not** complete and edge counts for uncovered researchers
    are absent, not zero.
@@ -246,6 +246,10 @@ confidence).
 5. Triage the 3,644 high-confidence expansion candidates, starting with the
    3,194 already ROR-affiliated with a catalogued facility.
 6. Finish the harvest for the remaining researchers once the API quota resets.
+   A parallel run reached batch 85 of 200 (2,793 researchers, 1,945,450 pair
+   rows) in a separate workspace; those batches are **not** merged into the
+   committed tables and would need re-harvesting or transferring. The API key
+   was at 1,640 requests remaining when that run stopped.
 
 ## 7. Operational notes for whoever runs this next
 
