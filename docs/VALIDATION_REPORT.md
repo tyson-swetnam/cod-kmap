@@ -53,10 +53,7 @@ Both values are recorded in `person_validation.mismatch_detail`.
 
 ### The largest defect class: 114 inactive or withdrawn RORs
 
-Every one of the 2,537 distinct ROR ids resolves —
-zero invalid. But 114 researcher rows cite an organisation whose ROR registry
-status is no longer active (109 inactive, 5 withdrawn), concentrated in a few
-reorganised institutions:
+Every one of the **2,537** distinct ROR ids stored on core registry rows resolves — zero invalid. (The lookup cache holds 5,270 resolved RORs: those 2,537 plus 2,733 more that came from OpenAlex `last_known_institutions` during the comparison. Only the 2,537 are the registry's own ids; the 5,270 is the total resolution workload.) But 114 researcher rows cite an organisation whose ROR registry status is no longer active (109 inactive, 5 withdrawn). Those 114 rows point at just **28 distinct organisations**, so a remapping pass is small work with broad effect:
 
 | ROR | organisation | status | rows |
 |---|---|---|---:|
