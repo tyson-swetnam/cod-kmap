@@ -239,9 +239,9 @@ export async function initDB() {
   // free-form console. Registering a view is not free: DuckDB-Wasm binds
   // eagerly (CREATE VIEW over a missing file throws), so each entry costs an
   // HTTP range request for the parquet footer, and the loop below awaits them
-  // one at a time. Deferring these removes 7 round-trips and 3.94 MB from the
+  // one at a time. Deferring these 5 removes 5 round-trips and 3.85 MB from the
   // path to first paint, publication_topics (3.41 MB, 356k rows) being almost
-  // all of it.
+  // all of it: 7.48 MB eager -> 3.63 MB.
   //
   // Anything listed here MUST be unreferenced outside src/views/sql.js.
   // Before moving a table into this list, grep ALL of src/ — not just

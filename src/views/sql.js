@@ -618,7 +618,7 @@ async function run(sql) {
     await whenReady();
     // The SQL-console-only tables (publication_topics, funding_events,
     // locations, …) and the v_* helper views are registered on demand rather
-    // than at init — they are 3.94 MB and 7 round-trips that the map does not
+    // than at init — they are 3.85 MB and 5 round-trips that the map does not
     // need. Arbitrary user SQL may reference any of them, so register before
     // executing. Idempotent; the cost is paid once per session.
     await ensureSqlTables();
