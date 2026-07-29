@@ -1,6 +1,11 @@
 # Registry validation report
 
-Run `val-20260729T035944Z` · 2026-07-29 · pipeline `scripts/validate_registry.py`
+Run `val-20260729T035944Z` · 2026-07-29
+
+Figures in this report were produced interactively and then reproduced by
+`scripts/validate_registry.py`, which was written from that work and is the
+reusable entry point going forward. Where a figure comes from a superseded run
+or a different scope, that is stated at the figure.
 
 Validates all 10,095 core-tier researchers in `person_registry`
 against their persistent identifiers, resolves their ROR affiliations, harvests
@@ -157,11 +162,18 @@ identifier equality; the reasoner is a second encoding of the same rule, so
 agreement is guaranteed by construction and says nothing about whether the
 linkage is *correct*.
 
-**Where the reasoner does earn its place: 176 split identities.** These are cases
+**Where the reasoner earns its place: 176 split identities.** These are cases
 where a co-author shares an ORCID with a registry person but carries a
 **different OpenAlex author id** — duplicate OpenAlex author records for one
-human. An OpenAlex-id join resolves **0 of 176**; transitive `sameAs` closure over
-the shared ORCID resolves all 176. This affects 163 distinct registry people,
+human.
+
+To be precise about credit: the 176 were *enumerated* by a plain SQL
+ORCID-equality join, not discovered by the reasoner. What the closure contributes
+is *resolution* — unifying the two different OpenAlex author ids into one
+identity, which an OpenAlex-id equality join cannot do (it resolves **0 of
+176**, since by construction the two ids differ). Either mechanism can find the
+pairs; only transitive `sameAs` over an inverse-functional ORCID makes them one
+person in the graph. This affects 163 distinct registry people,
 including 2 COD site personnel, and is recorded in
 `split_identity_findings.parquet`.
 
@@ -205,8 +217,10 @@ filled with substitutes:
 - **seabirds** — no OpenAlex topic exists at that granularity
 - **Great Lakes** — the nearest topic is African Great Lakes limnology, not Laurentian
 
-60 of 66 topics crosswalk to a project `area_id` (31 high, 28 medium, 7 low
-confidence).
+60 of 66 topics crosswalk to a project `area_id`; the other 6 carry
+`area_id='NONE'` because no project area was defensible. The confidence
+distribution (31 high, 28 medium, 7 low) covers all 66 rows including those 6, not
+the 60 mapped ones.
 
 ---
 
