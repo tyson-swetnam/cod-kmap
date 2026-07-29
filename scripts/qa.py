@@ -320,17 +320,41 @@ def check_person_registry(conn, failures: list[str]) -> None:
     if n <= 0:
         return
 
-    # The load-bearing rule. A registry row with neither an ORCID nor an
-    # OpenAlex id cannot be re-resolved or de-duplicated on a later run, so
-    # it would silently fork into a second row the next time the harvest
-    # sees the same person. This is also the invariant that stops a
-    # name-only resolver from ever writing here.
+    # The load-bearing rule: every registry row must carry SOME stable key,
+    # so it can be re-resolved and de-duplicated on a later run rather than
+    # silently forking into a second row the next time a source sees the
+    # same person. This is the invariant that stops a name-only resolver
+    # from ever writing here.
+    #
+    # A public identifier (ORCID / OpenAlex) satisfies it. So does the
+    # project's own person_id, for COD-INTERNAL people only: `people` and
+    # `cod_team_members` are curated by hand, person_id is stable across
+    # runs, and build_person_registry.py de-duplicates on it via by_pid.
+    # Requiring a public id of them dropped 95 real, named COD staff --
+    # including the PI and Co-PI -- out of the registry and so off the
+    # People view entirely. Rows keyed this way use a codp: canonical_id
+    # and are upgraded to an orcid:/openalex: key if one is ever supplied.
+    #
+    # Harvested identities (community_scholars) still REQUIRE a public
+    # identifier: for those the identifier is the whole basis of the claim.
     bare = conn.execute(
         "SELECT COUNT(*) FROM person_registry "
         "WHERE (orcid IS NULL OR orcid = '') "
-        "  AND (openalex_id IS NULL OR openalex_id = '')").fetchone()[0]
+        "  AND (openalex_id IS NULL OR openalex_id = '') "
+        "  AND (person_id IS NULL OR person_id = '')").fetchone()[0]
     assert_true(bare == 0,
-                f"{bare} person_registry row(s) carry neither orcid nor openalex_id",
+                f"{bare} person_registry row(s) carry no stable key "
+                f"(no orcid, no openalex_id, no person_id)",
+                failures)
+
+    # A codp: row is only legitimate for a COD-internal source.
+    bad_local = conn.execute(
+        "SELECT COUNT(*) FROM person_registry "
+        "WHERE canonical_id LIKE 'codp:%' "
+        "  AND source NOT IN ('people', 'cod-team')").fetchone()[0]
+    assert_true(bad_local == 0,
+                f"{bad_local} codp: registry row(s) come from a non-internal "
+                f"source (only 'people' and 'cod-team' may mint local ids)",
                 failures)
 
     for col in ("source_url", "confidence"):
