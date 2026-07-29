@@ -280,34 +280,58 @@ the 60 mapped ones.
 
 ---
 
-## 8. Figure provenance — what was re-derived, and what was not
+## 8. Figure provenance — what was re-derived, and from what
 
-This section exists because earlier drafts of this report claimed a broader
-verification than had been run. The report contains 99 distinct numeric tokens.
-They fall into three classes:
+This section exists because three earlier drafts claimed a broader verification
+than had been run. It is written to be checkable rather than believed.
 
-**35 figures re-derived from the shipped parquet** (zero mismatches):
-every count in §1 and §2 — pair rows, researchers covered, distinct co-authors,
-matched/core/archive split, edges, candidates and their confidence bands, public
-subsets, verdict counts per check, distinct stored RORs, inactive/withdrawn rows,
-split identities and the people they affect, registry sizes, facility linkage.
-The derivation queries and results are in `handoff/report_audit_full.json`.
+**49 figures re-derived from files tracked in this repository** — zero
+mismatches. Every count in §1 and §2, including the ones earlier drafts skipped:
+the `not_applicable` columns (99 / 786 / 648), the `fail` and `unresolved` counts
+(2 / 4 / 9 / 1), the per-organisation ROR row counts (38 CSIRO / 23 ICCC / 6
+NIWA), the 28 distinct inactive organisations, the 462 ORCID-only matches, and
+the 9,805 / 71,471 tier split. The queries and results are in
+`db/derived/report_audit_full.json`.
 
-**29 figures whose source is a run log or an API response header**, not a shipped
-table, and which therefore cannot be re-derived from the artifacts: the delegated
-parallel run's totals (1,945,450 pair rows, 2,793 researchers, batch 85), the
-live quota reading at that run's exit (1,640 of 10,000), the OWL closure's
-in-session triple counts (56,188 → 225,217, 9,015 bridges over the core-only
-slice), the 434 initial SHACL violations, per-topic OpenAlex `works_count`, and
-ORCID digit fragments quoted in the conflict table. Each is stated at the point
-of use with its scope.
+Two inputs were **added to the repo specifically so these figures could be
+re-derived by a reader**, having previously existed only outside it:
 
-**35 remaining tokens** are dates, section numbers, parameters (per-page 200,
-batch size 50), measured throughput (~62 works/s), ontology term counts, and
-prose quantities.
+- `db/parquet/ror_resolution_cache.parquet` — 5,270 resolved RORs with registry
+  status. Without it the largest defect class (114 inactive/withdrawn rows over
+  28 organisations) was uncheckable, because no tracked table carried ROR status;
+  `person_validation.evidence` records only the verdict, not the status.
+- `db/parquet/coauthor_pairs_raw.parquet` — the 3,446,537 harvested co-author
+  pair rows, consolidated from 48 untracked shards under `db/derived/`. Without
+  it the harvest coverage, tier split and ORCID-only match count could not be
+  reproduced.
+
+Corrections made while writing this section, each of which had reached a
+committed artifact:
+
+- **462 was hardcoded**, not derived — an audit cell literally assigned it from
+  remembered stdout while counting it among "re-derived" figures. It now comes
+  from a query and equals 462.
+- **The 9,805 / 71,471 tier split was computed against a copy of the gitignored
+  local DuckDB**, not shipped data, while being reported as parquet-derived. It
+  now derives from the tracked full registry joined to the tracked pair table.
+- **38 and 23 were declared un-derivable** ("run log / API header") when they are
+  row counts of a shipped table; they are now derived.
+
+**29 figures cannot be re-derived from any artifact** and are labelled at the
+point of use: the delegated parallel run's totals (1,945,450 pair rows, 2,793
+researchers, batch 85 of 200), the live quota reading at that run's exit (1,640
+of 10,000), the OWL closure's in-session triple counts (56,188 → 225,217 and
+9,015 bridges, over the core-only slice), the 434 initial SHACL violations, the
+per-topic OpenAlex `works_count` (358,880), and ORCID digit fragments quoted in
+the conflict table. These are run-log and API-header observations; the honest
+statement is that a reader must take them on trust or re-run the pipeline.
 
 **One figure was withdrawn.** An earlier draft reported 413 researchers resolving
-to a catalogued COD facility. That value came from an intermediate in-memory
-column and is not reproducible from any shipped table: stored-ROR equality gives
-263, OpenAlex-returned-ROR equality gives 263, either-side gives 521. The report
-now states 263, which matches the committed `registry_facilities` table exactly.
+to a catalogued COD facility. It came from an intermediate in-memory column and is
+not reproducible from any table: stored-ROR equality gives 263,
+OpenAlex-returned-ROR equality gives 263, either-side gives 521. The report states
+263, matching the committed `registry_facilities` table.
+
+The remainder of the numbers in this report are dates, section numbers, tuning
+parameters (per-page 200, batch size 50), the measured throughput ceiling
+(~62 works/s), ontology term counts, and prose quantities.
