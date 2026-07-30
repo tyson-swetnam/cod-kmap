@@ -233,24 +233,49 @@ export async function initDB() {
     // Researcher ↔ catalogued-site links, joined on ROR equality — written
     // by scripts/link_registry_facilities.py.
     'registry_facilities',
+    // NOTE: person_validation, coauthor_edges and coauthor_candidates were
+    // originally added to THIS list. They are read by no rendering view, and
+    // they are the three largest tables the site ships (15.51 MB combined), so
+    // they now live in lazyTables below. See the comment there.
   ];
 
   // Tables NO rendering view reads — only the SQL tab's canned queries and
   // free-form console. Registering a view is not free: DuckDB-Wasm binds
   // eagerly (CREATE VIEW over a missing file throws), so each entry costs an
   // HTTP range request for the parquet footer, and the loop below awaits them
-  // one at a time. Deferring these 5 removes 5 round-trips and 3.85 MB from the
-  // path to first paint, publication_topics (3.41 MB, 356k rows) being almost
-  // all of it: 7.48 MB eager -> 3.63 MB.
+  // one at a time. Deferring these 8 removes 8 round-trips and 19.37 MB from
+  // the path to first paint: 23.00 MB eager -> 3.63 MB.
+  //
+  // The three validation/co-author tables dominate that figure. They were
+  // written by scripts/validate_registry.py and originally registered eagerly;
+  // no rendering view reads any of them, so eager registration cost the browser
+  // 15.51 MB before first paint — more than the whole page needed before this
+  // work started. What each is:
+  //
+  //   person_validation    identifier-validation verdicts over person_registry,
+  //                        one row per (registry row, check, run) so a
+  //                        re-validation appends rather than overwrites. Query
+  //                        v_person_validation_latest, not the raw table.
+  //   coauthor_edges       provenanced co-authorship edges over the registry
+  //                        node set. Distinct from registry_collaborations:
+  //                        every row names the OpenAlex Work that proves it
+  //                        (exemplar_work_id) and the identifier-equality rule
+  //                        that matched it (match_method). Only the core-to-core
+  //                        subset ships here.
+  //   coauthor_candidates  review queue of co-authors seen on registry members'
+  //                        works who are not registry rows yet. Nothing here is
+  //                        a personnel record until a curator promotes it.
   //
   // Anything listed here MUST be unreferenced outside src/views/sql.js.
   // Before moving a table into this list, grep ALL of src/ — not just
   // src/views/ — because src/filters.js and src/map.js read tables that no
   // view file mentions (facility_types, research_areas, area_links,
   // network_membership are used by the geographic map's filter panel).
+  // Conversely, when a view LEARNS to read one of these, move it back out.
   const lazyTables = [
     'locations', 'funding_events', 'region_area_links', 'person_areas',
     'publication_topics',
+    'person_validation', 'coauthor_edges', 'coauthor_candidates',
   ];
 
   _pendingLazyTables = lazyTables;

@@ -1,0 +1,601 @@
+@prefix cod:     <https://tyson-swetnam.github.io/cod-kmap/ns/cod#> .
+@prefix codid:   <https://tyson-swetnam.github.io/cod-kmap/id/> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix foaf:    <http://xmlns.com/foaf/0.1/> .
+@prefix org:     <http://www.w3.org/ns/org#> .
+@prefix bibo:    <http://purl.org/ontology/bibo/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+#############################################################################
+# COD ontology — coastal observatory personnel, cohorts, areas, validation
+# and provenanced co-authorship.
+#
+# Scope: this ontology covers WHO is in the COD registry, WHAT cohorts and
+# research areas they belong to, WHETHER their identifiers have been
+# validated, and WHICH work proves a co-authorship edge. It deliberately
+# does NOT re-describe persons, organizations or publications — those come
+# from FOAF, ORG and BIBO respectively. A term is minted here only when no
+# established vocabulary carries it.
+#
+# The load-bearing design decision is the identity block: ORCID, OpenAlex
+# author, OpenAlex work, ROR and DOI properties are all declared
+# owl:InverseFunctionalProperty, so an OWL-RL reasoner derives owl:sameAs
+# between any two nodes that share one. That inference — not string
+# comparison — is the sanctioned way to decide that a co-author found on a
+# work is an existing registry person. cod:localIdentifier is pointedly NOT
+# inverse-functional; see its comment.
+#############################################################################
+
+<https://tyson-swetnam.github.io/cod-kmap/ns/cod>
+    a                     owl:Ontology ;
+    dcterms:title         "COD Coastal Observatory Personnel Ontology"@en ;
+    dcterms:description    """Vocabulary for the cod-kmap coastal observatory
+        catalogue: registry persons and their persistent identifiers, cohort
+        membership, research-area assignment, identifier-validation verdicts,
+        and co-authorship edges that carry a provenance path back to a
+        published work. Reuses FOAF for persons, ORG for organizations, BIBO
+        for publications, PROV-O for provenance and SKOS for the controlled
+        research-area vocabulary."""@en ;
+    dcterms:created       "2026-07-29"^^xsd:date ;
+    owl:versionInfo       "0.1.0" ;
+    vann:preferredNamespacePrefix "cod" ;
+    vann:preferredNamespaceUri    "https://tyson-swetnam.github.io/cod-kmap/ns/cod#" ;
+    rdfs:seeAlso          <https://github.com/tyson-swetnam/cod-kmap> ;
+    owl:imports           <http://xmlns.com/foaf/0.1/> ,
+                          <http://www.w3.org/ns/org#> ,
+                          <http://purl.org/ontology/bibo/> ,
+                          <http://www.w3.org/ns/prov#> ,
+                          <http://www.w3.org/2004/02/skos/core#> .
+
+#############################################################################
+# 1. Classes
+#############################################################################
+
+cod:RegistryPerson
+    a               owl:Class ;
+    rdfs:subClassOf foaf:Person ;
+    rdfs:label      "Registry person"@en ;
+    rdfs:comment    """A human with a row in the cod-kmap person_registry: one
+        node in the single identity space that the three human-facing layers
+        (facility personnel, the COD org chart, the field-wide scholar roster)
+        resolve into. Membership in this class asserts only that the project
+        holds a curated, provenanced record of the person — it does not assert
+        employment by COD, and it does not assert that a public identifier
+        exists (see cod:localIdentifier)."""@en .
+
+cod:CoauthorCandidate
+    a               owl:Class ;
+    rdfs:subClassOf foaf:Person ;
+    rdfs:label      "Co-author candidate"@en ;
+    rdfs:comment    """A person observed as a co-author on a registry member's
+        work who is not (yet) a cod:RegistryPerson. A proposal under review,
+        not a personnel record: nothing about a candidate may be published as
+        a COD roster entry until a curator promotes it. Disjoint from
+        cod:RegistryPerson so a reasoner flags a graph that asserts both, which
+        would mean a promotion was left half-finished."""@en ;
+    owl:disjointWith cod:RegistryPerson .
+
+cod:Cohort
+    a               owl:Class ;
+    rdfs:label      "Registry cohort"@en ;
+    rdfs:comment    """One of the populations a cod:RegistryPerson can belong
+        to. Enumerated and closed: the three cohorts correspond exactly to the
+        is_team / is_site_personnel / is_scholar flags on person_registry. A
+        person may belong to all three at once — that overlap is the reason the
+        registry exists."""@en ;
+    owl:oneOf       ( cod:TeamCohort cod:SitePersonnelCohort cod:ScholarCohort ) .
+
+cod:CohortMembership
+    a               owl:Class ;
+    rdfs:label      "Cohort membership"@en ;
+    rdfs:comment    """A reified membership of one cod:RegistryPerson in one
+        cod:Cohort. Reified rather than expressed as three boolean properties
+        so that the membership itself can carry provenance: which source
+        asserted it, when it was retrieved, and with what confidence. A direct
+        boolean cannot be cited."""@en .
+
+cod:ResearchArea
+    a               owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label      "COD research area"@en ;
+    rdfs:comment    """A term in the project's controlled research-area
+        vocabulary (schema/vocab/research_areas.csv, 40 areas in a two-level
+        parent/child hierarchy). A skos:Concept subclass so the existing
+        hierarchy maps onto skos:broader without inventing a parallel
+        parent property, and so an OpenAlex topic or GCMD keyword can be tied
+        in with skos:closeMatch / skos:exactMatch."""@en .
+
+cod:AreaAssignment
+    a               owl:Class ;
+    rdfs:label      "Research-area assignment"@en ;
+    rdfs:comment    """A reified assignment of a cod:RegistryPerson to a
+        cod:ResearchArea, carrying the weight and the evidence count that
+        produced it (typically the share of the person's works on that topic).
+        Reified because the assignment is derived and revisable, so it needs
+        its own provenance and confidence; a bare person-to-area triple would
+        lose the reason it was drawn."""@en .
+
+cod:ValidationResult
+    a               owl:Class ;
+    rdfs:label      "Identifier validation result"@en ;
+    rdfs:comment    """The outcome of running one named check against one
+        identifier of one cod:RegistryPerson at one point in time. One node per
+        (person, check, sweep), so re-validation appends rather than
+        overwrites and two sweeps can be diffed. Mirrors a row of the
+        person_validation table."""@en .
+
+cod:Verdict
+    a               owl:Class ;
+    rdfs:label      "Validation verdict"@en ;
+    rdfs:comment    """The closed set of outcomes a cod:ValidationResult can
+        carry. cod:NotApplicable and cod:Unresolved exist so that "this person
+        has no public identifier by construction" and "the resolver could not
+        be reached" are never recorded as cod:Fail — collapsing either into a
+        failure creates pressure to invent an identifier, which is the error
+        this project has had to undo three times."""@en ;
+    owl:oneOf       ( cod:Pass cod:Fail cod:NotApplicable cod:Unresolved ) .
+
+cod:CoauthorEdge
+    a               owl:Class ;
+    rdfs:label      "Co-authorship edge"@en ;
+    rdfs:comment    """A reified, provenanced co-authorship relation between two
+        cod:RegistryPerson nodes. Reified because an edge is only admissible
+        when it can name the published work that proves it and the
+        identifier-equality rule that matched the endpoints; a plain symmetric
+        triple cannot carry either. Every instance must have at least one
+        cod:evidenceWork — enforced by cod-shapes.ttl."""@en .
+
+cod:MatchMethod
+    a               owl:Class ;
+    rdfs:label      "Identity match method"@en ;
+    rdfs:comment    """The closed set of rules by which two person records may
+        be judged the same or two authors judged co-authors. All three are
+        identifier-based. There is deliberately no name-similarity member: name
+        matching is what attached cardiologists to marine laboratories in this
+        catalogue's history, and adding such a member here would license it
+        again."""@en ;
+    owl:oneOf       ( cod:OrcidEquality cod:OpenAlexAuthorIdEquality cod:SameAsClosure ) .
+
+cod:Facility
+    a               owl:Class ;
+    rdfs:label      "Catalogued facility"@en ;
+    rdfs:comment    """A catalogued coastal or ocean observing site: field
+        station, observatory, laboratory, vessel, mooring array, buoy, or
+        protected area. NOT a subclass of org:Organization, because most of the
+        catalogue's entries are places rather than legal organizations — a state
+        park will never hold a ROR. The subset that ARE research organizations
+        also bear cod:rorId and should be typed org:Organization in the same
+        graph."""@en .
+
+cod:Award
+    a               owl:Class ;
+    rdfs:label      "Funding award"@en ;
+    rdfs:comment    """A grant, contract or cooperative agreement supporting a
+        person or facility, identified by the funder's own award number. Minted
+        rather than reused because BIBO and ORG have no award concept and the
+        catalogue needs to distinguish an award from the funding organization
+        that issued it (which is an org:Organization)."""@en .
+
+#############################################################################
+# 2. Identity properties — the owl:InverseFunctionalProperty block
+#############################################################################
+# Each property below is functional (a node has at most one such identifier)
+# AND inverse-functional (an identifier belongs to at most one node). The
+# inverse-functional half is the mechanism the co-author matching relies on:
+# under OWL-RL, two nodes sharing a value on any of these are inferred
+# owl:sameAs, which merges a candidate co-author into the registry person
+# without any name comparison anywhere in the pipeline.
+
+cod:canonicalId
+    a               owl:DatatypeProperty , owl:FunctionalProperty , owl:InverseFunctionalProperty ;
+    rdfs:domain     foaf:Person ;
+    rdfs:range      xsd:string ;
+    rdfs:label      "canonical registry identifier"@en ;
+    rdfs:comment    """The person_registry primary key: 'orcid:0000-…' when an
+        ORCID is known, else 'openalex:A…', else 'codp:…' for a COD-internal
+        person. Inverse-functional because it is the registry's own primary
+        key — two nodes carrying the same canonical_id are the same person by
+        construction."""@en .
+
+cod:orcidId
+    a               owl:DatatypeProperty , owl:FunctionalProperty , owl:InverseFunctionalProperty ;
+    rdfs:domain     foaf:Person ;
+    rdfs:range      xsd:string ;
+    rdfs:label      "ORCID iD"@en ;
+    rdfs:comment    """A researcher's ORCID iD in bare 16-digit form
+        (0000-0002-1825-0097). The project's most authoritative person
+        identifier: ORCID is registry-issued and self-asserted by the
+        researcher, so it outranks any aggregator-derived id. Inverse-functional
+        — an ORCID identifies exactly one human, so two nodes sharing one are
+        owl:sameAs."""@en .
+
+cod:openAlexAuthorId
+    a               owl:DatatypeProperty , owl:FunctionalProperty , owl:InverseFunctionalProperty ;
+    rdfs:domain     foaf:Person ;
+    rdfs:range      xsd:string ;
+    rdfs:label      "OpenAlex author id"@en ;
+    rdfs:comment    """An OpenAlex author identifier ('A5023888391'). An
+        aggregator identifier and therefore ranked below cod:orcidId when the
+        two disagree, but still inverse-functional: OpenAlex author records are
+        the unit at which authorship is disambiguated upstream, so sharing one
+        licenses owl:sameAs. Note the practical caveat that OpenAlex
+        occasionally merges or splits author records; a validation sweep
+        (cod:ValidationResult) is how the project detects that."""@en .
+
+cod:rorId
+    a               owl:DatatypeProperty , owl:FunctionalProperty , owl:InverseFunctionalProperty ;
+    rdfs:range      xsd:string ;
+    rdfs:label      "ROR id"@en ;
+    rdfs:comment    """A Research Organization Registry identifier
+        ('https://ror.org/03m2x1q45' or the bare '03m2x1q45'). Applies to an
+        org:Organization and to the subset of cod:Facility instances that are
+        research organizations; it is the join that links a researcher's
+        affiliation to a catalogued site. Inverse-functional, which is what
+        makes the affiliation-to-facility link an inference rather than a string
+        match on institution names."""@en .
+
+cod:openAlexWorkId
+    a               owl:DatatypeProperty , owl:FunctionalProperty , owl:InverseFunctionalProperty ;
+    rdfs:domain     bibo:Document ;
+    rdfs:range      xsd:string ;
+    rdfs:label      "OpenAlex work id"@en ;
+    rdfs:comment    """An OpenAlex Work identifier ('W2741809807'). Declared
+        inverse-functional so that two graph nodes describing the same paper —
+        one reached through each endpoint of a co-authorship edge — collapse to
+        one work under OWL-RL, which is what makes an edge's evidence count
+        correct rather than double-counted."""@en .
+
+cod:doi
+    a                  owl:DatatypeProperty , owl:FunctionalProperty , owl:InverseFunctionalProperty ;
+    rdfs:subPropertyOf bibo:doi ;
+    rdfs:domain        bibo:Document ;
+    rdfs:range         xsd:string ;
+    rdfs:label         "DOI"@en ;
+    rdfs:comment       """A DOI in bare lowercase form ('10.1029/2021jc017428').
+        A subproperty of bibo:doi rather than a redefinition: BIBO does not
+        declare bibo:doi inverse-functional, and silently strengthening another
+        vocabulary's term would change the semantics of every graph that
+        imports BIBO. Narrowing it under a COD term keeps the strengthening
+        local and explicit."""@en .
+
+cod:localIdentifier
+    a               owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain     cod:RegistryPerson ;
+    rdfs:range      xsd:string ;
+    rdfs:label      "COD-internal local identifier"@en ;
+    rdfs:comment    """The 'codp:…' identity carried by the 95 registry rows for
+        COD-internal people who have no public identifier by construction —
+        programme staff, agency contacts and administrators who are not
+        publishing researchers. Representing them this way records that the
+        project knows who they are WITHOUT asserting a false ORCID, OpenAlex or
+        ROR: the node simply bears no cod:orcidId, cod:openAlexAuthorId or
+        cod:rorId triple, and cod-shapes.ttl accepts cod:localIdentifier as
+        satisfying the persistent-identifier requirement.
+
+        Deliberately NOT owl:InverseFunctionalProperty, unlike every other
+        identity property here. The value is a sha1 digest of
+        name|orcid|email, so two distinct people who share a name and have
+        neither ORCID nor email on file collide. Declaring it
+        inverse-functional would make an OWL-RL reasoner assert owl:sameAs
+        between them — a same-name merge, arriving through inference instead of
+        through a string comparison, but with the same wrong result. It is
+        functional (one such id per person) and nothing more."""@en .
+
+#############################################################################
+# 3. Cohort, area and affiliation properties
+#############################################################################
+
+cod:hasCohortMembership
+    a               owl:ObjectProperty ;
+    rdfs:domain     cod:RegistryPerson ;
+    rdfs:range      cod:CohortMembership ;
+    rdfs:label      "has cohort membership"@en ;
+    rdfs:comment    "Links a registry person to one reified, provenanced membership record."@en .
+
+cod:cohort
+    a               owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain     cod:CohortMembership ;
+    rdfs:range      cod:Cohort ;
+    rdfs:label      "cohort"@en ;
+    rdfs:comment    "The cohort a cod:CohortMembership places its subject in. Exactly one per membership."@en .
+
+cod:hasAreaAssignment
+    a               owl:ObjectProperty ;
+    rdfs:domain     cod:RegistryPerson ;
+    rdfs:range      cod:AreaAssignment ;
+    rdfs:label      "has research-area assignment"@en ;
+    rdfs:comment    "Links a registry person to one reified research-area assignment."@en .
+
+cod:area
+    a               owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain     cod:AreaAssignment ;
+    rdfs:range      cod:ResearchArea ;
+    rdfs:label      "research area"@en ;
+    rdfs:comment    "The controlled-vocabulary area an assignment points at. Exactly one per assignment."@en .
+
+cod:isPrimaryArea
+    a               owl:DatatypeProperty ;
+    rdfs:domain     cod:AreaAssignment ;
+    rdfs:range      xsd:boolean ;
+    rdfs:label      "is primary area"@en ;
+    rdfs:comment    """True on the single assignment used as the person's primary
+        group in the knowledge-map layout (person_primary_groups). At most one
+        assignment per person should carry it; cod-shapes.ttl does not enforce
+        that, because the layout tolerates an unassigned person but not a
+        wrongly-merged one."""@en .
+
+cod:areaWeight
+    a               owl:DatatypeProperty ;
+    rdfs:domain     cod:AreaAssignment ;
+    rdfs:range      xsd:double ;
+    rdfs:label      "area weight"@en ;
+    rdfs:comment    "Strength of the assignment, normally the share of the person's works on that topic (0..1)."@en .
+
+cod:evidenceCount
+    a               owl:DatatypeProperty ;
+    rdfs:range      xsd:nonNegativeInteger ;
+    rdfs:label      "evidence count"@en ;
+    rdfs:comment    "How many underlying records (usually publications) support a derived assertion."@en .
+
+cod:stewards
+    a               owl:ObjectProperty ;
+    rdfs:domain     cod:RegistryPerson ;
+    rdfs:range      cod:Facility ;
+    rdfs:label      "stewards facility"@en ;
+    rdfs:comment    """Links a registry person to a catalogued facility they
+        staff, direct or steward. Distinct from org:memberOf (reused, not
+        minted, for person-to-organization employment) because a cod:Facility
+        is frequently a place rather than an organization and cannot be the
+        object of org:memberOf."""@en .
+
+cod:fundedBy
+    a               owl:ObjectProperty ;
+    rdfs:range      cod:Award ;
+    rdfs:label      "funded by award"@en ;
+    rdfs:comment    "Links a person or facility to a cod:Award supporting them. The issuing agency is reached from the award via dcterms:publisher (an org:Organization)."@en .
+
+cod:awardIdentifier
+    a               owl:DatatypeProperty ;
+    rdfs:domain     cod:Award ;
+    rdfs:range      xsd:string ;
+    rdfs:label      "award identifier"@en ;
+    rdfs:comment    """The funder's own award number ('2608717', 'NA21NOS4780123').
+        Pointedly NOT inverse-functional: award numbering is scoped to the
+        issuing agency, so the same string can name different awards from
+        different funders and a global uniqueness claim would be false."""@en .
+
+#############################################################################
+# 4. Validation properties
+#############################################################################
+
+cod:hasValidationResult
+    a               owl:ObjectProperty ;
+    rdfs:domain     cod:RegistryPerson ;
+    rdfs:range      cod:ValidationResult ;
+    rdfs:label      "has validation result"@en ;
+    rdfs:comment    "Links a registry person to one identifier-check outcome."@en .
+
+cod:verdict
+    a               owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain     cod:ValidationResult ;
+    rdfs:range      cod:Verdict ;
+    rdfs:label      "verdict"@en ;
+    rdfs:comment    "The outcome of the check. Exactly one per result."@en .
+
+cod:checkId
+    a               owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain     cod:ValidationResult ;
+    rdfs:range      xsd:string ;
+    rdfs:label      "check id"@en ;
+    rdfs:comment    """Which check was run: 'orcid-resolves',
+        'openalex-author-resolves', 'ror-resolves', 'source-url-citable',
+        'name-agreement', 'affiliation-agreement', 'cohort-flag-agreement'.
+        Matches person_validation.check_id."""@en .
+
+cod:validatedValue
+    a               owl:DatatypeProperty ;
+    rdfs:domain     cod:ValidationResult ;
+    rdfs:range      xsd:string ;
+    rdfs:label      "validated identifier value"@en ;
+    rdfs:comment    "The literal identifier the check was run against, copied in so a verdict is readable without re-joining to a possibly re-harvested person node."@en .
+
+cod:mismatchDetail
+    a               owl:DatatypeProperty ;
+    rdfs:domain     cod:ValidationResult ;
+    rdfs:range      xsd:string ;
+    rdfs:label      "mismatch detail"@en ;
+    rdfs:comment    "What disagreed. Populated only when cod:verdict is cod:Fail."@en .
+
+cod:validationRun
+    a               owl:DatatypeProperty ;
+    rdfs:range      xsd:string ;
+    rdfs:label      "validation run id"@en ;
+    rdfs:comment    "Groups all results from one sweep, so two sweeps of the same person are both retained and diffable."@en .
+
+#############################################################################
+# 5. Co-authorship properties
+#############################################################################
+
+cod:coauthorOf
+    a               owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:domain     foaf:Person ;
+    rdfs:range      foaf:Person ;
+    rdfs:label      "co-author of"@en ;
+    rdfs:comment    """Convenience shortcut asserting that two people share a
+        published work. Symmetric. This is the traversal property for graph
+        queries; it carries NO provenance, so it must never be the only
+        assertion of an edge. Every cod:coauthorOf pair in a COD graph is
+        expected to be accompanied by a cod:CoauthorEdge that names the
+        evidence — cod-shapes.ttl enforces the edge, not the shortcut."""@en .
+
+cod:hasCoauthorEdge
+    a               owl:ObjectProperty ;
+    rdfs:domain     cod:RegistryPerson ;
+    rdfs:range      cod:CoauthorEdge ;
+    rdfs:label      "has co-author edge"@en ;
+    rdfs:comment    "Links a registry person to a reified co-authorship edge they participate in."@en ;
+    owl:inverseOf   cod:edgeParticipant .
+
+cod:edgeParticipant
+    a               owl:ObjectProperty ;
+    rdfs:domain     cod:CoauthorEdge ;
+    rdfs:range      foaf:Person ;
+    rdfs:label      "edge participant"@en ;
+    rdfs:comment    """One of the two endpoints of a cod:CoauthorEdge. Exactly
+        two per edge (enforced in cod-shapes.ttl). Range is foaf:Person rather
+        than cod:RegistryPerson so that a candidate-to-registry edge can be
+        staged in the same graph before promotion."""@en .
+
+cod:evidenceWork
+    a               owl:ObjectProperty ;
+    rdfs:domain     cod:CoauthorEdge ;
+    rdfs:range      bibo:Document ;
+    rdfs:label      "evidence work"@en ;
+    rdfs:comment    """A published work that both endpoints of the edge are
+        credited on. This is the provenance path the project requires of every
+        co-authorship edge: at least one such triple must exist, and the work
+        it points at must itself be identified (cod:openAlexWorkId or
+        cod:doi), so any edge can be re-checked in a single request."""@en .
+
+cod:exemplarWork
+    a                  owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf cod:evidenceWork ;
+    rdfs:domain        cod:CoauthorEdge ;
+    rdfs:range         bibo:Document ;
+    rdfs:label         "exemplar work"@en ;
+    rdfs:comment       """The single work nominated as the canonical proof of
+        the edge, for display and for spot-checking. A subproperty of
+        cod:evidenceWork, so asserting it satisfies the evidence requirement
+        automatically."""@en .
+
+cod:coPublicationCount
+    a               owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain     cod:CoauthorEdge ;
+    rdfs:range      xsd:nonNegativeInteger ;
+    rdfs:label      "co-publication count"@en ;
+    rdfs:comment    "Number of works both endpoints are credited on. Must be at least 1 for the edge to exist."@en .
+
+cod:matchMethod
+    a               owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:range      cod:MatchMethod ;
+    rdfs:label      "match method"@en ;
+    rdfs:comment    """The rule by which two records were judged to denote the
+        same person, or two authors judged co-authors. Applies to a
+        cod:CoauthorEdge and to a cod:CoauthorCandidate's proposed identity.
+        Restricted to the three identifier-based members of
+        cod:MatchMethod."""@en .
+
+cod:seenWith
+    a               owl:ObjectProperty ;
+    rdfs:domain     cod:CoauthorCandidate ;
+    rdfs:range      cod:RegistryPerson ;
+    rdfs:label      "seen with registry person"@en ;
+    rdfs:comment    "The registry person whose publication record surfaced this candidate."@en .
+
+cod:decision
+    a               owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain     cod:CoauthorCandidate ;
+    rdfs:range      xsd:string ;
+    rdfs:label      "curation decision"@en ;
+    rdfs:comment    "Review state of a candidate: 'pending', 'accepted', 'rejected' or 'deferred'."@en .
+
+cod:disambiguationEvidence
+    a               owl:DatatypeProperty ;
+    rdfs:range      xsd:string ;
+    rdfs:label      "disambiguation evidence"@en ;
+    rdfs:comment    """Free text recording how a name ambiguity was resolved —
+        'name matches a registry row but ORCIDs differ, distinct people', 'two
+        OpenAlex authors share this ORCID, upstream merge pending'. Required on
+        any candidate that was rejected or deferred, so a dropped person leaves
+        a reason behind rather than vanishing."""@en .
+
+#############################################################################
+# 6. Provenance properties
+#############################################################################
+# PROV-O supplies the activity/agent framing (prov:wasGeneratedBy,
+# prov:wasAttributedTo) and is imported for it. These three terms are minted
+# because the project requires them as directly-attached, machine-checkable
+# literals on every assertion — the shape of the requirement that
+# cod-shapes.ttl gates and that scripts/qa.py already gates in SQL.
+
+cod:sourceUrl
+    a               owl:DatatypeProperty ;
+    rdfs:range      xsd:anyURI ;
+    rdfs:label      "source URL"@en ;
+    rdfs:comment    """The exact citable URL an assertion came from — the API
+        query or record page, not the service homepage. Required on every
+        person, edge, candidate and validation node in a COD graph. A literal
+        rather than an object property so a shape can require its presence on
+        the node itself without dereferencing anything; use
+        prov:wasDerivedFrom alongside it when the source is also modelled as a
+        resource."""@en .
+
+cod:retrievedAt
+    a               owl:DatatypeProperty ;
+    rdfs:range      xsd:date ;
+    rdfs:label      "retrieved at"@en ;
+    rdfs:comment    """The date the assertion was fetched from cod:sourceUrl.
+        Parallel to prov:generatedAtTime but typed xsd:date to match the
+        catalogue's retrieved_at columns; subproperty status is not asserted
+        because prov:generatedAtTime ranges over xsd:dateTime."""@en .
+
+cod:confidence
+    a               owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:range      xsd:string ;
+    rdfs:label      "confidence"@en ;
+    rdfs:comment    """Curator confidence in the assertion: exactly one of
+        'high', 'medium' or 'low'. A literal from a closed list rather than an
+        object property, so the value maps 1:1 to the confidence column in
+        person_registry / coauthor_edges / person_validation and one SHACL
+        sh:in constraint gates the same vocabulary that scripts/qa.py gates in
+        SQL."""@en .
+
+cod:tier
+    a               owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain     cod:RegistryPerson ;
+    rdfs:range      xsd:string ;
+    rdfs:label      "registry tier"@en ;
+    rdfs:comment    """'core' or 'archive'. The core tier is the subset published
+        to the browser (public/parquet); the archive tier stays in the local
+        catalogue. A publication-channel fact, not a quality judgement."""@en .
+
+#############################################################################
+# 7. Named individuals
+#############################################################################
+
+cod:TeamCohort          a cod:Cohort ; rdfs:label "COD project team"@en ;
+    rdfs:comment "On the COD org chart (person_registry.is_team)."@en .
+cod:SitePersonnelCohort a cod:Cohort ; rdfs:label "Facility site personnel"@en ;
+    rdfs:comment "Staffs a catalogued facility (person_registry.is_site_personnel)."@en .
+cod:ScholarCohort       a cod:Cohort ; rdfs:label "Coastal-science scholar roster"@en ;
+    rdfs:comment "In the field-wide roster (person_registry.is_scholar)."@en .
+
+cod:Pass          a cod:Verdict ; rdfs:label "pass"@en ;
+    rdfs:comment "The identifier resolved and the resolved record agrees with the registry row."@en .
+cod:Fail          a cod:Verdict ; rdfs:label "fail"@en ;
+    rdfs:comment "The identifier resolved to nothing, or to a demonstrably different person."@en .
+cod:NotApplicable a cod:Verdict ; rdfs:label "not applicable"@en ;
+    rdfs:comment """No such identifier exists for this person by construction —
+        the case of every cod:localIdentifier-only node. Not a defect and never
+        to be reported as one."""@en .
+cod:Unresolved    a cod:Verdict ; rdfs:label "unresolved"@en ;
+    rdfs:comment """The check could not be completed: API error, rate limit, or
+        blocked network. Distinct from cod:Fail because the identifier has not
+        been shown to be wrong."""@en .
+
+cod:OrcidEquality              a cod:MatchMethod ; rdfs:label "ORCID equality"@en ;
+    rdfs:comment "Matched because both records carry the same cod:orcidId."@en .
+cod:OpenAlexAuthorIdEquality   a cod:MatchMethod ; rdfs:label "OpenAlex author id equality"@en ;
+    rdfs:comment "Matched because both records carry the same cod:openAlexAuthorId."@en .
+cod:SameAsClosure              a cod:MatchMethod ; rdfs:label "owl:sameAs closure"@en ;
+    rdfs:comment """Matched by OWL-RL inference over the inverse-functional
+        identity properties in this ontology — for example two nodes linked
+        transitively through a shared ROR-bearing affiliation and a shared
+        ORCID. The reasoner, not a string comparison, produced the
+        merge."""@en .

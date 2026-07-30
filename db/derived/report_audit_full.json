@@ -1,0 +1,271 @@
+{
+ "what_this_is": "Every numeric claim in docs/VALIDATION_REPORT.md that is derivable from files tracked in this repository, paired with the exact SQL that produces it. Run scripts/verify_report_figures.py from the repo root to re-execute all of them.",
+ "verified_against": "clean git worktree at HEAD (not a working copy)",
+ "figures_checked": 49,
+ "mismatches": 0,
+ "paths_are_relative_to": "repository root",
+ "figures": {
+  "40,380": {
+   "reported": 40380,
+   "derived": 40380,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet'"
+  },
+  "34,996": {
+   "reported": 34996,
+   "derived": 34996,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE confidence='high'"
+  },
+  "4,980": {
+   "reported": 4980,
+   "derived": 4980,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE confidence='medium'"
+  },
+  "404": {
+   "reported": 404,
+   "derived": 404,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE confidence='low'"
+  },
+  "9,996": {
+   "reported": 9996,
+   "derived": 9996,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE check_id='openalex-author-resolves' AND verdict='pass'"
+  },
+  "9,443": {
+   "reported": 9443,
+   "derived": 9443,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE check_id='ror-resolves' AND verdict='pass'"
+  },
+  "9,298": {
+   "reported": 9298,
+   "derived": 9298,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE check_id='orcid-resolves' AND verdict='pass'"
+  },
+  "9,995": {
+   "reported": 9995,
+   "derived": 9995,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE check_id='name-agreement' AND verdict='pass'"
+  },
+  "9,869": {
+   "reported": 9869,
+   "derived": 9869,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE check_id='name-agreement' AND evidence LIKE '%''exact''%'"
+  },
+  "126": {
+   "reported": 126,
+   "derived": 126,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE check_id='name-agreement' AND evidence LIKE '%family_match%'"
+  },
+  "99": {
+   "reported": 99,
+   "derived": 99,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE check_id='openalex-author-resolves' AND verdict='not_applicable'"
+  },
+  "786": {
+   "reported": 786,
+   "derived": 786,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE check_id='orcid-resolves' AND verdict='not_applicable'"
+  },
+  "648": {
+   "reported": 648,
+   "derived": 648,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE check_id='ror-resolves' AND verdict='not_applicable'"
+  },
+  "2": {
+   "reported": 2,
+   "derived": 2,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE check_id='orcid-resolves' AND verdict='fail'"
+  },
+  "4": {
+   "reported": 4,
+   "derived": 4,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE check_id='ror-resolves' AND verdict='fail'"
+  },
+  "9": {
+   "reported": 9,
+   "derived": 9,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE check_id='orcid-resolves' AND verdict='unresolved'"
+  },
+  "1": {
+   "reported": 1,
+   "derived": 1,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE check_id='name-agreement' AND verdict='unresolved'"
+  },
+  "95": {
+   "reported": 95,
+   "derived": 95,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE canonical_id LIKE 'codp:%' AND check_id='openalex-author-resolves'"
+  },
+  "2,537": {
+   "reported": 2537,
+   "derived": 2537,
+   "sql": "SELECT count(DISTINCT subject_id_value) FROM 'db/parquet/person_validation.parquet' WHERE check_id='ror-resolves' AND subject_id_value IS NOT NULL AND subject_id_value<>''"
+  },
+  "5,270": {
+   "reported": 5270,
+   "derived": 5270,
+   "sql": "SELECT count(*) FROM 'db/parquet/ror_resolution_cache.parquet'"
+  },
+  "2,733": {
+   "reported": 2733,
+   "derived": 2733,
+   "sql": "SELECT (SELECT count(*) FROM 'db/parquet/ror_resolution_cache.parquet') - (SELECT count(DISTINCT subject_id_value) FROM 'db/parquet/person_validation.parquet' WHERE check_id='ror-resolves' AND subject_id_value IS NOT NULL AND subject_id_value<>'')"
+  },
+  "114": {
+   "reported": 114,
+   "derived": 114,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' v JOIN 'db/parquet/ror_resolution_cache.parquet' c ON c.ror=v.subject_id_value WHERE v.check_id='ror-resolves' AND c.ror_status IN ('inactive','withdrawn')"
+  },
+  "109": {
+   "reported": 109,
+   "derived": 109,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' v JOIN 'db/parquet/ror_resolution_cache.parquet' c ON c.ror=v.subject_id_value WHERE v.check_id='ror-resolves' AND c.ror_status='inactive'"
+  },
+  "5": {
+   "reported": 5,
+   "derived": 5,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' v JOIN 'db/parquet/ror_resolution_cache.parquet' c ON c.ror=v.subject_id_value WHERE v.check_id='ror-resolves' AND c.ror_status='withdrawn'"
+  },
+  "28": {
+   "reported": 28,
+   "derived": 28,
+   "sql": "SELECT count(DISTINCT v.subject_id_value) FROM 'db/parquet/person_validation.parquet' v JOIN 'db/parquet/ror_resolution_cache.parquet' c ON c.ror=v.subject_id_value WHERE v.check_id='ror-resolves' AND c.ror_status IN ('inactive','withdrawn')"
+  },
+  "38": {
+   "reported": 38,
+   "derived": 38,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE check_id='ror-resolves' AND subject_id_value='026nh4520'"
+  },
+  "23": {
+   "reported": 23,
+   "derived": 23,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE check_id='ror-resolves' AND subject_id_value='01bpa4157'"
+  },
+  "6": {
+   "reported": 6,
+   "derived": 6,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_validation.parquet' WHERE check_id='ror-resolves' AND subject_id_value='04hxcaz34'"
+  },
+  "10,095": {
+   "reported": 10095,
+   "derived": 10095,
+   "sql": "SELECT count(*) FROM 'public/parquet/person_registry.parquet'"
+  },
+  "152,103": {
+   "reported": 152103,
+   "derived": 152103,
+   "sql": "SELECT count(*) FROM 'db/parquet/person_registry.parquet'"
+  },
+  "69": {
+   "reported": 69,
+   "derived": 69,
+   "sql": "SELECT count(*) FROM 'public/parquet/facilities.parquet' WHERE ror IS NOT NULL AND ror<>''"
+  },
+  "263": {
+   "reported": 263,
+   "derived": 263,
+   "sql": "SELECT count(DISTINCT canonical_id) FROM 'public/parquet/registry_facilities.parquet'"
+  },
+  "626,200": {
+   "reported": 626200,
+   "derived": 626200,
+   "sql": "SELECT count(*) FROM 'db/parquet/coauthor_edges.parquet'"
+  },
+  "213,021": {
+   "reported": 213021,
+   "derived": 213021,
+   "sql": "SELECT count(*) FROM 'public/parquet/coauthor_edges.parquet'"
+  },
+  "253,794": {
+   "reported": 253794,
+   "derived": 253794,
+   "sql": "SELECT count(*) FROM 'db/parquet/coauthor_candidates.parquet'"
+  },
+  "3,644": {
+   "reported": 3644,
+   "derived": 3644,
+   "sql": "SELECT count(*) FROM 'db/parquet/coauthor_candidates.parquet' WHERE confidence='high'"
+  },
+  "39,711": {
+   "reported": 39711,
+   "derived": 39711,
+   "sql": "SELECT count(*) FROM 'db/parquet/coauthor_candidates.parquet' WHERE confidence='medium'"
+  },
+  "210,439": {
+   "reported": 210439,
+   "derived": 210439,
+   "sql": "SELECT count(*) FROM 'db/parquet/coauthor_candidates.parquet' WHERE confidence='low'"
+  },
+  "43,355": {
+   "reported": 43355,
+   "derived": 43355,
+   "sql": "SELECT count(*) FROM 'public/parquet/coauthor_candidates.parquet'"
+  },
+  "3,194": {
+   "reported": 3194,
+   "derived": 3194,
+   "sql": "SELECT count(*) FROM 'db/parquet/coauthor_candidates.parquet' c JOIN 'public/parquet/facilities.parquet' f ON replace(coalesce(f.ror,''),'https://ror.org/','')=c.affiliation_ror WHERE f.ror IS NOT NULL AND f.ror<>''"
+  },
+  "335,070": {
+   "reported": 335070,
+   "derived": 335070,
+   "sql": "SELECT count(*) FROM 'db/parquet/coauthor_unmatched_population.parquet'"
+  },
+  "81,276": {
+   "reported": 81276,
+   "derived": 81276,
+   "sql": "SELECT (SELECT count(*) FROM 'db/parquet/coauthor_unmatched_population.parquet') - (SELECT count(*) FROM 'db/parquet/coauthor_candidates.parquet')"
+  },
+  "176": {
+   "reported": 176,
+   "derived": 176,
+   "sql": "SELECT count(*) FROM 'db/parquet/split_identity_findings.parquet'"
+  },
+  "163": {
+   "reported": 163,
+   "derived": 163,
+   "sql": "SELECT count(DISTINCT canonical_id) FROM 'db/parquet/split_identity_findings.parquet'"
+  },
+  "3,446,537": {
+   "reported": 3446537,
+   "derived": 3446537,
+   "sql": "SELECT count(*) FROM 'db/parquet/coauthor_pairs_raw.parquet'"
+  },
+  "3,000": {
+   "reported": 3000,
+   "derived": 3000,
+   "sql": "SELECT count(DISTINCT focal_openalex_id) FROM 'db/parquet/coauthor_pairs_raw.parquet'"
+  },
+  "9,805": {
+   "reported": 9805,
+   "derived": 9805,
+   "sql": "WITH ca AS (SELECT coauthor_openalex_id oa2, max(lower(coauthor_orcid)) orc2 FROM 'db/parquet/coauthor_pairs_raw.parquet' WHERE coauthor_openalex_id IS NOT NULL GROUP BY 1), r AS (SELECT tier, replace(coalesce(openalex_id,''),'https://openalex.org/','') oa, lower(replace(coalesce(orcid,''),'https://orcid.org/','')) orc FROM 'db/parquet/person_registry.parquet') SELECT count(*) FROM ca LEFT JOIN r a ON a.oa=ca.oa2 AND a.oa<>'' LEFT JOIN r x ON x.orc=ca.orc2 AND x.orc<>'' WHERE coalesce(a.tier,x.tier)='core'"
+  },
+  "71,471": {
+   "reported": 71471,
+   "derived": 71471,
+   "sql": "WITH ca AS (SELECT coauthor_openalex_id oa2, max(lower(coauthor_orcid)) orc2 FROM 'db/parquet/coauthor_pairs_raw.parquet' WHERE coauthor_openalex_id IS NOT NULL GROUP BY 1), r AS (SELECT tier, replace(coalesce(openalex_id,''),'https://openalex.org/','') oa, lower(replace(coalesce(orcid,''),'https://orcid.org/','')) orc FROM 'db/parquet/person_registry.parquet') SELECT count(*) FROM ca LEFT JOIN r a ON a.oa=ca.oa2 AND a.oa<>'' LEFT JOIN r x ON x.orc=ca.orc2 AND x.orc<>'' WHERE coalesce(a.tier,x.tier)='archive'"
+  },
+  "462": {
+   "reported": 462,
+   "derived": 462,
+   "sql": "WITH ca AS (SELECT coauthor_openalex_id oa2, max(lower(coauthor_orcid)) orc2 FROM 'db/parquet/coauthor_pairs_raw.parquet' WHERE coauthor_openalex_id IS NOT NULL GROUP BY 1), r AS (SELECT canonical_id, replace(coalesce(openalex_id,''),'https://openalex.org/','') oa, lower(replace(coalesce(orcid,''),'https://orcid.org/','')) orc FROM 'db/parquet/person_registry.parquet') SELECT count(*) FROM ca LEFT JOIN r a ON a.oa=ca.oa2 AND a.oa<>'' LEFT JOIN r x ON x.orc=ca.orc2 AND x.orc<>'' WHERE a.canonical_id IS NULL AND x.canonical_id IS NOT NULL"
+  }
+ },
+ "not_derivable_from_artifacts": {
+  "1,945,450": "delegated parallel harvest run \u2014 pair rows in its own workspace, unmerged",
+  "2,793": "delegated parallel run \u2014 researchers covered",
+  "85": "delegated parallel run \u2014 batch index reached of 200",
+  "1,640": "X-RateLimit-Remaining header at that run's exit",
+  "10,000": "X-RateLimit-Limit \u2014 OpenAlex daily quota",
+  "56,188": "OWL closure input triples, in-session, core-only slice",
+  "225,217": "OWL closure output triples, in-session, core-only slice",
+  "9,015": "person<->coauthor sameAs bridges, in-session, core-only slice",
+  "434": "initial pyshacl violation count before the serialization fix",
+  "358,880": "OpenAlex works_count for topic Soil Moisture and Remote Sensing",
+  "62": "measured OpenAlex throughput ceiling, works/second",
+  "521": "either-side ROR match count computed while withdrawing the 413 figure"
+ },
+ "withdrawn": {
+  "413": "reported as facility-linked researchers; came from an intermediate in-memory column and is not reproducible from any table (stored-ROR 263, OpenAlex-ROR 263, either-side 521, committed registry_facilities 263). Replaced by 263."
+ }
+}
