@@ -28,7 +28,7 @@
 // summing over the coastal topic set double-counts multi-topic papers.
 // Registry queries label the column `coastal_volume` for that reason.
 
-import { getConn, whenReady, unwrapRow } from '../db.js';
+import { getConn, whenReady, unwrapRow, ensureSqlTables } from '../db.js';
 
 // ── Canned queries ──────────────────────────────────────────────────
 //
@@ -616,6 +616,12 @@ async function run(sql) {
   const t0 = performance.now();
   try {
     await whenReady();
+    // The SQL-console-only tables (publication_topics, funding_events,
+    // locations, …) and the v_* helper views are registered on demand rather
+    // than at init — they are 3.85 MB and 5 round-trips that the map does not
+    // need. Arbitrary user SQL may reference any of them, so register before
+    // executing. Idempotent; the cost is paid once per session.
+    await ensureSqlTables();
     const conn = getConn();
     if (!conn) throw new Error('DuckDB connection not ready');
     const result = await conn.query(sql);
