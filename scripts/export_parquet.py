@@ -25,6 +25,10 @@ TABLES = [
     "locations",
     "funders",
     "funding_links",
+    # Exported even when empty (it usually is — see schema.sql): the
+    # schema.sql view v_facility_funding_by_year LEFT JOINs it, so without
+    # this file the parquet set can't bind all schema views on its own.
+    "cpi_index_us",
     "research_areas",
     "area_links",
     "networks",

@@ -62,6 +62,7 @@ LOAD_ORDER = [
     "facility_regions",
     "funders",
     "funding_events",      # parent of funding_links view
+    "cpi_index_us",        # usually zero rows; exported so schema views bind
     "provenance",
     # People-side
     "people",
