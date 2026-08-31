@@ -38,6 +38,9 @@ jobs:
           # Docs tab returns HTTP 404 for every page.
           cp -R docs _site/docs
 
+      - name: Generate llms.txt and llms-full.txt
+        run: python3 scripts/generate_agent_surface.py _site
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
