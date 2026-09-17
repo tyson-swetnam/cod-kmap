@@ -444,23 +444,28 @@ body.no-sidebar #app { grid-template-columns: 1fr; }
 }
 #status strong { color: var(--c-primary-d); font-weight: 700; margin-right: 4px; }
 
-/* Scoped to the sidebar on purpose: a bare `footer` selector would also catch
-   the <footer> elements the Docs and Stats views inject, turning them into flex
-   containers and changing their layout. */
-#sidebar > footer {
+/* NOTE: this is a bare element selector and three views inject their own
+   <footer> — .ds-links (datasets), .team-links (orgchart) and .reg-foot
+   (people). Each sets its own border, colour and font-size later in this file,
+   but relies on the rules here for side padding, background, and link
+   font-size / text-decoration. So these two rules must stay unscoped; only the
+   sidebar-specific layout below is scoped. */
+footer {
   padding: 6px 14px;
   border-top: 1px solid var(--c-border);
   background: var(--c-surface);
-  /* Four links now live here (source, agent guide, llms.txt, llms-full.txt) —
-     wrap rather than overflow the sidebar at narrow widths. */
+}
+footer a { color: var(--c-muted); font-size: 0.74rem; text-decoration: none; }
+footer a:hover { color: var(--c-primary); }
+
+/* The sidebar footer now holds four links (source, agent guide, llms.txt,
+   llms-full.txt) — wrap rather than overflow at narrow widths. Scoped so the
+   three view footers above are not turned into flex containers. */
+#sidebar > footer {
   display: flex;
   flex-wrap: wrap;
   gap: 2px 10px;
 }
-#sidebar > footer a {
-  color: var(--c-muted); font-size: 0.74rem; text-decoration: none;
-}
-#sidebar > footer a:hover { color: var(--c-primary); }
 
 /* ── No-script / agent directory ────────────────────────────────── */
 /* index.html opens with a <noscript> block listing the site's static
