@@ -748,8 +748,14 @@ def build_llms(docs: list[str], schemas: dict, schema_note: str | None,
         "(`slug,label,gcmd_uri,parent_slug`), "
         f"[vocab/networks.csv]({SITE_URL}/public/vocab/networks.csv) "
         "(`slug,label,aliases,level,url`): the controlled vocabularies behind "
-        "`facilities.facility_type`, `research_areas.slug` and `networks.slug`. "
-        "Join on the slug.",
+        "`facilities.facility_type`, `research_areas` and `networks`. "
+        "MIND THE COLUMN NAMES: every CSV calls its key `slug`, but in Parquet "
+        "only `facility_types` does — the others are `research_areas.area_id` "
+        "and `networks.network_id` (and the CSV's `parent_slug` is "
+        "`research_areas.parent_id`). The VALUES are identical slugs; only the "
+        "column names differ, so `research_areas.slug` and `networks.slug` are "
+        "binder errors, not empty results. `gcmd_uri` is populated for only 3 "
+        "of the 40 research areas.",
         f"- [parquet/schema.json]({SITE_URL}/public/parquet/schema.json): every "
         "table's columns, types and row count, as JSON. Fetch this instead of "
         "reading 46 Parquet footers.",

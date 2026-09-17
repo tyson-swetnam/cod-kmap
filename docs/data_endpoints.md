@@ -303,8 +303,10 @@ are byte-identical to `schema/vocab/` in the repository, which is canonical.
 
 **Mind the column names.** The CSV column is called `slug` in all three files,
 but only `facility_types` uses that name in Parquet too. In the other two the
-matching column is `area_id` and `network_id` — the *values* are identical
-slugs, only the column name differs:
+matching column is `area_id` and `network_id`. The same applies one level
+down: the CSV's `parent_slug` is `research_areas.parent_id` in Parquet. The
+*values* are identical slugs, only the column names differ — so a query using
+`research_areas.slug` raises a binder error rather than returning nothing:
 
 ```sql
 -- correct
