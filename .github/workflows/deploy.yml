@@ -18,7 +18,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # fetch-depth 0 because generate_agent_surface.py derives each page's
+      # <lastmod> for sitemap.xml from `git log -1 --format=%cs -- <path>`. In
+      # the default depth-1 clone there is no per-file history, so every entry
+      # would silently fall back to the build date.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # The site runs as plain static files at the repo root — index.html
       # uses an importmap to load maplibre-gl and @duckdb/duckdb-wasm from

@@ -45,6 +45,11 @@ DOC_META below carries the title and one-line description of each page in
 docs/. A page missing from DOC_META, or from DOC_PAGES in src/views/docs.js
 (which drives the Docs tab), triggers a warning on stderr; --strict turns any
 warning into a non-zero exit so CI can gate on the drift.
+
+Note that under --strict a MISSING duckdb is also a failure, not a degrade.
+That is deliberate: the degrade path exists for local runs, but a deploy that
+quietly shipped an llms.txt with no column lists would be worse than a red
+build. Run without --strict to accept the degraded output.
 """
 
 from __future__ import annotations
@@ -153,9 +158,9 @@ DOC_META: dict[str, tuple[str, str, str, str]] = {
     ),
     "REFERENCES.md": (
         "References",
-        "A 2026-04-26 snapshot of the 98-item COD Zotero group library (group "
-        "5711743) as 58 articles, 8 books, 10 reports and 21 webpages, with the "
-        "curl commands to regenerate it. BibTeX form: docs/references.bib.",
+        "A 2026-04-26 snapshot of the COD Zotero group library (group 5711743): "
+        "58 articles, 8 books, 10 reports and 21 webpages, with the curl commands "
+        "to regenerate it. BibTeX form (97 entries): docs/references.bib.",
         "Reference", "stable",
     ),
     "reference_documents_report.md": (
@@ -223,7 +228,8 @@ DOC_META: dict[str, tuple[str, str, str, str]] = {
 TABLE_GROUPS: list[tuple[str, str, list[str]]] = [
     ("Facilities and places",
      "The spine of the dataset. `facilities` is one row per catalogued site; "
-     "`regions` is one row per overlay polygon; `facility_regions` is the "
+     "`regions` holds attributes for the polygons of 7 of the 15 overlay "
+     "layers (147 of 3,566 features); `facility_regions` is the "
      "spatial-containment edge between them.",
      ["facilities", "locations", "facility_types", "provenance",
       "regions", "facility_regions", "region_area_links"]),
@@ -271,8 +277,10 @@ TABLE_NOTES: dict[str, str] = {
                   "row count as a count of research facilities",
     "locations": "one row per site location; a facility may have several",
     "provenance": "per-record source URL, retrieval date and confidence",
-    "regions": "overlay polygons as first-class rows; geometry itself is in "
-               "public/overlays/*.geojson, not here",
+    "regions": "attributes for overlay polygons — the geometry is in "
+               "public/overlays/*.geojson and features carry no region_id, so "
+               "join on (source_file, name). Covers only the 7 curated layers, "
+               "not the 8 bulk coastal-* / ramsar / neon-sites layers",
     "funding_links": "a 7-column projection of funding_events kept for "
                      "backwards compatibility, materialised as its own file; "
                      "same 3,634 rows",
@@ -294,6 +302,7 @@ TABLE_NOTES: dict[str, str] = {
                           "summing over a topic set double-counts multi-topic works",
     "community_scholars": "gated on a coastal-topic share, not name matching",
     "cod_wbs": "work-breakdown hierarchy for the COD project org chart",
+    "cod_team_members": "member_id is NOT unique (57 distinct over 67 rows)",
     "area_coverage_matrix": "per-research-area coverage metrics used by the Stats tab",
     "mvg_layout_metrics": "two rows: before/after metrics for the cartogram layout",
 }
@@ -303,18 +312,29 @@ TABLE_NOTES: dict[str, str] = {
 # Derived at runtime from src/db.js rather than hard-coded.
 DB_JS = "src/db.js"
 
+# Populated by the regex parsers below. A parser that silently returns nothing
+# would make this script publish confident, wrong claims (e.g. "src/db.js
+# recreates 0 views"), so every miss is recorded and reported as drift.
+_parse_failures: list[str] = []
+
 
 def warn(msg: str, warnings: list[str]) -> None:
     warnings.append(msg)
     print(f"warning: {msg}", file=sys.stderr)
 
 
+def read_doc(path: str) -> str:
+    """Read a docs page. A stray non-UTF-8 byte must not fail the whole deploy,
+    so decode errors are replaced rather than raised."""
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        return fh.read()
+
+
 def first_heading(path: str) -> str:
-    with open(path, encoding="utf-8") as fh:
-        for line in fh:
-            m = re.match(r"#\s+(.+)", line)
-            if m:
-                return m.group(1).strip()
+    for line in read_doc(path).split("\n"):
+        m = re.match(r"#\s+(.+)", line)
+        if m:
+            return m.group(1).strip()
     return os.path.basename(path)
 
 
@@ -328,8 +348,16 @@ def doc_pages_from_js(path: str = "src/views/docs.js") -> list[str]:
     try:
         src = open(path, encoding="utf-8").read()
     except OSError:
+        _parse_failures.append(f"{path}: unreadable")
         return []
-    return re.findall(r"path:\s*'docs/([^']+)'", src)
+    found = re.findall(r"""path:\s*['"]docs/([^'"]+)['"]""", src)
+    if not found:
+        # Without this the next loop reports every page as "missing from
+        # DOC_PAGES", which blames the wrong file and wedges --strict.
+        _parse_failures.append(f"{path}: found no DOC_PAGES entries — the array "
+                               "was probably reformatted; update the regex in "
+                               "doc_pages_from_js()")
+    return found
 
 
 def registered_tables(path: str = DB_JS) -> set[str]:
@@ -346,6 +374,7 @@ def registered_tables(path: str = DB_JS) -> set[str]:
     for decl in (r"const tables = \[(.*?)\n  \];", r"const lazyTables = \[(.*?)\n  \];"):
         m = re.search(decl, src, re.S)
         if not m:
+            _parse_failures.append(f"{path}: could not find /{decl}/")
             continue
         # Strip // comments first: the arrays carry long explanatory comments
         # that quote table names and other words (e.g. "the 'core' tier"),
@@ -367,8 +396,10 @@ def browser_views(path: str = DB_JS) -> list[str]:
     except OSError:
         return []
     m = re.search(r"const helperViews = \[(.*?)\n  \];", src, re.S)
-    body = m.group(1) if m else ""
-    return re.findall(r"CREATE OR REPLACE VIEW\s+(\w+)", body)
+    if not m:
+        _parse_failures.append(f"{path}: could not find the helperViews array")
+        return []
+    return re.findall(r"CREATE OR REPLACE VIEW\s+(\w+)", m.group(1))
 
 
 def schema_views(path: str = "schema/schema.sql") -> list[str]:
@@ -402,18 +433,47 @@ def parquet_schemas(parquet_dir: str) -> tuple[dict, str | None]:
         return out, "duckdb is not installed"
 
     con = duckdb.connect()
+    unreadable = []
     try:
         for table in out:
             lit = os.path.join(parquet_dir, f"{table}.parquet").replace("'", "''")
-            cols = con.execute(
-                f"DESCRIBE SELECT * FROM read_parquet('{lit}')").fetchall()
-            n_rows = con.execute(
-                f"SELECT count(*) FROM read_parquet('{lit}')").fetchone()[0]
+            try:
+                cols = con.execute(
+                    f"DESCRIBE SELECT * FROM read_parquet('{lit}')").fetchall()
+                n_rows = con.execute(
+                    f"SELECT count(*) FROM read_parquet('{lit}')").fetchone()[0]
+            except Exception as exc:  # truncated / zero-byte / corrupt footer
+                unreadable.append(f"{table} ({type(exc).__name__})")
+                continue
             out[table]["n_rows"] = int(n_rows)
             out[table]["columns"] = [{"name": c[0], "type": c[1]} for c in cols]
     finally:
         con.close()
+    if unreadable:
+        return out, "unreadable Parquet: " + ", ".join(unreadable)
     return out, None
+
+
+def absolutize(md: str) -> str:
+    """Rewrite doc-relative Markdown link targets to absolute URLs.
+
+    llms-full.txt concatenates every page into one file with no directory
+    context, so a relative `[Methods](METHODS.md)` there resolves against
+    whatever the consumer happens to be doing and 404s. Bare `docs/`-relative
+    targets become site URLs; protocol-relative and scheme-less hostnames
+    (`www.example.org/x`) get an https scheme rather than being treated as
+    local files. Anchors, mailto: and already-absolute URLs are left alone.
+    """
+    def fix(m):
+        text, target = m.group(1), m.group(2).strip()
+        if target.startswith(("http://", "https://", "#", "mailto:")):
+            return m.group(0)
+        if target.startswith("//"):
+            return f"[{text}](https:{target})"
+        if re.match(r"^(?:www\.|[a-z0-9-]+\.[a-z]{2,}/)", target):
+            return f"[{text}](https://{target})"
+        return f"[{text}]({SITE_URL}/docs/{target.lstrip('./')})"
+    return re.sub(r"\[([^\]]+)\]\(([^)]+)\)", fix, md)
 
 
 def human_bytes(n: int) -> str:
@@ -461,6 +521,10 @@ Allow: /
 # HTTP range requests, so DuckDB can query a table in place without
 # downloading it. Column names, types and row counts for every table:
 #   {SITE_URL}/public/parquet/schema.json
+# Other data endpoints:
+#   Facility points (GeoJSON): {SITE_URL}/public/facilities.geojson
+#   Overlay layer index:       {SITE_URL}/public/overlays/manifest.json
+#   Controlled vocabularies:   {SITE_URL}/public/vocab/<name>.csv
 #
 # Source repository: {REPO_URL}
 #   Rules for coding agents: {REPO_URL}/blob/{BRANCH}/AGENTS.md
@@ -840,7 +904,7 @@ def build_full(docs: list[str]) -> list[str]:
               f"## {title}",
               f"URL: {SITE_URL}/docs/{fn}",
               f"Raw source: {RAW_URL}/docs/{fn}", "",
-              open(os.path.join("docs", fn), encoding="utf-8").read().rstrip(),
+              absolutize(read_doc(os.path.join("docs", fn))).rstrip(),
               ""]
     return F
 
@@ -887,6 +951,8 @@ def main() -> int:
     parquet_dir = staged_parquet if os.path.isdir(staged_parquet) \
         else os.path.join("public", "parquet")
     schemas, schema_note = parquet_schemas(parquet_dir)
+    for f in _parse_failures:
+        warn(f"source parse failed, published claims may be wrong — {f}", warnings)
     if schema_note:
         warn(f"Parquet column lists and schema.json omitted: {schema_note}",
              warnings)

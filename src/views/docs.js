@@ -32,10 +32,14 @@ const BASE = new URL('./', document.baseURI).href;
 // That generator warns when a docs/*.md file is missing from either list —
 // a file absent HERE still ships and is still indexed, but has no tab.
 const DOC_PAGES = [
-  { title: 'For AI Agents',             path: 'docs/for_ai_agents.md' },
-  { title: 'Data Endpoints',            path: 'docs/data_endpoints.md' },
+  // Purpose stays first: this list's order is the tab order, and the FIRST
+  // entry is the default tab at '#/docs'. DOC_META in the generator is ordered
+  // agent-first instead (the agent guide leads llms.txt); the two lists are
+  // compared by membership, not by order, so they can differ on purpose.
   { title: 'Purpose & MSI Handout',     path: 'docs/cod_purpose_and_msi_handout.md' },
   { title: 'Methods',                   path: 'docs/METHODS.md' },
+  { title: 'Data Endpoints',            path: 'docs/data_endpoints.md' },
+  { title: 'For AI Agents',             path: 'docs/for_ai_agents.md' },
   { title: 'Team, Scholars & Data',     path: 'docs/team_scholars_datasets_methods.md' },
   { title: 'Person Registry',           path: 'docs/person_registry.md' },
   { title: 'Validation Report',         path: 'docs/VALIDATION_REPORT.md' },

@@ -11,7 +11,7 @@ empty HTML shell — no facilities, no people, no tables. Everything the app
 displays, however, is a plain static file with a stable URL. That is what this
 page maps out.
 
-Companion page: [Data endpoints](data_endpoints.md) is the per-endpoint
+Companion page: [Data endpoints](https://tyson-swetnam.github.io/cod-kmap/docs/data_endpoints.md) is the per-endpoint
 reference with worked recipes. This page is the orientation.
 
 ## Entry points
@@ -26,7 +26,7 @@ reference with worked recipes. This page is the orientation.
 | [`/public/facilities.geojson`](https://tyson-swetnam.github.io/cod-kmap/public/facilities.geojson) | All catalogued facilities as GeoJSON points. Coordinates without a Parquet reader. |
 | [`/public/overlays/manifest.json`](https://tyson-swetnam.github.io/cod-kmap/public/overlays/manifest.json) | Index of the polygon overlay layers; each key resolves to `/public/overlays/<key>.geojson`. |
 | `/public/vocab/<name>.csv` | The controlled vocabularies behind `facility_type`, `research_areas` and `networks`. Join on the slug. |
-| [`/sitemap.xml`](https://tyson-swetnam.github.io/cod-kmap/sitemap.xml), [`/robots.txt`](https://tyson-swetnam.github.io/cod-kmap/robots.txt) | Standard crawl surface. `robots.txt` repeats every pointer on this page. |
+| [`/sitemap.xml`](https://tyson-swetnam.github.io/cod-kmap/sitemap.xml), [`/robots.txt`](https://tyson-swetnam.github.io/cod-kmap/robots.txt) | Standard crawl surface. `robots.txt` repeats the main pointers as comments. |
 | [Source repository](https://github.com/tyson-swetnam/cod-kmap) | The pipeline that builds all of it, plus `AGENTS.md` with contribution rules for coding agents. |
 
 All of those addresses are relative to `https://tyson-swetnam.github.io/cod-kmap/`.
@@ -67,7 +67,7 @@ JOIN 'https://tyson-swetnam.github.io/cod-kmap/public/parquet/funders.parquet' f
 GROUP BY 1 ORDER BY facilities DESC LIMIT 20;
 ```
 
-See [Data endpoints](data_endpoints.md) for the full table catalogue, the join
+See [Data endpoints](https://tyson-swetnam.github.io/cod-kmap/docs/data_endpoints.md) for the full table catalogue, the join
 keys, and recipes in Python, R and plain curl.
 
 ## What is queryable, and what only looks like it is
@@ -84,8 +84,8 @@ published. That asymmetry constrains the app, not you.
 **2. Helper views recreated in the browser.** `src/db.js` recreates six views
 inside DuckDB-Wasm when the SQL tab is first used: `v_facility_funding_by_year`,
 `v_funder_funding_by_year`, `v_facility_key_personnel`, `v_funding_ledger`,
-`v_person_enriched` and `v_cod_team_enriched`. A view is not a file, so **none
-of these has a URL**. To use one, copy its `CREATE OR REPLACE VIEW` body from
+`v_person_enriched` and `v_cod_team_enriched`. A view is not a file, so
+**none of these has a URL.**. To use one, copy its `CREATE OR REPLACE VIEW` body from
 the `helperViews` array in
 [`src/db.js`](https://raw.githubusercontent.com/tyson-swetnam/cod-kmap/main/src/db.js)
 or from
@@ -160,9 +160,11 @@ registry. Signals to read before you rely on a row:
   name-match. Two scripts in the repository exist specifically to undo a
   name-only resolver that once attached cardiologists to marine labs.
 - **Core-tier publishing.** `person_registry`, `person_identity_source`,
-  `registry_collaborations` and `registry_facilities` publish only the core
-  tier; the full population stays in the local DuckDB. Counts from these tables
-  are **floors, not totals**.
+  `registry_collaborations`, `registry_facilities`, `coauthor_edges` and
+  `coauthor_candidates` publish only the core tier or the core-to-core subset;
+  the full population stays in the local DuckDB. `person_registry` ships 10,095
+  of roughly 152,000 identities, and `registry_facilities` 263 links against
+  about 1,467 locally. Counts from these tables are **floors, not totals**.
 - **Degree zero means unmeasured.** The co-authorship harvest covers a fraction
   of registry identities. A researcher with no edges has not been measured; it
   does not mean they publish alone.
@@ -177,9 +179,9 @@ registry. Signals to read before you rely on a row:
   `suitability_roadmap.md` describe intended work. `llms.txt` marks them
   `draft`. Do not read them as descriptions of shipped capability.
 
-Full method detail is in [Methods](METHODS.md); the identity model and its
-caveats are in [Person registry](person_registry.md); the audit run is in
-[Validation report](VALIDATION_REPORT.md).
+Full method detail is in [Methods](https://tyson-swetnam.github.io/cod-kmap/docs/METHODS.md); the identity model and its
+caveats are in [Person registry](https://tyson-swetnam.github.io/cod-kmap/docs/person_registry.md); the audit run is in
+[Validation report](https://tyson-swetnam.github.io/cod-kmap/docs/VALIDATION_REPORT.md).
 
 ## Answering questions from this corpus
 

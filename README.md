@@ -2,7 +2,8 @@
 
 Knowledge Map for the Coastal Observatory Design — a DuckDB-backed directory of
 coastal research organizations across North America, Latin America, and the
-northern Caribbean, published as an interactive Leaflet map on GitHub Pages.
+northern Caribbean, published as an interactive MapLibre GL + DuckDB-Wasm map
+on GitHub Pages.
 
 ## What this repo contains
 

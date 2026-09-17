@@ -5,8 +5,8 @@ page is the reference for all of them: what each endpoint is, how to read it,
 and worked recipes in DuckDB, Python, R and plain curl.
 
 For orientation and the trust/provenance signals, see
-[For AI agents](for_ai_agents.md). For how the data was assembled, see
-[Methods](METHODS.md).
+[For AI agents](https://tyson-swetnam.github.io/cod-kmap/docs/for_ai_agents.md). For how the data was assembled, see
+[Methods](https://tyson-swetnam.github.io/cod-kmap/docs/METHODS.md).
 
 ## URL conventions
 
@@ -83,8 +83,8 @@ The authoritative, always-current list of columns and types is
 regenerated from the actual files on every deploy;
 [`llms.txt`](https://tyson-swetnam.github.io/cod-kmap/llms.txt) carries the same
 column lists in prose. The catalogue below is the curated view: row counts,
-sizes and the join keys you need. **Row counts and sizes are from the
-2026-09-17 export** and will drift; `schema.json` is the source of truth.
+sizes and the join keys you need. **Row counts and sizes below are from the
+2026-09-17 export and will drift** — `schema.json` is the source of truth.
 
 Tables marked `*` are published and externally queryable but are not registered
 by the site's own `src/db.js`, so the in-app SQL console cannot see them.
@@ -128,7 +128,7 @@ Three human layers unified by `person_registry`: facility staff (`people`), the 
 | `facility_personnel` | 246 | 32 KB | 12 | person_id + facility_id |
 | `registry_facilities` | 263 | 5 KB | 6 | canonical_id + facility_id (matched on ror) |
 | `cod_wbs` | 52 | 3 KB | 6 | wbs_code (pk), parent_code, lead_person_id |
-| `cod_team_members` | 67 | 8 KB | 15 | member_id (pk), person_id, wbs_code |
+| `cod_team_members` | 67 | 8 KB | 15 | person_id, wbs_code (member_id is NOT unique) |
 | `community_scholars` | 523 | 102 KB | 30 | scholar_id (pk), person_id, orcid, openalex_id |
 | `scholar_area_assignments` * | 442 | 17 KB | 5 | canonical_id |
 | `person_areas` | 1,065 | 14 KB | 5 | person_id + area_id |
@@ -186,16 +186,13 @@ Precomputed groupings and coordinates that drive the Network tab's MVG cartogram
 
 ### Reading the catalogue
 
-- **`facilities` mixes two populations.** Of its 3,519 rows, **210 are research
-  organisations** and **3,309 are protected-area units** — the three
+- **`facilities` mixes two populations.** Of its 3,519 rows, 210 are research
+  organisations and 3,309 are protected-area units — the three
   `protected-area-federal` / `-state` / `-private` types. Filter on
   `facility_type` (resolved through `facility_types.slug`, or
   `vocab/facility_types.csv`) and never read the row count as a count of
-  research facilities:
-
-  ```sql
-  WHERE facility_type NOT LIKE 'protected-area-%'   -- research organisations
-  ```
+  research facilities — `WHERE facility_type NOT LIKE 'protected-area-%'`
+  selects the research organisations.
 - **`funding_links` is a projection of `funding_events`,** kept for backwards
   compatibility and materialised as its own file. Same 3,634 rows, 7 columns
   instead of 18. Use `funding_events` unless you specifically want the narrow
@@ -259,9 +256,39 @@ and feature count.
 cluttering layers default off (`DEFAULT_OFF` in `src/overlays.js`). It has no
 bearing on fetching them.
 
-The `regions` Parquet table carries one row per overlay polygon with its
-attributes and network linkage, but **not** its geometry. Join
-`regions.region_id` to the overlay features when you need both.
+### Joining `regions` to the overlay geometry
+
+The `regions` Parquet table carries overlay polygons as attribute rows —
+network linkage, manager, designation year — but **not** their geometry.
+
+Two things to know before you join:
+
+- **`regions` covers 7 of the 15 layers, not all of them.** Its 147 rows come
+  only from `nps-coastal` (44), `nep-programs` (28), `nerr-reserves` (28),
+  `neon-domains` (20), `marine-sanctuaries` (13), `epa-regions` (10) and
+  `marine-monuments` (4). The eight bulk `coastal-*`, `ramsar-us` and
+  `neon-sites` layers — 3,419 of the 3,566 overlay features — have no `regions`
+  rows at all.
+- **Overlay features do not carry `region_id`.** The join key is the pair
+  (`regions.source_file`, `regions.name`) against the layer filename and the
+  feature's `properties.name`. All 147 rows match on that pair.
+
+```python
+import json, duckdb
+con = duckdb.connect()
+regions = con.execute(
+    "SELECT region_id, name, source_file, kind, network_id "
+    "FROM 'https://tyson-swetnam.github.io/cod-kmap/public/parquet/regions.parquet'"
+).fetchall()
+by_key = {(r[2], r[1]): r for r in regions}       # (source_file, name) -> row
+
+layer = "marine-sanctuaries.geojson"
+gj = json.load(open(f"public/overlays/{layer}"))  # or fetch it over HTTP
+for feat in gj["features"]:
+    row = by_key.get((layer, feat["properties"]["name"]))
+    if row:
+        feat["properties"]["region_id"] = row[0]  # now geometry + attributes
+```
 
 ## Vocabulary endpoints
 
@@ -270,12 +297,24 @@ are byte-identical to `schema/vocab/` in the repository, which is canonical.
 
 | File | Header | Rows | Joins to |
 | --- | --- | --- | --- |
-| `public/vocab/facility_types.csv` | `slug,label,description` | 18 | `facilities.facility_type` |
-| `public/vocab/research_areas.csv` | `slug,label,gcmd_uri,parent_slug` | 40 | `research_areas.slug` |
-| `public/vocab/networks.csv` | `slug,label,aliases,level,url` | 35 | `networks.slug` |
+| `public/vocab/facility_types.csv` | `slug,label,description` | 18 | `facility_types.slug` = `facilities.facility_type` |
+| `public/vocab/research_areas.csv` | `slug,label,gcmd_uri,parent_slug` | 40 | `research_areas.area_id` |
+| `public/vocab/networks.csv` | `slug,label,aliases,level,url` | 35 | `networks.network_id` |
 
-`research_areas.csv` carries a `gcmd_uri` per row, so topics can be mapped onto
-NASA's GCMD keyword vocabulary.
+**Mind the column names.** The CSV column is called `slug` in all three files,
+but only `facility_types` uses that name in Parquet too. In the other two the
+matching column is `area_id` and `network_id` — the *values* are identical
+slugs, only the column name differs:
+
+```sql
+-- correct
+JOIN 'BASE/public/parquet/research_areas.parquet' ra ON ra.area_id = 'estuarine-ecology'
+-- research_areas.slug and networks.slug do NOT exist
+```
+
+`research_areas.csv` has a `gcmd_uri` column for mapping topics onto NASA's GCMD
+keyword vocabulary, but it is sparsely populated: **3 of the 40 rows** carry a
+URI; the rest are blank.
 
 ## Recipes
 
@@ -414,4 +453,4 @@ gitignored and `db/parquet/*.parquet` is the committed artifact. Rebuilding also
 re-creates the helper views from
 [`schema/schema.sql`](https://github.com/tyson-swetnam/cod-kmap/blob/main/schema/schema.sql),
 which do not exist over HTTP at all — see
-[For AI agents](for_ai_agents.md) for why.
+[For AI agents](https://tyson-swetnam.github.io/cod-kmap/docs/for_ai_agents.md) for why.
