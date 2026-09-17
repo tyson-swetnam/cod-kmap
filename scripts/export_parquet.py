@@ -2,8 +2,15 @@
 
 Produces:
   db/parquet/<table>.parquet
-  public/<table>.parquet            (copy that the static site serves)
+  public/parquet/<table>.parquet     (copy that the static site serves)
   public/facilities.geojson         (lightweight first-paint fallback)
+
+NOTE: the TABLES list below is NOT the inventory of the published data surface.
+It exports 14 tables; public/parquet/ holds 46, because ~20 other scripts
+(build_mvg_layout, build_person_registry, load_coastal_datasets, ...) write
+their own tables straight into db/parquet/ and public/parquet/. The only
+reliable inventory is the directory listing itself, which is what
+scripts/generate_agent_surface.py reads.
 """
 
 from __future__ import annotations

@@ -254,8 +254,11 @@ export async function initDB() {
   //
   //   person_validation    identifier-validation verdicts over person_registry,
   //                        one row per (registry row, check, run) so a
-  //                        re-validation appends rather than overwrites. Query
-  //                        v_person_validation_latest, not the raw table.
+  //                        re-validation appends rather than overwrites —
+  //                        filter to the newest run_id before counting.
+  //                        (schema.sql defines v_person_validation_latest for
+  //                        exactly this, but it is NOT in helperViews below,
+  //                        so that name does not exist in the browser.)
   //   coauthor_edges       provenanced co-authorship edges over the registry
   //                        node set. Distinct from registry_collaborations:
   //                        every row names the OpenAlex Work that proves it

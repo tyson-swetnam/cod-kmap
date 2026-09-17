@@ -4,6 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>cod-kmap — Coastal Observatory Design Knowledge Map</title>
+    <meta name="description" content="Knowledge map for the Coastal Observatory Design (COD): coastal research facilities, people, funding, publications and datasets, served as a MapLibre + DuckDB-Wasm site whose Parquet tables are queryable directly over HTTP." />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+    <!-- Agent surface. NOTE: text-extracting fetch tools discard <head>, so
+         these are a convenience for real crawlers only — the addresses an
+         agent can actually discover are the ones in body text: the <noscript>
+         directory below and the sidebar footer links. Both are absolute. -->
+    <link rel="alternate" type="text/plain"
+      title="llms.txt — machine-readable index of this site for AI agents"
+      href="./llms.txt" />
+    <link rel="alternate" type="text/plain"
+      title="llms-full.txt — full documentation corpus in one file"
+      href="./llms-full.txt" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
     <link rel="stylesheet" href="./src/styles.css" />
@@ -17,6 +29,48 @@
     </script>
   </head>
   <body>
+    <noscript>
+      <div class="noscript-directory">
+        <h1>cod-kmap — Coastal Observatory Design Knowledge Map</h1>
+        <p>
+          A directory of coastal research facilities, people, funding, publications
+          and datasets across the Americas. The interactive map is a JavaScript
+          application (MapLibre GL + DuckDB-Wasm) and renders nothing without
+          scripting — but every underlying document and data table is a plain
+          static file you can fetch directly.
+        </p>
+        <h2>If you are an AI agent or a text-only client</h2>
+        <ul>
+          <li><strong>Machine-readable index of this site:</strong>
+            <a href="https://tyson-swetnam.github.io/cod-kmap/llms.txt">https://tyson-swetnam.github.io/cod-kmap/llms.txt</a></li>
+          <li><strong>Whole documentation corpus in one file:</strong>
+            <a href="https://tyson-swetnam.github.io/cod-kmap/llms-full.txt">https://tyson-swetnam.github.io/cod-kmap/llms-full.txt</a></li>
+          <li><strong>Agent guide</strong> (endpoints, trust signals, how to query):
+            <a href="https://tyson-swetnam.github.io/cod-kmap/docs/for_ai_agents.md">https://tyson-swetnam.github.io/cod-kmap/docs/for_ai_agents.md</a></li>
+          <li><strong>Data endpoint reference</strong> (every table, column and URL):
+            <a href="https://tyson-swetnam.github.io/cod-kmap/docs/data_endpoints.md">https://tyson-swetnam.github.io/cod-kmap/docs/data_endpoints.md</a></li>
+          <li><strong>Machine-readable Parquet schema:</strong>
+            <a href="https://tyson-swetnam.github.io/cod-kmap/public/parquet/schema.json">https://tyson-swetnam.github.io/cod-kmap/public/parquet/schema.json</a></li>
+          <li><strong>Crawl surface:</strong>
+            <a href="https://tyson-swetnam.github.io/cod-kmap/sitemap.xml">sitemap.xml</a> ·
+            <a href="https://tyson-swetnam.github.io/cod-kmap/robots.txt">robots.txt</a></li>
+          <li><strong>Source repository:</strong>
+            <a href="https://github.com/tyson-swetnam/cod-kmap">https://github.com/tyson-swetnam/cod-kmap</a>
+            (contribution rules for coding agents in
+            <a href="https://github.com/tyson-swetnam/cod-kmap/blob/main/AGENTS.md">AGENTS.md</a>)</li>
+        </ul>
+        <p>
+          Every Parquet table is served at
+          <code>https://tyson-swetnam.github.io/cod-kmap/public/parquet/&lt;table&gt;.parquet</code>
+          over HTTP range requests, so DuckDB can query it remotely without
+          downloading the file:
+        </p>
+        <pre><code>INSTALL httpfs; LOAD httpfs;
+SELECT canonical_name, country, facility_type
+FROM 'https://tyson-swetnam.github.io/cod-kmap/public/parquet/facilities.parquet'
+LIMIT 10;</code></pre>
+      </div>
+    </noscript>
     <header id="topbar">
       <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle filters"
         aria-controls="sidebar" aria-expanded="false">
@@ -53,8 +107,14 @@
           <section id="overlays" class="sidebar-section"></section>
         </div>
         <section id="status" aria-live="polite">Loading data…</section>
+        <!-- These four links are the site's discoverable agent surface. They
+             are plain body text (not <head> metadata) on purpose: fetch tools
+             that convert a page to text keep body links and drop <head>. -->
         <footer>
           <a href="https://github.com/tyson-swetnam/cod-kmap" target="_blank" rel="noopener">Source on GitHub</a>
+          <a href="#/docs/for-ai-agents">For AI agents</a>
+          <a href="https://tyson-swetnam.github.io/cod-kmap/llms.txt" target="_blank" rel="noopener">llms.txt</a>
+          <a href="https://tyson-swetnam.github.io/cod-kmap/llms-full.txt" target="_blank" rel="noopener">llms-full.txt</a>
         </footer>
       </aside>
       <main id="viewport">

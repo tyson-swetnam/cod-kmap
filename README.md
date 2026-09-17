@@ -19,6 +19,8 @@ northern Caribbean, published as an interactive Leaflet map on GitHub Pages.
 | `index.html`, `src/` | MapLibre GL + `@duckdb/duckdb-wasm` static site (ES modules + CDN importmap — no build step). |
 | `public/` | Static data the site fetches at runtime: `facilities.geojson`, Parquet tables under `parquet/`, vocab CSVs under `vocab/`, polygon overlays under `overlays/`. |
 | `db/` | Built `cod_kmap.duckdb` and Parquet exports (gitignored). |
+| `docs/` | Human-authored Markdown, served raw at `/docs/*.md` and rendered by the Docs tab. Start with `docs/for_ai_agents.md` and `docs/data_endpoints.md`. |
+| `AGENTS.md` | Contribution rules for coding agents working in this repo. |
 | `.github/workflows/` | GitHub Pages deploy + weekly data-refresh workflows. |
 
 ## Subagent pipeline
@@ -54,13 +56,39 @@ python -m http.server 5173
 # then open http://localhost:5173/
 ```
 
+## Using the published data
+
+Every table the site displays is a Parquet file served with HTTP range-request
+support, so you can query one in place without downloading it:
+
+```sql
+INSTALL httpfs; LOAD httpfs;
+SELECT canonical_name, country, facility_type
+FROM 'https://tyson-swetnam.github.io/cod-kmap/public/parquet/facilities.parquet'
+LIMIT 10;
+```
+
+- **[`docs/data_endpoints.md`](docs/data_endpoints.md)** — every endpoint, all
+  46 tables with join keys, and recipes in DuckDB, Python, R and curl.
+- **[`docs/for_ai_agents.md`](docs/for_ai_agents.md)** — how agents should
+  consume the site, and the trust/provenance signals to read first.
+- **`/llms.txt`**, **`/llms-full.txt`** — machine-readable index and the whole
+  documentation corpus in one file.
+- **`/public/parquet/schema.json`** — columns, types and row counts for every
+  table.
+
 ## Deployment
 
-Push to `main`; `.github/workflows/deploy.yml` stages `index.html`, `src/`,
-and `public/` and publishes them to GitHub Pages. There is no Node build
-step — the site runs plain ES modules with a CDN importmap for MapLibre GL
-and DuckDB-Wasm. The weekly `refresh-data.yml` workflow re-runs the ingest
-pipeline and opens a PR with refreshed Parquet + GeoJSON artifacts.
+Push to `main`; `.github/workflows/deploy.yml` stages `index.html`,
+`favicon.svg`, `src/`, `public/` and `docs/`, runs
+`scripts/generate_agent_surface.py` to emit `robots.txt`, `sitemap.xml`,
+`llms.txt`, `llms-full.txt` and `public/parquet/schema.json`, then publishes to
+GitHub Pages. There is no Node build step — the site runs plain ES modules with
+a CDN importmap for MapLibre GL and DuckDB-Wasm. The generator runs with
+`--strict`, so a new page in `docs/` or a new Parquet table fails the build
+until it is registered (see `AGENTS.md`). The weekly `refresh-data.yml`
+workflow re-runs the ingest pipeline and opens a PR with refreshed Parquet +
+GeoJSON artifacts.
 
 ## External datasets
 

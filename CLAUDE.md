@@ -35,13 +35,17 @@ There is no test framework. `qa.py` is the only correctness gate; add new invari
 
 - **DuckDB on-disk format is not portable across versions** (e.g. 1.5.x writes a file 1.3.x cannot read). The `.duckdb` file is gitignored; the canonical committed artifact is `db/parquet/*.parquet`. After pulling, run `scripts/rebuild_db_from_parquet.py` before doing anything that opens the DB. See `scripts/rebuild_db_from_parquet.py` for the full rationale.
 
-- **Views don't survive parquet export.** `schema/schema.sql` defines helper views (`v_facility_funding_by_year`, `v_funder_funding_by_year`, `v_facility_key_personnel`, `v_funding_ledger`, `v_person_enriched`) — these are re-created in the browser by `src/db.js` after registering parquet tables. Add new views in **both** places or the SQL tab will lose them.
+- **Views don't survive parquet export.** `schema/schema.sql` defines 15 views; `src/db.js` re-creates only **six** of them in the browser (`v_facility_funding_by_year`, `v_funder_funding_by_year`, `v_facility_key_personnel`, `v_funding_ledger`, `v_person_enriched`, `v_cod_team_enriched`) — lazily, on first use of the SQL tab. Add a new web-facing view in **both** places or the SQL tab will lose it. The other eight exist only against a local DuckDB (the 15th, `funding_links`, is materialised by the export and ships as a parquet *table*); `docs/for_ai_agents.md` publishes that three-way split, so keep it in step. `scripts/generate_agent_surface.py` derives the list by parsing the `helperViews` array, so it cannot drift on its own.
 
 - **Arrow LIST/STRUCT columns are not plain JS arrays.** DuckDB-Wasm 1.29 returns Arrow Vectors that have `.length` but fail `Array.isArray()`. Always run row results through `arrowToPlain()` / `unwrapRow()` from `src/db.js` before downstream view code touches them — see the comment block in that file for the trap this fixed.
 
 - **Map sources need `Feature` shapes, not raw rows.** `query()` in `src/db.js` wraps each row in `{ type: 'Feature', geometry: { type: 'Point', coordinates: [...] }, properties: ... }` and drops rows with null coordinates. MapLibre silently skips rows that lack `geometry`.
 
 - **Vocabularies are duplicated** between `schema/vocab/` (canonical, used by ingest/QA) and `public/vocab/` (served to the browser for filter labels). Keep them in sync — there is a recent commit `c08fd86` that fixed exactly this drift.
+
+- **The agent surface is generated, and CI fails on drift.** `scripts/generate_agent_surface.py` writes `robots.txt`, `sitemap.xml`, `llms.txt`, `llms-full.txt` and `public/parquet/schema.json` into `_site` at deploy time (it needs `pip install duckdb` only to read Parquet column types; without it everything else still builds). `deploy.yml` runs it with `--strict`, so a **new page in `docs/` breaks the build** until it is added to `DOC_META` in that script AND to `DOC_PAGES` in `src/views/docs.js`; a **new Parquet table breaks it** until it is added to `TABLE_GROUPS`. That is deliberate — it is what keeps the published index honest. Nothing it emits is committed; don't hand-edit `llms.txt`.
+
+- **Don't add YAML frontmatter to `docs/*.md`.** `mdToHtml` in `src/views/docs.js` has no frontmatter handling: `---` becomes an `<hr>` and the YAML renders as visible paragraphs on the Docs tab. Page metadata lives in `DOC_META` instead.
 
 - **`COMMIT_*.sh` are one-shot driver scripts**, gitignored, not source. Don't read them as documentation of current state — they are historical commit drivers.
 

@@ -38,8 +38,21 @@ jobs:
           # Docs tab returns HTTP 404 for every page.
           cp -R docs _site/docs
 
-      - name: Generate llms.txt and llms-full.txt
-        run: python3 scripts/generate_agent_surface.py _site
+      # Agent surface: robots.txt, sitemap.xml, llms.txt, llms-full.txt and
+      # public/parquet/schema.json. duckdb is needed only to read column names,
+      # types and row counts out of the staged Parquet files — without it the
+      # generator still writes every output, minus the column lists and
+      # schema.json. --strict fails the build on documentation drift (a page in
+      # docs/ that is missing from DOC_META in the generator or from DOC_PAGES
+      # in src/views/docs.js, or a new Parquet table that no group claims).
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Generate the agent surface (llms.txt, robots.txt, sitemap.xml)
+        run: |
+          set -eu
+          pip install --quiet duckdb
+          python3 scripts/generate_agent_surface.py _site --strict
 
       - uses: actions/upload-pages-artifact@v3
         with:

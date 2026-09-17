@@ -1104,9 +1104,15 @@ CREATE OR REPLACE TABLE coauthor_candidates (
 -------------------------------------------------------------------------------
 -- Validation & co-authorship helper views
 -------------------------------------------------------------------------------
--- Reminder (CLAUDE.md): views do not survive the parquet export. All three
--- views below are also defined in the `helperViews` array in src/db.js so the
--- SQL tab keeps them in the browser. Change one, change both.
+-- Reminder (CLAUDE.md): views do not survive the parquet export, and these
+-- three are NOT among the views src/db.js re-creates in the browser (that
+-- array holds v_facility_funding_by_year, v_funder_funding_by_year,
+-- v_facility_key_personnel, v_funding_ledger, v_person_enriched and
+-- v_cod_team_enriched). So they exist only against a local DuckDB: the SQL tab
+-- cannot select from them, and neither can an external client, because a view
+-- is not a file. Their base tables (person_validation, coauthor_edges,
+-- person_registry) ARE published as parquet, so add a view here to the
+-- `helperViews` array in src/db.js if the app should be able to use it.
 
 -- Latest verdict per (row, check) — a validation sweep appends rather than
 -- overwrites, so almost every consumer wants this rather than the raw table.

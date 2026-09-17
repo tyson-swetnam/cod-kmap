@@ -448,9 +448,49 @@ footer {
   padding: 6px 14px;
   border-top: 1px solid var(--c-border);
   background: var(--c-surface);
+  /* Four links now live here (source, agent guide, llms.txt, llms-full.txt) —
+     wrap rather than overflow the sidebar at narrow widths. */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
 }
 footer a { color: var(--c-muted); font-size: 0.74rem; text-decoration: none; }
 footer a:hover { color: var(--c-primary); }
+
+/* ── No-script / agent directory ────────────────────────────────── */
+/* index.html opens with a <noscript> block listing the site's static
+   addresses (llms.txt, the raw docs, the Parquet endpoints). The app itself
+   renders nothing without JavaScript, so this is what a text-only client or
+   an AI fetcher sees. Browsers hide <noscript> content when scripting is
+   enabled, so none of this affects the running app. */
+.noscript-directory {
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: 28px 22px 40px;
+  color: var(--c-text);
+}
+.noscript-directory h1 { font-size: 1.5rem; margin: 0 0 12px; color: var(--c-primary-d); }
+.noscript-directory h2 { font-size: 1.05rem; margin: 26px 0 8px; }
+.noscript-directory p { margin: 0 0 12px; max-width: 46rem; }
+.noscript-directory ul { margin: 0 0 16px; padding-left: 20px; }
+.noscript-directory li { margin-bottom: 7px; word-break: break-word; }
+.noscript-directory a { color: var(--c-primary); }
+.noscript-directory code {
+  font-size: 0.85em;
+  background: var(--c-bg-alt);
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+  word-break: break-all;
+}
+.noscript-directory pre {
+  background: var(--c-bg-alt);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  overflow-x: auto;
+  font-size: 0.82rem;
+}
+.noscript-directory pre code { background: none; padding: 0; word-break: normal; }
 
 /* ── Map ────────────────────────────────────────────────────────── */
 #map { height: 100%; width: 100%; background: #eef2f4; }

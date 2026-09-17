@@ -27,14 +27,22 @@ const BASE = new URL('./', document.baseURI).href;
 
 // One entry per markdown file under /docs/. Order = tab order in the
 // UI. The first entry is the default tab when no slug is in the URL.
+// Keep in step with DOC_META in scripts/generate_agent_surface.py, which
+// carries the one-line description each page gets in the published llms.txt.
+// That generator warns when a docs/*.md file is missing from either list —
+// a file absent HERE still ships and is still indexed, but has no tab.
 const DOC_PAGES = [
+  { title: 'For AI Agents',             path: 'docs/for_ai_agents.md' },
+  { title: 'Data Endpoints',            path: 'docs/data_endpoints.md' },
   { title: 'Purpose & MSI Handout',     path: 'docs/cod_purpose_and_msi_handout.md' },
   { title: 'Methods',                   path: 'docs/METHODS.md' },
   { title: 'Team, Scholars & Data',     path: 'docs/team_scholars_datasets_methods.md' },
   { title: 'Person Registry',           path: 'docs/person_registry.md' },
+  { title: 'Validation Report',         path: 'docs/VALIDATION_REPORT.md' },
   { title: 'References',                path: 'docs/REFERENCES.md' },
   { title: 'Reference Documents Report',path: 'docs/reference_documents_report.md' },
   { title: 'Map Visualization Plan',    path: 'docs/map_visualization_plan.md' },
+  { title: 'Network Fix Metrics',       path: 'docs/NETWORK_FIX_METRICS.md' },
   { title: 'Funding Pipeline Plan',     path: 'docs/funding_pipeline_plan.md' },
   { title: 'Suitability Roadmap',       path: 'docs/suitability_roadmap.md' },
   { title: 'Personnel Gap Research',    path: 'docs/personnel_gap_research_plan.md' },
