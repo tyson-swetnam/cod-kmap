@@ -271,7 +271,7 @@ TABLE_GROUPS: list[tuple[str, str, list[str]]] = [
 # Short clarifications for tables whose name does not carry its meaning, or
 # where a naive query would be read wrongly.
 TABLE_NOTES: dict[str, str] = {
-    "facilities": "mixes two populations — 210 research organisations and "
+    "facilities": "mixes two populations — 223 research organisations and "
                   "3,309 protected-area units (facility_type prefixed "
                   "protected-area-). Filter on facility_type; do not read the "
                   "row count as a count of research facilities",

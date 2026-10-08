@@ -66861,6 +66861,253 @@
 "url": "https://www.ramsar.org/wetland/united-states-of-america",
 "parent_org": "Ramsar Convention on Wetlands"
 }
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-73.83686,
+40.58248
+]
+},
+"properties": {
+"id": "20ce6072b3bccc57",
+"name": "Jamaica Bay-Rockaway Parks Conservancy",
+"acronym": "JBRPC",
+"type": "nonprofit",
+"country": "US",
+"url": "https://www.jbrpc.org/",
+"parent_org": "Fund for the City of New York"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-77.04398,
+38.90745
+]
+},
+"properties": {
+"id": "f3f940ab8a1a752c",
+"name": "Ocean Conservancy",
+"acronym": null,
+"type": "nonprofit",
+"country": "US",
+"url": "https://oceanconservancy.org/",
+"parent_org": null
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-122.42808,
+37.80558
+]
+},
+"properties": {
+"id": "b9318478d5ec9674",
+"name": "Golden Gate National Parks Conservancy",
+"acronym": "GGNPC",
+"type": "nonprofit",
+"country": "US",
+"url": "https://www.parksconservancy.org/",
+"parent_org": null
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-122.27368,
+37.80654
+]
+},
+"properties": {
+"id": "9f4f2e6f9572bdae",
+"name": "California State Coastal Conservancy",
+"acronym": "SCC",
+"type": "state",
+"country": "US",
+"url": "https://scc.ca.gov/",
+"parent_org": "California Natural Resources Agency"
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-118.32365,
+33.3429
+]
+},
+"properties": {
+"id": "abddeb6fcf070b8d",
+"name": "Catalina Island Conservancy",
+"acronym": null,
+"type": "nonprofit",
+"country": "US",
+"url": "https://www.catalinaconservancy.org/",
+"parent_org": null
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-118.06142,
+33.71117
+]
+},
+"properties": {
+"id": "3719fb18d2b0ddeb",
+"name": "Bolsa Chica Conservancy",
+"acronym": null,
+"type": "nonprofit",
+"country": "US",
+"url": "https://bolsachica.org/",
+"parent_org": null
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-81.78889,
+26.16537
+]
+},
+"properties": {
+"id": "ed7476512acab8cd",
+"name": "Conservancy of Southwest Florida",
+"acronym": null,
+"type": "nonprofit",
+"country": "US",
+"url": "https://www.conservancy.org/",
+"parent_org": null
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-76.5132,
+38.97776
+]
+},
+"properties": {
+"id": "9c881ef72f5b3a36",
+"name": "Chesapeake Conservancy",
+"acronym": null,
+"type": "nonprofit",
+"country": "US",
+"url": "https://www.chesapeakeconservancy.org/",
+"parent_org": null
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-82.04559,
+26.44508
+]
+},
+"properties": {
+"id": "549e462be1d2b139",
+"name": "Sanibel-Captiva Conservation Foundation",
+"acronym": "SCCF",
+"type": "nonprofit",
+"country": "US",
+"url": "https://sccf.org/",
+"parent_org": null
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-79.37806,
+43.67184
+]
+},
+"properties": {
+"id": "2b464167d9fb1263",
+"name": "Nature Conservancy of Canada",
+"acronym": "NCC",
+"type": "international-nonprofit",
+"country": "CA",
+"url": "https://www.natureconservancy.ca/",
+"parent_org": null
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-82.33539,
+29.69615
+]
+},
+"properties": {
+"id": "d5e0fb230bef702a",
+"name": "Sea Turtle Conservancy",
+"acronym": "STC",
+"type": "nonprofit",
+"country": "US",
+"url": "https://conserveturtles.org/",
+"parent_org": null
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-117.84037,
+33.57488
+]
+},
+"properties": {
+"id": "401cf50aa38f479f",
+"name": "Crystal Cove Conservancy",
+"acronym": null,
+"type": "nonprofit",
+"country": "US",
+"url": "https://crystalcove.org/",
+"parent_org": null
+}
+},
+{
+"type": "Feature",
+"geometry": {
+"type": "Point",
+"coordinates": [
+-117.27424,
+33.01334
+]
+},
+"properties": {
+"id": "60f627d393b535c9",
+"name": "Nature Collective",
+"acronym": null,
+"type": "nonprofit",
+"country": "US",
+"url": "https://naturecollective.org/",
+"parent_org": null
+}
 }
 ]
 }

@@ -148,7 +148,7 @@ This dataset is assembled by an automated pipeline from public sources, with
 targeted human curation. It is a research artifact, not an authoritative
 registry. Signals to read before you rely on a row:
 
-- **`facilities` is not a list of research facilities.** Of its 3,519 rows, 210
+- **`facilities` is not a list of research facilities.** Of its 3,532 rows, 223
   are research organisations and 3,309 are protected-area units. Filter
   `facility_type NOT LIKE 'protected-area-%'` before quoting any count.
 - **Source, not us.** Facility records carry `source_url`, `retrieved_at` and a

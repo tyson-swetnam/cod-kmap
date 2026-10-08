@@ -10,7 +10,7 @@
 // ------------------------------------------------
 // Region area used to be proportional to research_areas_active.n_facilities.
 // Measured against the shipped site parquet, that made the map a state-park
-// index: of 3,519 catalogued facilities, 3,309 are protected areas
+// index: of 3,532 catalogued facilities, 3,309 are protected areas
 // (facility_type LIKE 'protected-area%'), every one of them assigned to
 // "Coastal terrestrial ecosystems", and they carry ZERO datasets and ZERO
 // researchers. One region therefore claimed 94.4% of the map area while the
@@ -3785,7 +3785,7 @@ export function initNetworkView(container) {
             <p><strong>Region size</strong> is a data-and-people weight —
             organisations, plus a bonus for each site that produces datasets,
             plus the datasets themselves, plus the researchers anchored there.
-            It is <em>not</em> the catalogue count: 3,309 of the 3,519
+            It is <em>not</em> the catalogue count: 3,309 of the 3,532
             catalogued facilities are protected areas holding zero datasets and
             zero researchers, and sizing by raw count gave them 94% of the map.
             They stay catalogued behind the off-by-default <em>Protected

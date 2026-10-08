@@ -8,7 +8,7 @@ identifier, so a researcher's OpenAlex affiliation (which always carries a
 ROR) has nothing to join to. This resolves each facility against the
 OpenAlex /institutions endpoint and stores the ROR.
 
-Only research organisations are attempted. Of 3,519 catalogued facilities,
+Only research organisations are attempted. Of 3,532 catalogued facilities,
 3,309 are protected areas — state parks, wildlife refuges, private
 preserves. A national estuarine reserve or a state park is not a research
 organisation and will never hold a ROR; asking OpenAlex for one invites
