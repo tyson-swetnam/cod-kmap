@@ -225,9 +225,14 @@ def insert_records(conn: duckdb.DuckDBPyConnection, records: list[Record]) -> No
 
     for r in records:
         d = r.raw
+        # Columns are named because `ror` sits between `established` and
+        # `created_at`: a positional VALUES list of 14 no longer fits.
         conn.execute(
-            """INSERT OR REPLACE INTO main.facilities VALUES
-               (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
+            """INSERT OR REPLACE INTO main.facilities
+               (facility_id, canonical_name, acronym, parent_org, facility_type,
+                country, region, hq_address, hq_lat, hq_lng, url, contact,
+                established, ror, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
             [
                 r.fid,
                 d.get("canonical_name"),
@@ -242,6 +247,7 @@ def insert_records(conn: duckdb.DuckDBPyConnection, records: list[Record]) -> No
                 d.get("url"),
                 d.get("contact"),
                 d.get("established"),
+                d.get("ror"),
             ],
         )
 
