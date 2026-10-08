@@ -95,12 +95,12 @@ The spine of the dataset. `facilities` is one row per catalogued site; `regions`
 
 | Table | Rows | Size | Cols | Join keys |
 | --- | --- | --- | --- | --- |
-| `facilities` | 3,519 | 205 KB | 15 | facility_id (pk), ror |
-| `locations` | 3,566 | 230 KB | 7 | location_id (pk), facility_id |
+| `facilities` | 3,532 | 209 KB | 15 | facility_id (pk), ror |
+| `locations` | 3,586 | 232 KB | 7 | location_id (pk), facility_id |
 | `facility_types` | 18 | 1 KB | 3 | slug (pk) |
-| `provenance` * | 3,534 | 65 KB | 6 | record_id (pk) |
+| `provenance` * | 3,547 | 66 KB | 6 | record_id (pk) |
 | `regions` | 147 | 15 KB | 13 | region_id (pk), network_id |
-| `facility_regions` | 366 | 5 KB | 4 | facility_id + region_id |
+| `facility_regions` | 390 | 6 KB | 4 | facility_id + region_id |
 | `region_area_links` | 385 | 3 KB | 2 | region_id + area_id |
 
 ### Research areas and networks
@@ -111,7 +111,7 @@ Controlled-vocabulary topic and consortium membership for facilities.
 | --- | --- | --- | --- | --- |
 | `research_areas` | 40 | 2 KB | 4 | area_id (pk), parent_id |
 | `research_areas_active` | 40 | 2 KB | 5 | area_id (pk) |
-| `area_links` | 9,624 | 72 KB | 2 | facility_id + area_id |
+| `area_links` | 9,670 | 73 KB | 2 | facility_id + area_id |
 | `networks` | 35 | 2 KB | 4 | network_id (pk) |
 | `network_membership` | 688 | 12 KB | 3 | facility_id + network_id |
 | `area_coverage_matrix` | 147 | 2 KB | 4 | area_id |
@@ -178,7 +178,7 @@ Precomputed groupings and coordinates that drive the Network tab's MVG cartogram
 
 | Table | Rows | Size | Cols | Join keys |
 | --- | --- | --- | --- | --- |
-| `facility_primary_groups` | 3,519 | 61 KB | 4 | facility_id + primary_area_id |
+| `facility_primary_groups` | 3,532 | 62 KB | 4 | facility_id + primary_area_id |
 | `person_primary_groups` | 280 | 8 KB | 5 | person_id + primary_area_id |
 | `mvg_node_layout` * | 713 | 64 KB | 11 | source_id |
 | `mvg_area_polygons` * | 21 | 27 KB | 9 | (none) |
@@ -186,7 +186,7 @@ Precomputed groupings and coordinates that drive the Network tab's MVG cartogram
 
 ### Reading the catalogue
 
-- **`facilities` mixes two populations.** Of its 3,519 rows, 210 are research
+- **`facilities` mixes two populations.** Of its 3,532 rows, 223 are research
   organisations and 3,309 are protected-area units — the three
   `protected-area-federal` / `-state` / `-private` types. Filter on
   `facility_type` (resolved through `facility_types.slug`, or
@@ -214,7 +214,7 @@ Precomputed groupings and coordinates that drive the Network tab's MVG cartogram
 
 ### Facility points
 
-`BASE + public/facilities.geojson` — 1.01 MB, 3,519 point features. This is the
+`BASE + public/facilities.geojson` — 1.02 MB, 3,532 point features. This is the
 map's first-paint fallback, and the quickest way to get coordinates without a
 Parquet reader. Feature properties: `id`, `name`, `acronym`, `type`, `country`,
 `parent_org`, `url`.

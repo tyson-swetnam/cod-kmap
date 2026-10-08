@@ -24,8 +24,10 @@ Steps:
      dedup rule. Re-running the same file is allowed and idempotent.
   3. Delete this file's previous locations / area_links / network_membership
      / provenance rows, then insert via ingest.insert_records.
-  4. Recompute facility_regions (populate_regions) and re-export parquet +
-     public/facilities.geojson (export_parquet).
+  4. Point-in-polygon the new facilities against the regions already in the
+     DB, then re-export parquet + public/facilities.geojson (export_parquet).
+     populate_regions.populate() is not reused: it starts by deleting
+     `regions`, which other tables reference by foreign key once loaded.
 
 `funders` must be empty: ingest.insert_records writes them to the legacy
 `funding_links`, which is now a view over `funding_events`. Funding edges
@@ -47,7 +49,9 @@ import export_parquet  # noqa: E402
 from ingest import (  # noqa: E402
     DB_PATH, ROOT, VOCAB_DIR, Record, assign_ids, haversine_km, insert_records,
 )
-from populate_regions import populate as populate_regions  # noqa: E402
+from populate_regions import load_region_rows, overlay_files  # noqa: E402
+from shapely import STRtree  # noqa: E402
+from shapely.geometry import Point  # noqa: E402
 
 
 def vocab(name: str) -> set[str]:
@@ -104,6 +108,23 @@ def collisions(conn: duckdb.DuckDBPyConnection, records: list[Record]) -> list[s
     return errs
 
 
+def link_regions(conn: duckdb.DuckDBPyConnection, records: list[Record]) -> int:
+    known = {rid for (rid,) in conn.execute("SELECT region_id FROM main.regions").fetchall()}
+    rows = [r for r in load_region_rows(overlay_files()) if r["region_id"] in known]
+    tree = STRtree([r["geometry"] for r in rows])
+    n = 0
+    for rec in records:
+        pt = Point(rec.raw["hq"]["lng"], rec.raw["hq"]["lat"])
+        for idx in tree.query(pt):
+            if rows[int(idx)]["geometry"].contains(pt):
+                conn.execute(
+                    "INSERT OR IGNORE INTO main.facility_regions VALUES (?, ?, 'within', 0.0)",
+                    [rec.fid, rows[int(idx)]["region_id"]],
+                )
+                n += 1
+    return n
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("file", type=Path)
@@ -135,7 +156,7 @@ def main() -> int:
             return 0
 
         fids = [r.fid for r in records]
-        for table in ("locations", "area_links", "network_membership"):
+        for table in ("locations", "area_links", "network_membership", "facility_regions"):
             conn.execute(f"DELETE FROM main.{table} WHERE facility_id IN ?", [fids])
         conn.execute(
             "DELETE FROM main.provenance WHERE record_type = 'facility' "
@@ -143,8 +164,8 @@ def main() -> int:
         )
         insert_records(conn, records)
         print(f"[ok] inserted {len(records)} facilities from {path.relative_to(ROOT)}")
+        print(f"[ok] facility_regions: {link_regions(conn, records)} containment edges")
 
-    populate_regions(DB_PATH)
     return export_parquet.main()
 
 

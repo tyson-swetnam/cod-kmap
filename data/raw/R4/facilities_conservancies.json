@@ -1,0 +1,572 @@
+[
+  {
+    "record_id": "R4-C001",
+    "canonical_name": "Jamaica Bay-Rockaway Parks Conservancy",
+    "acronym": "JBRPC",
+    "parent_org": "Fund for the City of New York",
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "Mid-Atlantic / New York Harbor",
+    "hq": {
+      "address": "114-04 Beach Channel Drive, Rockaway Park, NY 11694, USA",
+      "lat": 40.58248,
+      "lng": -73.83686
+    },
+    "locations": [
+      {
+        "label": "JBRPC HQ",
+        "address": "114-04 Beach Channel Drive, Rockaway Park, NY 11694, USA",
+        "lat": 40.58248,
+        "lng": -73.83686,
+        "role": "headquarters"
+      },
+      {
+        "label": "Floyd Bennett Field native plant nursery",
+        "address": "Floyd Bennett Field, Brooklyn, NY 11234, USA",
+        "lat": 40.59453,
+        "lng": -73.88804,
+        "role": "field-station"
+      },
+      {
+        "label": "Jamaica Bay Wildlife Refuge West Pond living shoreline",
+        "address": "Jamaica Bay Wildlife Refuge, Queens, NY 11693, USA",
+        "lat": 40.61673,
+        "lng": -73.82495,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "salt-marshes",
+      "beach-and-dune",
+      "coastal-terrestrial-ecosystems",
+      "wildlife-conservation"
+    ],
+    "networks": [],
+    "funders": [],
+    "url": "https://www.jbrpc.org/",
+    "contact": null,
+    "established": 2013,
+    "provenance": {
+      "source_url": "https://www.jbrpc.org/about",
+      "retrieved_at": "2026-10-08",
+      "confidence": "high",
+      "agent": "R4"
+    }
+  },
+  {
+    "record_id": "R4-C002",
+    "canonical_name": "Ocean Conservancy",
+    "acronym": null,
+    "parent_org": null,
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "National / Washington DC HQ",
+    "hq": {
+      "address": "1300 19th Street NW, 8th Floor, Washington, DC 20036, USA",
+      "lat": 38.90745,
+      "lng": -77.04398
+    },
+    "locations": [
+      {
+        "label": "Ocean Conservancy HQ",
+        "address": "1300 19th Street NW, 8th Floor, Washington, DC 20036, USA",
+        "lat": 38.90745,
+        "lng": -77.04398,
+        "role": "headquarters"
+      }
+    ],
+    "research_areas": [
+      "marine-debris-and-plastics",
+      "marine-policy-and-socio-economics",
+      "fisheries-and-aquaculture",
+      "ocean-acidification",
+      "climate-and-sea-level"
+    ],
+    "networks": [],
+    "funders": [],
+    "url": "https://oceanconservancy.org/",
+    "contact": null,
+    "established": 1972,
+    "provenance": {
+      "source_url": "https://oceanconservancy.org/about/",
+      "retrieved_at": "2026-10-08",
+      "confidence": "high",
+      "agent": "R4"
+    },
+    "ror": "https://ror.org/04004q467"
+  },
+  {
+    "record_id": "R4-C003",
+    "canonical_name": "Golden Gate National Parks Conservancy",
+    "acronym": "GGNPC",
+    "parent_org": null,
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "Pacific / San Francisco Bay",
+    "hq": {
+      "address": "201 Fort Mason, San Francisco, CA 94123, USA",
+      "lat": 37.80558,
+      "lng": -122.42808
+    },
+    "locations": [
+      {
+        "label": "GGNPC HQ",
+        "address": "201 Fort Mason, San Francisco, CA 94123, USA",
+        "lat": 37.80558,
+        "lng": -122.42808,
+        "role": "headquarters"
+      },
+      {
+        "label": "Golden Gate Raptor Observatory",
+        "address": "Building 1064, Fort Cronkhite, Sausalito, CA 94965, USA",
+        "lat": 37.83258,
+        "lng": -122.53776,
+        "role": "field-station"
+      },
+      {
+        "label": "Hawk Hill raptor count site",
+        "address": "Hawk Hill, Marin Headlands, CA, USA",
+        "lat": 37.82855,
+        "lng": -122.49877,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "coastal-terrestrial-ecosystems",
+      "wildlife-conservation",
+      "estuaries-and-wetlands"
+    ],
+    "networks": [],
+    "funders": [],
+    "url": "https://www.parksconservancy.org/",
+    "contact": null,
+    "established": 1981,
+    "provenance": {
+      "source_url": "https://www.parksconservancy.org/programs/golden-gate-raptor-observatory",
+      "retrieved_at": "2026-10-08",
+      "confidence": "high",
+      "agent": "R4"
+    },
+    "ror": "https://ror.org/02aps7m22"
+  },
+  {
+    "record_id": "R4-C004",
+    "canonical_name": "California State Coastal Conservancy",
+    "acronym": "SCC",
+    "parent_org": "California Natural Resources Agency",
+    "facility_type": "state",
+    "country": "US",
+    "region": "Pacific / California",
+    "hq": {
+      "address": "1515 Clay Street, 10th Floor, Oakland, CA 94612, USA",
+      "lat": 37.80654,
+      "lng": -122.27368
+    },
+    "locations": [
+      {
+        "label": "SCC HQ",
+        "address": "1515 Clay Street, 10th Floor, Oakland, CA 94612, USA",
+        "lat": 37.80654,
+        "lng": -122.27368,
+        "role": "headquarters"
+      }
+    ],
+    "research_areas": [
+      "climate-and-sea-level",
+      "estuaries-and-wetlands",
+      "tidal-wetlands",
+      "marine-policy-and-socio-economics"
+    ],
+    "networks": [],
+    "funders": [],
+    "url": "https://scc.ca.gov/",
+    "contact": null,
+    "established": 1976,
+    "provenance": {
+      "source_url": "https://scc.ca.gov/about/",
+      "retrieved_at": "2026-10-08",
+      "confidence": "high",
+      "agent": "R4"
+    },
+    "ror": "https://ror.org/009z6a066"
+  },
+  {
+    "record_id": "R4-C005",
+    "canonical_name": "Catalina Island Conservancy",
+    "acronym": null,
+    "parent_org": null,
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "Pacific / Southern California",
+    "hq": {
+      "address": "708 Crescent Avenue, Avalon, CA 90704, USA",
+      "lat": 33.3429,
+      "lng": -118.32365
+    },
+    "locations": [
+      {
+        "label": "Catalina Island Conservancy HQ",
+        "address": "708 Crescent Avenue, Avalon, CA 90704, USA",
+        "lat": 33.3429,
+        "lng": -118.32365,
+        "role": "headquarters"
+      },
+      {
+        "label": "Ackerman Native Plant Nursery / Middle Ranch",
+        "address": "Middle Ranch, Santa Catalina Island, CA 90704, USA",
+        "lat": 33.35575,
+        "lng": -118.43738,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "coastal-terrestrial-ecosystems",
+      "wildlife-conservation"
+    ],
+    "networks": [],
+    "funders": [],
+    "url": "https://www.catalinaconservancy.org/",
+    "contact": null,
+    "established": 1972,
+    "provenance": {
+      "source_url": "https://catalinaconservancy.org/conservation/wildlife-programs/catalina-island-fox/",
+      "retrieved_at": "2026-10-08",
+      "confidence": "high",
+      "agent": "R4"
+    }
+  },
+  {
+    "record_id": "R4-C006",
+    "canonical_name": "Bolsa Chica Conservancy",
+    "acronym": null,
+    "parent_org": null,
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "Pacific / Southern California",
+    "hq": {
+      "address": "3842 Warner Avenue, Huntington Beach, CA 92649, USA",
+      "lat": 33.71117,
+      "lng": -118.06142
+    },
+    "locations": [
+      {
+        "label": "Bolsa Chica Conservancy HQ",
+        "address": "3842 Warner Avenue, Huntington Beach, CA 92649, USA",
+        "lat": 33.71117,
+        "lng": -118.06142,
+        "role": "headquarters"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "tidal-wetlands",
+      "seabirds",
+      "wildlife-conservation"
+    ],
+    "networks": [],
+    "funders": [],
+    "url": "https://bolsachica.org/",
+    "contact": null,
+    "established": 1990,
+    "provenance": {
+      "source_url": "https://bolsachica.org/about-us/",
+      "retrieved_at": "2026-10-08",
+      "confidence": "high",
+      "agent": "R4"
+    }
+  },
+  {
+    "record_id": "R4-C007",
+    "canonical_name": "Conservancy of Southwest Florida",
+    "acronym": null,
+    "parent_org": null,
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "Gulf of Mexico / Southwest Florida",
+    "hq": {
+      "address": "1495 Smith Preserve Way, Naples, FL 34102, USA",
+      "lat": 26.16537,
+      "lng": -81.78889
+    },
+    "locations": [
+      {
+        "label": "Conservancy of Southwest Florida HQ",
+        "address": "1495 Smith Preserve Way, Naples, FL 34102, USA",
+        "lat": 26.16537,
+        "lng": -81.78889,
+        "role": "headquarters"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "mangroves",
+      "wildlife-conservation",
+      "marine-ecosystems"
+    ],
+    "networks": [],
+    "funders": [],
+    "url": "https://www.conservancy.org/",
+    "contact": null,
+    "established": 1964,
+    "provenance": {
+      "source_url": "https://www.conservancy.org/about/history/",
+      "retrieved_at": "2026-10-08",
+      "confidence": "high",
+      "agent": "R4"
+    },
+    "ror": "https://ror.org/039s43t96"
+  },
+  {
+    "record_id": "R4-C008",
+    "canonical_name": "Chesapeake Conservancy",
+    "acronym": null,
+    "parent_org": null,
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "Mid-Atlantic / Chesapeake Bay",
+    "hq": {
+      "address": "1212 West Street, Annapolis, MD 21401, USA",
+      "lat": 38.97776,
+      "lng": -76.5132
+    },
+    "locations": [
+      {
+        "label": "Chesapeake Conservancy HQ",
+        "address": "1212 West Street, Annapolis, MD 21401, USA",
+        "lat": 38.97776,
+        "lng": -76.5132,
+        "role": "headquarters"
+      }
+    ],
+    "research_areas": [
+      "remote-sensing",
+      "estuaries-and-wetlands",
+      "coastal-terrestrial-ecosystems"
+    ],
+    "networks": [],
+    "funders": [],
+    "url": "https://www.chesapeakeconservancy.org/",
+    "contact": null,
+    "established": 2008,
+    "provenance": {
+      "source_url": "https://www.chesapeakeconservancy.org/contact-us/",
+      "retrieved_at": "2026-10-08",
+      "confidence": "high",
+      "agent": "R4"
+    }
+  },
+  {
+    "record_id": "R4-C009",
+    "canonical_name": "Sanibel-Captiva Conservation Foundation",
+    "acronym": "SCCF",
+    "parent_org": null,
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "Gulf of Mexico / Southwest Florida",
+    "hq": {
+      "address": "1300 Periwinkle Way, Sanibel, FL 33957, USA",
+      "lat": 26.44508,
+      "lng": -82.04559
+    },
+    "locations": [
+      {
+        "label": "SCCF HQ",
+        "address": "1300 Periwinkle Way, Sanibel, FL 33957, USA",
+        "lat": 26.44508,
+        "lng": -82.04559,
+        "role": "headquarters"
+      },
+      {
+        "label": "SCCF Marine Laboratory",
+        "address": "900 Tarpon Bay Road, Sanibel, FL 33957, USA",
+        "lat": 26.4422,
+        "lng": -82.08307,
+        "role": "lab"
+      }
+    ],
+    "research_areas": [
+      "harmful-algal-blooms",
+      "ocean-observing-systems",
+      "estuaries-and-wetlands",
+      "wildlife-conservation"
+    ],
+    "networks": [],
+    "funders": [],
+    "url": "https://sccf.org/",
+    "contact": null,
+    "established": 1967,
+    "provenance": {
+      "source_url": "https://sccf.org/about/",
+      "retrieved_at": "2026-10-08",
+      "confidence": "high",
+      "agent": "R4"
+    },
+    "ror": "https://ror.org/010tc4s75"
+  },
+  {
+    "record_id": "R4-C010",
+    "canonical_name": "Nature Conservancy of Canada",
+    "acronym": "NCC",
+    "parent_org": null,
+    "facility_type": "international-nonprofit",
+    "country": "CA",
+    "region": "Canada / national",
+    "hq": {
+      "address": "365 Bloor Street East, Suite 1501, Toronto, ON M4W 3L4, Canada",
+      "lat": 43.67184,
+      "lng": -79.37806
+    },
+    "locations": [
+      {
+        "label": "NCC HQ",
+        "address": "365 Bloor Street East, Suite 1501, Toronto, ON M4W 3L4, Canada",
+        "lat": 43.67184,
+        "lng": -79.37806,
+        "role": "headquarters"
+      }
+    ],
+    "research_areas": [
+      "coastal-terrestrial-ecosystems",
+      "wildlife-conservation",
+      "estuaries-and-wetlands"
+    ],
+    "networks": [],
+    "funders": [],
+    "url": "https://www.natureconservancy.ca/",
+    "contact": null,
+    "established": 1962,
+    "provenance": {
+      "source_url": "https://www.natureconservancy.ca/en/",
+      "retrieved_at": "2026-10-08",
+      "confidence": "high",
+      "agent": "R4"
+    },
+    "ror": "https://ror.org/04fg9yv80"
+  },
+  {
+    "record_id": "R4-C011",
+    "canonical_name": "Sea Turtle Conservancy",
+    "acronym": "STC",
+    "parent_org": null,
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "Southeast Atlantic / Caribbean",
+    "hq": {
+      "address": "4581 NW 6th Street, Suite A, Gainesville, FL 32609, USA",
+      "lat": 29.69615,
+      "lng": -82.33539
+    },
+    "locations": [
+      {
+        "label": "STC HQ",
+        "address": "4581 NW 6th Street, Suite A, Gainesville, FL 32609, USA",
+        "lat": 29.69615,
+        "lng": -82.33539,
+        "role": "headquarters"
+      },
+      {
+        "label": "STC Tortuguero station",
+        "address": "Tortuguero, Limón, Costa Rica",
+        "lat": 10.54715,
+        "lng": -83.50502,
+        "role": "field-station"
+      }
+    ],
+    "research_areas": [
+      "wildlife-conservation",
+      "marine-ecosystems",
+      "beach-and-dune"
+    ],
+    "networks": [],
+    "funders": [],
+    "url": "https://conserveturtles.org/",
+    "contact": null,
+    "established": 1959,
+    "provenance": {
+      "source_url": "https://conserveturtles.org/",
+      "retrieved_at": "2026-10-08",
+      "confidence": "high",
+      "agent": "R4"
+    },
+    "ror": "https://ror.org/032p73z44"
+  },
+  {
+    "record_id": "R4-C012",
+    "canonical_name": "Crystal Cove Conservancy",
+    "acronym": null,
+    "parent_org": null,
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "Pacific / Southern California",
+    "hq": {
+      "address": "5 Crystal Cove, Newport Coast, CA 92657, USA",
+      "lat": 33.57488,
+      "lng": -117.84037
+    },
+    "locations": [
+      {
+        "label": "Crystal Cove Conservancy HQ",
+        "address": "5 Crystal Cove, Newport Coast, CA 92657, USA",
+        "lat": 33.57488,
+        "lng": -117.84037,
+        "role": "headquarters"
+      }
+    ],
+    "research_areas": [
+      "marine-ecology",
+      "coastal-terrestrial-ecosystems",
+      "wildlife-conservation"
+    ],
+    "networks": [],
+    "funders": [],
+    "url": "https://crystalcove.org/",
+    "contact": null,
+    "established": 1999,
+    "provenance": {
+      "source_url": "https://crystalcove.org/monitoring-programs/",
+      "retrieved_at": "2026-10-08",
+      "confidence": "high",
+      "agent": "R4"
+    }
+  },
+  {
+    "record_id": "R4-C013",
+    "canonical_name": "Nature Collective",
+    "acronym": null,
+    "parent_org": null,
+    "facility_type": "nonprofit",
+    "country": "US",
+    "region": "Pacific / San Diego",
+    "hq": {
+      "address": "San Elijo Lagoon Nature Center, 2710 Manchester Avenue, Cardiff-by-the-Sea, CA 92007, USA",
+      "lat": 33.01334,
+      "lng": -117.27424
+    },
+    "locations": [
+      {
+        "label": "Nature Collective HQ",
+        "address": "San Elijo Lagoon Nature Center, 2710 Manchester Avenue, Cardiff-by-the-Sea, CA 92007, USA",
+        "lat": 33.01334,
+        "lng": -117.27424,
+        "role": "headquarters"
+      }
+    ],
+    "research_areas": [
+      "estuaries-and-wetlands",
+      "tidal-wetlands",
+      "wildlife-conservation"
+    ],
+    "networks": [],
+    "funders": [],
+    "url": "https://naturecollective.org/",
+    "contact": null,
+    "established": 1987,
+    "provenance": {
+      "source_url": "https://naturecollective.org/about/",
+      "retrieved_at": "2026-10-08",
+      "confidence": "high",
+      "agent": "R4"
+    }
+  }
+]
