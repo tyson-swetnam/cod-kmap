@@ -44,6 +44,12 @@ IDENTITY RULES (project non-negotiables, enforced in code and in the schema):
     member and one must never be added.
   * Every row written carries >=1 persistent identifier, a citable source_url,
     and a confidence in {high, medium, low}.
+  * A (canonical_id or person_id, openalex_id) pair on the blocklist
+    data/seed/bad_openalex_pairs.csv (an OpenAlex author record a review
+    found to be another person, or several people merged) is refused: the
+    validate stage does not fetch it and records a 'fail' verdict naming
+    the blocklist, and the match stage does not key the registry row on
+    it, so it proves no edge and resolves no co-author.
   * canonical_id values starting 'codp:' are COD-internal people with no public
     identifier BY CONSTRUCTION. Their public-identifier checks are
     'not_applicable', never 'fail'. Counting them as failures would pressure
@@ -82,6 +88,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import cod_db  # noqa: E402
+from wipe_misattributed_identifiers import (  # noqa: E402
+    BAD_PAIRS_CSV, bad_openalex_pairs, is_blocked)
 
 TOPIC_SET = "db/derived/coastal_topic_set.parquet"
 STATE = "db/derived/harvest_state.json"
@@ -140,6 +148,29 @@ def _stage_df(con, df: pd.DataFrame, table: str, stage: str) -> int:
         finally:
             con.unregister("_df_in")
     return len(df)
+
+
+def blocked_registry_keys(con) -> str:
+    """Create TEMP table _blocked (canonical_id, oa): every registry row whose
+    openalex_id is blocked for it (by canonical_id or person_id) in
+    bad_openalex_pairs.csv. Returns its name, for anti-joins."""
+    pairs = bad_openalex_pairs()
+    con.execute("CREATE OR REPLACE TEMP TABLE _blocked_pairs "
+                "(subject VARCHAR, oa VARCHAR)")
+    if pairs:
+        con.executemany("INSERT INTO _blocked_pairs VALUES (?, ?)", sorted(pairs))
+    con.execute("""
+        CREATE OR REPLACE TEMP TABLE _blocked AS
+        SELECT DISTINCT r.canonical_id,
+               upper(replace(r.openalex_id, 'https://openalex.org/', '')) AS oa
+        FROM person_registry r JOIN _blocked_pairs b
+          ON (b.subject = r.canonical_id OR b.subject = r.person_id)
+         AND b.oa = upper(replace(r.openalex_id, 'https://openalex.org/', ''))""")
+    n = cod_db.scalar(con, "SELECT count(*) FROM _blocked")
+    if n:
+        print(f"[blocked] {n} registry row(s) carry a blocked openalex_id "
+              f"({BAD_PAIRS_CSV.name}); they are not keyed on it", flush=True)
+    return "_blocked"
 
 
 def pairs_source(con) -> str:
@@ -283,11 +314,22 @@ def stage_validate(con, run_id: str, batch_size: int = 50) -> pd.DataFrame:
     reg = con.execute(
         "SELECT canonical_id, display_name, orcid, openalex_id, affiliation, "
         "       affiliation_ror, is_team, is_site_personnel, is_scholar, "
-        "       source_url "
+        "       source_url, person_id "
         "FROM person_registry WHERE tier = 'core' ORDER BY tier_rank").fetchdf()
     print(f"[validate] {len(reg):,} core-tier rows", flush=True)
 
-    ids = [short_id(v) for v in reg.openalex_id if isinstance(v, str) and v]
+    # A blocked author is never fetched for the row it is blocked on.
+    pairs = bad_openalex_pairs()
+    blocked = {r.canonical_id for r in reg.itertuples(index=False)
+               if isinstance(r.openalex_id, str)
+               and is_blocked(pairs, r.openalex_id, r.canonical_id,
+                              r.person_id if isinstance(r.person_id, str) else None)}
+    if blocked:
+        print(f"[validate] {len(blocked)} row(s) carry a blocked openalex_id; "
+              f"not fetched, recorded as fail", flush=True)
+    ids = [short_id(r.openalex_id) for r in reg.itertuples(index=False)
+           if isinstance(r.openalex_id, str) and r.openalex_id
+           and r.canonical_id not in blocked]
     got: dict[str, dict] = {}
     batches = [ids[i:i + batch_size] for i in range(0, len(ids), batch_size)]
     for bi, batch in enumerate(batches):
@@ -341,7 +383,13 @@ def stage_validate(con, run_id: str, batch_size: int = 50) -> pd.DataFrame:
                 confidence=conf, run_id=run_id, notes=None))
 
         # 1. OpenAlex author id resolves.
-        if not oa_id:
+        if r.canonical_id in blocked:
+            emit("openalex-author-resolves", "fail", "openalex_id", oa_id,
+                 "registry", oa_url,
+                 f"openalex_id is blocked for this row in {BAD_PAIRS_CSV.name} "
+                 f"(another person, or several merged); not fetched",
+                 "run scripts/wipe_misattributed_identifiers.py")
+        elif not oa_id:
             emit("openalex-author-resolves", "not_applicable", "none", None,
                  "registry", None, "no OpenAlex author id on the registry row")
         elif rec is None:
@@ -498,11 +546,16 @@ def stage_match(con, run_id: str) -> None:
     print(f"[match] {n_ca:,} distinct co-authors (no matching applied)",
           flush=True)
 
-    con.execute("""
+    # A registry row is never keyed on an openalex_id blocked for it.
+    blocked = blocked_registry_keys(con)
+    con.execute(f"""
         CREATE OR REPLACE TEMP TABLE _resolved AS
         WITH r AS (
           SELECT canonical_id, tier,
-                 replace(coalesce(openalex_id,''),'https://openalex.org/','') AS oa,
+                 CASE WHEN canonical_id IN (SELECT canonical_id FROM {blocked})
+                      THEN ''
+                      ELSE replace(coalesce(openalex_id,''),'https://openalex.org/','')
+                 END AS oa,
                  lower(replace(coalesce(orcid,''),'https://orcid.org/','')) AS orc
           FROM person_registry)
         SELECT c.*,
@@ -532,12 +585,13 @@ def stage_match(con, run_id: str) -> None:
     # spilled 647 GiB of temp and died with OutOfMemoryError: the intermediate
     # is the full cross of every pair row against two key tables. Narrowing
     # first turns it into a small join over ~1% of the rows.
-    con.execute("""
+    con.execute(f"""
         CREATE OR REPLACE TEMP TABLE _regkey AS
         SELECT canonical_id,
                replace(coalesce(openalex_id,''),'https://openalex.org/','') AS oa
         FROM person_registry
-        WHERE openalex_id IS NOT NULL AND openalex_id <> ''""")
+        WHERE openalex_id IS NOT NULL AND openalex_id <> ''
+          AND canonical_id NOT IN (SELECT canonical_id FROM {blocked})""")
     con.execute("SET preserve_insertion_order = false")
     con.execute("""
         CREATE OR REPLACE TEMP TABLE _regpairs AS

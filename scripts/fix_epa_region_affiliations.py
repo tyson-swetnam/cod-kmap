@@ -31,8 +31,9 @@ This script:
      and refreshes their ``main.locations`` HQ rows.
   4. Reads the EPA-R* rows from ``data/seed/facility_personnel_seed.csv``,
      resolves their person_id from ``main.people`` by the URL on
-     homepage_url (which is set on every orphan), and writes the matching
-     ``main.facility_personnel`` row.
+     homepage_url (which is set on every orphan), else by ORCID — never
+     by name; a row neither identifier resolves is skipped with a
+     warning — and writes the matching ``main.facility_personnel`` row.
   5. Writes steps 3-4 as one lake snapshot. Publishing is no longer this
      script's job: run ``scripts/export_parquet.py`` (the only writer of
      ``db/parquet/``, ``public/parquet/`` and ``public/facilities.geojson``)
@@ -192,7 +193,8 @@ def link_administrators(conn: duckdb.DuckDBPyConnection) -> int:
     """Read EPA-R* rows from the seed CSV and create facility_personnel rows.
 
     Resolves each person by ``homepage_url`` exact match against people, which
-    is the most reliable join key on these rows (orcid is sometimes missing).
+    is the most reliable join key on these rows (orcid is sometimes missing),
+    else by ORCID. There is no name fallback.
     """
     # Build acronym → facility_id map
     acr_to_fid: dict[str, str] = {}
@@ -226,25 +228,33 @@ def link_administrators(conn: duckdb.DuckDBPyConnection) -> int:
             if not fid:
                 print(f"[skip] no facility for {acr}", file=sys.stderr)
                 continue
-            # find person by homepage_url match
-            url = (row.get("homepage_url") or "").strip()
-            if not url:
-                print(f"[skip] {row.get('person_name')!r} has no homepage_url", file=sys.stderr)
+            # Find the person by an identifier the seed row carries: its
+            # homepage_url, else its ORCID. Never by name: a name match is
+            # how this repo attached cardiologists to marine labs (see
+            # wipe_bad_openalex_attributions.py). An identifier that
+            # matches no row, or more than one, is skipped with a warning.
+            pid = None
+            # URL exact; ORCID case-insensitive (the check digit may be 'x').
+            for col, where in (("homepage_url", "trim(homepage_url) = ?"),
+                               ("orcid", "upper(trim(orcid)) = upper(?)")):
+                val = (row.get(col) or "").strip()
+                if not val:
+                    continue
+                hits = [r[0] for r in conn.execute(
+                    f"SELECT person_id FROM main.people WHERE {where} "
+                    f"ORDER BY person_id", [val]).fetchall()]
+                if len(hits) == 1:
+                    pid = hits[0]
+                    break
+                if len(hits) > 1:
+                    print(f"[warn] {row.get('person_name')!r}: {col} {val} matches "
+                          f"{len(hits)} people {hits}; not linked on it",
+                          file=sys.stderr)
+            if not pid:
+                print(f"[warn] skipped {row.get('person_name')!r} ({acr}): no people "
+                      f"row matches its homepage_url or ORCID (never matched by "
+                      f"name)", file=sys.stderr)
                 continue
-            person = conn.execute(
-                "SELECT person_id FROM main.people WHERE homepage_url = ?",
-                [url],
-            ).fetchone()
-            if not person:
-                # fall back to name
-                person = conn.execute(
-                    "SELECT person_id FROM main.people WHERE name = ?",
-                    [row.get("person_name", "").strip()],
-                ).fetchone()
-            if not person:
-                print(f"[skip] could not find person for {row.get('person_name')!r}", file=sys.stderr)
-                continue
-            pid = person[0]
             role = (row.get("role") or "Regional Administrator").strip()
             title = (row.get("title") or "").strip() or None
             is_key = (row.get("is_key_personnel") or "").strip().lower() in ("true", "1", "yes")
