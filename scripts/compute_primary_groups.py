@@ -18,16 +18,16 @@ Per-person primary area is derived directly from the highest-weight
 person_areas row when one exists; falls back to the primary area of
 the person's primary facility (via facility_personnel) otherwise.
 
-Output:
-  db/parquet/facility_primary_groups.parquet
+Output (derived tables in the lake, one snapshot per run):
+  facility_primary_groups
     facility_id, primary_area_id, primary_area_label, score
-  db/parquet/person_primary_groups.parquet
+  person_primary_groups
     person_id, primary_area_id, primary_area_label, score, source
-  db/parquet/research_areas_active.parquet
+  research_areas_active
     area_id, label, parent_id, n_facilities, collapsed_into
-  Public copies in public/parquet/ for the web app.
+  scripts/export_parquet.py ships them to db/parquet/ and public/parquet/.
 
-Idempotent — overwrites the parquets on every run.
+Idempotent — replaces the tables on every run.
 
 Usage::
     python scripts/compute_primary_groups.py
@@ -40,11 +40,8 @@ import argparse
 import sys
 from pathlib import Path
 
-import duckdb
-
-ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DB = ROOT / "db" / "cod_kmap.duckdb"
-PARQUET_OUT = [ROOT / "db" / "parquet", ROOT / "public" / "parquet"]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cod_db  # noqa: E402
 
 
 def compute_facility_primaries(conn) -> list[tuple]:
@@ -64,7 +61,11 @@ def compute_facility_primaries(conn) -> list[tuple]:
             JOIN   person_areas       pa ON pa.person_id = fp.person_id
         ),
         summed AS (
-            SELECT facility_id, area_id, SUM(score) AS total
+            -- Rounded: a DOUBLE SUM depends on the order rows arrive in,
+            -- which changes across a lake rebuild; 6 places keeps every
+            -- real difference and drops the last-digit noise, so the
+            -- ranking and the exported score are stable.
+            SELECT facility_id, area_id, round(SUM(score), 6) AS total
             FROM   facility_area_score
             GROUP  BY facility_id, area_id
         ),
@@ -176,11 +177,12 @@ def collapse_areas(conn, primaries: list[tuple], min_facilities: int) -> tuple[
     return cur, collapse_map
 
 
-def export_parquet(conn, facility_rows, person_rows, area_rows, dry: bool):
+def write_lake(conn, facility_rows, person_rows, area_rows, dry: bool):
     if dry:
-        print("[dry-run] would write parquet files; skipping")
+        print("[dry-run] would replace the three lake tables; skipping")
         return
-    # Use temp tables so we can export with a single COPY each.
+    # Stage in typed temp tables, then replace each lake table from its
+    # stage — the column types are the ones the parquet has always had.
     conn.execute("DROP TABLE IF EXISTS _facility_primary_tmp")
     conn.execute("""
         CREATE TEMP TABLE _facility_primary_tmp (
@@ -223,23 +225,21 @@ def export_parquet(conn, facility_rows, person_rows, area_rows, dry: bool):
         area_rows,
     )
 
-    for base in PARQUET_OUT:
-        base.mkdir(parents=True, exist_ok=True)
-        for tmp, name in [
-            ("_facility_primary_tmp",       "facility_primary_groups"),
-            ("_person_primary_tmp",         "person_primary_groups"),
-            ("_research_areas_active_tmp",  "research_areas_active"),
-        ]:
-            out = base / f"{name}.parquet"
-            conn.execute(
-                f"COPY {tmp} TO '{out}' (FORMAT PARQUET)"
-            )
-            print(f"[parquet] wrote {out}")
+    for tmp, name in [
+        ("_facility_primary_tmp",       "facility_primary_groups"),
+        ("_person_primary_tmp",         "person_primary_groups"),
+        ("_research_areas_active_tmp",  "research_areas_active"),
+    ]:
+        n = cod_db.replace_table(conn, name, f"SELECT * FROM {tmp}")
+        print(f"[lake] {name}: {n} rows")
+    print("[lake] run scripts/export_parquet.py to publish")
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--db", type=Path, default=DEFAULT_DB)
+    cod_db.add_argparse_catalog(ap)
+    ap.add_argument("--db", dest="catalog", type=Path,
+                    help="deprecated alias of --catalog")
     ap.add_argument("--min-facilities", type=int, default=3,
                     help="Areas with fewer than this many primary "
                          "facilities are folded into their parent. "
@@ -247,10 +247,8 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
-    if not args.db.exists():
-        print(f"[error] db not found: {args.db}", file=sys.stderr)
-        return 2
-    conn = duckdb.connect(str(args.db))
+    conn = cod_db.connect(read_only=args.dry_run,
+                          catalog=args.catalog, data=args.lake_data)
 
     # 1. Facility primaries (uncollapsed).
     raw_fp = compute_facility_primaries(conn)
@@ -318,7 +316,16 @@ def main() -> int:
     for area, n in sorted_active[:15]:
         print(f"  {n:4d}  {labels.get(area, '?'):40s}  ({area})")
 
-    export_parquet(conn, facility_rows, person_rows, area_rows, args.dry_run)
+    if args.dry_run:
+        write_lake(conn, facility_rows, person_rows, area_rows, dry=True)
+    else:
+        with cod_db.transaction(
+                conn, f"compute_primary_groups: {len(facility_rows)} facilities, "
+                      f"{len(person_rows)} people, min_facilities={args.min_facilities}"):
+            write_lake(conn, facility_rows, person_rows, area_rows, dry=False)
+            cod_db.assert_integrity(conn, ["facility_primary_groups",
+                                           "person_primary_groups",
+                                           "research_areas_active"])
     conn.close()
     return 0
 

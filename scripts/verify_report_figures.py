@@ -44,7 +44,11 @@ def main() -> int:
 
     audit = json.load(open(AUDIT))
     figures = audit["figures"]
-    con = duckdb.connect()
+    # Deliberately not the lake (scripts/cod_db.py): every figure's SQL names
+    # a committed db/parquet/ or public/parquet/ file, because the report
+    # makes claims about the tracked artifacts, which the lake may be ahead
+    # of. DuckDB's in-memory default connection is all that needs.
+    con = duckdb.default_connection()
 
     failures = []
     for token, spec in sorted(figures.items(),
