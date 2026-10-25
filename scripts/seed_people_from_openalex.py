@@ -32,7 +32,7 @@ checkpoint.
 
 Environment::
 
-    OPENALEX_EMAIL=tswetnam@arizona.edu   # polite pool, higher rate limit
+    OPENALEX_API_KEY=...   # required (scripts/openalex_auth.py)
 
 Usage::
 
@@ -41,7 +41,12 @@ Usage::
     python scripts/seed_people_from_openalex.py --top-authors 5  # fewer per facility
     python scripts/seed_people_from_openalex.py --dry-run        # resolve only
     python scripts/seed_people_from_openalex.py --force-refresh  # re-check facilities
-    python scripts/seed_people_from_openalex.py --export-parquet # refresh parquets
+
+Writes the DuckLake store of record (scripts/cod_db.py): authors are
+collected while the run talks to OpenAlex and written in one snapshot at
+the end. A facility is checkpointed as "done" only once that snapshot has
+committed, so an interrupted or failed run re-fetches it next time.
+``--export-parquet`` is a no-op now; publish with export_parquet.py.
 
 Typical wall-clock time: ~5-8 minutes for all 210 facilities in the
 polite pool.
@@ -65,13 +70,12 @@ except ImportError:
     print("[error] pip install requests --break-system-packages", file=sys.stderr)
     raise
 
-import duckdb
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cod_db  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DB = ROOT / "db" / "cod_kmap.duckdb"
 OVERRIDES = ROOT / "data" / "seed" / "openalex_institution_overrides.csv"
 PROGRESS = ROOT / "data" / "seed" / ".openalex_seed_progress.json"
-PARQUET_OUT = [ROOT / "db" / "parquet", ROOT / "public" / "parquet"]
 API = "https://api.openalex.org"
 
 
@@ -273,7 +277,8 @@ def split_name(full: str) -> tuple[str, str]:
     return " ".join(parts[:-1]), parts[-1]
 
 
-def upsert_person(conn, author: dict) -> str:
+def person_row(author: dict, seq: int) -> tuple:
+    """Stage row for one OpenAlex author (layout of STAGE_PEOPLE)."""
     name = author.get("display_name") or ""
     oa_short = author.get("id", "").split("/")[-1]
     orcid = author.get("orcid")
@@ -283,71 +288,96 @@ def upsert_person(conn, author: dict) -> str:
     given, family = split_name(name)
     concepts = author.get("x_concepts") or author.get("topics") or []
     interests = ", ".join(c.get("display_name", "") for c in concepts[:5]).strip(", ")
-
-    existing = conn.execute(
-        "SELECT 1 FROM people WHERE person_id = ?", [pid]
-    ).fetchone()
-    if existing is None:
-        conn.execute(
-            """
-            INSERT INTO people (
-                person_id, name, name_family, name_given, orcid,
-                openalex_id, research_interests, status,
-                created_at, updated_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, now(), now())
-            """,
-            [pid, name, family, given, orcid, oa_short, interests, "active"],
-        )
-    else:
-        # Only UPDATE if the row has no authorship rows yet (avoids the
-        # DuckDB FK-update limitation that bit the enricher earlier).
-        has_refs = conn.execute(
-            "SELECT 1 FROM authorship WHERE person_id = ? LIMIT 1", [pid]
-        ).fetchone()
-        if has_refs is None:
-            conn.execute(
-                """
-                UPDATE people SET
-                    name         = COALESCE(?, name),
-                    name_family  = COALESCE(?, name_family),
-                    name_given   = COALESCE(?, name_given),
-                    orcid        = COALESCE(?, orcid),
-                    openalex_id  = COALESCE(?, openalex_id),
-                    research_interests =
-                        COALESCE(NULLIF(?, ''), research_interests),
-                    updated_at = now()
-                WHERE person_id = ?
-                """,
-                [name, family, given, orcid, oa_short, interests, pid],
-            )
-    return pid
+    return (seq, pid, name, family, given, orcid, oa_short, interests)
 
 
-def upsert_personnel(conn, person_pid: str, facility_id: str,
-                     author: dict, institution_id: str) -> None:
+def personnel_row(person_pid: str, facility_id: str, author: dict,
+                  institution_id: str, seq: int) -> tuple:
+    """Stage row for one facility_personnel link (layout of STAGE_ROLES)."""
     role = "Research Scientist"
-    conn.execute(
-        """
-        INSERT INTO facility_personnel (
-            person_id, facility_id, role, title, is_key_personnel,
-            source, source_url, retrieved_at, confidence, notes
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, current_date, ?, ?)
-        ON CONFLICT (person_id, facility_id, role) DO UPDATE SET
-            source     = excluded.source,
-            source_url = excluded.source_url,
-            retrieved_at = excluded.retrieved_at,
-            confidence = excluded.confidence,
-            notes      = excluded.notes
-        """,
-        [person_pid, facility_id, role,
-         f"Top-{role.lower()} publisher at {author.get('display_name') or ''}",
-         False, "openalex:top-authors",
-         f"https://openalex.org/{institution_id}", "medium",
-         f"works_count={author.get('works_count') or 0}; "
-         f"h_index={author.get('h_index') or (author.get('summary_stats') or {}).get('h_index') or 0}"],
-    )
+    return (seq, person_pid, facility_id, role,
+            f"Top-{role.lower()} publisher at {author.get('display_name') or ''}",
+            False, "openalex:top-authors",
+            f"https://openalex.org/{institution_id}", "medium",
+            f"works_count={author.get('works_count') or 0}; "
+            f"h_index={author.get('h_index') or (author.get('summary_stats') or {}).get('h_index') or 0}")
+
+
+STAGE_PEOPLE = ("_seq INTEGER, person_id VARCHAR, name VARCHAR, name_family VARCHAR, "
+                "name_given VARCHAR, orcid VARCHAR, openalex_id VARCHAR, "
+                "research_interests VARCHAR")
+STAGE_ROLES = ("_seq INTEGER, person_id VARCHAR, facility_id VARCHAR, role VARCHAR, "
+               "title VARCHAR, is_key_personnel BOOLEAN, source VARCHAR, "
+               "source_url VARCHAR, confidence VARCHAR, notes VARCHAR")
+
+
+def write_stage(conn, people_rows: list[tuple], role_rows: list[tuple]) -> dict:
+    """Write the run's authors in one go. Call inside cod_db.transaction().
+
+    Same outcome as the old per-author statements:
+      * a person already in the lake is filled in (name parts, ORCID,
+        OpenAlex id overwritten when the author record has them; research
+        interests only when non-empty) — but only while they have no
+        authorship rows yet, so an enriched person's record is left as
+        enrich_people_openalex.py wrote it;
+      * a new person is inserted with status 'active';
+      * facility_personnel is upserted on (person, facility, role); a
+        match refreshes only the provenance columns, never title /
+        is_key_personnel.
+    The last staged row per key wins, as the last statement did.
+    """
+    conn.execute(f"CREATE OR REPLACE TEMP TABLE _seed_people ({STAGE_PEOPLE})")
+    conn.execute(f"CREATE OR REPLACE TEMP TABLE _seed_roles ({STAGE_ROLES})")
+    if people_rows:
+        conn.executemany("INSERT INTO _seed_people VALUES (?,?,?,?,?,?,?,?)", people_rows)
+    if role_rows:
+        conn.executemany("INSERT INTO _seed_roles VALUES (?,?,?,?,?,?,?,?,?,?)", role_rows)
+    conn.execute("CREATE OR REPLACE TEMP TABLE _seed_people_d AS "
+                 "SELECT DISTINCT ON (person_id) * FROM _seed_people "
+                 "ORDER BY person_id, _seq DESC")
+    # Existing people first (the INSERT below would otherwise make every
+    # new person "existing"). Only rows the update actually changes.
+    n_updated = cod_db.scalar(conn, """
+        UPDATE people SET
+            name         = COALESCE(s.name, people.name),
+            name_family  = COALESCE(s.name_family, people.name_family),
+            name_given   = COALESCE(s.name_given, people.name_given),
+            orcid        = COALESCE(s.orcid, people.orcid),
+            openalex_id  = COALESCE(s.openalex_id, people.openalex_id),
+            research_interests =
+                COALESCE(NULLIF(s.research_interests, ''), people.research_interests),
+            updated_at = now()
+        FROM _seed_people_d s
+        WHERE people.person_id = s.person_id
+          AND NOT EXISTS (SELECT 1 FROM authorship a WHERE a.person_id = s.person_id)
+          AND (   COALESCE(s.name, people.name) IS DISTINCT FROM people.name
+               OR COALESCE(s.name_family, people.name_family)
+                      IS DISTINCT FROM people.name_family
+               OR COALESCE(s.name_given, people.name_given)
+                      IS DISTINCT FROM people.name_given
+               OR COALESCE(s.orcid, people.orcid) IS DISTINCT FROM people.orcid
+               OR COALESCE(s.openalex_id, people.openalex_id)
+                      IS DISTINCT FROM people.openalex_id
+               OR COALESCE(NULLIF(s.research_interests, ''), people.research_interests)
+                      IS DISTINCT FROM people.research_interests)
+    """)
+    ins = cod_db.merge_upsert(
+        conn, "people", ["person_id"],
+        "SELECT person_id, name, name_family, name_given, orcid, openalex_id, "
+        "research_interests, 'active' AS status, "
+        "CAST(now() AS TIMESTAMP) AS created_at, CAST(now() AS TIMESTAMP) AS updated_at "
+        "FROM _seed_people_d",
+        insert_only=True)
+    roles = cod_db.merge_upsert(
+        conn, "facility_personnel", ["person_id", "facility_id", "role"],
+        "SELECT *, current_date AS retrieved_at FROM _seed_roles",
+        update_cols=["source", "source_url", "retrieved_at", "confidence", "notes"],
+        order_by="_seq DESC")
+    for t in ("_seed_people", "_seed_people_d", "_seed_roles"):
+        conn.execute(f"DROP TABLE {t}")
+    cod_db.assert_integrity(conn, ["people", "facility_personnel"])
+    return {"people_inserted": ins["inserted"], "people_updated": n_updated,
+            "personnel_inserted": roles["inserted"], "personnel_updated": roles["matched"]}
 
 
 # ── Progress ────────────────────────────────────────────────────────
@@ -366,9 +396,23 @@ def save_progress(data: dict) -> None:
 
 
 # ── Main ────────────────────────────────────────────────────────────
+def catalog_arg(args) -> Path | None:
+    """--db is the pre-lake flag, kept as an alias of --catalog. The retired
+    db/cod_kmap.duckdb file itself is not a catalog, so it is ignored."""
+    if args.db is None or args.catalog is not None:
+        return args.catalog
+    if args.db.suffix == ".duckdb":
+        print(f"[deprecated] --db {args.db} ignored (db/cod_kmap.duckdb is retired); "
+              f"use --catalog", file=sys.stderr)
+        return None
+    return args.db
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--db", type=Path, default=DEFAULT_DB)
+    cod_db.add_argparse_catalog(ap)
+    ap.add_argument("--db", type=Path, default=None,
+                    help="deprecated alias of --catalog (a .duckdb path is ignored)")
     ap.add_argument("--limit", type=int, default=0,
                     help="Max facilities to process (0 = all)")
     ap.add_argument("--top-authors", type=int, default=10,
@@ -378,22 +422,22 @@ def main() -> int:
     ap.add_argument("--force-refresh", action="store_true",
                     help="Ignore the progress checkpoint and re-check every facility")
     ap.add_argument("--export-parquet", action="store_true",
-                    help="Re-export people + facility_personnel parquets after the run")
+                    help="deprecated no-op: run scripts/export_parquet.py to publish")
     args = ap.parse_args()
 
-    if not args.db.exists():
-        print(f"[error] db not found: {args.db}", file=sys.stderr)
+    try:
+        conn = cod_db.connect(read_only=args.dry_run, catalog=catalog_arg(args),
+                              data=args.lake_data)
+    except cod_db.LakeNotFound as e:
+        print(f"[error] {e}", file=sys.stderr)
         return 2
-
-    conn = duckdb.connect(str(args.db))
     sess = session()
     overrides = load_overrides()
     progress = {} if args.force_refresh else load_progress()
 
-    facilities = conn.execute(
-        "SELECT facility_id, canonical_name, acronym, url, facility_type "
-        "FROM facilities ORDER BY canonical_name"
-    ).fetchall()
+    facilities = cod_db.rows(
+        conn, "SELECT facility_id, canonical_name, acronym, url, facility_type "
+              "FROM facilities ORDER BY canonical_name, facility_id")
     facilities = [
         {"facility_id": r[0], "canonical_name": r[1], "acronym": r[2],
          "url": r[3], "facility_type": r[4]}
@@ -405,90 +449,112 @@ def main() -> int:
     print(f"[seed] {len(facilities)} facilities, top {args.top_authors} "
           f"authors each, {'dry-run' if args.dry_run else 'live'}")
     totals = {"resolved": 0, "unresolved": 0, "authors": 0, "skipped_done": 0}
-    for i, f in enumerate(facilities, 1):
-        fid = f["facility_id"]
-        if fid in progress and progress[fid].get("status") == "done":
-            totals["skipped_done"] += 1
-            continue
+    people_rows: list[tuple] = []
+    role_rows: list[tuple] = []
+    # "done" checkpoints wait for the commit: saving one before the authors
+    # are in the lake would make an interrupted run skip that facility for
+    # good. Unresolved / stub-only / error states need no write and are
+    # checkpointed as they happen.
+    pending_done: dict[str, dict] = {}
+    seq = 0
+    try:
+        for i, f in enumerate(facilities, 1):
+            fid = f["facility_id"]
+            if fid in progress and progress[fid].get("status") == "done":
+                totals["skipped_done"] += 1
+                continue
 
-        try:
-            cands = resolve_institution_candidates(sess, f, overrides)
-        except Exception as e:
-            print(f"  [{i}/{len(facilities)}] {f['canonical_name'][:46]:<46} "
-                  f"RESOLVE-ERR: {e}")
-            progress[fid] = {"status": "error", "err": str(e)[:200]}
-            continue
-
-        if not cands:
-            print(f"  [{i}/{len(facilities)}] {f['canonical_name'][:46]:<46} "
-                  f"[no OpenAlex institution]")
-            totals["unresolved"] += 1
-            progress[fid] = {"status": "unresolved"}
-            continue
-
-        # Walk candidates; first one with at least one top author wins.
-        # This is how LTER sites / IOOS RIs / other OpenAlex "stub"
-        # institutions (catalogued but 0 authors) fall through to their
-        # host university instead of silently producing no rows.
-        chosen = None
-        authors: list[dict] = []
-        stub_skipped: list[str] = []
-        for inst in cands:
             try:
-                cand_authors = top_authors(sess, inst, args.top_authors)
+                cands = resolve_institution_candidates(sess, f, overrides)
             except Exception as e:
-                print(f"    [{inst}] AUTHORS-ERR: {e}")
+                print(f"  [{i}/{len(facilities)}] {f['canonical_name'][:46]:<46} "
+                      f"RESOLVE-ERR: {e}")
+                progress[fid] = {"status": "error", "err": str(e)[:200]}
                 continue
-            if cand_authors:
-                chosen = inst
-                authors = cand_authors
-                break
-            stub_skipped.append(inst)
 
-        if not chosen:
-            tail = f"  (tried {', '.join(cands)}; all 0 authors)" if cands else ""
-            print(f"  [{i}/{len(facilities)}] {f['canonical_name'][:46]:<46} "
-                  f"[no authors at any candidate]{tail}")
-            totals["unresolved"] += 1
-            progress[fid] = {"status": "stub-only",
-                             "candidates": cands}
-            continue
-
-        totals["resolved"] += 1
-        n = 0
-        for a in authors:
-            if args.dry_run:
+            if not cands:
+                print(f"  [{i}/{len(facilities)}] {f['canonical_name'][:46]:<46} "
+                      f"[no OpenAlex institution]")
+                totals["unresolved"] += 1
+                progress[fid] = {"status": "unresolved"}
                 continue
-            try:
-                pid = upsert_person(conn, a)
-                upsert_personnel(conn, pid, fid, a, chosen)
+
+            # Walk candidates; first one with at least one top author wins.
+            # This is how LTER sites / IOOS RIs / other OpenAlex "stub"
+            # institutions (catalogued but 0 authors) fall through to their
+            # host university instead of silently producing no rows.
+            chosen = None
+            authors: list[dict] = []
+            stub_skipped: list[str] = []
+            for inst in cands:
+                try:
+                    cand_authors = top_authors(sess, inst, args.top_authors)
+                except Exception as e:
+                    print(f"    [{inst}] AUTHORS-ERR: {e}")
+                    continue
+                if cand_authors:
+                    chosen = inst
+                    authors = cand_authors
+                    break
+                stub_skipped.append(inst)
+
+            if not chosen:
+                tail = f"  (tried {', '.join(cands)}; all 0 authors)" if cands else ""
+                print(f"  [{i}/{len(facilities)}] {f['canonical_name'][:46]:<46} "
+                      f"[no authors at any candidate]{tail}")
+                totals["unresolved"] += 1
+                progress[fid] = {"status": "stub-only",
+                                 "candidates": cands}
+                continue
+
+            totals["resolved"] += 1
+            n = 0
+            for a in authors:
+                if args.dry_run:
+                    continue
+                try:
+                    seq += 1
+                    prow = person_row(a, seq)
+                    rrow = personnel_row(prow[1], fid, a, chosen, seq)
+                except Exception as e:
+                    print(f"    author parse error for {a.get('display_name')}: {e}")
+                    continue
+                people_rows.append(prow)
+                role_rows.append(rrow)
                 n += 1
-            except Exception as e:
-                print(f"    author write error for {a.get('display_name')}: {e}")
-        totals["authors"] += n
-        note = f"  (skipped stubs: {','.join(stub_skipped)})" if stub_skipped else ""
-        print(f"  [{i}/{len(facilities)}] {f['canonical_name'][:46]:<46} "
-              f"inst={chosen}  authors={len(authors)}  wrote={n}{note}")
-        progress[fid] = {"status": "done", "openalex_id": chosen,
-                         "stub_skipped": stub_skipped,
-                         "authors_found": len(authors),
-                         "authors_written": n}
-        if i % 10 == 0:
-            save_progress(progress)
+            totals["authors"] += n
+            note = f"  (skipped stubs: {','.join(stub_skipped)})" if stub_skipped else ""
+            print(f"  [{i}/{len(facilities)}] {f['canonical_name'][:46]:<46} "
+                  f"inst={chosen}  authors={len(authors)}  wrote={n}{note}")
+            pending_done[fid] = {"status": "done", "openalex_id": chosen,
+                                 "stub_skipped": stub_skipped,
+                                 "authors_found": len(authors),
+                                 "authors_written": n}
+            if i % 10 == 0 and not args.dry_run:
+                save_progress(progress)
+    except KeyboardInterrupt:
+        print("\n[interrupted] writing the authors collected so far")
 
-    save_progress(progress)
+    if not args.dry_run:
+        if people_rows:
+            with cod_db.transaction(conn, f"seed_people_from_openalex: "
+                                          f"{len(pending_done)} facilities, "
+                                          f"{len(people_rows)} authors "
+                                          f"(top {args.top_authors})"):
+                res = write_stage(conn, people_rows, role_rows)
+            print(f"[lake] {res}")
+        # Committed (or nothing to write): the done states are now true.
+        progress.update(pending_done)
+        save_progress(progress)
     print(f"\n[done] resolved={totals['resolved']}, "
           f"unresolved={totals['unresolved']}, "
           f"skipped_done={totals['skipped_done']}, "
-          f"authors_written={totals['authors']}")
+          f"authors_written={totals['authors']}"
+          + ("  (dry-run: nothing written, checkpoint untouched)" if args.dry_run else ""))
 
     if args.export_parquet and not args.dry_run:
-        for base in PARQUET_OUT:
-            base.mkdir(parents=True, exist_ok=True)
-            for t in ("people", "facility_personnel"):
-                out = base / f"{t}.parquet"
-                conn.execute(f"COPY {t} TO '{out}' (FORMAT PARQUET)")
-                print(f"[parquet] wrote {out}")
+        print("[parquet] --export-parquet is a no-op now: run scripts/export_parquet.py "
+              "(the only parquet writer)")
     conn.close()
     return 0
 

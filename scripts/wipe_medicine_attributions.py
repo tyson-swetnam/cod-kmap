@@ -33,7 +33,8 @@ For each flagged person:
   * Leave publications themselves untouched (they may have legitimate
     co-authors among other people in the dataset).
 
-Then re-export the affected parquets.
+The wipe is one lake snapshot (scripts/cod_db.py), rolled back if it would
+orphan a row; run scripts/export_parquet.py to publish it.
 
 Idempotent — re-running finds nothing left to wipe.
 
@@ -45,16 +46,13 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import os
-import shutil
 import sys
 from pathlib import Path
 
-import duckdb
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cod_db  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DB = ROOT / "db" / "cod_kmap.duckdb"
-PARQUET_DIRS = [ROOT / "db" / "parquet", ROOT / "public" / "parquet"]
 
 # Strong medical terms: presence in research_interests is a strong negative
 # signal regardless of marine-keyword overlap (because authors with one
@@ -116,7 +114,7 @@ def find_suspects(conn, med_pct_threshold: float):
         WHERE {med_clause}
     """)
 
-    rows = conn.execute("""
+    rows = cod_db.rows(conn, """
         WITH per_pub AS (
             SELECT p.person_id, p.name, p.research_interests, p.openalex_id, p.orcid,
                    COUNT(DISTINCT a.publication_id) AS n_total,
@@ -139,7 +137,8 @@ def find_suspects(conn, med_pct_threshold: float):
                COALESCE(pa.n_pa, 0) AS n_pa
         FROM   per_pub pp
         LEFT JOIN pa_counts pa USING (person_id)
-    """).fetchall()
+        ORDER  BY pp.name, pp.person_id
+    """)
 
     suspects = []
     for pid, name, ri, oaid, orcid, n_total, n_med, n_pa in rows:
@@ -158,57 +157,55 @@ def find_suspects(conn, med_pct_threshold: float):
 
 
 def wipe(conn, suspects, *, keep_orcid: bool = False) -> dict:
+    """Run inside cod_db.transaction(): three statements, one snapshot."""
+    none = {"people": 0, "authorship_deleted": 0, "person_areas_deleted": 0}
     if not suspects:
-        return {"people": 0, "authorship": 0, "person_areas": 0}
+        return none
     pids = [s[0] for s in suspects
             if (not keep_orcid) or not (s[4] and s[4].startswith("0000-"))]
     if not pids:
-        return {"people": 0, "authorship": 0, "person_areas": 0}
+        return none
     placeholder = ",".join(["?"] * len(pids))
 
-    n_aut_before = conn.execute(
-        f"SELECT COUNT(*) FROM authorship WHERE person_id IN ({placeholder})",
-        pids,
-    ).fetchone()[0]
-    conn.execute(
-        f"DELETE FROM authorship WHERE person_id IN ({placeholder})", pids,
-    )
-    n_pa_before = conn.execute(
-        f"SELECT COUNT(*) FROM person_areas WHERE person_id IN ({placeholder})",
-        pids,
-    ).fetchone()[0]
-    conn.execute(
-        f"DELETE FROM person_areas WHERE person_id IN ({placeholder})", pids,
-    )
-    conn.execute(
+    # DELETE / UPDATE return a one-row (count) result.
+    n_aut = cod_db.scalar(
+        conn, f"DELETE FROM authorship WHERE person_id IN ({placeholder})", pids)
+    n_pa = cod_db.scalar(
+        conn, f"DELETE FROM person_areas WHERE person_id IN ({placeholder})", pids)
+    cod_db.scalar(
+        conn,
         f"""UPDATE people SET
                 openalex_id        = NULL,
                 research_interests = NULL,
                 bio                = NULL,
                 updated_at         = now()
             WHERE person_id IN ({placeholder})""",
-        pids,
-    )
+        pids)
     return {
         "people": len(pids),
-        "authorship_deleted": n_aut_before,
-        "person_areas_deleted": n_pa_before,
+        "authorship_deleted": n_aut,
+        "person_areas_deleted": n_pa,
     }
 
 
-def export_parquet(conn) -> None:
-    for base in PARQUET_DIRS:
-        base.mkdir(parents=True, exist_ok=True)
-        for t in ("people", "authorship", "person_areas"):
-            out = base / f"{t}.parquet"
-            conn.execute(f"COPY {t} TO '{out}' (FORMAT PARQUET)")
+def catalog_arg(args) -> Path | None:
+    """--db is the pre-lake flag, kept as an alias of --catalog. The retired
+    db/cod_kmap.duckdb file itself is not a catalog, so it is ignored."""
+    if args.db is None or args.catalog is not None:
+        return args.catalog
+    if args.db.suffix == ".duckdb":
+        print(f"[deprecated] --db {args.db} ignored (db/cod_kmap.duckdb is retired); "
+              f"use --catalog", file=sys.stderr)
+        return None
+    return args.db
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--db", type=Path,
-                    default=Path(os.environ.get("COD_KMAP_DB",
-                                                 str(DEFAULT_DB))))
+    cod_db.add_argparse_catalog(ap)
+    ap.add_argument("--db", type=Path, default=None,
+                    help="deprecated alias of --catalog (a .duckdb path is ignored; "
+                         "$COD_KMAP_DB is no longer read)")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--med-pct-threshold", type=float, default=25.0,
                     help="Wipe a person whose >= this %% of pubs are "
@@ -218,12 +215,14 @@ def main() -> int:
                          "trip the medicine heuristics. Off by default.")
     args = ap.parse_args()
 
-    if not args.db.exists():
-        print(f"[err] DB not found: {args.db}", file=sys.stderr)
+    catalog = catalog_arg(args)
+    print(f"[wipe] lake catalog: {cod_db.catalog_path(catalog)}", file=sys.stderr)
+    try:
+        conn = cod_db.connect(read_only=args.dry_run, catalog=catalog,
+                              data=args.lake_data)
+    except cod_db.LakeNotFound as e:
+        print(f"[err] {e}", file=sys.stderr)
         return 2
-    print(f"[wipe] DB: {args.db}", file=sys.stderr)
-
-    conn = duckdb.connect(str(args.db))
     suspects = find_suspects(conn, args.med_pct_threshold)
     print(f"[wipe] {len(suspects)} suspects identified", file=sys.stderr)
     print()
@@ -237,16 +236,27 @@ def main() -> int:
         conn.close()
         return 0
 
-    res = wipe(conn, suspects, keep_orcid=args.keep_orcid)
+    if not suspects:
+        print("[wiped] nothing to wipe", file=sys.stderr)
+        conn.close()
+        return 0
+
+    with cod_db.transaction(conn, f"wipe_medicine_attributions: "
+                                  f"{len(suspects)} suspects "
+                                  f"(med-pct >= {args.med_pct_threshold:g}"
+                                  + (", keep-orcid" if args.keep_orcid else "")
+                                  + ")"):
+        res = wipe(conn, suspects, keep_orcid=args.keep_orcid)
+        cod_db.assert_integrity(conn, ["people", "authorship", "person_areas"])
     print()
     print(f"[wiped] people: {res['people']}  "
           f"authorship_deleted: {res['authorship_deleted']}  "
           f"person_areas_deleted: {res['person_areas_deleted']}",
           file=sys.stderr)
 
-    export_parquet(conn)
-    print("[wipe] re-exported people, authorship, person_areas parquets",
-          file=sys.stderr)
+    # parquet is export_parquet.py's to write.
+    print("[wipe] run scripts/export_parquet.py to publish people, authorship, "
+          "person_areas", file=sys.stderr)
     conn.close()
     return 0
 

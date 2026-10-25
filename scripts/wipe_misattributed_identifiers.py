@@ -37,7 +37,9 @@ Effects, mirroring wipe_bad_openalex_attributions.py:
     be legitimately linked to another
   * records a provenance row per change
 
-Re-runs are idempotent.
+Re-runs are idempotent. A real run is one lake snapshot (scripts/cod_db.py),
+rolled back whole if it would orphan a row; ``--dry-run`` opens the lake
+read-only. Run scripts/export_parquet.py to publish.
 
 Usage::
     python scripts/wipe_misattributed_identifiers.py --dry-run
@@ -46,15 +48,15 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import contextlib
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-import duckdb
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cod_db  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DB = ROOT / "db" / "cod_kmap.duckdb"
-PARQUET_OUT = [ROOT / "db" / "parquet", ROOT / "public" / "parquet"]
 
 # name -> (wipe_orcid, wipe_openalex, evidence)
 BAD = {
@@ -142,24 +144,72 @@ BAD = {
 PROSE_IN_ORCID = ["Marty Downs", "Víctor Manuel Vidal Martínez"]
 
 
+def catalog_arg(args) -> Path | None:
+    """--db is the pre-lake flag, kept as an alias of --catalog. The retired
+    db/cod_kmap.duckdb file itself is not a catalog, so it is ignored."""
+    if args.db is None or args.catalog is not None:
+        return args.catalog
+    if args.db.suffix == ".duckdb":
+        print(f"[deprecated] --db {args.db} ignored (db/cod_kmap.duckdb is retired); "
+              f"use --catalog", file=sys.stderr)
+        return None
+    return args.db
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--db", type=Path, default=DEFAULT_DB)
+    cod_db.add_argparse_catalog(ap)
+    ap.add_argument("--db", type=Path, default=None,
+                    help="deprecated alias of --catalog (a .duckdb path is ignored)")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
-    if not args.db.exists():
-        print(f"[error] db not found: {args.db}", file=sys.stderr)
+    try:
+        conn = cod_db.connect(read_only=args.dry_run, catalog=catalog_arg(args),
+                              data=args.lake_data)
+    except cod_db.LakeNotFound as e:
+        print(f"[error] {e}", file=sys.stderr)
         return 2
 
-    conn = duckdb.connect(str(args.db))
+    # A dry run opens the lake read-only and writes nothing; a real run is
+    # one snapshot (rolled back whole if the integrity check fails, and
+    # empty — no snapshot — when there is nothing left to wipe).
+    tx = (contextlib.nullcontext() if args.dry_run else cod_db.transaction(
+        conn, f"wipe_misattributed_identifiers: {len(BAD)} roster + "
+              f"{len(PROSE_IN_ORCID)} prose-in-orcid rows"))
+    with tx:
+        n_orcid, n_oa, n_auth, n_areas, n_prose = _wipe(conn, args.dry_run)
+        if not args.dry_run:
+            cod_db.assert_integrity(
+                conn, ["people", "authorship", "person_areas", "provenance"])
+
+    print(f"[totals] orcid_wiped={n_orcid} openalex_wiped={n_oa} "
+          f"authorship_deleted={n_auth} person_areas_deleted={n_areas} "
+          f"prose_moved={n_prose}")
+
+    if not args.dry_run:
+        # parquet is export_parquet.py's to write.
+        print("[next] run scripts/export_parquet.py to publish")
+    conn.close()
+    return 0
+
+
+def _person_by_name(conn, cols: str, name: str):
+    """First people row with this exact name (ORDER BY person_id so a
+    shared name resolves the same way every run), or None."""
+    r = cod_db.rows(conn, f"SELECT {cols} FROM people WHERE name = ? "
+                          f"ORDER BY person_id LIMIT 1", [name])
+    return r[0] if r else None
+
+
+def _wipe(conn, dry_run: bool) -> tuple[int, int, int, int, int]:
+    """Apply BAD and PROSE_IN_ORCID; with dry_run, only print."""
     now = datetime.now(timezone.utc).isoformat()
     n_orcid = n_oa = n_auth = n_areas = n_prose = 0
+    prov: list[tuple] = []
 
     for name, (wipe_orcid, wipe_oa, why) in BAD.items():
-        row = conn.execute(
-            "SELECT person_id, orcid, openalex_id FROM people WHERE name = ?",
-            [name]).fetchone()
+        row = _person_by_name(conn, "person_id, orcid, openalex_id", name)
         if not row:
             print(f"  [skip] {name}: not in people")
             continue
@@ -171,71 +221,62 @@ def main() -> int:
             acts.append(f"openalex_id={oaid}")
         if not acts:
             continue
-        npub = conn.execute(
-            "SELECT count(*) FROM authorship WHERE person_id = ?",
-            [pid]).fetchone()[0]
+        npub = cod_db.scalar(
+            conn, "SELECT count(*) FROM authorship WHERE person_id = ?", [pid])
         print(f"  {name}: wiping {', '.join(acts)}"
               + (f" and {npub} authorship rows" if wipe_oa and npub else ""))
-        if args.dry_run:
+        if dry_run:
             continue
 
         if wipe_orcid and orcid:
-            conn.execute("UPDATE people SET orcid = NULL, updated_at = now() "
-                         "WHERE person_id = ?", [pid])
+            cod_db.scalar(conn, "UPDATE people SET orcid = NULL, updated_at = now() "
+                                "WHERE person_id = ?", [pid])
             n_orcid += 1
         if wipe_oa and oaid:
-            conn.execute("UPDATE people SET openalex_id = NULL, "
-                         "research_interests = NULL, updated_at = now() "
-                         "WHERE person_id = ?", [pid])
+            cod_db.scalar(conn, "UPDATE people SET openalex_id = NULL, "
+                                "research_interests = NULL, updated_at = now() "
+                                "WHERE person_id = ?", [pid])
             n_oa += 1
-            n_auth += conn.execute(
-                "SELECT count(*) FROM authorship WHERE person_id = ?",
-                [pid]).fetchone()[0]
-            conn.execute("DELETE FROM authorship WHERE person_id = ?", [pid])
-            n_areas += conn.execute(
-                "SELECT count(*) FROM person_areas WHERE person_id = ?",
-                [pid]).fetchone()[0]
-            conn.execute("DELETE FROM person_areas WHERE person_id = ?", [pid])
+            # DELETE returns a one-row (count) result.
+            n_auth += cod_db.scalar(
+                conn, "DELETE FROM authorship WHERE person_id = ?", [pid])
+            n_areas += cod_db.scalar(
+                conn, "DELETE FROM person_areas WHERE person_id = ?", [pid])
 
-        conn.execute(
-            "INSERT INTO provenance (record_type, record_id, source_url, "
-            "retrieved_at, confidence, agent) VALUES (?,?,?,?,?,?)",
-            ["person", pid,
-             "https://api.openalex.org/authors + https://pub.orcid.org",
-             now, "high",
-             f"wipe_misattributed_identifiers.py: cleared "
-             f"{', '.join(a.split('=')[0] for a in acts)}. {why}"])
+        prov.append(("person", pid,
+                     "https://api.openalex.org/authors + https://pub.orcid.org",
+                     now, "high",
+                     f"wipe_misattributed_identifiers.py: cleared "
+                     f"{', '.join(a.split('=')[0] for a in acts)}. {why}"))
+
+    if prov:
+        # Staged, then one INSERT: a row-at-a-time insert into the lake
+        # writes one tiny data file per statement.
+        conn.execute("CREATE OR REPLACE TEMP TABLE stage_provenance ("
+                     "record_type VARCHAR, record_id VARCHAR, source_url VARCHAR, "
+                     "retrieved_at DATE, confidence VARCHAR, agent VARCHAR)")
+        conn.executemany("INSERT INTO stage_provenance VALUES (?,?,?,?,?,?)", prov)
+        conn.execute("INSERT INTO provenance (record_type, record_id, source_url, "
+                     "retrieved_at, confidence, agent) "
+                     "SELECT * FROM stage_provenance")
+        conn.execute("DROP TABLE stage_provenance")
 
     for name in PROSE_IN_ORCID:
-        row = conn.execute(
-            "SELECT person_id, orcid, notes FROM people WHERE name = ?",
-            [name]).fetchone()
+        row = _person_by_name(conn, "person_id, orcid, notes", name)
         if not row:
             continue
         pid, orcid, notes = row
         if not orcid or len(orcid) == 19:
             continue
         print(f"  {name}: moving prose out of orcid into notes")
-        if args.dry_run:
+        if dry_run:
             continue
         merged = "; ".join(t for t in [notes, orcid] if t)
-        conn.execute("UPDATE people SET orcid = NULL, notes = ?, "
-                     "updated_at = now() WHERE person_id = ?", [merged, pid])
+        cod_db.scalar(conn, "UPDATE people SET orcid = NULL, notes = ?, "
+                            "updated_at = now() WHERE person_id = ?", [merged, pid])
         n_prose += 1
 
-    print(f"[totals] orcid_wiped={n_orcid} openalex_wiped={n_oa} "
-          f"authorship_deleted={n_auth} person_areas_deleted={n_areas} "
-          f"prose_moved={n_prose}")
-
-    if not args.dry_run:
-        for base in PARQUET_OUT:
-            base.mkdir(parents=True, exist_ok=True)
-            for tbl in ("people", "authorship", "person_areas", "provenance"):
-                out = base / f"{tbl}.parquet"
-                conn.execute(f"COPY {tbl} TO '{out}' (FORMAT PARQUET)")
-            print(f"[parquet] refreshed {base}")
-    conn.close()
-    return 0
+    return n_orcid, n_oa, n_auth, n_areas, n_prose
 
 
 if __name__ == "__main__":
