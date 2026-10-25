@@ -26,8 +26,10 @@ Warnings (printed, not failures) flag known debt that needs a data change
 to clear.
 
 Invariants on the CSV/JSON-seeded tables (COD team, scholars, datasets,
-registry) must be gated on the table being non-empty: refresh-data.yml
-runs ingest.py, which leaves those tables empty in the CI lake.
+registry) must be gated on the table being non-empty: a scratch lake
+built from ingest.py alone (or a partial rebuild) leaves them empty, and
+that must not read as a failure. CI no longer does this -- refresh-data.yml
+rebuilds the lake from db/parquet first -- but the gate stays cheap.
 
 Usage::
 
@@ -183,10 +185,10 @@ EXPECTED_COLUMNS = {
 def table_rows(conn, table: str) -> int:
     """Row count, or -1 when the table isn't in this database.
 
-    The weekly refresh workflow rebuilds a DB from ingest.py alone, where
-    every table below is empty (their data lives in committed parquet that
-    ingest never touches). Gating on this keeps that run green instead of
-    failing on absent data it was never asked to produce.
+    A lake built from ingest.py alone has every table below empty (their
+    data lives in committed parquet that ingest never touches). Gating on
+    this keeps such a run green instead of failing on absent data it was
+    never asked to produce.
     """
     try:
         return conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
@@ -197,7 +199,7 @@ def table_rows(conn, table: str) -> int:
 def check_tables_present(conn, failures: list[str]) -> None:
     """If any of the new tables has rows, they must all exist.
 
-    Every check below no-ops on an empty table so the ingest-only CI stays
+    Every check below no-ops on an empty table so an ingest-only lake stays
     green, which means an accidentally *dropped* table looked exactly like an
     empty one and silenced its invariants. Once one of the group is populated
     we know this is a full database, so a missing sibling is a real fault.
@@ -858,8 +860,8 @@ def check_topic_crosswalk(conn, failures: list[str],
         with a comma shifts every column after it);
       * an area_id that is not in schema/vocab/research_areas.csv;
       * an id that occurs in publication_topics under a different name.
-        Gated on publication_topics being non-empty (ingest.py empties it
-        in the CI lake).
+        Gated on publication_topics being non-empty (an ingest-only lake has
+        none).
     """
     import csv as _csv                                    # noqa: PLC0415
     import re as _re                                      # noqa: PLC0415

@@ -730,7 +730,7 @@ def build_llms(docs: list[str], schemas: dict, schema_note: str | None,
         "place.** " + ", ".join(f"`{v}`" for v in sviews) + " are defined in "
         f"`schema/schema.sql` but are NOT recreated in the browser. Reproduce "
         "them against a local DuckDB built from the committed Parquet "
-        f"(`python scripts/rebuild_db_from_parquet.py`), or inline their SQL. "
+        f"(`python scripts/rebuild_lake_from_parquet.py`), or inline their SQL. "
         "`v_facility_funding_by_year_real` additionally needs `cpi_index_us`, "
         "which ships with zero rows, so it cannot return real-dollar figures yet.",
         "",
