@@ -5,8 +5,8 @@ The browser loads parquet directly into DuckDB-Wasm, so the site cannot
 serve the whole harvested population — 190k authors match the coastal
 topic filter. This script scores every registry row and promotes the top
 ``--core-size`` to ``tier='core'``; only that tier is exported to
-public/parquet. The full population stays in db/cod_kmap.duckdb (and its
-db/parquet mirror) for analysis.
+public/parquet (by scripts/export_parquet.py, which filters on tier). The
+full population stays in the lake and its db/parquet mirror for analysis.
 
 Scoring
 -------
@@ -41,8 +41,16 @@ and a metric threshold must never drop them.
 
 Usage::
 
-    python scripts/rank_person_registry.py --core-size 10000 --export-parquet
+    python scripts/rank_person_registry.py --core-size 10000
     python scripts/rank_person_registry.py --dry-run
+
+A real run writes tier/tier_rank/tier_score in one lake snapshot; then run
+scripts/export_parquet.py. --export-parquet is accepted for old callers and
+does nothing.
+
+Ties are broken by canonical_id, so the ranking is reproducible: the old
+``ROW_NUMBER() OVER (ORDER BY pinned DESC, score DESC)`` numbered tied
+scores in whatever order the engine produced them.
 """
 from __future__ import annotations
 
@@ -51,20 +59,41 @@ import sys
 from datetime import date
 from pathlib import Path
 
-import duckdb
-
-ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DB = ROOT / "db" / "cod_kmap.duckdb"
-DB_PARQUET = ROOT / "db" / "parquet"
-SITE_PARQUET = ROOT / "public" / "parquet"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cod_db  # noqa: E402
 
 DEFAULT_WEIGHTS = dict(coastal_output=0.35, impact=0.35,
                        recency=0.15, connectivity=0.15)
 
 
+def assert_written(conn, written: list[str]) -> None:
+    """cod_db.assert_integrity, raising only for the tables this run wrote.
+
+    A violation in a written table rolls the run back. A violation in a
+    table that merely points at one of them (an edge or verdict whose
+    registry row an earlier rebuild dropped) is printed, not raised: this
+    run did not cause it and cannot repair it, the script that owns that
+    table recomputes it, and qa.py fails on it until then, so nothing stale
+    is exported unnoticed.
+    """
+    v = cod_db.integrity_violations(conn, written)
+    own = [x for x in v if x["table"] in written]
+    if own:
+        raise cod_db.IntegrityError(own)
+    dep = [x for x in v if x["table"] not in written]
+    if dep:
+        print("[warn] rows in other tables point at rows that no longer exist "
+              "(qa.py fails until their scripts are re-run):\n"
+              + "\n".join("       " + line for line in
+                          cod_db.format_violations(dep).splitlines()),
+              file=sys.stderr)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--db", type=Path, default=DEFAULT_DB)
+    cod_db.add_argparse_catalog(ap)
+    ap.add_argument("--db", dest="catalog", type=Path,
+                    help="deprecated alias of --catalog")
     ap.add_argument("--core-size", type=int, default=10000)
     ap.add_argument("--w-coastal", type=float, default=DEFAULT_WEIGHTS["coastal_output"])
     ap.add_argument("--w-impact", type=float, default=DEFAULT_WEIGHTS["impact"])
@@ -72,11 +101,17 @@ def main() -> int:
     ap.add_argument("--w-connectivity", type=float,
                     default=DEFAULT_WEIGHTS["connectivity"])
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--export-parquet", action="store_true")
+    ap.add_argument("--export-parquet", action="store_true",
+                    help="deprecated no-op: run scripts/export_parquet.py")
     args = ap.parse_args()
 
-    conn = duckdb.connect(str(args.db))
-    total = conn.execute("SELECT COUNT(*) FROM person_registry").fetchone()[0]
+    try:
+        conn = cod_db.connect(read_only=args.dry_run,
+                              catalog=args.catalog, data=args.lake_data)
+    except cod_db.LakeNotFound as e:
+        print(f"[error] {e}", file=sys.stderr)
+        return 2
+    total = cod_db.scalar(conn, "SELECT COUNT(*) FROM person_registry")
     print(f"[rank] scoring {total:,} registry row(s)")
 
     # Degree within the co-authorship graph, as a scoring input.
@@ -110,67 +145,60 @@ def main() -> int:
              + {args.w_recency} * p_recency + {args.w_connectivity} * p_conn AS score
         FROM _scored""")
 
-    ranked = conn.execute("""
+    # canonical_id breaks ties so the ranking is reproducible run to run.
+    conn.execute("""
+        CREATE OR REPLACE TEMP TABLE _ranked AS
         SELECT canonical_id, pinned, score,
-               ROW_NUMBER() OVER (ORDER BY pinned DESC, score DESC) AS rk
-        FROM _final ORDER BY rk""").fetchall()
+               ROW_NUMBER() OVER (ORDER BY pinned DESC, score DESC,
+                                  canonical_id) AS rk
+        FROM _final""")
 
-    n_pinned = sum(1 for _, p, _, _ in ranked if p)
+    n_pinned = cod_db.scalar(conn, "SELECT count(*) FROM _ranked WHERE pinned")
     core_size = max(args.core_size, n_pinned)
     if core_size > args.core_size:
         print(f"[rank] {n_pinned:,} pinned row(s) exceed --core-size "
               f"{args.core_size:,}; core widened to {core_size:,} so no "
               f"COD-affiliated person is dropped")
 
-    updates = [("core" if rk <= core_size else "archive", rk, sc, cid)
-               for cid, _, sc, rk in ranked]
-    n_core = sum(1 for t, *_ in updates if t == "core")
+    n_core = cod_db.scalar(conn, "SELECT count(*) FROM _ranked WHERE rk <= ?",
+                           [core_size])
     print(f"[rank] core={n_core:,} ({n_pinned:,} pinned) archive={total - n_core:,}")
 
     if args.dry_run:
         top = conn.execute("""
             SELECT r.display_name, r.h_index, r.coastal_works_count, f.score
             FROM _final f JOIN person_registry r USING (canonical_id)
-            WHERE NOT f.pinned ORDER BY f.score DESC LIMIT 8""").fetchall()
+            WHERE NOT f.pinned ORDER BY f.score DESC, f.canonical_id LIMIT 8""").fetchall()
         print("[rank] top unpinned by score:")
         for name, h, cw, sc in top:
             print(f"    {sc:.3f}  h={h:<4} coastal={cw:<5} {name}")
         conn.close()
         return 0
 
-    conn.executemany(
-        "UPDATE person_registry SET tier = ?, tier_rank = ?, tier_score = ? "
-        "WHERE canonical_id = ?", updates)
+    # One set-based UPDATE from the ranking table: a per-row UPDATE against
+    # the lake is far slower at harvest scale (150k rows).
+    with cod_db.transaction(conn, f"rank_person_registry: core={n_core} "
+                                  f"archive={total - n_core} (core_size={core_size})"):
+        conn.execute(f"""
+            UPDATE person_registry
+            SET tier = CASE WHEN s.rk <= {int(core_size)} THEN 'core'
+                            ELSE 'archive' END,
+                tier_rank = CAST(s.rk AS INTEGER),
+                tier_score = s.score
+            FROM _ranked s
+            WHERE person_registry.canonical_id = s.canonical_id""")
+        assert_written(conn, ["person_registry"])
 
+    # Shipping is export_parquet.py's job: it exports tier='core' only, and
+    # keeps person_identity_source / registry_facilities / person_validation
+    # rows only for core-tier people and registry_collaborations /
+    # coauthor_edges rows only when both endpoints ship (EXPORT_WHERE), or
+    # the browser would hold edges pointing at absent nodes — which qa.py's
+    # orphan-edge invariant would (correctly) fail on a site rebuild.
+    print("[rank] tiers written to the lake (run export_parquet.py to publish)")
     if args.export_parquet:
-        DB_PARQUET.mkdir(parents=True, exist_ok=True)
-        SITE_PARQUET.mkdir(parents=True, exist_ok=True)
-        # Full population to db/parquet — the analysis mirror.
-        conn.execute(f"COPY person_registry TO "
-                     f"'{DB_PARQUET / 'person_registry.parquet'}' (FORMAT PARQUET)")
-        conn.execute(f"COPY person_identity_source TO "
-                     f"'{DB_PARQUET / 'person_identity_source.parquet'}' (FORMAT PARQUET)")
-        conn.execute(f"COPY registry_collaborations TO "
-                     f"'{DB_PARQUET / 'registry_collaborations.parquet'}' (FORMAT PARQUET)")
-        # Core tier only to public/parquet — this is what the browser loads.
-        conn.execute(f"""COPY (SELECT * FROM person_registry WHERE tier = 'core')
-                         TO '{SITE_PARQUET / 'person_registry.parquet'}' (FORMAT PARQUET)""")
-        conn.execute(f"""COPY (SELECT s.* FROM person_identity_source s
-                         JOIN person_registry r USING (canonical_id)
-                         WHERE r.tier = 'core')
-                         TO '{SITE_PARQUET / 'person_identity_source.parquet'}' (FORMAT PARQUET)""")
-        # Edges are kept only when BOTH endpoints ship, or the browser
-        # would hold edges pointing at absent nodes — which qa.py's
-        # orphan-edge invariant would (correctly) fail on a site rebuild.
-        conn.execute(f"""COPY (SELECT c.* FROM registry_collaborations c
-                         JOIN person_registry a ON a.canonical_id = c.canonical_id_a
-                         JOIN person_registry b ON b.canonical_id = c.canonical_id_b
-                         WHERE a.tier = 'core' AND b.tier = 'core')
-                         TO '{SITE_PARQUET / 'registry_collaborations.parquet'}' (FORMAT PARQUET)""")
-        for p in (SITE_PARQUET / "person_registry.parquet",
-                  SITE_PARQUET / "registry_collaborations.parquet"):
-            print(f"[parquet] site {p.name}: {p.stat().st_size / 1e6:.1f} MB")
-        print("[note] parquet is gitignored; stage with `git add -f`")
+        print("[note] --export-parquet is a no-op now; run "
+              "scripts/export_parquet.py to publish the lake")
     conn.close()
     return 0
 
