@@ -852,6 +852,7 @@ async function fetchRegistry() {
              p.orcid,
              p.openalex_id,
              p.homepage_url,
+             f.url                              AS site_url,
              p.affiliation_country,
              p.person_id,
              p.tier_rank,
@@ -864,6 +865,7 @@ async function fetchRegistry() {
       FROM   registry_facilities rf
       JOIN   person_registry p ON p.canonical_id = rf.canonical_id
       LEFT   JOIN harvested h  ON h.canonical_id = rf.canonical_id
+      LEFT   JOIN facilities f ON f.facility_id = rf.facility_id
       ORDER  BY rf.facility_id, p.tier_rank`,
 
     // Collaborator rows, densified to one row per (linked researcher,
@@ -2727,7 +2729,9 @@ function drawRegistryLayer(d3, tip) {
 // canonical_id, not people.person_id, so the People directory route
 // only works for the minority that carry a person_id. Everyone else
 // gets their ORCID (or OpenAlex) profile, which is the identifier the
-// registry is actually built on.
+// registry is actually built on. Last resort is the site's own page
+// (site_url, roster rows only): url_hygiene.py nulls homepages that were
+// really facility landing pages, and the site is where those pointed.
 function openRegistryProfile(d) {
   if (!d) return;
   if (d.person_id) {
@@ -2736,7 +2740,7 @@ function openRegistryProfile(d) {
   }
   const url = d.orcid ? `https://orcid.org/${d.orcid}`
             : d.openalex_id ? `https://openalex.org/${d.openalex_id}`
-            : d.homepage_url || null;
+            : d.homepage_url || d.site_url || null;
   if (url) window.open(url, '_blank', 'noopener');
 }
 
