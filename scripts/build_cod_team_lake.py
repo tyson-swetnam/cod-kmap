@@ -1,44 +1,54 @@
 #!/usr/bin/env python3
-"""Build the COD project team layer as a DuckLake, and sync it to people.
+"""Load the COD project team layer into the lake, and sync it to people.
 
 The COD org chart is hand-transcribed into two seed CSVs:
 
     data/seed/cod_wbs.csv            the Work Breakdown Structure tree
     data/seed/cod_team_members.csv   one row per (person, WBS element, role)
 
-This script loads them into a **DuckLake** catalogue (db/cod_team.ducklake
-plus its managed parquet under db/ducklake_data/), so each run lands as a
-new snapshot and the roster's history is queryable:
+This script validates them and writes the ``cod_wbs`` and
+``cod_team_members`` tables of the project's DuckLake store of record
+(``scripts/cod_db.py``), in one transaction, so each run that changes the
+roster lands as ONE snapshot with the commit message
+``build_cod_team_lake: …``. The roster's history is therefore the lake's
+own history, queryable from ``import cod_db; con = cod_db.connect(read_only=True)``::
 
-    ATTACH 'ducklake:db/cod_team.ducklake' AS teamlake;
-    SELECT * FROM teamlake.snapshots();
-    SELECT * FROM teamlake.cod_team_members AT (VERSION => 1);
+    SELECT snapshot_id, snapshot_time, author, commit_message
+      FROM lake.snapshots()
+     WHERE commit_message LIKE 'build_cod_team_lake:%' ORDER BY 1 DESC;
+    SELECT * FROM cod_team_members AT (VERSION => 12);
+    SELECT change_type, member_id, wbs_code, role
+      FROM ducklake_table_changes('lake', 'main', 'cod_team_members', 12, 12);
 
-Both the catalogue and its data directory are gitignored, exactly like
-db/cod_kmap.duckdb: the DuckLake is a local convenience, and the shared
-canonical artifact is still plain parquet in db/parquet/ + public/parquet/
-(which is also what DuckDB-Wasm reads in the browser). Everything is
-regenerable from the two seed CSVs, so losing the lake costs nothing.
+``--history`` prints that log with the per-table row changes of each
+snapshot. This replaces the separate ``db/cod_team.ducklake`` +
+``db/ducklake_data/`` catalogue the layer used to keep, and its
+plain-table fallback: there is one lake now, and no second copy to mirror.
 
-If the ducklake extension is unavailable — no network to
-extensions.duckdb.org and no bundled wheel — the script says so and falls
-back to plain tables in the main DB. The parquet output is byte-for-byte
-the same either way, so a fallback run is not a degraded run.
+A run whose seeds match the lake changes nothing, so it commits nothing:
+each table is rewritten only when its staged rows differ from the lake
+(``DELETE`` + one ``INSERT … SELECT``, which keeps the column definitions'
+NOT NULL / DEFAULT; DuckLake snapshots per *statement*, so rows are never
+inserted one at a time), and only people rows the sync would actually
+change are merged.
 
-Named members are also upserted into `people` so the existing Researcher
-directory, enrichment scripts, and metrics pipeline pick them up. The
-upsert COALESCEs every enrichable column, so a blank cell in the seed CSV
-never wipes a value that scripts/enrich_people_*.py resolved earlier.
+Named members (status ``active``) are also merged into ``people`` so the
+Researcher directory, enrichment scripts and metrics pipeline pick them up.
+The merge never erases an identifier: ``orcid``, ``openalex_id``,
+``google_scholar_id`` and ``homepage_url`` keep the lake's value when the
+seed cell is blank, and ``notes`` keeps the lake's value whenever it has
+one. ``email`` is never written: it still feeds the ``person_id`` hash
+(``sha1(f"{name.lower()}|{orcid}|{email.lower()}")[:16]``, identical to
+scripts/load_facility_personnel.py), but contact details stay in the seed.
+
+Nothing here writes parquet. Publish with ``python scripts/export_parquet.py``.
 
 Usage::
 
     python scripts/build_cod_team_lake.py
-    python scripts/build_cod_team_lake.py --no-ducklake     # skip the lake
-    python scripts/build_cod_team_lake.py --dry-run
-    python scripts/build_cod_team_lake.py --history         # show snapshots
-
-Idempotent: re-running with unchanged seeds leaves identical tables (a new
-DuckLake snapshot is still recorded, which is the point of the lake).
+    python scripts/build_cod_team_lake.py --dry-run     # validate the seeds only
+    python scripts/build_cod_team_lake.py --history     # roster snapshots
+    python scripts/build_cod_team_lake.py --catalog /tmp/x/cat.sqlite   # scratch lake
 """
 from __future__ import annotations
 
@@ -48,15 +58,13 @@ import hashlib
 import sys
 from pathlib import Path
 
-import duckdb
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cod_db  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DB = ROOT / "db" / "cod_kmap.duckdb"
 WBS_CSV = ROOT / "data" / "seed" / "cod_wbs.csv"
 MEMBERS_CSV = ROOT / "data" / "seed" / "cod_team_members.csv"
-CATALOG = ROOT / "db" / "cod_team.ducklake"
-LAKE_DATA = ROOT / "db" / "ducklake_data"
-PARQUET_OUT = [ROOT / "db" / "parquet", ROOT / "public" / "parquet"]
+SCRIPT = "build_cod_team_lake"
 
 # Institution slugs from the org chart's colour legend, plus the extra
 # affiliations named in member boxes. Validated so a typo in the seed CSV
@@ -79,9 +87,25 @@ MEMBER_COLS = [
     "institution_slug", "is_pi", "is_copi", "is_leadership_committee",
     "committees", "status", "sort_order", "source", "notes",
 ]
-LAKE_TABLES = ["cod_wbs", "cod_team_members"]
-# people changes too (the sync), so its parquet is refreshed alongside.
-EXPORT_TABLES = LAKE_TABLES + ["people"]
+TEAM_TABLES = [("cod_wbs", WBS_COLS), ("cod_team_members", MEMBER_COLS)]
+
+# The people columns the sync stages, and how each merges into an existing
+# row — the semantics of the pre-lake per-row upsert on person_id:
+#   overwrite  the seed wins            (name, name_family, name_given, status)
+#   coalesce   the seed wins unless it is blank  (the enrichable identifiers)
+#   fill       the lake wins unless it is blank  (notes)
+# email is deliberately absent (see the module docstring), and updated_at
+# is set to now() on every row the merge changes.
+PEOPLE_COLS = [
+    "person_id", "name", "name_family", "name_given", "orcid", "openalex_id",
+    "google_scholar_id", "homepage_url", "status", "notes",
+]
+PEOPLE_COALESCE = ["orcid", "openalex_id", "google_scholar_id", "homepage_url"]
+PEOPLE_FILL = ["notes"]
+PEOPLE_NOTE = "COD team (org-chart-2026)"
+
+# Tables this script writes; --history reports changes to these.
+WRITES = ["cod_wbs", "cod_team_members", "people"]
 
 
 def person_id(name: str, orcid: str = "", email: str = "") -> str:
@@ -230,88 +254,6 @@ def build_rows(wbs_raw: list[dict], members_raw: list[dict]) -> tuple[list, list
     return wbs_rows, member_rows, fatal
 
 
-def attach_lake(conn) -> str:
-    """Try to attach a DuckLake catalogue; return the schema name to write
-    to ('teamlake' on success, 'main' on fallback)."""
-    try:
-        from duckdb_extensions import import_extension  # noqa: PLC0415
-        import_extension("ducklake")
-        print("[lake] ducklake extension loaded from the bundled wheel")
-    except Exception:  # noqa: BLE001 - the wheel is optional
-        try:
-            conn.execute("INSTALL ducklake;")
-            print("[lake] ducklake extension installed from extensions.duckdb.org")
-        except duckdb.Error as e:
-            print(f"[warn] ducklake unavailable ({str(e).splitlines()[0]})")
-            print("[warn] falling back to plain tables in the main DB "
-                  "(identical parquet output; no snapshot history)")
-            print("[hint] pip install duckdb-extensions duckdb-extension-ducklake")
-            return "main"
-    try:
-        conn.execute("LOAD ducklake;")
-        LAKE_DATA.mkdir(parents=True, exist_ok=True)
-        conn.execute(
-            f"ATTACH IF NOT EXISTS 'ducklake:{CATALOG}' AS teamlake "
-            f"(DATA_PATH '{LAKE_DATA}/')"
-        )
-        print(f"[lake] attached {CATALOG.relative_to(ROOT)} "
-              f"(data: {LAKE_DATA.relative_to(ROOT)}/)")
-        return "teamlake"
-    except duckdb.Error as e:
-        print(f"[warn] could not attach DuckLake ({str(e).splitlines()[0]}); using main")
-        return "main"
-
-
-def write_tables(conn, target: str, wbs_rows: list, member_rows: list) -> None:
-    """Create/replace the two tables in `target`, then mirror into main so
-    qa.py, the parquet export, and rebuild all see the same rows whichever
-    mode we ran in.
-
-    Rows are staged in a temp table and moved with a single INSERT …
-    SELECT rather than executemany: DuckLake records one snapshot per
-    statement, so a per-row insert would bury each run's real change under
-    a hundred single-row snapshots and make the history useless.
-    """
-    for table, cols, rows, ddl in (
-        ("cod_wbs", WBS_COLS, wbs_rows,
-         "wbs_code VARCHAR, parent_code VARCHAR, title VARCHAR, "
-         "lead_person_id VARCHAR, sort_order INTEGER, notes VARCHAR"),
-        ("cod_team_members", MEMBER_COLS, member_rows,
-         "member_id VARCHAR, person_id VARCHAR, display_name VARCHAR, "
-         "wbs_code VARCHAR, role VARCHAR, institution VARCHAR, "
-         "institution_slug VARCHAR, is_pi BOOLEAN, is_copi BOOLEAN, "
-         "is_leadership_committee BOOLEAN, committees VARCHAR, status VARCHAR, "
-         "sort_order INTEGER, source VARCHAR, notes VARCHAR"),
-    ):
-        stage = f"_stage_{table}"
-        conn.execute(f"CREATE OR REPLACE TEMP TABLE {stage} ({ddl})")
-        conn.executemany(
-            f"INSERT INTO {stage} VALUES ({', '.join('?' * len(cols))})", rows)
-        if target == "main":
-            # main.* already exist with the PRIMARY KEY and NOT NULL
-            # constraints schema.sql declares. CREATE OR REPLACE here would
-            # silently swap them for unconstrained tables, so the no-DuckLake
-            # path would stop catching duplicate (member, wbs, role) rows that
-            # the DuckLake path still rejects.
-            conn.execute(f"DELETE FROM main.{table}")
-            conn.execute(f"INSERT INTO main.{table} SELECT * FROM {stage}")
-        else:
-            conn.execute(f"CREATE OR REPLACE TABLE {target}.{table} ({ddl})")
-            conn.execute(f"INSERT INTO {target}.{table} SELECT * FROM {stage}")
-        conn.execute(f"DROP TABLE {stage}")
-    print(f"[{target}] cod_wbs={len(wbs_rows)} cod_team_members={len(member_rows)}")
-
-    if target != "main":
-        # main.* already exist with PKs from schema.sql — replace contents,
-        # not the tables, so the constraints stay in force.
-        conn.execute("DELETE FROM main.cod_team_members;")
-        conn.execute("DELETE FROM main.cod_wbs;")
-        conn.execute(f"INSERT INTO main.cod_wbs SELECT * FROM {target}.cod_wbs;")
-        conn.execute(
-            f"INSERT INTO main.cod_team_members SELECT * FROM {target}.cod_team_members;")
-        print("[main] mirrored from the lake")
-
-
 def members_raw_aligned(member_rows: list, members_raw: list[dict]) -> list[dict]:
     """Re-pair each built row with the seed row it came from.
 
@@ -325,101 +267,197 @@ def members_raw_aligned(member_rows: list, members_raw: list[dict]) -> list[dict
     return [index.get((row[2], row[3], row[4]), {}) for row in member_rows]
 
 
-def sync_people(conn, members_raw: list[dict], member_rows: list) -> int:
-    """Upsert named members into people. COALESCE on every enrichable
-    column so a blank seed cell never clobbers an enriched value."""
-    # Walk the built rows and their originating seed row together. Resolving
-    # by display_name instead would let two different people who share a name
-    # collapse onto whichever row happened to be last, silently writing one
-    # person's identifiers onto the other.
+def people_rows(members_raw: list[dict], member_rows: list) -> list[list]:
+    """One staged people row per distinct named member (first role row wins).
+
+    Walks the built rows and their originating seed row together. Resolving
+    by display_name instead would let two different people who share a name
+    collapse onto whichever row happened to be last, silently writing one
+    person's identifiers onto the other.
+    """
     seen: set[str] = set()
-    n = 0
+    out: list[list] = []
     for row, r in zip(member_rows, members_raw_aligned(member_rows, members_raw)):
-        pid = row[1]
-        name = row[2]
+        pid, name = row[1], row[2]
         if not pid or pid in seen:
             continue
         seen.add(pid)
         given, family = split_name(name)
-        conn.execute(
-            """
-            INSERT INTO people (
-                person_id, name, name_family, name_given, email, orcid,
-                openalex_id, google_scholar_id, homepage_url, status, notes,
-                updated_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, now())
-            ON CONFLICT (person_id) DO UPDATE SET
-                name              = excluded.name,
-                name_family       = excluded.name_family,
-                name_given        = excluded.name_given,
-                email             = COALESCE(excluded.email, people.email),
-                orcid             = COALESCE(excluded.orcid, people.orcid),
-                openalex_id       = COALESCE(excluded.openalex_id, people.openalex_id),
-                google_scholar_id = COALESCE(excluded.google_scholar_id,
-                                             people.google_scholar_id),
-                homepage_url      = COALESCE(excluded.homepage_url, people.homepage_url),
-                status            = 'active',
-                notes             = COALESCE(people.notes, excluded.notes),
-                updated_at        = now()
-            """,
-            [pid, name, family, given,
-             (r.get("email") or "").strip() or None,
-             (r.get("orcid") or "").strip() or None,
-             (r.get("openalex_id") or "").strip() or None,
-             (r.get("google_scholar_id") or "").strip() or None,
-             (r.get("homepage_url") or "").strip() or None,
-             "COD team (org-chart-2026)"],
-        )
-        n += 1
-    return n
+        out.append([
+            pid, name, family, given,
+            (r.get("orcid") or "").strip() or None,
+            (r.get("openalex_id") or "").strip() or None,
+            (r.get("google_scholar_id") or "").strip() or None,
+            (r.get("homepage_url") or "").strip() or None,
+            "active",
+            PEOPLE_NOTE,
+        ])
+    return out
 
 
-def export_parquet(conn) -> None:
-    for table in EXPORT_TABLES:
-        for base in PARQUET_OUT:
-            base.mkdir(parents=True, exist_ok=True)
-            out = base / f"{table}.parquet"
-            conn.execute(f"COPY (SELECT * FROM main.{table}) TO '{out}' (FORMAT PARQUET)")
-        print(f"[parquet] {table} -> " + ", ".join(
-            str((b / f'{table}.parquet').relative_to(ROOT)) for b in PARQUET_OUT))
-    print("[note] parquet files are gitignored; stage them with `git add -f`")
+def _cols(cols: list[str], prefix: str = "") -> str:
+    return ", ".join(prefix + cod_db.qident(c) for c in cols)
 
 
-def show_history(conn, target: str) -> None:
-    if target != "teamlake":
-        print("[history] no DuckLake attached")
+def _stage(con, stage: str, like: str, cols: list[str], rows: list) -> None:
+    """A TEMP table with ``like``'s column types for ``cols``, holding ``rows``.
+
+    executemany into TEMP is fine: the temp catalog is not the lake, so it
+    makes no snapshots. The lake is then written with one statement.
+    """
+    con.execute(f"CREATE OR REPLACE TEMP TABLE {stage} AS "
+                f"SELECT {_cols(cols)} FROM {cod_db.qident(like)} LIMIT 0")
+    if rows:
+        con.executemany(f"INSERT INTO {stage} VALUES ({', '.join('?' * len(cols))})", rows)
+
+
+def _n_differing(con, stage: str, table: str, cols: list[str]) -> int:
+    """Rows in either the staged set or the lake table but not both (bag diff)."""
+    c, t = _cols(cols), cod_db.qident(table)
+    return cod_db.scalar(
+        con,
+        f"SELECT (SELECT count(*) FROM (SELECT {c} FROM {stage} EXCEPT ALL "
+        f"                              SELECT {c} FROM {t})) "
+        f"     + (SELECT count(*) FROM (SELECT {c} FROM {t} EXCEPT ALL "
+        f"                              SELECT {c} FROM {stage}))")
+
+
+def write_team_tables(con, wbs_rows: list, member_rows: list) -> dict[str, int]:
+    """Replace cod_wbs and cod_team_members with the seed rows, if they differ.
+
+    DELETE + one INSERT … SELECT per table, not CREATE OR REPLACE: the
+    lake's column definitions (NOT NULL, DEFAULT) survive. A table whose
+    rows already match is not touched, so an unchanged seed makes no
+    snapshot. Returns the number of differing rows per table (0 = untouched).
+    """
+    out: dict[str, int] = {}
+    for (table, cols), rows in zip(TEAM_TABLES, (wbs_rows, member_rows)):
+        stage = f"_stage_{table}"
+        _stage(con, stage, table, cols, rows)
+        n = _n_differing(con, stage, table, cols)
+        if n:
+            con.execute(f"DELETE FROM {cod_db.qident(table)}")
+            con.execute(f"INSERT INTO {cod_db.qident(table)} ({_cols(cols)}) "
+                        f"SELECT {_cols(cols)} FROM {stage}")
+        con.execute(f"DROP TABLE {stage}")
+        out[table] = n
+        print(f"[lake] {table}: {len(rows)} rows "
+              + (f"(rewritten; {n} row(s) differed)" if n else "(unchanged)"))
+    return out
+
+
+def sync_people(con, rows: list[list]) -> dict:
+    """Merge the named members into people (see PEOPLE_COLS for the rules).
+
+    Only rows the merge would change are merged, so an unchanged roster
+    leaves people (and its updated_at stamps) alone and commits nothing.
+    """
+    _stage(con, "_stage_people", "people", PEOPLE_COLS, rows)
+
+    def merged(c: str) -> str:
+        q = cod_db.qident(c)
+        if c in PEOPLE_FILL:
+            return f"COALESCE(t.{q}, s.{q})"
+        if c in PEOPLE_COALESCE:
+            return f"COALESCE(s.{q}, t.{q})"
+        return f"s.{q}"
+
+    changed = " OR ".join(f"{merged(c)} IS DISTINCT FROM t.{cod_db.qident(c)}"
+                          for c in PEOPLE_COLS if c != "person_id")
+    con.execute(
+        "CREATE OR REPLACE TEMP TABLE _stage_people_delta AS "
+        "SELECT s.* FROM _stage_people s "
+        "LEFT JOIN people t ON t.person_id = s.person_id "
+        f"WHERE t.person_id IS NULL OR {changed}")
+    n_delta = cod_db.scalar(con, "SELECT count(*) FROM _stage_people_delta")
+    res = {"staged": len(rows), "matched": 0, "inserted": 0,
+           "unchanged": len(rows) - n_delta}
+    if n_delta:
+        r = cod_db.merge_upsert(con, "people", ["person_id"], "_stage_people_delta",
+                                coalesce=PEOPLE_COALESCE, fill=PEOPLE_FILL,
+                                extra_set={"updated_at": "now()"})
+        res.update(matched=r["matched"], inserted=r["inserted"])
+    con.execute("DROP TABLE _stage_people_delta")
+    con.execute("DROP TABLE _stage_people")
+    print(f"[lake] people: {res['staged']} COD team member(s): {res['inserted']} inserted, "
+          f"{res['matched']} updated, {res['unchanged']} unchanged")
+    return res
+
+
+def show_history(con, limit: int) -> None:
+    """This script's snapshots, newest first, with per-table row changes."""
+    snaps = cod_db.rows(
+        con,
+        f"SELECT snapshot_id, CAST(snapshot_time AS VARCHAR), author, commit_message "
+        f"FROM {cod_db.LAKE}.snapshots() WHERE commit_message LIKE ? "
+        f"ORDER BY snapshot_id DESC LIMIT ?", [f"{SCRIPT}:%", limit])
+    if not snaps:
+        print(f"[history] no {SCRIPT} snapshots in this lake yet")
         return
-    try:
-        rows = conn.execute(
-            "SELECT snapshot_id, snapshot_time, changes FROM teamlake.snapshots() "
-            "ORDER BY snapshot_id DESC LIMIT 10"
-        ).fetchall()
-        print(f"[history] {len(rows)} most recent snapshot(s):")
-        for sid, stime, changes in rows:
-            print(f"  #{sid}  {stime}  {changes}")
-    except duckdb.Error as e:
-        print(f"[warn] snapshots() unavailable: {str(e).splitlines()[0]}")
+    print(f"[history] {len(snaps)} most recent {SCRIPT} snapshot(s):")
+    for sid, stime, author, msg in snaps:
+        print(f"  #{sid}  {stime}  {author}  {msg}")
+        parts = []
+        for table in WRITES:
+            counts = cod_db.rows(
+                con,
+                f"SELECT change_type, count(*) FROM ducklake_table_changes("
+                f"'{cod_db.LAKE}', 'main', '{table}', {int(sid)}, {int(sid)}) "
+                f"GROUP BY 1 ORDER BY 1")
+            if counts:
+                parts.append(f"{table}: " + ", ".join(f"{n} {ct}" for ct, n in counts))
+        print("      " + ("; ".join(parts) or "no row changes"))
+    print("[history] rows as of a snapshot:  "
+          "SELECT * FROM cod_team_members AT (VERSION => n)")
 
 
-def main() -> int:
+def catalog_arg(args) -> Path | None:
+    """--db is the pre-lake flag, kept as an alias of --catalog. The retired
+    db/cod_kmap.duckdb file itself is not a catalog, so it is ignored."""
+    if args.db is None or args.catalog is not None:
+        return args.catalog
+    if args.db.suffix == ".duckdb":
+        print(f"[deprecated] --db {args.db} ignored (db/cod_kmap.duckdb is retired); "
+              f"use --catalog", file=sys.stderr)
+        return None
+    return args.db
+
+
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--db", type=Path, default=DEFAULT_DB)
+    cod_db.add_argparse_catalog(ap)
+    ap.add_argument("--db", type=Path, default=None,
+                    help="deprecated alias of --catalog (a .duckdb path is ignored)")
     ap.add_argument("--wbs-csv", type=Path, default=WBS_CSV)
     ap.add_argument("--members-csv", type=Path, default=MEMBERS_CSV)
-    ap.add_argument("--no-ducklake", action="store_true",
-                    help="write plain tables in the main DB, skip the lake")
+    ap.add_argument("--no-ducklake", dest="legacy_no_lake", action="store_true",
+                    help="deprecated no-op: the team layer always lives in the main lake")
+    ap.add_argument("--skip-export", action="store_true",
+                    help="deprecated no-op: this script no longer writes parquet")
     ap.add_argument("--dry-run", action="store_true", help="validate only, write nothing")
-    ap.add_argument("--skip-export", action="store_true", help="don't refresh parquet")
-    ap.add_argument("--history", action="store_true",
-                    help="print the DuckLake snapshot log and exit")
-    args = ap.parse_args()
+    ap.add_argument("--history", nargs="?", type=int, const=10, default=None, metavar="N",
+                    help=f"print the last N (default 10) {SCRIPT} snapshots and exit")
+    args = ap.parse_args(argv)
 
-    if not args.db.exists():
-        print(f"[error] {args.db} not found — run scripts/rebuild_db_from_parquet.py first",
+    if args.legacy_no_lake:
+        print("[deprecated] --no-ducklake ignored: the COD team tables live in the "
+              "main lake (scripts/cod_db.py); there is no separate catalogue to skip",
               file=sys.stderr)
-        return 2
+    if args.skip_export:
+        print("[deprecated] --skip-export ignored: this script never writes parquet "
+              "(run scripts/export_parquet.py)", file=sys.stderr)
+    catalog = catalog_arg(args)
+
+    if args.history is not None:
+        try:
+            con = cod_db.connect(read_only=True, catalog=catalog, data=args.lake_data)
+        except cod_db.LakeNotFound as e:
+            print(f"[error] {e}", file=sys.stderr)
+            return 2
+        show_history(con, args.history)
+        con.close()
+        return 0
 
     wbs_raw = read_seed(args.wbs_csv)
     members_raw = read_seed(args.members_csv)
@@ -435,39 +473,49 @@ def main() -> int:
     named = sum(1 for r in member_rows if r[1])
     open_slots = sum(1 for r in member_rows if r[11] in ("tbd", "tbh"))
     collective = sum(1 for r in member_rows if r[11] == "collective")
-    people_ct = len({r[1] for r in member_rows if r[1]})
-    print(f"[ok] validated: {people_ct} distinct people across {named} role rows, "
+    person_rows = people_rows(members_raw, member_rows)
+    print(f"[ok] validated: {len(person_rows)} distinct people across {named} role rows, "
           f"{open_slots} unfilled position(s), {collective} group-staffed")
 
     if args.dry_run:
         print("[dry-run] nothing written")
         return 0
 
-    conn = duckdb.connect(str(args.db))
-    conn.execute("SET search_path = main;")
+    try:
+        con = cod_db.connect(catalog=catalog, data=args.lake_data)
+    except cod_db.LakeNotFound as e:
+        print(f"[error] {e}", file=sys.stderr)
+        return 2
 
-    target = "main" if args.no_ducklake else attach_lake(conn)
-    if args.history:
-        show_history(conn, target)
-        conn.close()
-        return 0
+    before = cod_db.latest_snapshot(con).get("snapshot_id")
+    message = (f"{SCRIPT}: {len(wbs_rows)} WBS rows, {len(member_rows)} member rows, "
+               f"{len(person_rows)} people from data/seed/cod_*.csv")
+    try:
+        with cod_db.transaction(con, message):
+            write_team_tables(con, wbs_rows, member_rows)
+            sync_people(con, person_rows)
+            cod_db.assert_integrity(con, WRITES)
+    except cod_db.IntegrityError as e:
+        print(f"[error] integrity check failed; nothing committed:\n{e}", file=sys.stderr)
+        con.close()
+        return 1
 
-    write_tables(conn, target, wbs_rows, member_rows)
-    n_synced = sync_people(conn, members_raw, member_rows)
-    print(f"[people] upserted {n_synced} COD team member(s)")
-
-    if not args.skip_export:
-        export_parquet(conn)
-    show_history(conn, target)
+    after = cod_db.latest_snapshot(con)
+    if after.get("snapshot_id") != before:
+        print(f"[lake] committed snapshot #{after['snapshot_id']}: {after['commit_message']}")
+        print("[next] python scripts/qa.py && python scripts/export_parquet.py   "
+              "# publish to db/parquet + public/parquet")
+    else:
+        print("[lake] seeds match the lake; nothing changed, no snapshot written")
 
     for label, sql in (
-        ("PI", "SELECT display_name, institution FROM main.cod_team_members WHERE is_pi"),
-        ("Co-PIs", "SELECT DISTINCT display_name, institution FROM main.cod_team_members "
+        ("PI", "SELECT display_name, institution FROM cod_team_members WHERE is_pi"),
+        ("Co-PIs", "SELECT DISTINCT display_name, institution FROM cod_team_members "
                    "WHERE is_copi ORDER BY display_name"),
     ):
-        rows = conn.execute(sql).fetchall()
+        rows = cod_db.rows(con, sql)
         print(f"  {label}: " + "; ".join(f"{n} ({i})" for n, i in rows))
-    conn.close()
+    con.close()
     return 0
 
 
