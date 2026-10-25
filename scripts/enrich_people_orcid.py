@@ -18,6 +18,13 @@ match is accepted only if the name resolves to exactly one ORCID; two or
 more namesakes are logged `ambiguous-name-only` and left null.
 
 Logs every decision to data/seed/orcid_resolution_log.csv for audit.
+
+The same log is also an input: a row whose decision starts with
+"cleared-" (cleared-wrong-person, cleared-unverified, cleared-404,
+written by review and wipe passes) is a rejection of that (person, ORCID)
+pair. The resolver never attaches a rejected ORCID to that person again,
+whatever it scores; the person is left null and the skip is logged
+`blocked-cleared`. Removing the cleared- row is the only override.
 Accepted ORCIDs are written to the DuckLake (scripts/cod_db.py) in one
 snapshot after the network loop; publish with scripts/export_parquet.py.
 
@@ -28,6 +35,8 @@ Usage::
     python scripts/enrich_people_orcid.py --dry-run
     python scripts/enrich_people_orcid.py --only-missing  (default)
     python scripts/enrich_people_orcid.py --reverify      (re-check existing orcids)
+    python scripts/enrich_people_orcid.py --person-id 0433ba6616b2808a --dry-run
+    python scripts/enrich_people_orcid.py --log-csv /tmp/log.csv --dry-run
 """
 from __future__ import annotations
 
@@ -48,6 +57,11 @@ except ImportError:
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import cod_db  # noqa: E402
+# (person_id, ORCID upper-cased) -> decision for every 'cleared-*' log row.
+# A pair cleared once stays rejected even if an earlier or later row says
+# 'accept'. Shared with wipe_misattributed_identifiers.roster_drift().
+from wipe_misattributed_identifiers import (  # noqa: E402
+    load_orcid_rejections as load_rejections)
 
 ROOT = Path(__file__).resolve().parent.parent
 LOG_CSV = ROOT / "data" / "seed" / "orcid_resolution_log.csv"
@@ -400,7 +414,13 @@ def main() -> int:
     ap.add_argument("--reverify", action="store_true",
                     help="Re-check people who already have orcid; useful "
                          "after a refactor of the matching rules.")
+    ap.add_argument("--person-id", action="append", default=[],
+                    help="Only this person (repeatable).")
+    ap.add_argument("--log-csv", type=Path, default=LOG_CSV,
+                    help="Resolution log: read for cleared- rejections, "
+                         "appended with this run's decisions.")
     args = ap.parse_args()
+    rejected = load_rejections(args.log_csv)
 
     try:
         conn = cod_db.connect(read_only=args.dry_run, catalog=catalog_arg(args),
@@ -426,9 +446,10 @@ def main() -> int:
                COALESCE(facs.facilities, []) AS facilities
         FROM   people p
         LEFT JOIN facs ON facs.person_id = p.person_id
-        WHERE  {"p.orcid IS NULL OR length(p.orcid) = 0" if not args.reverify else "TRUE"}
+        WHERE  ({"p.orcid IS NULL OR length(p.orcid) = 0" if not args.reverify else "TRUE"})
+          AND  (len(?::VARCHAR[]) = 0 OR list_contains(?::VARCHAR[], p.person_id))
         ORDER BY p.name, p.person_id
-    """)
+    """, [list(args.person_id), list(args.person_id)])
 
     people = [
         {"person_id": r[0], "name": r[1], "orcid": r[2],
@@ -438,11 +459,12 @@ def main() -> int:
     if args.batch:
         people = people[: args.batch]
     print(f"[orcid] processing {len(people)} people  "
-          f"min-conf={args.min_conf}  dry-run={args.dry_run}")
+          f"min-conf={args.min_conf}  dry-run={args.dry_run}  "
+          f"rejections={len(rejected)}")
 
-    LOG_CSV.parent.mkdir(parents=True, exist_ok=True)
-    log_exists = LOG_CSV.exists()
-    log = LOG_CSV.open("a", newline="", encoding="utf-8")
+    args.log_csv.parent.mkdir(parents=True, exist_ok=True)
+    log_exists = args.log_csv.exists()
+    log = args.log_csv.open("a", newline="", encoding="utf-8")
     log_w = csv.writer(log)
     if not log_exists:
         log_w.writerow([
@@ -463,6 +485,17 @@ def main() -> int:
                 print(f"  [{i}/{len(people)}] {p['name']:30s} ERROR: {e}")
                 totals["errors"] += 1
                 continue
+            cleared = rejected.get((p["person_id"], (orcid or "").upper()))
+            if orcid and cleared:
+                print(f"    [blocked] {p['name']}: {orcid} is {cleared} for "
+                      f"{p['person_id']} in {args.log_csv.name}; left null "
+                      f"(was {info['decision']}, score {info.get('score', '')})")
+                info = {"decision": "blocked-cleared",
+                        "candidates": info.get("candidates", 0),
+                        "score": info.get("score", ""),
+                        "match_org": f"{cleared} in resolution log; resolver "
+                                     f"said {info['decision']}",
+                        "match_facility": info.get("match_facility", "")}
             log_w.writerow([
                 p["person_id"], p["name"], info["decision"], orcid or "",
                 info.get("candidates", 0), info.get("score", ""),
@@ -471,7 +504,7 @@ def main() -> int:
             totals[info["decision"]] = totals.get(info["decision"], 0) + 1
             msg = orcid or "—"
             print(f"  [{i}/{len(people)}] {p['name']:30s} {info['decision']:25s} {msg}")
-            if orcid:
+            if orcid and not cleared:
                 found.append((p["person_id"], orcid))
             time.sleep(0.05)
     except KeyboardInterrupt:

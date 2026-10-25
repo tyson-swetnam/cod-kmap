@@ -15,7 +15,7 @@ David Burke, William Reay, etc. with research_interests like
 'Medicine, Cardiology, Heart failure'.
 
 This script identifies the bad rows via two heuristics — research_interests
-contain ZERO marine/coastal keywords, OR the person has no
+contain ZERO marine/coastal keywords, OR (--strict) the person has no
 person_areas mapping at all — then:
 
   * NULLs openalex_id + research_interests on the person
@@ -23,6 +23,22 @@ person_areas mapping at all — then:
   * DELETEs the matching person_areas rows
   * Leaves publications themselves untouched (they may have legitimate
     co-authors among other people in the dataset).
+
+A heuristic never overrides identifier evidence. A person is exempt —
+reported as kept, never wiped — when their openalex_id is verified:
+
+  * orcid-equality: the person has an ORCID, and the OpenAlex author
+    record carries that same ORCID (the latest 'orcid-resolves' verdict in
+    person_validation is 'pass' for their person_registry row, which holds
+    the same ORCID and the same openalex_id). An empty research_interests
+    says nothing about such a match; Clark Alexander's correct,
+    ORCID-matched A5052291224 was flagged only because it had none.
+  * coastal-topic share: their registry row's author record clears the
+    scholar roster's own gate (build_community_scholars.MIN_COASTAL_WORKS
+    coastal works and MIN_COASTAL_SHARE of all works).
+
+A (person_id, openalex_id) pair in data/seed/bad_openalex_pairs.csv is
+always a suspect ('blocklisted'), whatever else holds.
 
 Re-runs are idempotent: a fresh run finds nothing left to wipe. The wipe
 is one lake snapshot (scripts/cod_db.py), rolled back if it would orphan
@@ -41,6 +57,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import cod_db  # noqa: E402
+from build_community_scholars import MIN_COASTAL_SHARE, MIN_COASTAL_WORKS  # noqa: E402
+from wipe_misattributed_identifiers import bad_openalex_pairs, is_blocked  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -66,7 +84,51 @@ def has_marine_signal(text: str) -> bool:
     return any(kw in s for kw in MARINE_KW)
 
 
-def find_suspects(conn, strict: bool):
+def verified_openalex(conn) -> dict[str, str]:
+    """person_id -> why that person's current openalex_id is verified.
+
+    Read from the lake only (no API call): the person's person_registry row
+    must hold the same openalex_id (and, for orcid-equality, the same ORCID).
+    """
+    if not (cod_db.table_exists(conn, "person_registry")
+            and cod_db.table_exists(conn, "person_validation")):
+        return {}
+    out: dict[str, str] = {}
+    for pid, orcid, oaid in cod_db.rows(conn, """
+            WITH latest AS (
+              SELECT canonical_id, verdict, subject_id_value,
+                     row_number() OVER (PARTITION BY canonical_id
+                                        ORDER BY retrieved_at DESC, run_id DESC) AS rn
+              FROM person_validation WHERE check_id = 'orcid-resolves')
+            SELECT p.person_id, p.orcid, p.openalex_id
+            FROM people p
+            JOIN person_registry r ON r.person_id = p.person_id
+            JOIN latest v ON v.canonical_id = r.canonical_id AND v.rn = 1
+            WHERE p.orcid IS NOT NULL AND p.orcid <> ''
+              AND upper(r.orcid) = upper(p.orcid)
+              AND upper(r.openalex_id) = upper(p.openalex_id)
+              AND v.verdict = 'pass' AND upper(v.subject_id_value) = upper(p.orcid)
+            ORDER BY 1"""):
+        out[pid] = (f"orcid-equality: OpenAlex {oaid} carries the stored "
+                    f"ORCID {orcid}")
+    for pid, oaid, cw, share in cod_db.rows(conn, """
+            SELECT p.person_id, p.openalex_id, r.coastal_works_count, r.coastal_share
+            FROM people p JOIN person_registry r ON r.person_id = p.person_id
+            WHERE upper(r.openalex_id) = upper(p.openalex_id)
+              AND r.coastal_works_count >= ? AND r.coastal_share >= ?
+            ORDER BY 1""", [MIN_COASTAL_WORKS, MIN_COASTAL_SHARE]):
+        out.setdefault(pid, f"coastal-topic share: {cw} coastal works, "
+                            f"{share:.0%} of output (gate {MIN_COASTAL_WORKS} / "
+                            f"{MIN_COASTAL_SHARE:.0%})")
+    return out
+
+
+def find_suspects(conn, strict: bool, verified: dict[str, str] | None = None):
+    """[(person_id, name, research_interests, openalex_id, why)] to wipe.
+    People in `verified` are never suspects unless their pair is
+    blocklisted."""
+    verified = verified or {}
+    blocked = bad_openalex_pairs()
     rows = cod_db.rows(conn, """
         SELECT person_id, name, research_interests, openalex_id
         FROM   people
@@ -75,7 +137,11 @@ def find_suspects(conn, strict: bool):
     """)
     suspects = []
     for pid, name, ri, oaid in rows:
-        if not has_marine_signal(ri):
+        if is_blocked(blocked, oaid, pid):
+            suspects.append((pid, name, ri, oaid, 'blocklisted'))
+        elif pid in verified:
+            continue
+        elif not has_marine_signal(ri):
             suspects.append((pid, name, ri, oaid, 'no-marine-keywords'))
     if strict:
         # Additional candidates: anyone with openalex_id but ZERO
@@ -93,7 +159,7 @@ def find_suspects(conn, strict: bool):
         """)
         already = {s[0] for s in suspects}
         for pid, name, ri, oaid in zeros:
-            if pid in already:
+            if pid in already or pid in verified:
                 continue
             suspects.append((pid, name, ri, oaid, 'no-person-areas'))
     return suspects
@@ -112,8 +178,16 @@ def wipe(conn, suspects):
         conn, f"DELETE FROM person_areas WHERE person_id IN ({placeholder})", pids)
     cod_db.scalar(
         conn,
+        # research_interests goes only when it came from OpenAlex (no
+        # source, or an OpenAlex source); a curated, sourced value stays.
         f"""UPDATE people SET openalex_id = NULL,
-                              research_interests = NULL,
+                              research_interests = CASE
+                                WHEN coalesce(research_interests_source_url, '') = ''
+                                  OR research_interests_source_url ILIKE '%openalex.org%'
+                                THEN NULL ELSE research_interests END,
+                              research_interests_source_url = CASE
+                                WHEN research_interests_source_url ILIKE '%openalex.org%'
+                                THEN NULL ELSE research_interests_source_url END,
                               updated_at = now()
             WHERE person_id IN ({placeholder})""",
         pids)
@@ -156,12 +230,20 @@ def main() -> int:
         print(f"[error] {e}", file=sys.stderr)
         return 2
 
-    suspects = find_suspects(conn, args.strict)
+    verified = verified_openalex(conn)
+    suspects = find_suspects(conn, args.strict, verified)
+    # Report the verified people the heuristics alone would have flagged.
+    flagged = {s[0] for s in find_suspects(conn, args.strict)}
+    kept = [(pid, why) for pid, why in sorted(verified.items()) if pid in flagged
+            and pid not in {s[0] for s in suspects}]
+    names = dict(cod_db.rows(conn, "SELECT person_id, name FROM people"))
+    if kept:
+        print(f"[kept] {len(kept)} flagged by the heuristics but verified:")
+        for pid, why in sorted(kept, key=lambda k: names.get(k[0], "")):
+            print(f"  {names.get(pid, pid):30s} {why}")
     print(f"[suspects] {len(suspects)} candidates for wipe:")
-    for pid, name, ri, oaid, why in suspects[:25]:
+    for pid, name, ri, oaid, why in suspects:
         print(f"  [{why}] {name:30s} {oaid:13s} {(ri or '')[:60]}")
-    if len(suspects) > 25:
-        print(f"  …and {len(suspects) - 25} more")
 
     if args.dry_run:
         print("\n[dry-run] would wipe; skipping writes.")

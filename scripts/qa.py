@@ -1218,6 +1218,90 @@ def check_facilities(conn, failures: list[str]) -> None:
         assert_true(count == 0, f"{count} {country} facilities outside the country bbox", failures)
 
 
+# --- WP3 identity hygiene checks ---
+# Decision log of enrich_people_orcid.py and the review/wipe passes, and the
+# (person or registry row, OpenAlex author) pairs a review rejected. Both are
+# read by the enrich scripts so a re-run cannot re-attach a rejected id; these
+# checks catch any other writer.
+ORCID_LOG = Path(__file__).resolve().parent.parent / "data" / "seed" / "orcid_resolution_log.csv"
+BAD_OPENALEX_PAIRS = (Path(__file__).resolve().parent.parent / "data" / "seed"
+                      / "bad_openalex_pairs.csv")
+
+
+def check_identity_hygiene(conn, failures: list[str],
+                           orcid_log: Path = ORCID_LOG,
+                           bad_pairs: Path = BAD_OPENALEX_PAIRS) -> None:
+    """Fail on an identifier a review rejected, or one ORCID on two people.
+
+      * a people row carrying an ORCID that orcid_resolution_log.csv marks
+        cleared-wrong* for that person (cleared-404 / cleared-unverified
+        may legitimately come back with evidence);
+      * a (person_id, openalex_id) or (canonical_id, openalex_id) pair of
+        bad_openalex_pairs.csv present in people / person_registry;
+      * one ORCID held by more than one people row.
+    Each part is gated on its table being non-empty (ingest.py empties
+    people and person_registry in the CI lake).
+    """
+    n_people = table_rows(conn, "people")
+    n_registry = table_rows(conn, "person_registry")
+    if n_people > 0 and orcid_log.exists():
+        back = conn.execute(
+            """SELECT p.name, p.person_id, p.orcid, any_value(l.decision)
+               FROM people p
+               JOIN read_csv(?, header=True, all_varchar=True) l
+                 ON l.person_id = p.person_id
+                AND upper(trim(l.orcid)) = upper(trim(p.orcid))
+               WHERE l.decision LIKE 'cleared-wrong%'
+               GROUP BY ALL ORDER BY 1""", [str(orcid_log)]).fetchall()
+        assert_true(not back, f"{len(back)} people carry an ORCID that "
+                              f"{orcid_log.name} marks cleared-wrong for them: "
+                    + "; ".join(f"{n} ({pid}) {o} [{d}]" for n, pid, o, d in back[:5]),
+                    failures)
+
+    if bad_pairs.exists() and (n_people > 0 or n_registry > 0):
+        # The id is compared bare and upper-cased, as the enrich scripts do.
+        oa = ("upper(regexp_replace(trim({}), '^https?://(api\\.)?openalex\\.org/"
+              "(authors/)?', '', 'i'))")
+        conn.execute(
+            f"""CREATE OR REPLACE TEMP TABLE _qa_bad_pairs AS
+                SELECT nullif(trim(person_id), '') AS person_id,
+                       nullif(trim(canonical_id), '') AS canonical_id,
+                       {oa.format('openalex_id')} AS oa
+                FROM read_csv(?, header=True, all_varchar=True)
+                WHERE nullif(trim(openalex_id), '') IS NOT NULL""", [str(bad_pairs)])
+        present = []
+        if n_people > 0:
+            present += conn.execute(
+                f"""SELECT 'people', p.person_id, p.name, p.openalex_id
+                    FROM people p JOIN _qa_bad_pairs b
+                      ON b.person_id = p.person_id AND b.oa = {oa.format('p.openalex_id')}
+                    ORDER BY 2""").fetchall()
+        if n_registry > 0:
+            present += conn.execute(
+                f"""SELECT 'person_registry', r.canonical_id, r.display_name, r.openalex_id
+                    FROM person_registry r JOIN _qa_bad_pairs b
+                      ON (b.canonical_id = r.canonical_id OR b.person_id = r.person_id)
+                     AND b.oa = {oa.format('r.openalex_id')}
+                    ORDER BY 2""").fetchall()
+        conn.execute("DROP TABLE _qa_bad_pairs")
+        assert_true(not present,
+                    f"{len(present)} blocked OpenAlex attribution(s) from "
+                    f"{bad_pairs.name} are present (run "
+                    f"scripts/wipe_misattributed_identifiers.py): "
+                    + "; ".join(f"{t} {i} {n} {o}" for t, i, n, o in present[:5]),
+                    failures)
+
+    if n_people > 0:
+        # One ORCID, one person (lto qa.py; scripts/dedupe_people.py merges).
+        dup = conn.execute(
+            """SELECT upper(trim(orcid)), list(person_id ORDER BY person_id),
+                      any_value(name)
+               FROM people WHERE orcid IS NOT NULL AND trim(orcid) <> ''
+               GROUP BY 1 HAVING COUNT(*) > 1 ORDER BY 1""").fetchall()
+        assert_true(not dup, f"{len(dup)} ORCID(s) held by more than one people row: "
+                    + "; ".join(f"{n} {o} {ids}" for o, ids, n in dup[:5]), failures)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="cod-kmap data-quality gate")
     cod_db.add_argparse_catalog(ap)
@@ -1263,6 +1347,7 @@ def main(argv: list[str] | None = None) -> int:
             # --- WP2 crosswalk checks ---
             (check_topic_crosswalk, ()),
             # --- WP3 identity hygiene checks ---
+            (check_identity_hygiene, ()),
             # --- WP4 url health checks ---
             (check_url_health, ()),
         ]

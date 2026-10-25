@@ -47,6 +47,15 @@ Resolution rules (ALL must hold)
      "A. DICKSON" before this rule existed, which would have attached two
      papers to a researcher with hundreds.
 
+Blocked pairs
+-------------
+A (canonical_id or person_id, openalex_id) pair listed in
+data/seed/bad_openalex_pairs.csv (an OpenAlex author record a review found
+to be another person, or several people merged) is never hydrated from or
+attached, on either route: a row whose stored id is blocked is not
+fetched, and an author the ORCID lookup returns is dropped if it is
+blocked for that row. Both are logged ``[blocked]``.
+
 A row resolved this way is written with confidence 'medium', never 'high':
 rules 1-3 are strong evidence, but they are not an identifier the source
 itself asserted. Rows resolved from an identifier already on file stay
@@ -77,6 +86,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import cod_db  # noqa: E402
 import openalex_auth  # noqa: E402
 from enrich_people_orcid import distinctive_tokens  # noqa: E402
+from wipe_misattributed_identifiers import (  # noqa: E402
+    bad_openalex_pairs, is_blocked, norm_openalex)
 
 ROOT = Path(__file__).resolve().parent.parent
 TOPICS_CSV = ROOT / "data" / "datasets" / "coastal_topics.csv"
@@ -313,22 +324,38 @@ def main() -> int:
     found: list[tuple] = []
 
     # ── hydrate rows that already have an identifier ───────────────────
+    blocked = bad_openalex_pairs()
     rows = conn.execute(
-        "SELECT canonical_id, display_name, orcid, openalex_id "
+        "SELECT canonical_id, display_name, orcid, openalex_id, person_id "
         "FROM person_registry "
         "WHERE (orcid IS NOT NULL AND orcid <> '') "
         "   OR (openalex_id IS NOT NULL AND openalex_id <> '') "
         "ORDER BY display_name").fetchall()
     if args.limit:
         rows = rows[:args.limit]
-    print(f"[hydrate] {len(rows)} registry row(s) with an identifier")
+    print(f"[hydrate] {len(rows)} registry row(s) with an identifier; "
+          f"{len(blocked)} blocked pair(s) in bad_openalex_pairs.csv")
     hydrated = 0
     interrupted = False
     try:
-        for i, (cid, name, orcid, oa_id) in enumerate(rows, 1):
+        for i, (cid, name, orcid, oa_id, pid) in enumerate(rows, 1):
+            if is_blocked(blocked, oa_id, cid, pid):
+                # Never fetch a blocked author for this row; the ORCID
+                # route below may still find this row's real author.
+                print(f"  [blocked] {name} ({cid}): stored {oa_id} is on the "
+                      f"blocklist; not hydrated from it (run "
+                      f"wipe_misattributed_identifiers.py to clear it)")
+                oa_id = None
+                if not orcid:
+                    continue
             a = fetch_author(sess, oa_id=oa_id, orcid=orcid)
             time.sleep(SLEEP)
             if not a:
+                continue
+            if is_blocked(blocked, a.get("id"), cid, pid):
+                print(f"  [blocked] {name} ({cid}): OpenAlex returned "
+                      f"{norm_openalex(a.get('id'))}, which is on the blocklist "
+                      f"for this row; not attached")
                 continue
             f = author_fields(a, coastal)
             # Never let hydration overwrite an ORCID already on file — if
@@ -385,6 +412,13 @@ def main() -> int:
             decisions[decision] = decisions.get(decision, 0) + 1
             if decision == "resolved" and a:
                 f = author_fields(a, coastal)
+                cid = (f"orcid:{f['orcid']}" if f.get("orcid")
+                       else f"openalex:{f['openalex_id']}")
+                if is_blocked(blocked, f.get("openalex_id"), sid, cid):
+                    print(f"  [blocked] {name}: {f.get('openalex_id')} is on "
+                          f"the blocklist for {sid}; not attached")
+                    decisions["blocked"] = decisions.get("blocked", 0) + 1
+                    continue
                 found.append((src, sid, name, aff, f))
             if i % 50 == 0:
                 print(f"  [resolve] {i}/{len(unresolved)}  {decisions}")
