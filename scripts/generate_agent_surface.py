@@ -170,6 +170,14 @@ DOC_META: dict[str, tuple[str, str, str, str]] = {
         "dated built/superseded notes on each.",
         "Report", "stable",
     ),
+    "knowledge-map.md": (
+        "Knowledge map",
+        "How the Network tab's cartogram works: the data-and-people weight "
+        "(data providers = facilities with datasets; protected areas excluded), "
+        "the fit-to-everything viewport, every label threshold, and the registry "
+        "layer sized by coastal output volume.",
+        "Guide", "stable",
+    ),
     "map_visualization_plan.md": (
         "Map visualization plan",
         "Design of the Network tab's MVG cartogram: the grouping options with "

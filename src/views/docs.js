@@ -45,6 +45,7 @@ const DOC_PAGES = [
   { title: 'Validation Report',         path: 'docs/VALIDATION_REPORT.md' },
   { title: 'References',                path: 'docs/REFERENCES.md' },
   { title: 'Reference Documents Report',path: 'docs/reference_documents_report.md' },
+  { title: 'Knowledge Map',             path: 'docs/knowledge-map.md' },
   { title: 'Map Visualization Plan',    path: 'docs/map_visualization_plan.md' },
   { title: 'Network Fix Metrics',       path: 'docs/NETWORK_FIX_METRICS.md' },
   { title: 'Funding Pipeline Plan',     path: 'docs/funding_pipeline_plan.md' },
