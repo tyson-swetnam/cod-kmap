@@ -15,6 +15,7 @@
 import maplibregl from 'maplibre-gl';
 import { DATA_BASE } from './config.js';
 import { isMapAvailable } from './map.js';
+import { facetsNarrowing, overlayHiddenByFilters } from './overlay-facets.js';
 
 const MANIFEST_URL = `${DATA_BASE}overlays/manifest.json`;
 
@@ -43,10 +44,27 @@ const FACILITY_LAYERS = [
   'facility-points-hover',
 ];
 
+// ── Filter-aware overlay hiding ─────────────────────────────────────
+//
+// Which overlays a filter selection hides is decided in overlay-facets.js
+// (pure, testable without MapLibre); this file owns the effects. A manual
+// toggle while a facet is active is an override and wins until the facets
+// clear. Untagged layers (epa-regions, neon-domains — pure admin context)
+// are never touched.
+
 let _map = null;
 let _manifest = {};
 let _active = new Set();
 let _onChange = () => {};
+// Overlays auto-hidden by the current facet state (still "on" from the
+// user's point of view — restored the moment the facets clear).
+const _filterHidden = new Set();
+// Overlays the user toggled while facets were active — their choice wins.
+const _userOverride = new Set();
+let _facetsActive = false;
+// The last filter state seen, so the default-on boot (which finishes
+// asynchronously) can apply a selection that arrived before it did.
+let _lastFilters = null;
 
 // Track which overlays have had their data fetched so we don't refetch.
 const _loaded = new Set();
@@ -128,6 +146,11 @@ export async function initOverlays(map, container, onChange) {
     if (!(cb instanceof HTMLInputElement)) return;
     const id = cb.dataset.overlay;
     if (!id) return;
+    // A manual toggle while facets are active overrides the auto-hide
+    // for this layer until the facets clear.
+    if (_facetsActive) _userOverride.add(id);
+    _filterHidden.delete(id);
+    cb.closest('.overlay-row')?.classList.remove('overlay-row-filtered');
     if (cb.checked) {
       await showOverlay(id);
     } else {
@@ -140,7 +163,14 @@ export async function initOverlays(map, container, onChange) {
   // map style + facility layers to be ready, so these are safe to fire now.
   const bootTargets = Object.keys(_manifest).filter((id) => !DEFAULT_OFF.has(id));
   Promise.allSettled(bootTargets.map((id) => showOverlay(id)))
-    .then(() => _onChange())
+    .then(() => {
+      // A filter refresh that ran while these were still loading saw them
+      // as inactive and left them alone; apply it now. (sync calls
+      // _onChange itself when it hides anything; call it regardless so
+      // the legend picks up the booted layers.)
+      if (_lastFilters) syncOverlaysToFilters(_lastFilters);
+      _onChange();
+    })
     .catch((e) => console.warn('overlays: default-on boot failed', e));
 }
 
@@ -225,7 +255,10 @@ async function ensureLoaded(id) {
       type: 'fill',
       source: `ov-${id}`,
       layout: { visibility: 'none' },
-      paint: { 'fill-color': meta.color, 'fill-opacity': 0.16 },
+      // Optional manifest knobs (as in lto): a large backdrop outline
+      // would tint everything inside it at the default opacity, so an
+      // entry can ask for a lighter fill or a different stroke.
+      paint: { 'fill-color': meta.color, 'fill-opacity': meta.fill_opacity ?? 0.16 },
     }, beforeLayer);
 
     _map.addLayer({
@@ -235,21 +268,26 @@ async function ensureLoaded(id) {
       layout: { visibility: 'none' },
       paint: {
         'line-color': meta.color,
-        'line-width': 1.25,
+        'line-width': meta.line_width ?? 1.25,
         'line-opacity': 0.75,
       },
     }, beforeLayer);
 
-    _map.on('click', `ov-${id}-fill`, (e) => {
-      const f = e.features?.[0];
-      if (!f) return;
-      new maplibregl.Popup({ maxWidth: '280px' })
-        .setLngLat([e.lngLat.lng, e.lngLat.lat])
-        .setHTML(overlayPopup(id, f.properties || {}))
-        .addTo(_map);
-    });
-    _map.on('mouseenter', `ov-${id}-fill`, () => { _map.getCanvas().style.cursor = 'pointer'; });
-    _map.on('mouseleave', `ov-${id}-fill`, () => { _map.getCanvas().style.cursor = ''; });
+    // `interactive: false` in the manifest skips the popup: a backdrop
+    // outline covering the whole view would otherwise bury the
+    // facilities' own popups under it.
+    if (meta.interactive !== false) {
+      _map.on('click', `ov-${id}-fill`, (e) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        new maplibregl.Popup({ maxWidth: '280px' })
+          .setLngLat([e.lngLat.lng, e.lngLat.lat])
+          .setHTML(overlayPopup(id, f.properties || {}))
+          .addTo(_map);
+      });
+      _map.on('mouseenter', `ov-${id}-fill`, () => { _map.getCanvas().style.cursor = 'pointer'; });
+      _map.on('mouseleave', `ov-${id}-fill`, () => { _map.getCanvas().style.cursor = ''; });
+    }
   } else {
     // Point layer — circle marker with a coloured fill + white halo so
     // the points are visible regardless of basemap.
@@ -325,6 +363,42 @@ export function activeOverlays() {
     label: _manifest[id]?.label || id,
     color: _manifest[id]?.color || '#64748b',
   }));
+}
+
+// Called by main.js on every filter refresh. See overlay-facets.js for
+// the rationale and the tag tables. Idempotent; cheap when nothing changes.
+export function syncOverlaysToFilters(filters) {
+  _lastFilters = filters;
+  if (!_map || !Object.keys(_manifest).length) return;
+  const facetsActive = facetsNarrowing(filters);
+
+  // Facets just cleared: overrides expire and auto-hidden layers return.
+  if (!facetsActive && _facetsActive) _userOverride.clear();
+  _facetsActive = facetsActive;
+
+  let changed = false;
+  const restoring = [];
+  for (const id of Object.keys(_manifest)) {
+    const wantHide = !_userOverride.has(id) && overlayHiddenByFilters(id, filters);
+    const row = document.querySelector(`input[data-overlay="${id}"]`)
+      ?.closest('.overlay-row');
+    if (wantHide && _active.has(id)) {
+      hideOverlay(id);
+      _filterHidden.add(id);
+      row?.classList.add('overlay-row-filtered');
+      changed = true;
+    } else if (!wantHide && _filterHidden.has(id)) {
+      _filterHidden.delete(id);
+      row?.classList.remove('overlay-row-filtered');
+      // showOverlay is async (first show fetches; the data is already
+      // loaded for anything we auto-hid). The legend reads _active, which
+      // showOverlay only updates after its await, so refresh it once the
+      // restores land rather than synchronously.
+      restoring.push(showOverlay(id));
+      changed = true;
+    }
+  }
+  if (changed) Promise.allSettled(restoring).then(() => _onChange());
 }
 
 function overlayPopup(id, p) {
