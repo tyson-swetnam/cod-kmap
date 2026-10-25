@@ -838,6 +838,65 @@ def check_mvg_node_layout(conn, failures: list[str]) -> None:
                 failures)
 
 
+CROSSWALK_CSV = Path(__file__).resolve().parent.parent / "data" / "vocab_crosswalk" / "openalex_to_area.csv"
+RESEARCH_AREAS_CSV = Path(__file__).resolve().parent.parent / "schema" / "vocab" / "research_areas.csv"
+
+
+def check_topic_crosswalk(conn, failures: list[str],
+                          path: Path = CROSSWALK_CSV,
+                          areas_csv: Path = RESEARCH_AREAS_CSV) -> None:
+    """The OpenAlex -> research-area crosswalk must name real things.
+
+    Its concept ids were once typed from memory: "Kelp" carried the id of
+    "Global warming", "Ecosystem" the id of the general concept "Ecology",
+    "Great Lakes" the id of "History", and 11,154 tags on 7,329 papers
+    were scored through a wrong id. compute_person_areas.py and
+    compute_area_metrics.py join on the id alone, so nothing downstream
+    notices. Fails on:
+
+      * a row that does not have exactly 5 fields (an unquoted label
+        with a comma shifts every column after it);
+      * an area_id that is not in schema/vocab/research_areas.csv;
+      * an id that occurs in publication_topics under a different name.
+        Gated on publication_topics being non-empty (ingest.py empties it
+        in the CI lake).
+    """
+    import csv as _csv                                    # noqa: PLC0415
+    import re as _re                                      # noqa: PLC0415
+    if not path.exists() or not areas_csv.exists():
+        failures.append(f"topic crosswalk or research-area vocab missing: {path}")
+        return
+    with areas_csv.open(newline="", encoding="utf-8") as fh:
+        areas = {r["slug"] for r in _csv.DictReader(fh)}
+    with path.open(newline="", encoding="utf-8") as fh:
+        rows = [r for r in _csv.reader(fh)
+                if r and not r[0].lstrip().startswith("#") and r[0] != "openalex_id"]
+
+    bad_len = [r[0] for r in rows if len(r) != 5]
+    assert_true(not bad_len,
+                f"{len(bad_len)} topic-crosswalk row(s) without exactly 5 fields "
+                f"(quote labels that contain commas): {bad_len[:5]}", failures)
+    bad_area = sorted({r[2] if len(r) > 2 else "" for r in rows
+                       if len(r) < 3 or r[2] not in areas})
+    assert_true(not bad_area,
+                f"topic crosswalk maps to unknown research areas: {bad_area[:8]}", failures)
+
+    if table_rows(conn, "publication_topics") <= 0:
+        return
+
+    def norm(s: str) -> str:
+        return _re.sub(r"[^a-z0-9]+", " ", (s or "").lower()).strip()
+
+    real = dict(conn.execute(
+        "SELECT concept_id, any_value(concept_name) FROM publication_topics "
+        "GROUP BY 1").fetchall())
+    wrong = sorted({f"{r[0]} is '{real[r[0]]}', not '{r[1]}'" for r in rows
+                    if len(r) > 1 and r[0] in real and norm(real[r[0]]) != norm(r[1])})
+    assert_true(not wrong,
+                f"{len(wrong)} topic-crosswalk id(s) carry the wrong label: {wrong[:5]}",
+                failures)
+
+
 def check_facility_ror(conn, failures: list[str]) -> None:
     """facilities.ror must be the bare 9-character ROR id, not a URL.
 
@@ -1200,6 +1259,7 @@ def main(argv: list[str] | None = None) -> int:
             (check_coauthor_candidates, ()),
             (check_mvg_node_layout, ()),
             # --- WP2 crosswalk checks ---
+            (check_topic_crosswalk, ()),
             # --- WP3 identity hygiene checks ---
             # --- WP4 url health checks ---
             (check_url_health, ()),
