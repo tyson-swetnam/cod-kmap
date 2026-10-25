@@ -4,35 +4,45 @@ layouts for the COD knowledge map.
 
 Implements KMap and PCL from Hossain, Moradi, Mondal & Kobourov, "Map
 Visualizations for Graphs with Group Restrictions", Graphics Interface 2025
-(see scripts/mvg.py), and writes four tables to db/parquet/ and
-public/parquet/:
+(see scripts/mvg.py), and writes four derived tables into the lake (one
+snapshot; scripts/export_parquet.py publishes them to db/parquet/ and
+public/parquet/):
 
-  mvg_node_layout.parquet          per-node KMap and PCL coordinates
-  mvg_area_polygons.parquet        per-area polygon WKT + area/size shares
-  scholar_area_assignments.parquet scholar -> research area (+confidence)
-  mvg_layout_metrics.parquet       M1-M7 quality metrics for both methods
+  mvg_node_layout          per-node KMap and PCL coordinates
+  mvg_area_polygons        per-area polygon WKT + area/size shares
+  scholar_area_assignments scholar -> research area (+confidence)
+  mvg_layout_metrics       M1-M7 quality metrics for both methods
 
 The front end recomputes a KMap-equivalent layout in src/views/network.js at
 page load; these tables let it read a precomputed PCL layout instead
 (network.js Phase 3, "PCL refinement", is unbuilt).
 
 Node population (713 nodes / 5,648 edges / 21 areas):
-  site personnel   people.parquet with an area in person_primary_groups
-  COD leadership   cod_team_members.parquet (domain role, else operations)
-  scholars         community_scholars.parquet joined via person_registry
+  site personnel   people with an area in person_primary_groups
+  COD leadership   cod_team_members (domain role, else operations)
+  scholars         community_scholars joined via person_registry
 
-Edges: internal co-authorship (authorship.parquet), registry collaborations
-(registry_collaborations.parquet), and scholar<->COD bridge edges.
+Edges: internal co-authorship (authorship), registry collaborations
+(registry_collaborations), and scholar<->COD bridge edges.
+
+Inputs are read from the lake by default, so a layout run straight after
+compute_primary_groups.py sees its output without an export in between.
+The lake holds the whole person_registry (archive tier included), which is
+what db/parquet -- this script's old input -- holds too. With --parquet-dir
+the inputs are read from a parquet catalog instead; the outputs always go
+to the lake. The layout is deterministic for a given --seed (default 7):
+every input query is ordered and mvg.py seeds every random draw.
 
 Usage:
-  python scripts/build_mvg_layout.py                  # both output dirs
+  python scripts/build_mvg_layout.py                  # lake -> lake
   python scripts/build_mvg_layout.py --k-ext 12       # sparser graph
+  python scripts/build_mvg_layout.py --parquet-dir db/parquet   # parquet -> lake
 
 PROVENANCE WARNING. Research areas for community scholars are INFERRED, not
 curated: no scholar->area table exists in the catalog, and the shared_areas
 field on registry_collaborations covers only 9 scholars. Each scholar's area
 is a weighted vote over their community_scholars.top_topics phrases mapped
-onto research_areas.parquet, via the cached map in
+onto research_areas, via the cached map in
 db/derived/topic_area_map.json. Mean confidence is 0.58 and 125 of 442 rows
 fall below 0.4. The confidence column ships with the table -- treat low
 values as provisional pending curator review, and do not present them in the
@@ -45,7 +55,9 @@ import sys
 import collections
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import cod_db  # noqa: E402
 
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OPS_AREA = "Project leadership & operations"
 
 
@@ -59,34 +71,45 @@ def _rollup(area_id, parent):
         area_id = p
 
 
-def load_graph(parquet_dir, topic_map_path):
-    """Assemble the combined node/edge/label lists from the parquet catalog."""
-    import duckdb
+def load_graph(con, topic_map_path, parquet_dir=None):
+    """Assemble the combined node/edge/label lists from the lake tables (or,
+    with ``parquet_dir``, from the parquet catalog there, read through the
+    same connection). Every query is ordered, so the node and edge lists --
+    and with them the seeded layout -- do not depend on the order a lake
+    happens to return rows in."""
     import pandas as pd
-    con = duckdb.connect()
-    P = lambda t: os.path.join(parquet_dir, t + ".parquet")
+    if parquet_dir is None:
+        P = lambda t: cod_db.qident(t)
+    else:
+        P = lambda t: "'" + os.path.join(parquet_dir, t + ".parquet").replace("'", "''") + "'"
     q = lambda s: con.execute(s).fetchdf()
 
-    areas = q(f"select area_id, label, parent_id from '{P('research_areas')}'")
+    areas = q(f"select area_id, label, parent_id from {P('research_areas')} order by area_id")
     lab2id = dict(zip(areas.label, areas.area_id))
     id2lab = dict(zip(areas.area_id, areas.label))
     parent = dict(zip(areas.area_id, areas.parent_id))
 
-    people = q(f"select person_id, name from '{P('people')}'")
+    people = q(f"select person_id, name from {P('people')} order by person_id")
     names = dict(zip(people.person_id, people.name))
-    pg = q(f"""select person_id, primary_area_label from '{P('person_primary_groups')}'
-               where primary_area_label is not null""")
+    pg = q(f"""select person_id, primary_area_label from {P('person_primary_groups')}
+               where primary_area_label is not null order by person_id""")
     pg["area"] = [id2lab.get(_rollup(lab2id.get(l), parent))
                   for l in pg.primary_area_label]
 
-    tm = q(f"select person_id, display_name, role from '{P('cod_team_members')}'")
+    # Primary-key order (what export_parquet.py writes, and what the committed
+    # file held). It matters: the rows with a NULL person_id reach pandas as
+    # NaN, which is truthy, so the first of them becomes one 't:nan' node
+    # and its display_name depends on which row comes first.
+    tm = q(f"""select person_id, display_name, role from {P('cod_team_members')}
+               order by member_id, wbs_code, role""")
     team_ids = set(tm.person_id.dropna())
 
     with open(topic_map_path) as fh:
         topic2area = json.load(fh)
     cs = q(f"""select c.scholar_id, c.name, c.top_topics, r.canonical_id, r.h_index
-               from '{P('community_scholars')}' c
-               join '{P('person_registry')}' r on c.scholar_id = r.scholar_id""")
+               from {P('community_scholars')} c
+               join {P('person_registry')} r on c.scholar_id = r.scholar_id
+               order by r.canonical_id, c.scholar_id""")
     cs = cs.drop_duplicates("canonical_id")
 
     def vote(tt):
@@ -131,14 +154,15 @@ def load_graph(parquet_dir, topic_map_path):
                   if r.uid.startswith(("p:", "t:"))}
     uid_canon = {r.src: r.uid for r in N.itertuples(index=False)
                  if r.uid.startswith("s:")}
-    coauth = q(f"""with a as (select person_id, publication_id from '{P('authorship')}'
+    coauth = q(f"""with a as (select person_id, publication_id from {P('authorship')}
                               where person_id is not null)
                    select x.person_id pa, y.person_id pb from a x join a y
                     on x.publication_id=y.publication_id and x.person_id<y.person_id
-                   group by 1,2""")
-    rc = q(f"""select canonical_id_a a, canonical_id_b b from '{P('registry_collaborations')}'""")
-    reg = q(f"""select canonical_id, person_id from '{P('person_registry')}'
-                where person_id is not null""")
+                   group by 1,2 order by 1,2""")
+    rc = q(f"""select canonical_id_a a, canonical_id_b b
+               from {P('registry_collaborations')} order by 1, 2""")
+    reg = q(f"""select canonical_id, person_id from {P('person_registry')}
+                where person_id is not null order by canonical_id""")
     canon2person = dict(zip(reg.canonical_id, reg.person_id))
 
     E = set()
@@ -162,12 +186,45 @@ def load_graph(parquet_dir, topic_map_path):
     return N, uids, labels, edges, cs
 
 
+# Column types of the four output tables, as committed in db/parquet.
+NODE_LAYOUT_TYPES = {
+    "node_uid": "VARCHAR", "name": "VARCHAR", "source_id": "VARCHAR",
+    "cohort": "VARCHAR", "area_label": "VARCHAR", "degree": "BIGINT",
+    "connected": "BOOLEAN", "kmap_x": "DOUBLE", "kmap_y": "DOUBLE",
+    "pcl_x": "DOUBLE", "pcl_y": "DOUBLE",
+}
+AREA_POLYGON_TYPES = {
+    "research_area": "VARCHAR", "n_nodes": "BIGINT", "n_leadership": "BIGINT",
+    "n_personnel": "BIGINT", "n_scholar": "BIGINT", "polygon_area": "DOUBLE",
+    "area_share": "DOUBLE", "size_share": "DOUBLE", "wkt": "VARCHAR",
+}
+SCHOLAR_TYPES = {
+    "canonical_id": "VARCHAR", "name": "VARCHAR", "assigned_area": "VARCHAR",
+    "topic_vote_confidence": "DOUBLE", "h_index": "INTEGER",
+}
+METRICS_TYPES = {
+    "method": "VARCHAR", "nodes": "BIGINT", "edges": "BIGINT", "groups": "BIGINT",
+    "M1": "DOUBLE", "M2": "DOUBLE", "M3": "DOUBLE", "M4": "DOUBLE",
+    "M5": "DOUBLE", "M6": "DOUBLE", "M7": "DOUBLE",
+    "within_crossings": "BIGINT", "between_crossings": "BIGINT",
+    "total_crossings": "BIGINT",
+}
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--parquet-dir", default="db/parquet")
-    ap.add_argument("--out-dir", action="append", default=None)
-    ap.add_argument("--topic-map", default="db/derived/topic_area_map.json")
+    ap.add_argument("--parquet-dir", default=None,
+                    help="read inputs from this parquet catalog instead of "
+                         "the lake (outputs still go to the lake)")
+    ap.add_argument("--out-dir", action="append", default=None,
+                    help="removed: the tables are written to the lake; run "
+                         "scripts/export_parquet.py to publish them")
+    cod_db.add_argparse_catalog(ap)
+    ap.add_argument("--db", dest="catalog", type=os.path.abspath,
+                    help="deprecated alias of --catalog")
+    ap.add_argument("--topic-map",
+                    default=os.path.join(ROOT, "db", "derived", "topic_area_map.json"))
     ap.add_argument("--k-ext", type=float, default=40.0,
                     help="PCL external gravity. TUNE PER GRAPH: the optimum "
                          "tracks the between-group edge fraction (12 at 54%% "
@@ -175,13 +232,20 @@ def main(argv=None):
     ap.add_argument("--iterations", type=int, default=250)
     ap.add_argument("--seed", type=int, default=7)
     args = ap.parse_args(argv)
-    out_dirs = args.out_dir or ["db/parquet", "public/parquet"]
+    if args.out_dir:
+        print("[error] --out-dir was removed: build_mvg_layout.py writes its "
+              "tables to the lake; run scripts/export_parquet.py to publish "
+              "them", file=sys.stderr)
+        return 2
 
     import numpy as np
     import pandas as pd
     import mvg
 
-    N, uids, labels, edges, cs = load_graph(args.parquet_dir, args.topic_map)
+    # One writer connection: the read happens before the long layout
+    # computation and the write is one short transaction after it.
+    lake = cod_db.connect(catalog=args.catalog, data=args.lake_data)
+    N, uids, labels, edges, cs = load_graph(lake, args.topic_map, args.parquet_dir)
     print(f"graph: {len(uids)} nodes, {len(edges)} edges, {len(set(labels))} areas")
 
     km = mvg.mvg_kmap(labels, edges, seed=args.seed)
@@ -237,13 +301,32 @@ def main(argv=None):
     sch.columns = ["canonical_id", "name", "assigned_area",
                    "topic_vote_confidence", "h_index"]
 
-    for d in out_dirs:
-        os.makedirs(d, exist_ok=True)
-        layout.to_parquet(os.path.join(d, "mvg_node_layout.parquet"), index=False)
-        polys.to_parquet(os.path.join(d, "mvg_area_polygons.parquet"), index=False)
-        sch.to_parquet(os.path.join(d, "scholar_area_assignments.parquet"), index=False)
-        metrics.to_parquet(os.path.join(d, "mvg_layout_metrics.parquet"), index=False)
-        print("wrote layout tables ->", os.path.abspath(d))
+    # Each table is cast column by column to the types the committed parquet
+    # has always had (pandas dtypes vary with NULLs and pandas versions), so a
+    # computed lake exports the same bytes as one rebuilt from parquet.
+    tables = [("mvg_node_layout", layout, NODE_LAYOUT_TYPES),
+              ("mvg_area_polygons", polys, AREA_POLYGON_TYPES),
+              ("scholar_area_assignments", sch, SCHOLAR_TYPES),
+              ("mvg_layout_metrics", metrics, METRICS_TYPES)]
+    with cod_db.transaction(lake, f"build_mvg_layout: {len(uids)} nodes, "
+                                  f"{len(edges)} edges, k_ext={args.k_ext:g}, "
+                                  f"seed={args.seed}"):
+        for name, df, types in tables:
+            if list(df.columns) != list(types):
+                raise RuntimeError(f"{name}: columns {list(df.columns)} != "
+                                   f"expected {list(types)}")
+            cols = ", ".join(f"CAST({cod_db.qident(c)} AS {t}) AS {cod_db.qident(c)}"
+                             for c, t in types.items())
+            lake.register("_mvg_df", df)
+            try:
+                n = cod_db.replace_table(lake, name, f"SELECT {cols} FROM _mvg_df")
+            finally:
+                lake.unregister("_mvg_df")
+            print(f"[lake] {name}: {n} rows")
+        cod_db.assert_integrity(lake, ["mvg_node_layout", "mvg_area_polygons",
+                                       "scholar_area_assignments", "mvg_layout_metrics"])
+    print("wrote layout tables -> lake (run scripts/export_parquet.py to publish)")
+    lake.close()
     return 0
 
 
