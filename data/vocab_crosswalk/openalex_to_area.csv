@@ -1,19 +1,42 @@
 openalex_id,openalex_label,area_id,confidence,notes
-# OpenAlex topic / concept → cod-kmap research_areas crosswalk.
-# Used by scripts/compute_person_areas.py to derive person_areas from
-# the per-publication topics stored in publication_topics.
+# OpenAlex topic / concept -> cod-kmap research_areas crosswalk.
+# Read by scripts/compute_person_areas.py (person_areas) and
+# scripts/compute_area_metrics.py (person_area_metrics) to turn the
+# per-publication tags in publication_topics into per-(person; area) scores.
+# Both skip rows whose first field starts with '#' and rows naming an
+# area_id that research_areas does not hold.
 #
-# One OpenAlex id may map to multiple area_ids — emit one row per pair.
-# `confidence` is one of high|medium|low and is used as a multiplier
-# (1.0 / 0.7 / 0.4) when summing weights across a person's publications.
+# One OpenAlex id may map to several area_ids: one row per pair.
+# confidence is high / medium / low: a multiplier of 1.0 / 0.7 / 0.4.
 #
-# IMPORTANT: only marine / coastal / oceanographic topics are mapped
-# here. Off-domain topics (cardiology, particle physics, oral
-# microbiology…) are intentionally absent so the aggregator skips them
-# and we don't dilute a person's research-area scores with co-author
-# noise from cross-disciplinary collaborations.
+# Rules this file follows (scripts/qa.py check_topic_crosswalk enforces 1-2):
+#   1. Every id carries the label OpenAlex gives it in publication_topics.
+#      Never type an id from memory: copy id and name together from
+#      publication_topics. Rebuilt on 2026-10-25 because 17 concept ids of
+#      the first version named other concepts (Kelp carried the id of
+#      Global warming; Ecosystem the id of Ecology on 4917 papers; Great
+#      Lakes the id of History; Pinniped the id of Uterus) and 14 ids were
+#      not in the data at all. 11154 tags on 7329 papers went through a
+#      wrong id.
+#   2. Every area_id exists in schema/vocab/research_areas.csv.
+#   3. Only coastal / marine / oceanographic subjects are mapped. Off-domain
+#      topics (cardiology - particle physics - astronomy) are absent on
+#      purpose so co-author noise does not dilute a person's areas.
+#   4. Broad level-0/1 discipline concepts are left out: Ecology
+#      (C18903297) - Environmental science (C39432304) - Geology
+#      (C127313418) - Earth science (C1965285) - Environmental resource
+#      management (C107826830) - Paleontology (C151730666). Each sits on
+#      hundreds to thousands of papers of every kind. The level-2 concept
+#      Ecosystem (C110872660) is left out for the same reason. A level-1
+#      concept is kept only when it names the area itself (Oceanography
+#      - Fishery - Remote sensing) and then at low confidence.
+#   5. Intended concepts with no id in the data are not mapped: Tidal
+#      wetland - Tsunami - Polar regions - Pinniped - Great Lakes -
+#      Long-Term Ecological Research. The great-lakes and
+#      long-term-ecological-research areas therefore get no
+#      publication-derived scores.
 #
-# ============ TOPICS (Tnnnnn) — newer OpenAlex 4500-leaf hierarchy ============
+# ============ TOPICS (Tnnnnn) - OpenAlex topic hierarchy; the primary signal ============
 T10032,Marine and coastal ecosystems,marine-ecosystems,high,
 T10230,Marine and fisheries research,fisheries-and-aquaculture,high,
 T10230,Marine and fisheries research,marine-ecosystems,medium,
@@ -22,8 +45,8 @@ T10779,Coastal wetland ecosystem dynamics,salt-marshes,high,
 T10779,Coastal wetland ecosystem dynamics,tidal-wetlands,high,
 T10765,Marine Biology and Ecology Research,biological-oceanography,high,
 T10765,Marine Biology and Ecology Research,marine-ecosystems,medium,
-T10643,Marine and coastal plant biology,seagrass,high,
-T10643,Marine and coastal plant biology,mangroves,high,
+T10643,Marine and coastal plant biology,seagrass,medium,was high: a general coastal-plant topic; Seagrass concept is on 132 of its 654 papers
+T10643,Marine and coastal plant biology,mangroves,low,was high: a general coastal-plant topic; Mangrove concept carries the specific signal
 T10643,Marine and coastal plant biology,coastal-terrestrial-ecosystems,medium,
 T10302,Fish Ecology and Management Studies,fisheries-and-aquaculture,high,
 T10302,Fish Ecology and Management Studies,marine-ecosystems,medium,
@@ -52,7 +75,6 @@ T11311,Soil and Water Nutrient Dynamics,marine-biogeochemistry,medium,
 T11311,Soil and Water Nutrient Dynamics,estuaries-and-wetlands,low,
 T10029,Climate variability and models,climate-and-sea-level,high,
 T10029,Climate variability and models,physical-oceanography,medium,
-T10026,Galaxies: Formation, Evolution, Phenomena,,low,off-domain (astronomy)
 T11588,Atmospheric and Environmental Gas Dynamics,marine-biogeochemistry,medium,
 T10895,Species Distribution and Climate Change,marine-ecosystems,medium,
 T10895,Species Distribution and Climate Change,climate-and-sea-level,medium,
@@ -144,58 +166,88 @@ T11879,Protist diversity and phylogeny,biological-oceanography,medium,
 T13388,Rangeland and Wildlife Management,coastal-terrestrial-ecosystems,low,
 T10555,Fire effects on ecosystems,coastal-disturbance,medium,
 T12614,Indigenous Studies and Ecology,marine-policy-and-socio-economics,medium,
-# ============ Long Tail topics — broad LTER / freshwater / disturbance / etc ============
 T11405,Geophysics and Gravity Measurements,marine-geology,low,
 T10399,Hydrocarbon exploration and reservoir analysis,marine-geology,low,
 T13193,Geological Studies and Exploration,marine-geology,low,
 T10413,High-pressure geophysics and materials,marine-geology,low,
-T11362,Membrane Separation and Gas Transport,,low,off-domain
-T10295,Plasmonic and Surface Plasmon Research,,low,off-domain
-T10299,Photonic and Optical Devices,,low,off-domain
-T11854,Laser-induced spectroscopy and plasma,,low,off-domain
-T10257,Oral microbiology and periodontitis research,,low,off-domain
-T10261,Genetic Associations and Epidemiology,,low,off-domain
-T10031,T-cell and B-cell Immunology,,low,off-domain
-T11020,Immune Cell Function and Interaction,,low,off-domain
-T10878,CRISPR and Genetic Engineering,,low,off-domain
-T10268,Developmental Biology and Gene Regulation,,low,off-domain
-T10015,Genomics and Phylogenetic Studies,,low,off-domain
 T10266,Plant Water Relations and Carbon Dynamics,coastal-terrestrial-ecosystems,low,
-T10751,Forensic and Genetic Research,,low,off-domain
-# ============ CONCEPTS (Cnnnnnnnnnn) — older 6-level Wikidata-derived hierarchy ============
-# Only a handful are useful; the canonical OpenAlex topics above are
-# already higher-quality, but concepts give us an additional fallback
-# when topics are missing for older publications.
-C39432304,Environmental science,marine-ecosystems,low,
-C111368507,Earth science,oceanography,low,
-C107826830,Geology,marine-geology,low,
-C18903297,Ecosystem,marine-ecosystems,low,
-C53570757,Estuary,estuaries-and-wetlands,medium,
-C19354541,Mangrove,mangroves,high,
-C2778870195,Seagrass,seagrass,high,
-C2778889925,Coral reef,coral-reefs,high,
-C151730666,Phytoplankton,biological-oceanography,medium,
-C2776035688,Sea level rise,climate-and-sea-level,high,
-C2779080207,Coastal erosion,coastal-erosion,high,
-C2992653833,Salt marsh,salt-marshes,high,
-C2780887740,Marine ecosystem,marine-ecosystems,high,
-C194969405,Sediment transport,sediment-transport,high,
-C2778312941,Ocean acidification,ocean-acidification,high,
-C2779010993,Tidal wetland,tidal-wetlands,high,
-C181199279,Algal bloom,harmful-algal-blooms,high,
-C26873012,Coastal management,marine-policy-and-socio-economics,medium,
-C2778572836,Marine debris,marine-debris-and-plastics,high,
-C2779343474,Microplastic,marine-debris-and-plastics,high,
-C156695742,Tsunami,tsunamis-and-coastal-hazards,high,
-C204323151,Aquaculture,fisheries-and-aquaculture,high,
-C111368507,Fishery,fisheries-and-aquaculture,high,
-C2776638537,Kelp forest,kelp-forests,high,
-C115343472,Kelp,kelp-forests,medium,
-C2780377012,Polar regions,polar-and-cryosphere,high,
-C156325361,Cetacean,marine-mammals,high,
-C2779066055,Pinniped,marine-mammals,high,
-C95124753,Seabird,seabirds,high,
-C2779345533,Deep sea,deep-sea,high,
-C172925046,Long-Term Ecological Research,long-term-ecological-research,high,
-C57879066,Remote sensing,remote-sensing,medium,
-C95457728,Great Lakes,great-lakes,high,
+T10753,Microplastics and Plastic Pollution,marine-debris-and-plastics,high,added
+T14146,Earthquake and Tsunami Effects,tsunamis-and-coastal-hazards,high,added
+T12180,Polar Research and Ecology,polar-and-cryosphere,high,added
+T12014,"Fish biology, ecology, and behavior",fisheries-and-aquaculture,medium,added
+T12652,International Maritime Law Issues,marine-policy-and-socio-economics,medium,added
+T12383,Aeolian processes and effects,beach-and-dune,medium,added: co-occurs with barrier islands and dunes here
+T10199,Wildlife Ecology and Conservation,wildlife-conservation,medium,added
+# ============ CONCEPTS (Cnnnnnnnnn) - older Wikidata-derived tags; a fallback and a second signal ============
+C88160329,Estuary,estuaries-and-wetlands,medium,fix: was C53570757 (Pleistocene)
+C68874143,Mangrove,mangroves,high,fix: was C19354541 (absent)
+C2777400808,Seagrass,seagrass,high,fix: was C2778870195 (absent)
+C79367842,Coral reef,coral-reefs,high,fix: was C2778889925 (absent)
+C2780892065,Phytoplankton,biological-oceanography,medium,fix: was C151730666 (Paleontology)
+C2777774347,Sea level rise,climate-and-sea-level,high,fix: was C2776035688 (Affect (linguistics))
+C154261466,Coastal erosion,coastal-erosion,high,fix: was C2779080207 (absent)
+C87441765,Salt marsh,salt-marshes,high,fix: was C2992653833 (absent)
+C151152651,Marine ecosystem,marine-ecosystems,high,fix: was C2780887740 (absent)
+C65589250,Sediment transport,sediment-transport,high,fix: was C194969405 (absent)
+C19829342,Ocean acidification,ocean-acidification,high,fix: was C2778312941 (absent)
+C120305227,Algal bloom,harmful-algal-blooms,high,fix: was C181199279 (Enzyme)
+C2778900803,Coastal management,marine-policy-and-socio-economics,medium,fix: was C26873012 (Condensed matter physics)
+C62329434,Marine debris,marine-debris-and-plastics,high,fix: was C2778572836 (Space (punctuation))
+C2780401329,Microplastics,marine-debris-and-plastics,high,fix: was C2779343474 (Context (archaeology))
+C86909935,Aquaculture,fisheries-and-aquaculture,high,fix: was C204323151 (Range (aeronautics))
+C505870484,Fishery,fisheries-and-aquaculture,low,fix: was C111368507 (Oceanography); level-1 so low
+C153274386,Kelp forest,kelp-forests,high,fix: was C2776638537 (absent)
+C2776705890,Kelp,kelp-forests,medium,fix: was C115343472 (Global warming)
+C2777803996,Cetacea,marine-mammals,high,fix: Cetacean was C156325361 (Grounded theory)
+C2777981335,Seabird,seabirds,high,fix: was C95124753 (Environmental ethics)
+C21790881,Deep sea,deep-sea,high,fix: was C2779345533 (absent)
+C62649853,Remote sensing,remote-sensing,low,fix: was C57879066 (Mechanics); level-1 so low
+C111368507,Oceanography,oceanography,low,relabelled: this id is Oceanography not Earth science; level-1 kept low as it names the area itself
+C143020374,Coral,coral-reefs,high,added
+C67715294,Wetland,estuaries-and-wetlands,medium,added
+C67268981,Marsh,estuaries-and-wetlands,medium,added
+C117949133,Brackish marsh,tidal-marshes,medium,added
+C142804171,Blue carbon,estuaries-and-wetlands,medium,added
+C142804171,Blue carbon,marine-biogeochemistry,medium,added
+C74501621,Sea level,climate-and-sea-level,high,added
+C22818535,Storm surge,tsunamis-and-coastal-hazards,high,added
+C11693305,Coastal flood,tsunamis-and-coastal-hazards,high,added
+C39463204,Coastal hazards,tsunamis-and-coastal-hazards,high,added
+C29141058,Tropical cyclone,tsunamis-and-coastal-hazards,medium,added
+C149348798,Upwelling,physical-oceanography,high,added
+C78091846,Thermohaline circulation,physical-oceanography,high,added
+C187599188,Ocean current,physical-oceanography,high,added
+C134097258,Sea surface temperature,physical-oceanography,medium,added
+C2776248883,Ocean observations,ocean-observing-systems,high,added
+C136894858,Sea ice,polar-and-cryosphere,high,added
+C518008717,Arctic,polar-and-cryosphere,medium,added
+C158836135,Zooplankton,biological-oceanography,medium,added
+C108469399,Plankton,biological-oceanography,medium,added
+C197248824,Seawater,chemical-oceanography,medium,added
+C2779374926,Ocean chemistry,chemical-oceanography,high,added
+C71915725,Biogeochemical cycle,marine-biogeochemistry,low,added: not only marine so low
+C130309983,Biogeochemistry,marine-biogeochemistry,low,added: not only marine so low
+C186699998,Eutrophication,marine-biogeochemistry,medium,added
+C7836513,Hypoxia (environmental),marine-biogeochemistry,medium,added
+C2777493711,Submarine groundwater discharge,coastal-processes,medium,added
+C2777493711,Submarine groundwater discharge,marine-biogeochemistry,medium,added
+C68800169,Marine protected area,marine-policy-and-socio-economics,high,added
+C207769581,Marine reserve,marine-policy-and-socio-economics,medium,added
+C2780362636,Marine spatial planning,marine-policy-and-socio-economics,high,added
+C113416529,Marine conservation,marine-ecosystems,medium,added
+C202041845,Fisheries management,fisheries-and-aquaculture,high,added
+C24061886,Overfishing,fisheries-and-aquaculture,high,added
+C2776364969,Oyster,fisheries-and-aquaculture,medium,added
+C2777704720,Whale,marine-mammals,high,added
+C2985668151,Oil spill,marine-debris-and-plastics,medium,added: pollution bucket as for T12316
+C2776939893,Ocean color,remote-sensing,medium,added
+C182393718,Barrier island,coastal-processes,high,added
+C182393718,Barrier island,beach-and-dune,medium,added
+C139146106,Beach nourishment,shoreline-change,high,added
+C16156107,Beach morphodynamics,coastal-processes,high,added
+C16156107,Beach morphodynamics,beach-and-dune,medium,added
+C2778986533,Foredune,beach-and-dune,high,added
+C174580923,Intertidal zone,marine-ecosystems,medium,added
+C83042747,Benthic zone,marine-ecosystems,medium,added
+C5465852,Red tide,harmful-algal-blooms,high,added
+C147366489,Wildlife conservation,wildlife-conservation,high,added

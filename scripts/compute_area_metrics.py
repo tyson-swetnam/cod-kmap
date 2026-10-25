@@ -70,13 +70,27 @@ def compute_person_area_metrics(conn) -> None:
     print("[person_area_metrics] computing…")
 
     # Load the OpenAlex → research_area crosswalk into a temp table so
-    # the SQL joins stay clean.
+    # the SQL joins stay clean. all_varchar: the sniffer must not guess
+    # types from the '#' comment rows; those rows are then dropped, as are
+    # rows naming an area research_areas does not hold (they would produce
+    # metrics rows with no label; qa.py check_topic_crosswalk fails on them).
     cw_csv = ROOT / "data" / "vocab_crosswalk" / "openalex_to_area.csv"
     if not cw_csv.exists():
         print(f"[error] crosswalk missing: {cw_csv}", file=sys.stderr)
         return
-    conn.execute("DROP TABLE IF EXISTS _crosswalk")
+    conn.execute("DROP TABLE IF EXISTS _crosswalk_raw")
     conn.execute(f"""
+        CREATE TEMP TABLE _crosswalk_raw AS
+        SELECT trim(openalex_id) AS openalex_id, trim(area_id) AS area_id,
+               lower(trim(confidence)) AS confidence
+        FROM read_csv_auto('{cw_csv}', ignore_errors=true, header=true,
+                           skip=0, all_varchar=true)
+        WHERE openalex_id IS NOT NULL AND area_id IS NOT NULL
+          AND length(trim(openalex_id)) > 0 AND length(trim(area_id)) > 0
+          AND NOT starts_with(trim(openalex_id), '#')
+    """)
+    conn.execute("DROP TABLE IF EXISTS _crosswalk")
+    conn.execute("""
         CREATE TEMP TABLE _crosswalk AS
         SELECT openalex_id, area_id,
                CASE confidence
@@ -85,13 +99,19 @@ def compute_person_area_metrics(conn) -> None:
                  WHEN 'low'    THEN 0.4
                  ELSE 0.4
                END AS conf_mult
-        FROM read_csv_auto('{cw_csv}', ignore_errors=true, header=true,
-                           skip=0)
-        WHERE openalex_id IS NOT NULL AND area_id IS NOT NULL
-          AND length(openalex_id) > 0 AND length(area_id) > 0
+        FROM _crosswalk_raw
+        WHERE area_id IN (SELECT area_id FROM research_areas)
     """)
     n_cw = cod_db.scalar(conn, "SELECT COUNT(*) FROM _crosswalk")
+    unknown = [r[0] for r in conn.execute(
+        "SELECT DISTINCT area_id FROM _crosswalk_raw "
+        "WHERE area_id NOT IN (SELECT area_id FROM research_areas) ORDER BY 1"
+    ).fetchall()]
     print(f"  crosswalk rows loaded: {n_cw}")
+    if unknown:
+        print(f"  [warn] ignored crosswalk rows naming unknown research areas: "
+              f"{unknown[:8]}", file=sys.stderr)
+    conn.execute("DROP TABLE _crosswalk_raw")
 
     # 1. (publication_id, area_id, score) — publication-area mapping.
     conn.execute("DROP TABLE IF EXISTS _pub_area")

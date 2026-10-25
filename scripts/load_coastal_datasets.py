@@ -249,7 +249,20 @@ def main() -> int:
                      f"SELECT {', '.join(DATASET_COLS)} FROM _ds_stage")
         conn.execute(f"INSERT INTO dataset_endpoints ({', '.join(ENDPOINT_COLS)}) "
                      f"SELECT {', '.join(ENDPOINT_COLS)} FROM _ep_stage")
-        cod_db.assert_integrity(conn, TABLES)
+        # dataset_facilities (scripts/link_dataset_facilities.py) references
+        # coastal_datasets, so a dataset dropped from the JSON would leave
+        # its links orphaned and assert_integrity would roll the whole load
+        # back. Drop those links in the same snapshot; re-run
+        # link_dataset_facilities.py to relink anything new.
+        orphaned = cod_db.scalar(
+            conn, "SELECT COUNT(*) FROM dataset_facilities "
+                  "WHERE dataset_id NOT IN (SELECT dataset_id FROM _ds_stage)")
+        if orphaned:
+            conn.execute("DELETE FROM dataset_facilities "
+                         "WHERE dataset_id NOT IN (SELECT dataset_id FROM _ds_stage)")
+        print(f"[lake] removed {orphaned} dataset_facilities row(s) for datasets "
+              f"no longer in the catalogue")
+        cod_db.assert_integrity(conn, TABLES + ["dataset_facilities"])
     print(f"[lake] replaced {len(ds_rows)} datasets, {len(ep_rows)} endpoints "
           f"(run scripts/export_parquet.py to publish)")
 

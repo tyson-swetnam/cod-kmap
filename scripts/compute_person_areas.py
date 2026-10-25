@@ -105,6 +105,17 @@ def main() -> int:
     conn = cod_db.connect(read_only=args.dry_run,
                           catalog=args.catalog, data=args.lake_data)
 
+    # Rows naming an area research_areas does not hold are ignored here
+    # (qa.py check_topic_crosswalk fails on them): left in, they would
+    # take a slot of --top-areas and then be dropped at insert time.
+    known_areas = {r[0] for r in cod_db.rows(conn, "SELECT area_id FROM research_areas")}
+    unknown = sorted({a for v in crosswalk.values() for a, _ in v} - known_areas)
+    if unknown:
+        print(f"[warn] ignored crosswalk rows naming unknown research areas: "
+              f"{unknown[:8]}", file=sys.stderr)
+        crosswalk = {oa: kept for oa, v in crosswalk.items()
+                     if (kept := [(a, m) for a, m in v if a in known_areas])}
+
     # Load the (publication_id, concept_id, score) join we need into
     # a Python list — for ~250k rows this is trivial RAM-wise and lets
     # us keep the per-row arithmetic in Python (CONFIDENCE_MULT lookup
