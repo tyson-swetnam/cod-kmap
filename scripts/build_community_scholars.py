@@ -712,8 +712,7 @@ def write_table(conn, rows: list[dict], message: str) -> None:
     Staged in a TEMP table typed like the target, then one DELETE + INSERT
     inside one transaction. The parquet copies are export_parquet.py's job.
     """
-    conn.execute("CREATE OR REPLACE TEMP TABLE _scholar_stage AS "
-                 f"SELECT {', '.join(COLS)} FROM community_scholars LIMIT 0")
+    cod_db.create_temp_like(conn, '_scholar_stage', f"SELECT {', '.join(COLS)} FROM community_scholars")
     if rows:
         conn.executemany(
             f"INSERT INTO _scholar_stage ({', '.join(COLS)}) "

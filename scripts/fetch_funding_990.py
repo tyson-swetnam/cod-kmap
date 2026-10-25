@@ -139,10 +139,10 @@ def flush(conn, buf: LakeBuffer, message: str) -> None:
                                 insert_only=True)
             conn.execute("DROP TABLE _stage_funders")
         if buf.events:
-            conn.execute(
-                f"CREATE OR REPLACE TEMP TABLE _stage_events AS SELECT "
+            cod_db.create_temp_like(conn, "_stage_events", 
+                f"SELECT "
                 f"{', '.join(EVENT_COLS)}, 0::BIGINT AS _seq "
-                f"FROM funding_events LIMIT 0")
+                f"FROM funding_events")
             conn.executemany(
                 f"INSERT INTO _stage_events VALUES "
                 f"({', '.join(['?'] * (len(EVENT_COLS) + 1))})",

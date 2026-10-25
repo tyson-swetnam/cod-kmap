@@ -234,8 +234,7 @@ def main() -> int:
     for table, stage, cols, data in (
             ("coastal_datasets", "_ds_stage", DATASET_COLS, ds_rows),
             ("dataset_endpoints", "_ep_stage", ENDPOINT_COLS, ep_rows)):
-        conn.execute(f"CREATE OR REPLACE TEMP TABLE {stage} AS "
-                     f"SELECT {', '.join(cols)} FROM {table} LIMIT 0")
+        cod_db.create_temp_like(conn, stage, f"SELECT {', '.join(cols)} FROM {table}")
         conn.executemany(
             f"INSERT INTO {stage} VALUES ({', '.join('?' * len(cols))})", data)
 

@@ -233,8 +233,7 @@ def main() -> int:
     # row-by-row INSERTs into the lake are slow and each would snapshot.
     cols = ("canonical_id_a, canonical_id_b, co_pub_count, first_year, "
             "last_year, shared_areas, shared_facilities")
-    conn.execute(f"CREATE OR REPLACE TEMP TABLE _rc_stage AS "
-                 f"SELECT {cols} FROM registry_collaborations LIMIT 0")
+    cod_db.create_temp_like(conn, '_rc_stage', f"SELECT {cols} FROM registry_collaborations")
     if rows:
         conn.executemany(f"INSERT INTO _rc_stage ({cols}) VALUES (?,?,?,?,?,?,?)",
                          rows)

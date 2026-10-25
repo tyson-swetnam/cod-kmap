@@ -429,9 +429,9 @@ def _finish(conn, prov, hydrate_rows, found, args) -> None:
             conn, f"enrich_registry_identifiers: hydrated {len(hydrate_rows)}, "
                   f"resolved {len(found)}, {len(prov)} provenance row(s)"):
         if hydrate_rows:
-            conn.execute(
-                "CREATE OR REPLACE TEMP TABLE _hydrate AS SELECT canonical_id, "
-                + ", ".join(HYDRATE_COLS) + " FROM person_registry LIMIT 0")
+            cod_db.create_temp_like(
+                conn, "_hydrate", "SELECT canonical_id, "
+                + ", ".join(HYDRATE_COLS) + " FROM person_registry")
             conn.executemany(
                 f"INSERT INTO _hydrate VALUES ({', '.join('?' * (1 + len(HYDRATE_COLS)))})",
                 hydrate_rows)
@@ -457,8 +457,8 @@ def _finish(conn, prov, hydrate_rows, found, args) -> None:
                 FROM _resolved s WHERE {table}.{key} = s.sid""")
             written.append(table)
         if prov:
-            conn.execute("CREATE OR REPLACE TEMP TABLE _prov AS SELECT "
-                         + ", ".join(PROV_COLS) + " FROM person_identity_source LIMIT 0")
+            cod_db.create_temp_like(conn, "_prov", "SELECT "
+                                    + ", ".join(PROV_COLS) + " FROM person_identity_source")
             conn.executemany(f"INSERT INTO _prov VALUES ({', '.join('?' * len(PROV_COLS))})",
                              prov)
             # Merged on the table's row key (cod_db.DERIVED_CONSTRAINTS): the

@@ -305,8 +305,7 @@ def _stage(con, stage: str, like: str, cols: list[str], rows: list) -> None:
     executemany into TEMP is fine: the temp catalog is not the lake, so it
     makes no snapshots. The lake is then written with one statement.
     """
-    con.execute(f"CREATE OR REPLACE TEMP TABLE {stage} AS "
-                f"SELECT {_cols(cols)} FROM {cod_db.qident(like)} LIMIT 0")
+    cod_db.create_temp_like(con, stage, f"SELECT {_cols(cols)} FROM {cod_db.qident(like)}")
     if rows:
         con.executemany(f"INSERT INTO {stage} VALUES ({', '.join('?' * len(cols))})", rows)
 
