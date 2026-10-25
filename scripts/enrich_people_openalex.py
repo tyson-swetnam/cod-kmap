@@ -9,13 +9,13 @@ Author record via (in priority order):
 
   1. Existing openalex_id on the row
   2. ORCID (`/authors?filter=orcid:0000-…`)
-  3. Name + institutional affiliation search
-     (`/authors?search=<name>&filter=last_known_institution.display_name.search:<inst>`)
+  (Name search is disabled; see resolve_author.)
 
 For each match we then fetch up to N publications, co-authors, and
 concepts (research topics), writing into:
 
-  * people.openalex_id / research_interests     (update)
+  * people.openalex_id                           (update)
+  * people.research_interests                   (FILL-ONLY, see below)
   * publications                                (upsert by doi/openalex_id)
   * authorship                                  (link person ↔ pub)
   * person_areas                                (weighted links to
@@ -27,13 +27,33 @@ concepts (research topics), writing into:
                                                  when present, else we
                                                  just skip topic writes)
 
+research_interests is fill-only. It is written only when the stored
+value is empty, or is itself an earlier OpenAlex-generated list (see
+ri_overwritable). A value with a non-OpenAlex research_interests_source_url
+or a hand-written value is never touched. (lto's 2026-10-23 run overwrote
+122 curated values with generic x_concepts -- "Hydrology (agriculture),
+Environmental science, Geology, ..." -- before this rule existed.) When it
+writes, the value is the author's top-5 OpenAlex topics by count, joined
+with "; " (x_concepts only as a fallback), and research_interests_source_url
+is the author's OpenAlex URL.
+
+An author on the misattribution blocklist for this person
+(data/seed/bad_openalex_pairs.csv, read through
+wipe_misattributed_identifiers.bad_openalex_pairs) is never attached,
+whichever route -- stored id or ORCID -- resolved it.
+
 Adapted from the UNM knowledge-map enrichment pipeline pattern.
+
+Writes the DuckLake store of record (scripts/cod_db.py): rows are staged in
+TEMP tables during the network loop and land in one snapshot at the end of
+the run (Ctrl-C writes what was staged so far). ``--dry-run`` attaches the
+lake read-only. Publish with scripts/export_parquet.py.
 
 Usage::
 
     python scripts/enrich_people_openalex.py --dry-run           # no writes
     python scripts/enrich_people_openalex.py --limit 10          # small batch
-    python scripts/enrich_people_openalex.py --db db/cod_kmap.duckdb
+    python scripts/enrich_people_openalex.py --catalog /tmp/scratch/cat.sqlite
 
 Environment:
     OPENALEX_API_KEY=…                    # required
@@ -55,13 +75,11 @@ except ImportError:
     print("[error] pip install requests --break-system-packages", file=sys.stderr)
     raise
 
-import duckdb
-
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cod_db  # noqa: E402
 import openalex_auth  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DB = ROOT / "db" / "cod_kmap.duckdb"
 API = "https://api.openalex.org"
 UA = "cod-kmap/0.1 (+https://github.com/tyson-swetnam/cod-kmap)"
 
@@ -78,13 +96,103 @@ def session() -> requests.Session:
     return openalex_auth.openalex_session(user_agent=UA)
 
 
+# (person_id, openalex_id) pairs a review found to be the wrong person, or
+# a person merged with others. An author on it is never attached to that
+# person again, whichever route resolved it.
+from wipe_misattributed_identifiers import bad_openalex_pairs, is_blocked  # noqa: E402
+
+BAD_PAIRS = bad_openalex_pairs()
+
+
+def _is_bad(person: dict, author: dict) -> bool:
+    short = (author.get("id") or "").rstrip("/").split("/")[-1].upper()
+    if is_blocked(BAD_PAIRS, short, person["person_id"]):
+        print(f"    [blocked] {person.get('name')}: {short} is on the "
+              "misattribution blocklist (data/seed/bad_openalex_pairs.csv)")
+        return True
+    return False
+
+
+# --- research_interests: fill-only -------------------------------------
+#
+# Earlier runs stored ", ".join(x_concepts[:5]) with NO source URL, so a
+# previous OpenAlex value cannot be told apart by provenance alone. It is
+# recognised by shape instead: no source URL, an openalex_id on the row
+# (this script always set both together; the wipe scripts NULL both), and
+# 1-5 ", "-separated terms that are each, case-sensitively, an OpenAlex
+# concept display name. Curated keywords are lower-case phrases ("larval
+# fish ecology"), concept names are capitalised. New writes carry the
+# author's OpenAlex URL as their source, so from now on provenance alone
+# identifies them. (Ported from lto c8b9864, where this rule matched 68
+# generic concept lists and none of 27 hand-written source-less values.)
+OPENALEX_HOSTS = {"openalex.org", "api.openalex.org"}
+# OpenAlex's 19 level-0 concepts: x_concepts always leads with these, so
+# they are recognised even if publication_topics holds no concept rows.
+LEVEL0_CONCEPTS = {
+    "Art", "Biology", "Business", "Chemistry", "Computer science", "Economics",
+    "Engineering", "Environmental science", "Geography", "Geology", "History",
+    "Materials science", "Mathematics", "Medicine", "Philosophy", "Physics",
+    "Political science", "Psychology", "Sociology",
+}
+
+
+def is_openalex_url(url: str | None) -> bool:
+    from urllib.parse import urlparse                  # noqa: PLC0415
+    host = (urlparse((url or "").strip()).hostname or "").lower()
+    return host in OPENALEX_HOSTS
+
+
+def load_concept_vocab(conn) -> set[str]:
+    """Every OpenAlex concept display name the lake has seen."""
+    rows = cod_db.rows(
+        conn, "SELECT DISTINCT concept_name FROM publication_topics "
+              "WHERE kind = 'concept' AND concept_name IS NOT NULL")
+    return LEVEL0_CONCEPTS | {r[0] for r in rows}
+
+
+def looks_like_concept_list(value: str, vocab: set[str]) -> bool:
+    terms = value.split(", ")
+    return 1 <= len(terms) <= 5 and all(t in vocab for t in terms)
+
+
+def ri_overwritable(person: dict, vocab: set[str]) -> tuple[bool, str]:
+    """May this run write research_interests for `person`? (ok, reason)."""
+    value = (person.get("research_interests") or "").strip()
+    src = (person.get("research_interests_source_url") or "").strip()
+    if not value:
+        return True, "empty"
+    if src:
+        if is_openalex_url(src):
+            return True, "previous OpenAlex value (source URL)"
+        return False, f"curated (source {src})"
+    if (person.get("openalex_id") or "").strip() and looks_like_concept_list(value, vocab):
+        return True, "previous OpenAlex concept list (no source URL)"
+    return False, "curated (no source URL, not an OpenAlex concept list)"
+
+
+def interests_from_author(author: dict) -> str | None:
+    """Top-5 OpenAlex topics by count; legacy x_concepts only if the author
+    record has no topics. x_concepts are level-0/1 concepts ("Biology,
+    Environmental science, Geography") and say little about a person.
+    Topics are joined with '; ' because a topic name may contain a comma."""
+    topics = [t for t in (author.get("topics") or []) if t.get("display_name")]
+    if topics:
+        topics.sort(key=lambda t: -(t.get("count") or 0))  # stable on ties
+        return "; ".join(t["display_name"] for t in topics[:5])
+    names = [c.get("display_name") for c in (author.get("x_concepts") or [])[:5]
+             if c.get("display_name")]
+    return ", ".join(names) or None
+
+
 def resolve_author(sess: requests.Session, person: dict) -> dict | None:
-    """Try openalex_id → ORCID → name+institution. Returns the author JSON
-    or None."""
+    """Try openalex_id → ORCID. Returns the author JSON or None. An author
+    on the misattribution blocklist for this person is never returned; a
+    blocked stored id falls through to the ORCID route, which may find the
+    person's real author."""
     oa_id = (person.get("openalex_id") or "").strip()
     if oa_id:
         r = sess.get(f"{API}/authors/{oa_id}")
-        if r.ok:
+        if r.ok and not _is_bad(person, r.json()):
             return r.json()
 
     orcid = (person.get("orcid") or "").strip()
@@ -94,7 +202,7 @@ def resolve_author(sess: requests.Session, person: dict) -> dict | None:
         if r.ok:
             hits = r.json().get("results", [])
             if hits:
-                return hits[0]
+                return None if _is_bad(person, hits[0]) else hits[0]
 
     # Name-only resolution is DELIBERATELY DISABLED. It used to fall back
     # to /authors?search=<name>&per_page=1, which returns the OpenAlex
@@ -116,13 +224,15 @@ def resolve_author(sess: requests.Session, person: dict) -> dict | None:
 def fetch_works(sess: requests.Session, author_oa_id: str,
                 max_records: int = 100) -> list[dict]:
     """Fetch up to `max_records` publications for this OpenAlex author.
-    Uses cursor pagination."""
+    Uses cursor pagination at OpenAlex's maximum page size (200): every
+    list request costs one credit of the daily allowance whatever its
+    size, so 50-record pages cost 4x the credits for the same works."""
     out: list[dict] = []
     cursor = "*"
     while cursor and len(out) < max_records:
         r = sess.get(f"{API}/works", params={
             "filter": f"authorships.author.id:{author_oa_id}",
-            "per_page": min(50, max_records - len(out)),
+            "per_page": min(200, max_records - len(out)),
             "cursor": cursor,
         })
         if not r.ok:
@@ -156,10 +266,87 @@ def _short_concept_id(raw: str) -> str | None:
     return raw
 
 
+# Writes are staged in TEMP tables while the loop talks to OpenAlex and
+# land in the lake in one transaction at the end of the run (one
+# snapshot). TEMP tables live outside the lake, so staging them is not a
+# lake write. Lookups read the lake and the stage together, so a paper
+# staged for one author is reused, not re-inserted, for a co-author.
+STAGE_DDL = [
+    # ri_before / ri_src_before: the values ri_overwritable() judged. The
+    # write only lands if the row still holds them at commit time, so an
+    # edit made while this run was talking to the API is not overwritten.
+    "CREATE OR REPLACE TEMP TABLE _stage_people "
+    "(person_id VARCHAR, openalex_id VARCHAR, research_interests VARCHAR, "
+    "research_interests_source_url VARCHAR, ri_before VARCHAR, "
+    "ri_src_before VARCHAR)",
+]
+# Only the columns staged below: merge_upsert inserts every column the
+# stage shares with the target, so a staged created_at (NULL) would
+# override the column's DEFAULT CURRENT_TIMESTAMP. Created through
+# cod_db.create_temp_like (explicit DDL), never an empty CTAS.
+STAGE_LIKE = [
+    ("_stage_publications",
+     "SELECT publication_id, doi, title, pub_year, pub_type, journal, cited_by_count, "
+     "openalex_id, url, source, retrieved_at FROM publications"),
+    ("_stage_authorship",
+     "SELECT person_id, publication_id, raw_name, 0 AS _seq FROM authorship"),
+    ("_stage_topics",
+     "SELECT publication_id, concept_id, concept_name, score, level, kind, source, "
+     "0 AS _seq FROM publication_topics"),
+]
+_seq = 0
+
+
+def _next_seq() -> int:
+    global _seq
+    _seq += 1
+    return _seq
+
+
+def write_stage(conn) -> dict:
+    """Apply the staged writes to the lake. Call inside transaction().
+
+    The old do-nothing-on-conflict inserts (authorship, publication_topics) become an
+    insert-only MERGE where the first staged row wins, as before.
+    """
+    # research_interests is fill-only: a staged value is non-NULL only when
+    # ri_overwritable() allowed it, and it lands only if the row still holds
+    # the value that was judged.
+    ri_ok = ("NULLIF(s.research_interests, '') IS NOT NULL "
+             "AND people.research_interests IS NOT DISTINCT FROM s.ri_before "
+             "AND people.research_interests_source_url IS NOT DISTINCT FROM s.ri_src_before")
+    n_ri = cod_db.scalar(conn, f"SELECT count(*) FROM people JOIN _stage_people s "
+                               f"ON people.person_id = s.person_id WHERE {ri_ok}")
+    conn.execute(f"""
+        UPDATE people SET openalex_id = s.openalex_id,
+               research_interests = CASE WHEN {ri_ok} THEN s.research_interests
+                                         ELSE people.research_interests END,
+               research_interests_source_url =
+                   CASE WHEN {ri_ok} THEN s.research_interests_source_url
+                        ELSE people.research_interests_source_url END,
+               updated_at = now()
+        FROM   _stage_people s WHERE people.person_id = s.person_id
+    """)
+    out = {"people": cod_db.scalar(conn, "SELECT count(*) FROM _stage_people"),
+           "research_interests": n_ri}
+    out["publications"] = cod_db.merge_upsert(
+        conn, "publications", ["publication_id"], "_stage_publications",
+        insert_only=True)
+    out["authorship"] = cod_db.merge_upsert(
+        conn, "authorship", ["person_id", "publication_id"], "_stage_authorship",
+        insert_only=True, order_by="_seq")
+    out["publication_topics"] = cod_db.merge_upsert(
+        conn, "publication_topics", ["publication_id", "concept_id"],
+        "_stage_topics", insert_only=True, order_by="_seq")
+    cod_db.assert_integrity(conn, ["people", "publications", "authorship",
+                                   "publication_topics"])
+    return out
+
+
 def upsert_publication_topics(conn, pub_id: str, work: dict) -> int:
-    """Write OpenAlex concepts + topics + keywords for a publication.
-    Idempotent: ON CONFLICT DO NOTHING so re-runs are cheap. Returns
-    the number of rows actually inserted."""
+    """Stage OpenAlex concepts + topics + keywords for a publication.
+    Idempotent: staged rows go in insert-only, so re-runs are cheap.
+    Returns the number of rows staged."""
     rows: list[tuple] = []
     for c in (work.get("concepts") or []):
         cid = _short_concept_id(c.get("id"))
@@ -189,20 +376,18 @@ def upsert_publication_topics(conn, pub_id: str, work: dict) -> int:
         try:
             conn.execute(
                 """
-                INSERT INTO publication_topics (
+                INSERT INTO _stage_topics (
                     publication_id, concept_id, concept_name,
-                    score, level, kind, source
+                    score, level, kind, source, _seq
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT (publication_id, concept_id) DO NOTHING
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                list(r),
+                [*r, _next_seq()],
             )
             written += 1
         except Exception as e:
-            # Most likely an FK violation if pub_id was somehow stale,
-            # or a transient conflict on a concurrent write. Log + skip
-            # so one bad row doesn't kill the rest of the publication.
+            # A bad value (e.g. a score that won't cast). Log + skip so
+            # one bad row doesn't kill the rest of the publication.
             print(f"[topics] skip {pub_id}/{r[1]}: {e}")
     return written
 
@@ -219,19 +404,27 @@ def upsert_publication(conn, work: dict) -> str | None:
     # of the same paper). We use the first row we find and reuse its
     # publication_id for the authorship link so the second insert
     # doesn't trip publications.doi UNIQUE and crash the whole author's
-    # enrichment run.
+    # enrichment run. Rows staged earlier in this run count as existing.
+    # The row whose publication_id matches is preferred over a DOI hit.
+    known = ("(SELECT publication_id, doi, cited_by_count FROM publications "
+             "UNION ALL SELECT publication_id, doi, cited_by_count "
+             "FROM _stage_publications)")
     if doi:
-        hit = conn.execute(
-            "SELECT publication_id, cited_by_count "
-            "FROM publications WHERE publication_id = ? OR doi = ? LIMIT 1",
-            [pub_id, doi],
-        ).fetchone()
+        hit = cod_db.rows(
+            conn,
+            f"SELECT publication_id, cited_by_count FROM {known} "
+            "WHERE publication_id = ? OR doi = ? "
+            "ORDER BY publication_id = ? DESC LIMIT 1",
+            [pub_id, doi, pub_id],
+        )
     else:
-        hit = conn.execute(
-            "SELECT publication_id, cited_by_count "
-            "FROM publications WHERE publication_id = ? LIMIT 1",
+        hit = cod_db.rows(
+            conn,
+            f"SELECT publication_id, cited_by_count FROM {known} "
+            "WHERE publication_id = ? LIMIT 1",
             [pub_id],
-        ).fetchone()
+        )
+    hit = hit[0] if hit else None
     if hit and hit[0] != pub_id:
         # Existing row found via DOI; reuse its id for authorship.
         return hit[0]
@@ -245,7 +438,7 @@ def upsert_publication(conn, work: dict) -> str | None:
     if existing is None:
         conn.execute(
             """
-            INSERT INTO publications (
+            INSERT INTO _stage_publications (
                 publication_id, doi, title, pub_year, pub_type,
                 journal, cited_by_count, openalex_id, url, source, retrieved_at
             )
@@ -256,41 +449,37 @@ def upsert_publication(conn, work: dict) -> str | None:
         )
     # existing row case: skip the UPDATE.
     #
-    # DuckDB (≥1.0, as of 1.5.x) refuses to UPDATE a row that has any
-    # FK still pointing at it, even when the UPDATE doesn't touch the
-    # PK column. This breaks co-author enrichment: if person A is
-    # enriched first and has paper X, paper X gets an authorship row
-    # (A, X). When we then process co-author B on the same paper,
-    # upsert_publication tries to UPDATE publications.cited_by_count
-    # for X, and DuckDB aborts with
-    #
-    #   Constraint Error: Violates foreign key constraint because key
-    #   "publication_id: W…" is still referenced by a foreign key in
-    #   a different table
-    #
-    # The first write is already factually correct (same OpenAlex
-    # data, minutes apart), so we can safely skip the refresh and
+    # This was forced by the old native DuckDB file, which refused to
+    # UPDATE a row any FK pointed at. The lake has no such block, but
+    # the first write is already factually correct (same OpenAlex
+    # data, minutes apart), so the refresh is still skipped and we
     # just fall through to the authorship INSERT.
     return pub_id
 
 
 def enrich_person(conn, sess: requests.Session, person: dict,
-                  max_pubs: int, dry: bool) -> dict:
+                  max_pubs: int, dry: bool, vocab: set[str] | None = None) -> dict:
     result = {"person_id": person["person_id"], "works_found": 0, "upserted": 0}
     author = resolve_author(sess, person)
     if not author:
         return result
     author_oa = author["id"]
     author_oa_short = author_oa.split("/")[-1]
-    interests = ", ".join(
-        (c.get("display_name") or "") for c in (author.get("x_concepts") or [])[:5]
-    )
+    interests = interests_from_author(author)
+    ri_ok, why = ri_overwritable(person, vocab or LEVEL0_CONCEPTS)
+    result["research_interests"] = "fill" if (ri_ok and interests) else "keep"
+    if interests and ri_ok:
+        print(f"    [interests] fill ({why}): {interests}")
+    elif interests:
+        print(f"    [interests] keep, {why}")
+    staged_ri = interests if ri_ok else None
     if not dry:
         conn.execute(
-            "UPDATE people SET openalex_id = ?, research_interests = "
-            "COALESCE(NULLIF(?, ''), research_interests), "
-            "updated_at = now() WHERE person_id = ?",
-            [author_oa_short, interests, person["person_id"]],
+            "INSERT INTO _stage_people VALUES (?, ?, ?, ?, ?, ?)",
+            [person["person_id"], author_oa_short, staged_ri,
+             f"https://openalex.org/{author_oa_short}" if staged_ri else None,
+             person.get("research_interests"),
+             person.get("research_interests_source_url")],
         )
 
     works = fetch_works(sess, author_oa, max_pubs)
@@ -304,25 +493,38 @@ def enrich_person(conn, sess: requests.Session, person: dict,
             continue
         conn.execute(
             """
-            INSERT INTO authorship (person_id, publication_id, raw_name)
-            VALUES (?, ?, ?)
-            ON CONFLICT (person_id, publication_id) DO NOTHING
+            INSERT INTO _stage_authorship (person_id, publication_id, raw_name, _seq)
+            VALUES (?, ?, ?, ?)
             """,
-            [person["person_id"], pid, person["name"]],
+            [person["person_id"], pid, person["name"], _next_seq()],
         )
         # Write OpenAlex topics/concepts/keywords for this work. We do
         # this *every* time we see the publication (not just on first
         # insert) because OpenAlex topic scores update over time and
-        # we'd rather refresh than miss the new ones; ON CONFLICT DO
-        # NOTHING keeps re-runs cheap when nothing has changed.
+        # we'd rather refresh than miss the new ones; the insert-only
+        # merge keeps re-runs cheap when nothing has changed.
         result["topics_written"] += upsert_publication_topics(conn, pid, w)
         result["upserted"] += 1
     return result
 
 
+def catalog_arg(args) -> Path | None:
+    """--db is the pre-lake flag, kept as an alias of --catalog. The retired
+    db/cod_kmap.duckdb file itself is not a catalog, so it is ignored."""
+    if args.db is None or args.catalog is not None:
+        return args.catalog
+    if args.db.suffix == ".duckdb":
+        print(f"[deprecated] --db {args.db} ignored (db/cod_kmap.duckdb is retired); "
+              f"use --catalog", file=sys.stderr)
+        return None
+    return args.db
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--db", type=Path, default=DEFAULT_DB)
+    cod_db.add_argparse_catalog(ap)
+    ap.add_argument("--db", type=Path, default=None,
+                    help="deprecated alias of --catalog (a .duckdb path is ignored)")
     ap.add_argument("--limit", type=int, default=0,
                     help="Max people to process (0 = all)")
     ap.add_argument("--max-pubs", type=int, default=100,
@@ -330,47 +532,72 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
-    if not args.db.exists():
-        print(f"[error] db not found: {args.db}", file=sys.stderr)
+    try:
+        conn = cod_db.connect(read_only=args.dry_run, catalog=catalog_arg(args),
+                              data=args.lake_data)
+    except cod_db.LakeNotFound as e:
+        print(f"[error] {e}", file=sys.stderr)
         return 2
-
-    conn = duckdb.connect(str(args.db))
     sess = session()
+    if not args.dry_run:
+        for ddl in STAGE_DDL:
+            conn.execute(ddl)
+        for name, like in STAGE_LIKE:
+            cod_db.create_temp_like(conn, name, like)
 
     # .fetchall() + manual dict build is more portable across DuckDB
     # versions than .fetchdf() (pandas bridge varies) and avoids a
     # hard pandas dependency on the user's machine.
     rows = conn.execute(
-        "SELECT person_id, name, orcid, openalex_id FROM people ORDER BY name"
+        "SELECT person_id, name, orcid, openalex_id, research_interests, "
+        "research_interests_source_url FROM people ORDER BY name"
     ).fetchall()
     people = [
-        {"person_id": r[0], "name": r[1], "orcid": r[2], "openalex_id": r[3]}
+        {"person_id": r[0], "name": r[1], "orcid": r[2], "openalex_id": r[3],
+         "research_interests": r[4], "research_interests_source_url": r[5]}
         for r in rows
     ]
+    vocab = load_concept_vocab(conn)
     if args.limit:
         people = people[: args.limit]
     print(f"[enrich] processing {len(people)} people"
           f"{'  (dry-run)' if args.dry_run else ''}")
 
-    totals = {"works_found": 0, "upserted": 0, "topics": 0, "skipped": 0}
-    for i, p in enumerate(people, 1):
-        try:
-            r = enrich_person(conn, sess, p, args.max_pubs, args.dry_run)
-            totals["works_found"] += r["works_found"]
-            totals["upserted"] += r["upserted"]
-            totals["topics"] += r.get("topics_written", 0)
-            if not r["works_found"]:
+    totals = {"works_found": 0, "upserted": 0, "topics": 0, "skipped": 0,
+              "ri_fill": 0}
+    try:
+        for i, p in enumerate(people, 1):
+            try:
+                r = enrich_person(conn, sess, p, args.max_pubs, args.dry_run, vocab)
+                totals["ri_fill"] += r.get("research_interests") == "fill"
+                totals["works_found"] += r["works_found"]
+                totals["upserted"] += r["upserted"]
+                totals["topics"] += r.get("topics_written", 0)
+                if not r["works_found"]:
+                    totals["skipped"] += 1
+                print(f"  [{i}/{len(people)}] {p['name']}  "
+                      f"works={r['works_found']}  wrote={r['upserted']}  "
+                      f"topics+={r.get('topics_written', 0)}")
+            except Exception as e:
+                print(f"  [{i}/{len(people)}] {p['name']}  ERROR: {e}")
                 totals["skipped"] += 1
-            print(f"  [{i}/{len(people)}] {p['name']}  "
-                  f"works={r['works_found']}  wrote={r['upserted']}  "
-                  f"topics+={r.get('topics_written', 0)}")
-        except Exception as e:
-            print(f"  [{i}/{len(people)}] {p['name']}  ERROR: {e}")
-            totals["skipped"] += 1
+    except KeyboardInterrupt:
+        print("\n[interrupted] writing what was staged so far")
 
     print(f"[done] works_found={totals['works_found']}  "
           f"upserted={totals['upserted']}  topics={totals['topics']}  "
-          f"skipped={totals['skipped']}")
+          f"skipped={totals['skipped']}  "
+          f"research_interests_fill={totals['ri_fill']}")
+    if not args.dry_run:
+        with cod_db.transaction(
+                conn, f"enrich_people_openalex: {len(people)} people, "
+                      f"max-pubs {args.max_pubs}"):
+            out = write_stage(conn)
+        print(f"[lake] people={out['people']}  "
+              f"research_interests={out['research_interests']}  "
+              + "  ".join(f"{t}={out[t]}" for t in
+                          ("publications", "authorship", "publication_topics"))
+              + "  (run export_parquet.py to publish)")
     conn.close()
     return 0
 

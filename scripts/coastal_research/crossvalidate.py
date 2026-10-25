@@ -12,21 +12,26 @@ Output: a Markdown table per layer plus per-state summaries, written to
 ``data/raw/R11_coastal_ecosystems/gap_report.md``. The report drives the
 follow-on "Add overlays + facilities to map and database" task — every
 truly-new unit becomes a candidate facility row.
+
+The facilities come from the lake, opened read-only (``$COD_LAKE_CATALOG``
+or ``--catalog``; no lake means no facility matches, as before).
+``--out`` writes the report somewhere else (e.g. a scratch dir).
 """
 from __future__ import annotations
 
+import argparse
 import json
-import os
 import sys
-from collections import Counter, defaultdict
+from collections import Counter
 from pathlib import Path
 
-import duckdb
 from rapidfuzz import fuzz
 
 ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(ROOT / "scripts"))
+import cod_db  # noqa: E402
+
 OUT = ROOT / "data" / "raw" / "R11_coastal_ecosystems" / "gap_report.md"
-DB = ROOT / "db" / "cod_kmap.duckdb"
 
 NEW_LAYERS = [
     ("coastal-fws-units", "USFWS Refuges & Approved Boundaries"),
@@ -58,8 +63,14 @@ def name_norm(s: str) -> str:
         .replace("national recreation area", "nra")
 
 
-def main() -> int:
-    OUT.parent.mkdir(parents=True, exist_ok=True)
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    cod_db.add_argparse_catalog(ap)
+    ap.add_argument("--out", type=Path, default=OUT,
+                    help=f"report path (default: {OUT.relative_to(ROOT)})")
+    args = ap.parse_args(argv)
+    out = args.out.resolve()
+    out.parent.mkdir(parents=True, exist_ok=True)
 
     # Index every legacy overlay's names
     legacy_names: dict[str, set[str]] = {}
@@ -67,13 +78,15 @@ def main() -> int:
         feats = load_layer(ln)
         legacy_names[ln] = {name_norm(f["properties"].get("name", "")) for f in feats}
 
-    # Index facilities table
-    if DB.exists():
-        with duckdb.connect(str(DB), read_only=True) as conn:
-            facs = conn.execute(
-                "SELECT facility_id, canonical_name, acronym FROM facilities"
-            ).fetchall()
-    else:
+    # Index facilities table (empty when the lake has not been built)
+    try:
+        with cod_db.connect(read_only=True, catalog=args.catalog,
+                            data=args.lake_data) as conn:
+            facs = cod_db.rows(
+                conn, "SELECT facility_id, canonical_name, acronym FROM facilities")
+    except cod_db.LakeNotFound as e:
+        print(f"[crossvalidate] no lake ({e.args[0].splitlines()[0]}); "
+              f"facility matching skipped", file=sys.stderr)
         facs = []
     fac_index = {name_norm(name): (fid, name, acr) for fid, name, acr in facs}
     fac_acr_index = {(acr or "").lower(): (fid, name, acr) for fid, name, acr in facs if acr}
@@ -152,8 +165,8 @@ def main() -> int:
                      f"| {st.get('match-legacy-overlay/nps-coastal', 0) + st.get('match-legacy-overlay/nerr-reserves', 0) + st.get('match-legacy-overlay/nep-programs', 0) + st.get('match-legacy-overlay/marine-sanctuaries', 0) + st.get('match-legacy-overlay/marine-monuments', 0)} "
                      f"| {st.get('fuzzy-facility', 0)} |")
 
-    OUT.write_text("\n".join(lines))
-    print(f"[crossvalidate] wrote {OUT.relative_to(ROOT)}")
+    out.write_text("\n".join(lines))
+    print(f"[crossvalidate] wrote {out}")
     for lid, lbl, n, st, sts in summary:
         print(f"  {lbl:55s} {n:4d} features  new={st.get('new',0):4d}  "
               f"existing-facility={st.get('match-facility',0):3d}  "

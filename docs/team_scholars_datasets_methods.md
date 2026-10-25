@@ -73,54 +73,59 @@ Some names were also read off the chart image, so spellings are worth a pass
 ### Building it
 
 ```bash
-python scripts/build_cod_team_lake.py
+python scripts/build_cod_team_lake.py     # seeds -> cod_wbs, cod_team_members, people (lake)
+python scripts/qa.py
+python scripts/export_parquet.py          # lake -> db/parquet, public/parquet
 ```
 
-This is idempotent: re-running with unchanged seeds produces identical
-tables and identical parquet.
+This is idempotent: a run whose seeds already match the lake changes
+nothing and writes no snapshot, so the next export is byte-identical.
+`--dry-run` validates the seeds without writing.
 
-### Why a DuckLake
+### Roster history
 
 The team roster is the one table in this repo that is expected to change
 by revision rather than by re-harvest — people join, positions get filled,
 the WBS gets reorganised — and "what did the team look like at proposal
-time?" is a question worth being able to answer. So the build writes into
-a **DuckLake** catalogue:
+time?" is a question worth being able to answer.
 
+The build writes `cod_wbs` and `cod_team_members` into the project's one
+DuckLake store of record (`db/cod_kmap_catalog.sqlite` + `db/lake/`,
+opened through `scripts/cod_db.py`), in **one transaction per run**. A run
+that changes the roster lands as one snapshot whose commit message starts
+`build_cod_team_lake:`, so the roster's history is the lake's own history:
+
+```python
+import sys; sys.path.insert(0, "scripts")
+import cod_db
+con = cod_db.connect(read_only=True)
+con.sql("""SELECT snapshot_id, snapshot_time, author, commit_message
+             FROM lake.snapshots()
+            WHERE commit_message LIKE 'build_cod_team_lake:%'
+            ORDER BY 1 DESC""").show()
+con.sql("SELECT * FROM cod_team_members AT (VERSION => 12)").show()
 ```
-db/cod_team.ducklake      the catalogue
-db/ducklake_data/         DuckLake-managed parquet
-```
 
-Every run lands as a snapshot, so the history is queryable:
+`python scripts/build_cod_team_lake.py --history` prints the same log with
+the per-table row changes of each snapshot.
 
-```sql
-ATTACH 'ducklake:db/cod_team.ducklake' AS teamlake;
-SELECT * FROM teamlake.snapshots();
-SELECT * FROM teamlake.cod_team_members AT (VERSION => 1);
-```
+Until October 2026 the layer kept its own separate catalogue
+(`db/cod_team.ducklake` + `db/ducklake_data/`, attached as `teamlake`, with a
+plain-table fallback when the `duckdb-extension-ducklake` wheel was
+missing). That copy is retired; there is one lake now.
 
-Both paths are gitignored, for the same reason `db/cod_kmap.duckdb` is:
-DuckDB's on-disk format is not portable across versions, and the whole
-thing is regenerable from two CSVs. The **shared** artifact is still plain
+The lake is gitignored local state: snapshot ids mean nothing across
+clones, and it is rebuilt from the committed `db/parquet/` with
+`scripts/rebuild_lake_from_parquet.py`. The **shared** artifact is the
 parquet in `db/parquet/` and `public/parquet/`, which is also what
 DuckDB-Wasm reads in the browser. Snapshot history is a local convenience,
 not shared state.
 
-Rows are staged and moved with a single `INSERT … SELECT` per table.
-DuckLake records one snapshot per statement, so inserting row-by-row would
-bury each run's real change under a hundred single-row snapshots.
-
-The extension is optional. Install it without needing
-`extensions.duckdb.org`:
-
-```bash
-pip install duckdb-extensions duckdb-extension-ducklake
-```
-
-If it is unavailable the script says so and writes plain tables into the
-main database instead. The parquet output is identical either way, so a
-fallback run is not a degraded run — you just lose the snapshot log.
+Each table is rewritten only when its staged rows differ from the lake,
+with a `DELETE` and a single `INSERT … SELECT`. DuckLake records one
+snapshot per autocommit statement, so inserting row-by-row outside a
+transaction would bury each run's real change under a hundred single-row
+snapshots.
 
 ### Syncing into `people`
 
@@ -129,9 +134,13 @@ Named members are upserted into `people` on
 formula as `scripts/load_facility_personnel.py`, so the same human seeded
 through either path collapses onto one row.
 
-Every enrichable column is written with
-`COALESCE(excluded.x, people.x)`, so a blank cell in the seed CSV never
-wipes a value that the enrichment scripts resolved earlier.
+The sync is a `MERGE` (`cod_db.merge_upsert`) keyed on `person_id`.
+`orcid`, `openalex_id`, `google_scholar_id` and `homepage_url` keep the
+lake's value when the seed cell is blank, and `notes` keeps the lake's
+value whenever it has one, so a blank cell in the seed CSV never wipes a
+value that the enrichment scripts resolved earlier. `email` is never
+written to `people`: it still feeds the `person_id` hash, but contact
+details stay in the seed.
 
 ### Filling in profiles and metrics
 
@@ -152,18 +161,21 @@ python scripts/enrich_people_orcid.py        # strict 3-rule matcher
 python scripts/enrich_people_openalex.py     # publications + topics
 python scripts/enrich_people_gscholar.py     # Scholar ids via OpenAlex/ORCID
 python scripts/backfill_publication_topics.py
+python scripts/compute_collaborations.py     # co-author edges from authorship
 python scripts/compute_person_areas.py       # needs publication_topics above
-python scripts/compute_collaborations.py --export-parquet
 python scripts/compute_primary_groups.py     # MUST precede area_metrics
 python scripts/compute_area_metrics.py       # h-index, citations, composite_z
-python scripts/init_people_tables.py --export-parquet   # publications/authorship/topics
-python scripts/build_cod_team_lake.py        # re-snapshot people.parquet
+python scripts/build_mvg_layout.py           # knowledge-map layout
 python scripts/build_person_registry.py      # unify the three layers on one key
 python scripts/compute_registry_collaborations.py   # cross-cohort co-pub edges
 python scripts/link_registry_facilities.py   # researcher ↔ site, on ROR equality
 python scripts/rank_person_registry.py       # assign core / archive tier
 python scripts/qa.py
+python scripts/export_parquet.py             # the only step that writes parquet
 ```
+
+Every script above writes into the lake, one snapshot per run; none of them
+writes parquet. `export_parquet.py` publishes everything at the end.
 
 The four registry scripts run last, and in that order: the registry needs
 the three source layers populated before it can unify them, the graph and
@@ -176,15 +188,14 @@ earlier version of this page:
 - **`compute_primary_groups.py` must run before `compute_area_metrics.py`**,
   not after. Two of the metric tables join `facility_primary_groups`, which
   only the groups script produces.
-- **`compute_collaborations.py` needs `--export-parquet`**; without the flag it
-  updates the database and writes no parquet, so the co-author counts never
-  reach the browser.
-- **`init_people_tables.py --export-parquet` is not optional.** No script in
-  the chain exports `publications`, `authorship`, `person_areas` or
-  `publication_topics`, so newly harvested publications would sit in the local
-  database and never reach the site. That command re-exports all seven
-  people-side tables (it is `CREATE TABLE IF NOT EXISTS`, so it will not wipe
-  anything).
+- **`compute_collaborations.py` must also run before
+  `compute_area_metrics.py`**, which reads `collaborations` for the per-area
+  co-authorship counts.
+- **Nothing reaches the site until `export_parquet.py` runs.** Earlier
+  versions of this chain needed `--export-parquet` on
+  `compute_collaborations.py` and `init_people_tables.py` because each
+  script wrote its own parquet. They no longer do; the flag is accepted as a
+  no-op, and the single exporter at the end publishes every table.
 
 Then stage the refreshed parquet — it is gitignored but tracked, so a plain
 `git add` silently skips it:
@@ -288,7 +299,7 @@ Five stages, each checkpointed under `data/raw/community_scholars/`
 | B | Hydrate authors 50 at a time: ORCID, summary stats, last known institution |
 | C | For the shortlist only, count coastal-topic works all-time and over five years, and find each author's first publication year |
 | D | Assign cohorts locally and deterministically |
-| E | Link to `people`, write the table, refresh parquet |
+| E | Link to `people` and write the table into the lake (one snapshot; `export_parquet.py` publishes it) |
 
 About 1,250 requests, minutes in the polite pool.
 
@@ -407,8 +418,8 @@ synthesis-network  model-output  archive  mapping-product
 ## Verifying all three
 
 ```bash
-python scripts/rebuild_db_from_parquet.py   # committed parquet -> local DB
-python scripts/qa.py                        # must exit 0
+python scripts/rebuild_lake_from_parquet.py   # committed db/parquet -> local lake
+python scripts/qa.py                          # must exit 0
 python -m http.server 5173                  # then open /#/people, /#/org, /#/data
 ```
 
@@ -421,6 +432,9 @@ closure, and vocabulary membership throughout — plus a column-presence
 check per table, which catches the schema-versus-loader drift that has
 already bitten the people tables once.
 
-Every block is skipped when its table is empty, so the weekly
-ingest-only refresh (where these tables have no rows, because their data
-lives in committed parquet that `ingest.py` never touches) stays green.
+Every block is skipped when its table is empty, so QA stays meaningful on
+a lake that does not carry these layers (a scratch lake built from a
+partial parquet folder, for example). The weekly `refresh-data.yml` no
+longer runs into that case: it rebuilds the lake from the committed
+`db/parquet/` first, so these tables are populated before `ingest.py`
+upserts into it.

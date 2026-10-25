@@ -9,6 +9,24 @@ permissions:
   contents: write
   pull-requests: write
 
+# The PR step also needs the repo setting "Allow GitHub Actions to create
+# and approve pull requests" (Settings -> Actions -> General). GitHub also
+# disables a scheduled workflow after 60 days without repo activity
+# ("disabled_inactivity"); re-enable with `gh workflow enable "Refresh data"`.
+#
+# The lake is rebuilt from the committed db/parquet (the canonical copy:
+# full registry, archive tier and db-only tables), then only the loaders
+# whose inputs are committed and that run offline are re-run. The network
+# enrichers (enrich_people_*, fetch_funding_*, harvest_coastal_authors, ...)
+# are not run here. ingest.py upserts into the rebuilt lake and leaves the
+# parquet-only layers (people, registry, R11 footprints) alone, and the
+# loaders commit nothing when their seeds already match, so a week with no
+# input change produces no data diff and no PR.
+
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+
 jobs:
   refresh:
     runs-on: ubuntu-latest
@@ -16,26 +34,64 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
+          # duckdb 2.0 needs Python >= 3.11.
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - name: Ingest raw data
-        run: python scripts/ingest.py
+      # The DuckLake store (db/cod_kmap_catalog.sqlite + db/lake/) is
+      # gitignored local state; every run rebuilds it from db/parquet. The
+      # ducklake/sqlite extensions are fetched from extensions.duckdb.org on
+      # first use. Nothing else is cached.
+      - name: Rebuild DuckLake from committed parquet
+        run: python scripts/rebuild_lake_from_parquet.py --parquet db/parquet
+      - name: Ingest data/raw/R*/*.json (geocode cache only)
+        run: python scripts/ingest.py --skip-geocode
+      - name: Load COD team layer (data/seed/cod_wbs.csv, cod_team_members.csv)
+        run: python scripts/build_cod_team_lake.py
+      - name: Load dataset catalogue (data/datasets/coastal_datasets.json)
+        run: python scripts/load_coastal_datasets.py
+      - name: Link datasets to facilities
+        run: python scripts/link_dataset_facilities.py
+      # Derived tables, in dependency order: compute_area_metrics reads
+      # collaborations and facility_primary_groups; build_mvg_layout reads
+      # person_primary_groups and cod_team_members.
+      - name: Recompute derived tables
+        run: |
+          set -eu
+          python scripts/compute_collaborations.py
+          python scripts/compute_person_areas.py
+          python scripts/compute_primary_groups.py
+          python scripts/compute_area_metrics.py
+          python scripts/build_mvg_layout.py
       - name: Run QA
         run: python scripts/qa.py
       - name: Export Parquet + GeoJSON
         run: python scripts/export_parquet.py
+      # Not peter-evans/create-pull-request: db/parquet/*.parquet and
+      # public/parquet/*.parquet are gitignored-but-tracked, and a plain
+      # `git add` (which that action runs) silently skips a NEW ignored file.
+      # Stage with `git add -f`.
       - name: Open refresh PR
-        uses: peter-evans/create-pull-request@v6
-        with:
-          branch: data-refresh/${{ github.run_id }}
-          title: "chore(data): weekly refresh"
-          commit-message: "chore(data): weekly refresh"
-          body: |
-            Automated weekly data refresh produced by `scripts/ingest.py`.
-            Review Parquet and GeoJSON diffs before merging.
-          add-paths: |
-            db/parquet/*.parquet
-            public/parquet/*.parquet
-            public/facilities.geojson
-          labels: data-refresh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: data-refresh/${{ github.run_id }}
+        run: |
+          set -eu
+          git add -f db/parquet/*.parquet public/parquet/*.parquet
+          git add public/facilities.geojson
+          if git diff --cached --quiet; then
+            echo "No changes; no PR opened."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git commit -m "chore(data): weekly refresh"
+          git push origin "$BRANCH"
+          gh label create data-refresh --color 1d76db \
+            --description "Automated weekly data refresh" 2>/dev/null || true
+          gh pr create --base "${{ github.event.repository.default_branch }}" \
+            --head "$BRANCH" \
+            --title "chore(data): weekly refresh" \
+            --label data-refresh \
+            --body "Automated weekly data refresh: DuckLake rebuilt from the committed db/parquet, committed-input loaders re-run (\`ingest.py --skip-geocode\`, \`build_cod_team_lake.py\`, \`load_coastal_datasets.py\`, \`link_dataset_facilities.py\`), derived tables recomputed (\`compute_collaborations\` → \`compute_person_areas\` → \`compute_primary_groups\` → \`compute_area_metrics\` → \`build_mvg_layout\`), gated by \`scripts/qa.py\`, then re-exported by \`scripts/export_parquet.py\`. Review the db/parquet, public/parquet and public/facilities.geojson diffs before merging."

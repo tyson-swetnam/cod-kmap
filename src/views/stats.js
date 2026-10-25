@@ -50,6 +50,7 @@ import { TYPE_COLORS } from '../map.js';
 
 let _container = null;
 let _renderedOnce = false;
+let _inFlight = null;   // promise of the renderDashboard() pass in progress
 
 const TOP_N_FACILITIES = 10;
 const TOP_N_RESEARCHERS = 10;
@@ -366,10 +367,22 @@ async function fetchAll() {
       ORDER  BY e.co_pub_count DESC, person_a
       LIMIT  12`,
   };
-  const out = {};
+  // Each query is isolated: one missing table or binder error empties only
+  // the panel that reads it, instead of throwing out of fetchAll() and
+  // blanking the whole dashboard (which is what happened when
+  // person_identity_source was still registered lazily). Failed keys are
+  // collected in out._failed so renderDashboard can say which panels are
+  // incomplete.
+  const out = { _failed: [] };
   for (const [k, sql] of Object.entries(queries)) {
-    const r = await conn.query(sql);
-    out[k] = r.toArray().map((row) => numify(row.toJSON()));
+    try {
+      const r = await conn.query(sql);
+      out[k] = r.toArray().map((row) => numify(row.toJSON()));
+    } catch (e) {
+      console.warn(`[stats] query "${k}" failed:`, e.message);
+      out[k] = [];
+      out._failed.push(k);
+    }
   }
   return out;
 }
@@ -1016,8 +1029,15 @@ async function renderDashboard() {
         ${buildToc(data.areas, colorFor)}
         <div class="dash-sections">${registryPanel}${sections}</div>
       </div>
-      <p class="dash-status" style="text-align:center;color:#64748b">Done.</p>
+      <p class="dash-status" style="text-align:center;color:#64748b">${
+        data._failed.length
+          ? `Done, but ${data._failed.length} panel quer${data._failed.length === 1 ? 'y' : 'ies'}
+             failed and show no data: ${esc(data._failed.join(', '))}.`
+          : 'Done.'}</p>
     </div>`;
+  // Set even when some queries failed: renderStats() runs on every map
+  // refresh until this flips, and a persistent failure would otherwise
+  // re-run the whole query set each time.
   _renderedOnce = true;
 }
 
@@ -1038,12 +1058,15 @@ export function initStatsView(container) {
 export function renderStats(_features) {
   if (!_container) return;
   // Don't refetch on every map filter change; only on first visit.
-  if (_renderedOnce) return;
-  renderDashboard().catch((e) => {
+  if (_renderedOnce || _inFlight) return;
+  // main.js calls this on every map refresh; without the in-flight guard a
+  // burst of refreshes during first load starts several concurrent passes
+  // over the same ~20 queries.
+  _inFlight = renderDashboard().catch((e) => {
     console.error('[stats] dashboard render failed', e);
     if (_container) {
       const s = _container.querySelector('.dash-status');
       if (s) s.textContent = `Render failed: ${e.message}`;
     }
-  });
+  }).finally(() => { _inFlight = null; });
 }

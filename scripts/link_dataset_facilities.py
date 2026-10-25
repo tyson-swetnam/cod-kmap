@@ -38,10 +38,15 @@ catalogue does not carry as rows (NASA centres, EPA, USGS mission areas,
 EU/UN bodies) — they are absent, not unmatched, and forcing them in would
 mean inventing facility records.
 
+The edges replace `dataset_facilities` in the lake in one transaction (one
+snapshot); scripts/export_parquet.py publishes them. An edge that comes out
+exactly as it already is keeps its `retrieved_at`, so re-running on another
+day changes nothing; a new or changed edge is stamped with today's date.
+
 Usage::
 
     python scripts/link_dataset_facilities.py --dry-run
-    python scripts/link_dataset_facilities.py --export-parquet
+    python scripts/link_dataset_facilities.py
 """
 from __future__ import annotations
 
@@ -52,11 +57,10 @@ from collections import Counter, defaultdict
 from datetime import date
 from pathlib import Path
 
-import duckdb
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cod_db  # noqa: E402
 
-ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DB = ROOT / "db" / "cod_kmap.duckdb"
-PARQUET_OUT = [ROOT / "db" / "parquet", ROOT / "public" / "parquet"]
+SOURCE = "derived:link_dataset_facilities"
 
 # Facility types that can steward a dataset. The other 3,309 rows in
 # `facilities` are protected areas — a state park does not publish an
@@ -93,29 +97,15 @@ METHOD_CONFIDENCE = {"canonical-name": "high", "network-id": "high",
 ACRONYM_TOKEN = re.compile(r"\b[A-Z][A-Za-z0-9\-.]{2,}\b")
 
 
-def ensure_link_table(conn) -> None:
-    """Mirror of the DDL in schema/schema.sql, for a DB predating it."""
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS dataset_facilities (
-            dataset_id   VARCHAR NOT NULL,
-            facility_id  VARCHAR NOT NULL,
-            role         VARCHAR,
-            method       VARCHAR NOT NULL,
-            confidence   VARCHAR NOT NULL,
-            evidence     VARCHAR,
-            source       VARCHAR,
-            source_url   VARCHAR,
-            retrieved_at DATE,
-            PRIMARY KEY (dataset_id, facility_id, role)
-        )""")
-
-
 def load_facilities(conn):
     """Research organisations, plus the two lookup structures the passes need."""
+    # Ordered: `superseded` keeps the last longer name that contains a
+    # shorter one, so the result must not depend on the order the lake
+    # returns rows in.
     rows = conn.execute(
         "SELECT facility_id, canonical_name, acronym, facility_type "
         "FROM facilities WHERE facility_type IN "
-        f"({', '.join('?' * len(RESEARCH_TYPES))})",
+        f"({', '.join('?' * len(RESEARCH_TYPES))}) ORDER BY facility_id",
         sorted(RESEARCH_TYPES),
     ).fetchall()
 
@@ -173,7 +163,7 @@ def derive(conn):
     net_label = dict(conn.execute("SELECT network_id, label FROM networks").fetchall())
     datasets = conn.execute(
         "SELECT dataset_id, provider, program, network_id, source_url "
-        "FROM coastal_datasets").fetchall()
+        "FROM coastal_datasets ORDER BY dataset_id").fetchall()
 
     edges: dict[tuple[str, str], dict] = {}
 
@@ -242,24 +232,21 @@ def report(conn) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--db", type=Path, default=DEFAULT_DB)
+    cod_db.add_argparse_catalog(ap)
+    ap.add_argument("--db", dest="catalog", type=Path,
+                    help="deprecated alias of --catalog")
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--export-parquet", action="store_true")
+    ap.add_argument("--export-parquet", action="store_true",
+                    help="deprecated no-op: run scripts/export_parquet.py")
     args = ap.parse_args()
 
-    if not args.db.exists():
-        print(f"[error] {args.db} not found — run "
-              f"scripts/rebuild_db_from_parquet.py first", file=sys.stderr)
-        return 2
-
-    conn = duckdb.connect(str(args.db))
-    conn.execute("SET search_path = main;")
+    conn = cod_db.connect(read_only=args.dry_run,
+                          catalog=args.catalog, data=args.lake_data)
     if conn.execute("SELECT COUNT(*) FROM coastal_datasets").fetchone()[0] == 0:
         print("[error] coastal_datasets is empty — run "
               "scripts/load_coastal_datasets.py first", file=sys.stderr)
         return 2
 
-    ensure_link_table(conn)
     rows = derive(conn)
     if not rows:
         print("[error] derived zero edges — refusing to empty dataset_facilities",
@@ -275,26 +262,42 @@ def main() -> int:
         return 0
 
     today = date.today().isoformat()
-    conn.execute("DELETE FROM dataset_facilities")
+    conn.execute("""
+        CREATE OR REPLACE TEMP TABLE _df_stage (
+            dataset_id VARCHAR, facility_id VARCHAR, role VARCHAR,
+            method VARCHAR, confidence VARCHAR, evidence VARCHAR,
+            source_url VARCHAR)""")
     conn.executemany(
-        "INSERT INTO dataset_facilities (dataset_id, facility_id, role, method, "
-        "confidence, evidence, source, source_url, retrieved_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, 'derived:link_dataset_facilities', ?, ?)",
+        "INSERT INTO _df_stage VALUES (?, ?, ?, ?, ?, ?, ?)",
         [[r["dataset_id"], r["facility_id"], r["role"], r["method"],
-          r["confidence"], r["evidence"], r["source_url"], today] for r in rows],
+          r["confidence"], r["evidence"], r["source_url"]] for r in rows],
     )
+    # An edge identical to the one already in the lake keeps its date.
+    same = " AND ".join(f"o.{c} IS NOT DISTINCT FROM s.{c}" for c in (
+        "dataset_id", "facility_id", "role", "method", "confidence",
+        "evidence", "source_url"))
+    with cod_db.transaction(conn, f"link_dataset_facilities: {len(rows)} edge(s)"):
+        conn.execute(f"""
+            CREATE OR REPLACE TEMP TABLE _df_new AS
+            SELECT s.*, ? AS source,
+                   COALESCE((SELECT max(o.retrieved_at) FROM dataset_facilities o
+                             WHERE {same} AND o.source = ?),
+                            CAST(? AS DATE)) AS retrieved_at
+            FROM _df_stage s""", [SOURCE, SOURCE, today])
+        conn.execute("DELETE FROM dataset_facilities")
+        conn.execute(
+            "INSERT INTO dataset_facilities (dataset_id, facility_id, role, method, "
+            "confidence, evidence, source, source_url, retrieved_at) "
+            "SELECT dataset_id, facility_id, role, method, confidence, evidence, "
+            "source, source_url, retrieved_at FROM _df_new")
+        cod_db.assert_integrity(conn, ["dataset_facilities"])
     report(conn)
-
+    # Unlike registry_facilities there is no tier filter: both endpoints
+    # (coastal_datasets, facilities) ship whole, so every edge resolves in
+    # the browser. export_parquet.py publishes the table.
+    print("[lake] dataset_facilities replaced (run scripts/export_parquet.py to publish)")
     if args.export_parquet:
-        for base in PARQUET_OUT:
-            base.mkdir(parents=True, exist_ok=True)
-            out = base / "dataset_facilities.parquet"
-            conn.execute(f"COPY dataset_facilities TO '{out}' (FORMAT PARQUET)")
-        # Unlike registry_facilities there is no tier filter: both endpoints
-        # (coastal_datasets, facilities) ship whole, so every edge resolves
-        # in the browser.
-        print("[parquet] dataset_facilities -> db/parquet, public/parquet")
-        print("[note] new parquet files are gitignored; stage them with `git add -f`")
+        print("[note] --export-parquet is a no-op now; run scripts/export_parquet.py")
     conn.close()
     return 0
 

@@ -172,6 +172,19 @@ Curated catalogue of external coastal datasets and their machine-readable access
 | `dataset_endpoints` | 242 | 16 KB | 6 | dataset_id |
 | `dataset_facilities` | 48 | 5 KB | 9 | dataset_id + facility_id |
 
+### Link health
+
+Result of the weekly HTTP HEAD sweep (GET fallback) over every link URL in
+`facilities.url`, `people.homepage_url`, `coastal_datasets.homepage_url` /
+`.source_url` and `dataset_endpoints.url`: one verdict per distinct URL.
+Written by `scripts/check_url_health.py` from the weekly
+`.github/workflows/url-health.yml` run, which opens a PR rather than
+publishing directly, so the file first appears once that PR is merged.
+
+| Table | Rows | Size | Cols | Join keys |
+| --- | --- | --- | --- | --- |
+| `url_health` * | (after first sweep) | | 4 | url (pk); status, http_code, checked_at |
+
 ### Knowledge-map layout
 
 Precomputed groupings and coordinates that drive the Network tab's MVG cartogram. Derived artifacts, not source data.
@@ -202,7 +215,7 @@ Precomputed groupings and coordinates that drive the Network tab's MVG cartogram
 - **Core-tier tables are floors.** `person_registry`,
   `person_identity_source`, `registry_collaborations` and
   `registry_facilities` publish only the core tier; the full population stays
-  in the local DuckDB. Aggregates from them undercount.
+  in the repository's `db/parquet/`. Aggregates from them undercount.
 - **`person_validation` is append-only** — one row per (registry row, check,
   run). Filter to the latest `run_id` before counting.
 - **`coauthor_candidates` is a review queue,** not a personnel table. Nothing
@@ -445,14 +458,26 @@ cd cod-kmap
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-python scripts/rebuild_db_from_parquet.py   # db/cod_kmap.duckdb from committed Parquet
-duckdb db/cod_kmap.duckdb
+python scripts/rebuild_lake_from_parquet.py   # db/parquet -> local DuckLake
 ```
 
-`rebuild_db_from_parquet.py` is required rather than optional: the DuckDB
-on-disk format is not portable across versions, so the `.duckdb` file is
-gitignored and `db/parquet/*.parquet` is the committed artifact. Rebuilding also
-re-creates the helper views from
+The full tables are plain files, so any DuckDB 1.1+ client can read them
+directly, for example `SELECT count(*) FROM 'db/parquet/person_registry.parquet'`.
+For the helper views and the snapshot history, open the rebuilt lake, which
+needs DuckDB 2.0 (`requirements.txt` pins it; the ducklake and sqlite
+extensions download on first use):
+
+```bash
+duckdb -c "INSTALL ducklake; INSTALL sqlite;
+  ATTACH 'ducklake:sqlite:db/cod_kmap_catalog.sqlite' AS lake (READ_ONLY); USE lake;
+  SELECT count(*) FROM person_registry;"
+```
+
+or, from Python, `import cod_db; con = cod_db.connect(read_only=True)` with
+`scripts/` on the path. The lake (`db/cod_kmap_catalog.sqlite` + `db/lake/`)
+is gitignored local state; `db/parquet/*.parquet` is the committed artifact,
+written only by `scripts/export_parquet.py`. Rebuilding also re-creates the
+helper views from
 [`schema/schema.sql`](https://github.com/tyson-swetnam/cod-kmap/blob/main/schema/schema.sql),
 which do not exist over HTTP at all — see
 [For AI agents](https://tyson-swetnam.github.io/cod-kmap/docs/for_ai_agents.md) for why.

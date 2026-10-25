@@ -170,6 +170,14 @@ DOC_META: dict[str, tuple[str, str, str, str]] = {
         "dated built/superseded notes on each.",
         "Report", "stable",
     ),
+    "knowledge-map.md": (
+        "Knowledge map",
+        "How the Network tab's cartogram works: the data-and-people weight "
+        "(data providers = facilities with datasets; protected areas excluded), "
+        "the fit-to-everything viewport, every label threshold, and the registry "
+        "layer sized by coastal output volume.",
+        "Guide", "stable",
+    ),
     "map_visualization_plan.md": (
         "Map visualization plan",
         "Design of the Network tab's MVG cartogram: the grouping options with "
@@ -261,6 +269,11 @@ TABLE_GROUPS: list[tuple[str, str, list[str]]] = [
      "Curated catalogue of external coastal datasets and their machine-readable "
      "access endpoints.",
      ["coastal_datasets", "dataset_endpoints", "dataset_facilities"]),
+    ("Link health",
+     "Result of the weekly HTTP HEAD sweep (GET fallback) over every link URL "
+     "in facilities, people and the dataset catalogue: one verdict per distinct "
+     "URL, keyed on url.",
+     ["url_health"]),
     ("Knowledge-map layout",
      "Precomputed groupings and coordinates that drive the Network tab's MVG "
      "cartogram. Derived artifacts, not source data.",
@@ -371,15 +384,19 @@ def registered_tables(path: str = DB_JS) -> set[str]:
     except OSError:
         return set()
     names: set[str] = set()
-    for decl in (r"const tables = \[(.*?)\n  \];", r"const lazyTables = \[(.*?)\n  \];"):
-        m = re.search(decl, src, re.S)
+    # Indentation-agnostic: the closing `];` must sit at the same indent as
+    # its `const` line, whatever that indent is (initDB's body moved inside a
+    # try block, which re-indented both arrays).
+    for decl in (r"^([ \t]*)const tables = \[(.*?)\n\1\];",
+                 r"^([ \t]*)const lazyTables = \[(.*?)\n\1\];"):
+        m = re.search(decl, src, re.S | re.M)
         if not m:
             _parse_failures.append(f"{path}: could not find /{decl}/")
             continue
         # Strip // comments first: the arrays carry long explanatory comments
         # that quote table names and other words (e.g. "the 'core' tier"),
         # which would otherwise be counted as registered entries.
-        body = re.sub(r"//[^\n]*", "", m.group(1))
+        body = re.sub(r"//[^\n]*", "", m.group(2))
         names |= set(re.findall(r"'([a-z0-9_]+)'", body))
     return names
 
@@ -395,11 +412,11 @@ def browser_views(path: str = DB_JS) -> list[str]:
         src = open(path, encoding="utf-8").read()
     except OSError:
         return []
-    m = re.search(r"const helperViews = \[(.*?)\n  \];", src, re.S)
+    m = re.search(r"^([ \t]*)const helperViews = \[(.*?)\n\1\];", src, re.S | re.M)
     if not m:
         _parse_failures.append(f"{path}: could not find the helperViews array")
         return []
-    return re.findall(r"CREATE OR REPLACE VIEW\s+(\w+)", m.group(1))
+    return re.findall(r"CREATE OR REPLACE VIEW\s+(\w+)", m.group(2))
 
 
 def schema_views(path: str = "schema/schema.sql") -> list[str]:
@@ -713,7 +730,7 @@ def build_llms(docs: list[str], schemas: dict, schema_note: str | None,
         "place.** " + ", ".join(f"`{v}`" for v in sviews) + " are defined in "
         f"`schema/schema.sql` but are NOT recreated in the browser. Reproduce "
         "them against a local DuckDB built from the committed Parquet "
-        f"(`python scripts/rebuild_db_from_parquet.py`), or inline their SQL. "
+        f"(`python scripts/rebuild_lake_from_parquet.py`), or inline their SQL. "
         "`v_facility_funding_by_year_real` additionally needs `cpi_index_us`, "
         "which ships with zero rows, so it cannot return real-dollar figures yet.",
         "",

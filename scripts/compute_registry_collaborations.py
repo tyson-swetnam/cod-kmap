@@ -28,7 +28,15 @@ Shared context on each edge:
 Usage::
 
     python scripts/compute_registry_collaborations.py --dry-run
-    python scripts/compute_registry_collaborations.py --export-parquet
+    python scripts/compute_registry_collaborations.py
+    python scripts/compute_registry_collaborations.py --offline   # cache only
+
+The edges replace registry_collaborations in the lake in one snapshot;
+scripts/export_parquet.py publishes them (both-ends-core to public/parquet).
+--export-parquet is accepted for old callers and does nothing. --offline
+builds the edges from the work-list cache alone (no API key, no requests)
+and refuses to write when the cache is empty, because an empty cache would
+otherwise replace every edge with none.
 """
 from __future__ import annotations
 
@@ -39,14 +47,11 @@ import time
 from collections import defaultdict
 from pathlib import Path
 
-import duckdb
-
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cod_db  # noqa: E402
 import openalex_auth  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DB = ROOT / "db" / "cod_kmap.duckdb"
-PARQUET_OUT = [ROOT / "db" / "parquet", ROOT / "public" / "parquet"]
 CACHE = ROOT / "data" / "raw" / "registry_collab"
 API = "https://api.openalex.org"
 SLEEP = 0.05
@@ -97,20 +102,33 @@ def fetch_works(sess, oa_id: str) -> list[dict]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--db", type=Path, default=DEFAULT_DB)
+    cod_db.add_argparse_catalog(ap)
+    ap.add_argument("--db", dest="catalog", type=Path,
+                    help="deprecated alias of --catalog")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--resume", action="store_true", default=True)
     ap.add_argument("--limit", type=int, default=0)
-    ap.add_argument("--export-parquet", action="store_true")
+    ap.add_argument("--offline", action="store_true",
+                    help="no OpenAlex requests: build edges from the cached "
+                         "work lists only (authors not in the cache contribute "
+                         "only through other authors' lists)")
+    ap.add_argument("--cache", type=Path, default=None,
+                    help=f"work-list cache (default: "
+                         f"{(CACHE / 'author_works.ndjson').relative_to(ROOT)})")
+    ap.add_argument("--export-parquet", action="store_true",
+                    help="deprecated no-op: run scripts/export_parquet.py")
     args = ap.parse_args()
 
-    if not args.db.exists():
-        print(f"[error] db not found: {args.db}", file=sys.stderr)
+    sess = None
+    if not args.offline:
+        openalex_auth.require_api_key()
+        sess = openalex_auth.openalex_session()
+    try:
+        conn = cod_db.connect(read_only=args.dry_run,
+                              catalog=args.catalog, data=args.lake_data)
+    except cod_db.LakeNotFound as e:
+        print(f"[error] {e}", file=sys.stderr)
         return 2
-
-    openalex_auth.require_api_key()
-    sess = openalex_auth.openalex_session()
-    conn = duckdb.connect(str(args.db))
 
     members = conn.execute(
         "SELECT canonical_id, openalex_id, display_name FROM person_registry "
@@ -121,10 +139,9 @@ def main() -> int:
     if args.limit:
         members = members[:args.limit]
 
-    CACHE.mkdir(parents=True, exist_ok=True)
-    cache_file = CACHE / "author_works.ndjson"
+    cache_file = args.cache or CACHE / "author_works.ndjson"
     done: dict[str, list] = {}
-    if args.resume and cache_file.exists():
+    if (args.resume or args.offline) and cache_file.exists():
         for line in cache_file.read_text().splitlines():
             if line.strip():
                 rec = json.loads(line)
@@ -132,14 +149,25 @@ def main() -> int:
         print(f"[graph] resumed {len(done)} author(s) from cache")
 
     todo = [m for m in members if m[1] not in done]
-    with cache_file.open("a") as fh:
-        for i, (cid, oa, name) in enumerate(todo, 1):
-            works = fetch_works(sess, oa)
-            done[oa] = works
-            fh.write(json.dumps({"oa": oa, "w": works}) + "\n")
-            fh.flush()
-            if i % 25 == 0 or i == len(todo):
-                print(f"  [graph] {i}/{len(todo)} authors fetched")
+    if args.offline:
+        print(f"[graph] --offline: {len(todo)} member(s) not in the cache are "
+              f"not fetched")
+        if not done:
+            print(f"[error] --offline with an empty cache ({cache_file}) would "
+                  f"replace every edge with none; nothing written",
+                  file=sys.stderr)
+            conn.close()
+            return 1
+    else:
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
+        with cache_file.open("a") as fh:
+            for i, (cid, oa, name) in enumerate(todo, 1):
+                works = fetch_works(sess, oa)
+                done[oa] = works
+                fh.write(json.dumps({"oa": oa, "w": works}) + "\n")
+                fh.flush()
+                if i % 25 == 0 or i == len(todo):
+                    print(f"  [graph] {i}/{len(todo)} authors fetched")
 
     # ── build edges ────────────────────────────────────────────────────
     edges: dict[tuple[str, str], dict] = defaultdict(
@@ -187,32 +215,39 @@ def main() -> int:
                      ",".join(sa) or None, ",".join(sf) or None])
 
     if rows:
-        top = conn.execute("""
+        top = cod_db.rows(conn, """
             SELECT ra.display_name, rb.display_name, ? AS n
             FROM person_registry ra, person_registry rb
             WHERE ra.canonical_id = ? AND rb.canonical_id = ?""",
-            [rows[0][2], rows[0][0], rows[0][1]]).fetchone()
+            [rows[0][2], rows[0][0], rows[0][1]])
         if top:
+            top = top[0]
             print(f"[graph] strongest edge: {top[0]} <-> {top[1]}  {top[2]} co-pubs")
 
     if args.dry_run:
         conn.close()
         return 0
 
-    conn.execute("DELETE FROM registry_collaborations")
+    # Stage in a temp table with the target's column types, then replace the
+    # table with one DELETE + INSERT in one transaction (one snapshot):
+    # row-by-row INSERTs into the lake are slow and each would snapshot.
+    cols = ("canonical_id_a, canonical_id_b, co_pub_count, first_year, "
+            "last_year, shared_areas, shared_facilities")
+    cod_db.create_temp_like(conn, '_rc_stage', f"SELECT {cols} FROM registry_collaborations")
     if rows:
-        conn.executemany(
-            "INSERT INTO registry_collaborations (canonical_id_a, canonical_id_b, "
-            "co_pub_count, first_year, last_year, shared_areas, shared_facilities) "
-            "VALUES (?,?,?,?,?,?,?)", rows)
-    print(f"[db] registry_collaborations {len(rows)} rows")
+        conn.executemany(f"INSERT INTO _rc_stage ({cols}) VALUES (?,?,?,?,?,?,?)",
+                         rows)
+    with cod_db.transaction(conn, f"compute_registry_collaborations: {len(rows)} "
+                                  f"edges over {len(members)} registry member(s)"):
+        conn.execute("DELETE FROM registry_collaborations")
+        conn.execute(f"INSERT INTO registry_collaborations ({cols}) "
+                     f"SELECT {cols} FROM _rc_stage")
+        cod_db.assert_integrity(conn, ["registry_collaborations"])
+    print(f"[lake] registry_collaborations {len(rows)} rows")
 
     if args.export_parquet:
-        for base in PARQUET_OUT:
-            base.mkdir(parents=True, exist_ok=True)
-            out = base / "registry_collaborations.parquet"
-            conn.execute(f"COPY registry_collaborations TO '{out}' (FORMAT PARQUET)")
-            print(f"[parquet] wrote {out}")
+        print("[note] --export-parquet is a no-op now; run "
+              "scripts/export_parquet.py to publish the lake")
     conn.close()
     return 0
 

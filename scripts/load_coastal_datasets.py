@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Load the curated coastal dataset catalogue into DuckDB + parquet.
+"""Load the curated coastal dataset catalogue into the lake.
 
 The catalogue at data/datasets/coastal_datasets.json is hand-researched
 (see docs/team_scholars_datasets_methods.md) and is the single source of
-truth: this script DELETEs and re-inserts both tables on every run, so
-editing the JSON and re-running is the whole update workflow.
+truth: this script DELETEs and re-inserts both tables on every run (one
+transaction, so one lake snapshot), so editing the JSON and re-running is
+the whole update workflow. scripts/export_parquet.py publishes the tables.
 
 Each dataset carries one or more access endpoints. The point of the
 catalogue is the *machine* endpoints — an ERDDAP base, a THREDDS
@@ -28,7 +29,8 @@ import re
 import sys
 from pathlib import Path
 
-import duckdb
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cod_db  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -44,9 +46,7 @@ def rel(path: Path) -> str:
         return str(Path(path).resolve().relative_to(ROOT))
     except ValueError:
         return str(path)
-DEFAULT_DB = ROOT / "db" / "cod_kmap.duckdb"
 DEFAULT_JSON = ROOT / "data" / "datasets" / "coastal_datasets.json"
-PARQUET_OUT = [ROOT / "db" / "parquet", ROOT / "public" / "parquet"]
 TABLES = ["coastal_datasets", "dataset_endpoints"]
 
 # Kept in sync with the same-named sets in scripts/qa.py. Both lists are
@@ -167,14 +167,17 @@ def check_urls(records: list[dict]) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--db", type=Path, default=DEFAULT_DB)
+    cod_db.add_argparse_catalog(ap)
+    ap.add_argument("--db", dest="catalog", type=Path,
+                    help="deprecated alias of --catalog")
     ap.add_argument("--json", type=Path, default=DEFAULT_JSON)
     ap.add_argument("--dry-run", action="store_true",
                     help="validate and report; write nothing")
     ap.add_argument("--check-urls", action="store_true",
                     help="probe every endpoint URL (needs network)")
     ap.add_argument("--skip-export", action="store_true",
-                    help="load the DB but don't refresh parquet")
+                    help="deprecated no-op: this script never writes parquet; "
+                         "run scripts/export_parquet.py")
     args = ap.parse_args()
 
     if not args.json.exists():
@@ -194,14 +197,9 @@ def main() -> int:
         return 2
     print(f"[read] {len(records)} datasets from {rel(args.json)}")
 
-    if not args.db.exists():
-        print(f"[error] {args.db} not found — run scripts/rebuild_db_from_parquet.py first",
-              file=sys.stderr)
-        return 2
-
-    conn = duckdb.connect(str(args.db))
-    conn.execute("SET search_path = main;")
-    known_networks = {r[0] for r in conn.execute("SELECT network_id FROM networks").fetchall()}
+    conn = cod_db.connect(read_only=args.dry_run,
+                          catalog=args.catalog, data=args.lake_data)
+    known_networks = {r[0] for r in cod_db.rows(conn, "SELECT network_id FROM networks")}
 
     fatal = validate(records, known_networks)
     if fatal:
@@ -223,38 +221,49 @@ def main() -> int:
         print("[dry-run] nothing written")
         return 0
 
-    # The JSON is the source of truth, so replace wholesale rather than
-    # upserting — a dataset removed from the file should disappear here.
-    conn.execute("DELETE FROM dataset_endpoints;")
-    conn.execute("DELETE FROM coastal_datasets;")
-
     ds_rows = [[rec.get(c) for c in DATASET_COLS] for rec in records]
-    conn.executemany(
-        f"INSERT INTO coastal_datasets ({', '.join(DATASET_COLS)}) "
-        f"VALUES ({', '.join('?' * len(DATASET_COLS))})",
-        ds_rows,
-    )
     ep_rows = [
         [rec["dataset_id"], ep["endpoint_type"], ep["url"],
          ep.get("label"), ep.get("format_notes"), bool(ep.get("auth_required"))]
         for rec in records for ep in rec["endpoints"]
     ]
-    conn.executemany(
-        f"INSERT INTO dataset_endpoints ({', '.join(ENDPOINT_COLS)}) "
-        f"VALUES ({', '.join('?' * len(ENDPOINT_COLS))})",
-        ep_rows,
-    )
-    print(f"[db] inserted {len(ds_rows)} datasets, {len(ep_rows)} endpoints")
 
-    if not args.skip_export:
-        for table in TABLES:
-            for base in PARQUET_OUT:
-                base.mkdir(parents=True, exist_ok=True)
-                out = base / f"{table}.parquet"
-                conn.execute(f"COPY (SELECT * FROM {table}) TO '{out}' (FORMAT PARQUET)")
-            print(f"[parquet] {table} -> " + ", ".join(
-                rel(b / f"{table}.parquet") for b in PARQUET_OUT))
-        print("[note] new parquet files are gitignored; stage them with `git add -f`")
+    # Stage both tables in TEMP tables shaped like the lake tables (LIMIT 0
+    # copies the column types), then replace the lake rows with one
+    # statement each.
+    for table, stage, cols, data in (
+            ("coastal_datasets", "_ds_stage", DATASET_COLS, ds_rows),
+            ("dataset_endpoints", "_ep_stage", ENDPOINT_COLS, ep_rows)):
+        cod_db.create_temp_like(conn, stage, f"SELECT {', '.join(cols)} FROM {table}")
+        conn.executemany(
+            f"INSERT INTO {stage} VALUES ({', '.join('?' * len(cols))})", data)
+
+    # The JSON is the source of truth, so replace wholesale rather than
+    # upserting — a dataset removed from the file should disappear here.
+    with cod_db.transaction(conn, f"load_coastal_datasets: {len(ds_rows)} datasets, "
+                                  f"{len(ep_rows)} endpoints from {rel(args.json)}"):
+        conn.execute("DELETE FROM dataset_endpoints")
+        conn.execute("DELETE FROM coastal_datasets")
+        conn.execute(f"INSERT INTO coastal_datasets ({', '.join(DATASET_COLS)}) "
+                     f"SELECT {', '.join(DATASET_COLS)} FROM _ds_stage")
+        conn.execute(f"INSERT INTO dataset_endpoints ({', '.join(ENDPOINT_COLS)}) "
+                     f"SELECT {', '.join(ENDPOINT_COLS)} FROM _ep_stage")
+        # dataset_facilities (scripts/link_dataset_facilities.py) references
+        # coastal_datasets, so a dataset dropped from the JSON would leave
+        # its links orphaned and assert_integrity would roll the whole load
+        # back. Drop those links in the same snapshot; re-run
+        # link_dataset_facilities.py to relink anything new.
+        orphaned = cod_db.scalar(
+            conn, "SELECT COUNT(*) FROM dataset_facilities "
+                  "WHERE dataset_id NOT IN (SELECT dataset_id FROM _ds_stage)")
+        if orphaned:
+            conn.execute("DELETE FROM dataset_facilities "
+                         "WHERE dataset_id NOT IN (SELECT dataset_id FROM _ds_stage)")
+        print(f"[lake] removed {orphaned} dataset_facilities row(s) for datasets "
+              f"no longer in the catalogue")
+        cod_db.assert_integrity(conn, TABLES + ["dataset_facilities"])
+    print(f"[lake] replaced {len(ds_rows)} datasets, {len(ep_rows)} endpoints "
+          f"(run scripts/export_parquet.py to publish)")
 
     for cat, n in conn.execute(
         "SELECT category, COUNT(*) FROM coastal_datasets GROUP BY category ORDER BY 2 DESC, 1"

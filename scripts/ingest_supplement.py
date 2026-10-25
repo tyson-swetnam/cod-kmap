@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-"""Add one facilities_*.json file to the existing DB without a full rebuild.
+"""Add one facilities_*.json file to the lake without touching the rest.
 
-`scripts/ingest.py` re-executes schema.sql, which empties every table —
-including the 3,300+ R11 protected areas and the people / registry layers
-that live only in committed parquet. For adding a handful of hand-researched
-records to a live catalogue that is the wrong tool. This script takes the
-same agent-schema JSON (see agents/README.md), checks it cannot collide with
-a facility already in the DB, and inserts it with ingest.py's own
-`insert_records`, so the two paths cannot drift.
+`scripts/ingest.py` upserts every data/raw/R*/ file (and re-derives the
+region tables). For adding a handful of hand-researched records to a live
+catalogue that is more than needed. This script takes the same agent-schema
+JSON (see agents/README.md), checks it cannot collide with a facility
+already in the lake, and inserts it with ingest.py's own `insert_records`,
+so the two paths cannot drift.
 
 The file must still live under data/raw/R*/facilities_*.json so that a full
 ingest picks it up too.
 
-Usage (after `scripts/rebuild_db_from_parquet.py`)::
+Usage (the lake must exist: `scripts/rebuild_lake_from_parquet.py`)::
 
     python scripts/ingest_supplement.py data/raw/R4/facilities_conservancies.json
     python scripts/ingest_supplement.py <file> --dry-run   # checks only
+    python scripts/ingest_supplement.py <file> --no-export # lake only
 
 Steps:
   1. Validate facility_type / research_areas / networks against schema/vocab.
@@ -23,15 +23,19 @@ Steps:
      source file by URL, or by fuzzy name (>= 92) within 5 km — ingest.py's
      dedup rule. Re-running the same file is allowed and idempotent.
   3. Delete this file's previous locations / area_links / network_membership
-     / provenance rows, then insert via ingest.insert_records.
+     / facility_regions / provenance rows, then insert via
+     ingest.insert_records (which normalises `ror` to the bare id).
   4. Point-in-polygon the new facilities against the regions already in the
-     DB, then re-export parquet + public/facilities.geojson (export_parquet).
-     populate_regions.populate() is not reused: it starts by deleting
-     `regions`, which other tables reference by foreign key once loaded.
+     lake. populate_regions.populate() is not reused: it re-derives every
+     region and every facility's containment, not just this file's.
+  5. Check integrity and commit — steps 3-5 are one lake snapshot — then
+     re-export db/parquet, public/parquet and public/facilities.geojson
+     with export_parquet.main([]) (a scratch catalog exports to
+     <catalog dir>/export/, never over the committed files).
 
-`funders` must be empty: ingest.insert_records writes them to the legacy
-`funding_links`, which is now a view over `funding_events`. Funding edges
-belong to the R9 / funding_events scripts.
+`funders` must be empty: funding edges belong to the R9 / funding_events
+scripts, which carry the amounts, years and award ids that a research
+record does not.
 """
 from __future__ import annotations
 
@@ -45,13 +49,12 @@ import duckdb
 from rapidfuzz import fuzz
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cod_db  # noqa: E402
 import export_parquet  # noqa: E402
 from ingest import (  # noqa: E402
-    DB_PATH, ROOT, VOCAB_DIR, Record, assign_ids, haversine_km, insert_records,
+    ROOT, VOCAB_DIR, Record, assign_ids, haversine_km, insert_records,
 )
-from populate_regions import load_region_rows, overlay_files  # noqa: E402
-from shapely import STRtree  # noqa: E402
-from shapely.geometry import Point  # noqa: E402
+from populate_regions import containment, load_region_rows, overlay_files  # noqa: E402
 
 
 def vocab(name: str) -> set[str]:
@@ -87,10 +90,10 @@ def validate(records: list[Record]) -> list[str]:
 
 def collisions(conn: duckdb.DuckDBPyConnection, records: list[Record]) -> list[str]:
     ours = {r.fid for r in records}
-    existing = conn.execute(
+    existing = cod_db.rows(
+        conn,
         "SELECT facility_id, canonical_name, lower(trim(url)), hq_lat, hq_lng "
-        "FROM main.facilities"
-    ).fetchall()
+        "FROM main.facilities")
     errs = []
     for r in records:
         d = r.raw
@@ -109,27 +112,31 @@ def collisions(conn: duckdb.DuckDBPyConnection, records: list[Record]) -> list[s
 
 
 def link_regions(conn: duckdb.DuckDBPyConnection, records: list[Record]) -> int:
-    known = {rid for (rid,) in conn.execute("SELECT region_id FROM main.regions").fetchall()}
+    """Containment edges for these facilities against the regions already
+    in the lake (a polygon whose region is not there is skipped)."""
+    known = {rid for (rid,) in cod_db.rows(conn, "SELECT region_id FROM main.regions")}
     rows = [r for r in load_region_rows(overlay_files()) if r["region_id"] in known]
-    tree = STRtree([r["geometry"] for r in rows])
-    n = 0
-    for rec in records:
-        pt = Point(rec.raw["hq"]["lng"], rec.raw["hq"]["lat"])
-        for idx in tree.query(pt):
-            if rows[int(idx)]["geometry"].contains(pt):
-                conn.execute(
-                    "INSERT OR IGNORE INTO main.facility_regions VALUES (?, ?, 'within', 0.0)",
-                    [rec.fid, rows[int(idx)]["region_id"]],
-                )
-                n += 1
-    return n
+    links = containment(conn, rows, [rec.fid for rec in records])
+    conn.execute("CREATE OR REPLACE TEMP TABLE _sup_facility_regions "
+                 "(facility_id VARCHAR, region_id VARCHAR)")
+    if links:
+        conn.executemany("INSERT INTO _sup_facility_regions VALUES (?, ?)", links)
+    st = cod_db.merge_upsert(
+        conn, "facility_regions", ["facility_id", "region_id"],
+        "SELECT facility_id, region_id, 'within' AS relation, 0.0::DOUBLE AS distance_km "
+        "FROM _sup_facility_regions", insert_only=True)
+    conn.execute("DROP TABLE _sup_facility_regions")
+    return st["unique_keys"]
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("file", type=Path)
     ap.add_argument("--dry-run", action="store_true")
-    args = ap.parse_args()
+    ap.add_argument("--no-export", action="store_true",
+                    help="write the lake only; run scripts/export_parquet.py later")
+    cod_db.add_argparse_catalog(ap)
+    args = ap.parse_args(argv)
 
     path = args.file.resolve()
     agent = path.parent.name
@@ -145,7 +152,14 @@ def main() -> int:
         return 1
 
     errs = validate(records)
-    with duckdb.connect(str(DB_PATH), read_only=args.dry_run) as conn:
+    try:
+        conn = cod_db.connect(read_only=args.dry_run, catalog=args.catalog,
+                              data=args.lake_data)
+    except cod_db.LakeNotFound as e:
+        print(f"[error] {e}", file=sys.stderr)
+        return 2
+    rel = path.relative_to(ROOT)
+    try:
         errs += collisions(conn, records)
         if errs:
             for e in errs:
@@ -156,17 +170,36 @@ def main() -> int:
             return 0
 
         fids = [r.fid for r in records]
-        for table in ("locations", "area_links", "network_membership", "facility_regions"):
-            conn.execute(f"DELETE FROM main.{table} WHERE facility_id IN ?", [fids])
-        conn.execute(
-            "DELETE FROM main.provenance WHERE record_type = 'facility' "
-            "AND record_id IN ?", [fids],
-        )
-        insert_records(conn, records)
-        print(f"[ok] inserted {len(records)} facilities from {path.relative_to(ROOT)}")
-        print(f"[ok] facility_regions: {link_regions(conn, records)} containment edges")
+        with cod_db.transaction(conn, f"ingest_supplement: {len(records)} facilities "
+                                      f"from {rel}"):
+            for table in ("locations", "area_links", "network_membership",
+                          "facility_regions"):
+                conn.execute(f"DELETE FROM main.{table} WHERE facility_id IN "
+                             f"(SELECT unnest(?::VARCHAR[]))", [fids])
+            conn.execute(
+                "DELETE FROM main.provenance WHERE record_type = 'facility' "
+                "AND record_id IN (SELECT unnest(?::VARCHAR[]))", [fids])
+            insert_records(conn, records)
+            n_links = link_regions(conn, records)
+            cod_db.assert_integrity(conn, [
+                "facilities", "locations", "area_links", "network_membership",
+                "facility_regions", "provenance", "funders", "funding_events"])
+        snap = cod_db.latest_snapshot(conn)
+    finally:
+        conn.close()
+    print(f"[ok] inserted {len(records)} facilities from {rel} "
+          f"(snapshot {snap.get('snapshot_id')})")
+    print(f"[ok] facility_regions: {n_links} containment edges")
 
-    return export_parquet.main()
+    if args.no_export:
+        print("[next] python scripts/qa.py && python scripts/export_parquet.py")
+        return 0
+    export_argv = []
+    if args.catalog is not None:
+        export_argv += ["--catalog", str(args.catalog)]
+    if args.lake_data is not None:
+        export_argv += ["--lake-data", str(args.lake_data)]
+    return export_parquet.main(export_argv)
 
 
 if __name__ == "__main__":

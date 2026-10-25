@@ -81,11 +81,12 @@ range-readable by any external DuckDB, pandas or Arrow client. Six of them
 own `src/db.js`, so the in-app SQL console cannot see them even though they are
 published. That asymmetry constrains the app, not you.
 
-**2. Helper views recreated in the browser.** `src/db.js` recreates six views
-inside DuckDB-Wasm when the SQL tab is first used: `v_facility_funding_by_year`,
-`v_funder_funding_by_year`, `v_facility_key_personnel`, `v_funding_ledger`,
-`v_person_enriched` and `v_cod_team_enriched`. A view is not a file, so
-**none of these has a URL.**. To use one, copy its `CREATE OR REPLACE VIEW` body from
+**2. Helper views recreated in the browser.** `src/db.js` recreates nine views
+inside DuckDB-Wasm when the SQL tab is first used: `v_facility_map`,
+`v_region_enriched`, `v_facility_funding_by_year`, `v_funder_funding_by_year`,
+`v_facility_key_personnel`, `v_funding_ledger`, `v_person_enriched`,
+`v_person_areas_enriched` and `v_cod_team_enriched`. A view is not a file, so
+**none of these has a URL.** To use one, copy its `CREATE OR REPLACE VIEW` body from
 the `helperViews` array in
 [`src/db.js`](https://raw.githubusercontent.com/tyson-swetnam/cod-kmap/main/src/db.js)
 or from
@@ -94,12 +95,11 @@ and run it against the published Parquet; every base table they need is
 published.
 
 **3. Views that exist only in the repository schema.** `schema/schema.sql`
-defines eight more views — `v_facility_map`, `v_facility_enriched`,
-`v_region_enriched`, `v_person_areas_enriched`,
+defines five more views — `v_facility_enriched`,
 `v_facility_funding_by_year_real`, `v_person_validation_latest`,
 `v_person_validation_summary`, `v_coauthor_edges_enriched` — that are **not**
-recreated in the browser either. Reproduce them against a local DuckDB built
-from the committed Parquet (`python scripts/rebuild_db_from_parquet.py`), or
+recreated in the browser. Reproduce them against a local DuckLake built
+from the committed Parquet (`python scripts/rebuild_lake_from_parquet.py`), or
 inline their SQL. One of them, `v_facility_funding_by_year_real`, depends on
 `cpi_index_us`, which ships with zero rows, so it cannot yet return
 inflation-adjusted figures at all.
@@ -162,7 +162,7 @@ registry. Signals to read before you rely on a row:
 - **Core-tier publishing.** `person_registry`, `person_identity_source`,
   `registry_collaborations`, `registry_facilities`, `coauthor_edges` and
   `coauthor_candidates` publish only the core tier or the core-to-core subset;
-  the full population stays in the local DuckDB. `person_registry` ships 10,095
+  the full population stays in the repository's `db/parquet/`. `person_registry` ships 10,095
   of roughly 152,000 identities, and `registry_facilities` 263 links against
   about 1,467 locally. Counts from these tables are **floors, not totals**.
 - **Degree zero means unmeasured.** The co-authorship harvest covers a fraction

@@ -1,7 +1,14 @@
--- cod-kmap DuckDB schema (D1 deliverable)
--- Idempotent: safe to re-read against an existing DB.
--- Load the spatial extension externally (INSTALL spatial; LOAD spatial;)
--- before calling ST_Point on the locations table.
+-- cod-kmap logical schema (D1 deliverable)
+--
+-- This file is the LOGICAL schema: every PRIMARY KEY / UNIQUE / FOREIGN KEY /
+-- CHECK the data must satisfy. It is never executed against the store of
+-- record. The store is a DuckLake (scripts/cod_db.py), and DuckLake rejects
+-- those constraints, so scripts/cod_db.py runs this file in a throwaway
+-- in-memory "spec" database, creates the lake's tables column-only (types,
+-- NOT NULL, DEFAULT) from it, and re-checks every constraint after the fact
+-- (cod_db.integrity_violations, run by scripts/qa.py and by loaders before
+-- they commit). Executing it against a populated database would wipe it:
+-- every table is CREATE OR REPLACE.
 
 -- All tables live in the default `main` schema. DuckDB does not allow
 -- a custom schema with the same name as the database file, and the
@@ -411,7 +418,11 @@ CREATE OR REPLACE TABLE people (
     status              VARCHAR,                   -- active | emeritus | former | unknown
     notes               VARCHAR,
     created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- Where research_interests came from (an OpenAlex author record, a
+    -- faculty page). Appended last so older parquet loads BY NAME with this
+    -- column NULL.
+    research_interests_source_url VARCHAR
 );
 
 -- Role a person plays at a facility. A single person can hold multiple
@@ -534,7 +545,6 @@ SELECT
     fp.title,
     p.orcid,
     p.openalex_id,
-    p.email,
     p.homepage_url,
     fp.start_date,
     fp.source_url
@@ -554,7 +564,6 @@ SELECT
     p.name_family,
     p.orcid,
     p.openalex_id,
-    p.email,
     p.homepage_url,
     p.research_interests,
     p.status,
@@ -571,7 +580,7 @@ LEFT JOIN research_areas     ra ON ra.area_id     = pa.area_id
 LEFT JOIN authorship         a  ON a.person_id    = p.person_id
 LEFT JOIN publications       pub ON pub.publication_id = a.publication_id
 GROUP BY p.person_id, p.name, p.name_family, p.orcid, p.openalex_id,
-         p.email, p.homepage_url, p.research_interests, p.status;
+         p.homepage_url, p.research_interests, p.status;
 
 -- person × research_area enriched with the actual evidence count and
 -- the top topics (drawn from publication_topics) that pushed the
@@ -606,14 +615,17 @@ LEFT JOIN (
 -- columns, no REFERENCES clauses) rather than real foreign keys:
 --
 --   1. cod_team_members carries rows for unfilled positions (TBD/TBH)
---      whose person_id is NULL by design. A real FK plus the pre-filter
---      in scripts/rebuild_db_from_parquet.py would silently drop them.
+--      whose person_id is NULL by design.
 --   2. cod_wbs.parent_code is a self-reference, and the WBS bulk-loads
 --      in seed order rather than parent-first.
 --   3. community_scholars are community-wide researchers who mostly do
 --      NOT work at a catalogued facility, so they have no people row to
 --      point at; person_id is populated only when a scholar provably
 --      matches an existing person (ORCID or OpenAlex id equality).
+--
+-- Undeclared is not unchecked: each of these references is listed in
+-- scripts/cod_db.py SOFT_REFERENCES and verified like a foreign key by
+-- qa.py (a NULL reference passes, as in SQL).
 -- ---------------------------------------------------------------------
 
 -- Work Breakdown Structure of the COD project org chart.
@@ -893,13 +905,28 @@ CREATE OR REPLACE TABLE registry_collaborations (
     PRIMARY KEY (canonical_id_a, canonical_id_b)
 );
 
+-- Researcher <-> catalogued-facility links, joined on ROR equality between
+-- person_registry.affiliation_ror and facilities.ror -- written by
+-- scripts/link_registry_facilities.py. Soft refs both sides (checked via
+-- cod_db.SOFT_REFERENCES). db/parquet holds every link; public/parquet only
+-- the links whose researcher is core tier (export_parquet.EXPORT_WHERE).
+CREATE OR REPLACE TABLE registry_facilities (
+    canonical_id  VARCHAR NOT NULL,                -- soft ref person_registry(canonical_id)
+    facility_id   VARCHAR NOT NULL,                -- soft ref facilities(facility_id)
+    ror           VARCHAR,                         -- the ROR both sides carry
+    method        VARCHAR NOT NULL,                -- ror-equality
+    confidence    VARCHAR NOT NULL,                -- high | medium | low
+    retrieved_at  VARCHAR,
+    PRIMARY KEY (canonical_id, facility_id)
+);
+
 -------------------------------------------------------------------------------
 -- Registry validation & provenanced co-authorship
 -------------------------------------------------------------------------------
 --
--- Append to schema/schema.sql after the registry_collaborations block (the
--- current end of file). Three tables, all soft-ref (no FK) so they can be
--- bulk-loaded in any order by scripts/rebuild_db_from_parquet.py:
+-- Three tables, all soft-ref (no FK) so they can be bulk-loaded in any order
+-- by scripts/rebuild_lake_from_parquet.py (the references are still checked:
+-- see cod_db.SOFT_REFERENCES):
 --
 --   person_validation    one row per (registry row, check) — did this row's
 --                        ORCID / OpenAlex id / ROR actually resolve?
@@ -1169,3 +1196,25 @@ SELECT e.edge_id,
 FROM coauthor_edges e
 JOIN person_registry ra ON ra.canonical_id = e.canonical_id_a
 JOIN person_registry rb ON rb.canonical_id = e.canonical_id_b;
+
+-------------------------------------------------------------------------------
+-- URL health
+-------------------------------------------------------------------------------
+--
+-- One row per distinct URL found in the catalogue's link columns, with the
+-- verdict of the latest HTTP HEAD (GET fallback) sweep. Sources:
+-- facilities.url, people.homepage_url, coastal_datasets.homepage_url and
+-- .source_url, dataset_endpoints.url. Written by scripts/check_url_health.py,
+-- which replaces every row in one lake transaction (DELETE + INSERT, so these
+-- column definitions survive); the Data tab joins it on url to paint endpoint
+-- health dots. Keyed on url alone: one URL often appears under several
+-- (table, column) pairs and gets one verdict. Endpoint templates with
+-- {PLACEHOLDER} segments are never requested; they record status
+-- 'template-skipped' with http_code NULL.
+CREATE OR REPLACE TABLE url_health (
+    url         VARCHAR PRIMARY KEY,
+    status      VARCHAR,                           -- ok | redirect | client-error | server-error |
+                                                   -- timeout | template-skipped | unchecked
+    http_code   INTEGER,                           -- final HTTP status; NULL when none was received
+    checked_at  VARCHAR                            -- ISO-8601 date of the sweep
+);
