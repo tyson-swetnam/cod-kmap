@@ -444,7 +444,9 @@ async function renderOrgChart() {
         <header class="team-header"><h1>COD org chart</h1></header>
         <p class="no-data">
           No team rows yet. Run <code>python scripts/build_cod_team_lake.py</code>
-          to load the org chart from <code>data/seed/cod_team_members.csv</code>.
+          to load the org chart from <code>data/seed/cod_team_members.csv</code>
+          into the lake, then <code>python scripts/export_parquet.py</code>
+          to publish it.
         </p>
       </div>`;
     return;

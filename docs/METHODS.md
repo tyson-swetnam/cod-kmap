@@ -189,31 +189,44 @@ where one is published.
 ## Ingest pipeline
 
 ```
+db/parquet/*.parquet                   (committed, canonical copy of every table)
+        │
+        ▼  scripts/rebuild_lake_from_parquet.py
+        │    - DuckLake store of record: db/cod_kmap_catalog.sqlite
+        │      (SQLite catalog) + db/lake/ (data files), DuckDB 2.0
+        │
 data/raw/R*/facilities_*.json          (one JSON per research agent)
         │
-        ▼  scripts/ingest.py
+        ▼  scripts/ingest.py           (one lake snapshot per run)
         │    - dedup (URL match, fuzzy name, 5 km haversine)
         │    - geocode missing addresses (Nominatim, on-disk cache)
-        │    - load vocab from schema/vocab/*.csv
-        │    - INSERT OR REPLACE into facilities, locations, area_links,
-        │      network_membership, funders, funding_links
+        │    - reload vocab from schema/vocab/*.csv
+        │    - MERGE (upsert) into facilities, locations, area_links,
+        │      network_membership, funders, funding_events, provenance;
+        │      facilities absent from data/raw are left as they are
         │    - call populate_regions for spatial linkage
         │
-        ▼  scripts/populate_regions.py
-        │    - read every public/overlays/*.geojson
-        │    - INSERT 1 row per polygon into `regions`
+        ▼  scripts/populate_regions.py (same snapshot)
+        │    - read the seven region overlays in public/overlays/
+        │    - one `regions` row per polygon
         │    - seed `region_area_links` from per-kind heuristics
         │    - STRtree point-in-polygon: every facility × every
         │      region → `facility_regions` containment edges
         │
-        ▼  scripts/export_parquet.py
-             - COPY each table TO db/parquet/<table>.parquet
-             - mirror to public/parquet/ for DuckDB-Wasm HTTP-range reads
+        ▼  scripts/qa.py               (hard gate)
+        │
+        ▼  scripts/export_parquet.py   (the only parquet writer)
+             - every table → db/parquet/<table>.parquet
+             - filtered copy → public/parquet/ for DuckDB-Wasm
+               HTTP-range reads (core registry tier, no db-only tables,
+               email redacted)
              - emit public/facilities.geojson as a lightweight fallback
 ```
 
-`scripts/qa.py` runs a bounding-box, enum, foreign-key, and
-provenance audit and writes `data/raw/validation-report.md`.
+`scripts/qa.py` first re-checks every key, foreign key, CHECK and NOT
+NULL declared in `schema/schema.sql` against the lake (DuckLake itself
+enforces none of them), then runs bounding-box, vocabulary, provenance and
+per-layer audits, and exits non-zero on any failure.
 
 ## In-browser data access
 
@@ -239,7 +252,7 @@ Note that the registry parquet in `public/parquet/` is not the whole
 table. Only the 10,000-row `core` tier is served to the browser, along
 with the collaboration edges and facility links whose endpoints are both
 in that tier. The full 152,008-row population lives in `db/parquet/` and
-is queryable only against a local DuckDB — so any count read off the
+is queryable only against a local lake rebuilt from it — so any count read off the
 site's SQL tab is a count within the core tier, not within the field.
 [The Person Registry](#/docs/person-registry) explains what that
 selection is and is not.
@@ -264,10 +277,10 @@ are unioned.
 
 | Layer | Technology |
 |---|---|
-| Data storage | DuckDB + Parquet exports |
+| Data storage | DuckLake (DuckDB 2.0, SQLite catalog) + Parquet exports |
 | Spatial linkage | shapely 2.x with STRtree |
-| Ingest | Python 3.11; `duckdb`, `rapidfuzz`, `geopy`, `shapely` |
-| In-browser query | DuckDB-Wasm via esm.sh, HTTP range reads |
+| Ingest | Python ≥ 3.11; `duckdb` 2.0, `rapidfuzz`, `geopy`, `shapely` |
+| In-browser query | DuckDB-Wasm 1.33.1-dev65.0 (DuckDB 1.5) via esm.sh, HTTP range reads |
 | Map | MapLibre-GL 4.7.1, OpenFreeMap positron tiles |
 | Front end | Vanilla JavaScript ES modules — no bundler |
 | Hosting | GitHub Pages — repo root served directly |

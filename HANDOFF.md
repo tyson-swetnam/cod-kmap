@@ -28,6 +28,15 @@ links researchers to sites on ROR equality. New scripts:
 `compute_registry_collaborations.py`, `harvest_coastal_authors.py`,
 `rank_person_registry.py`, `link_registry_facilities.py`.
 
+**Update 2026-10 — the pipeline runs on DuckDB 2.0 and a DuckLake store of
+record.** `db/cod_kmap.duckdb` and the separate `db/cod_team.ducklake` are
+retired. Every script opens the one lake (`db/cod_kmap_catalog.sqlite` +
+`db/lake/`, both gitignored) through `scripts/cod_db.py`, writes one snapshot
+per run, and writes no parquet; `scripts/export_parquet.py` is the only
+writer of `db/parquet/` and `public/parquet/`. The commands in §1, §2, §3 and
+§7 below have been updated to match; `CLAUDE.md` ("DuckLake store") has the
+details.
+
 Still outstanding:
   * Nobody has rendered the three tabs in a browser (§5). No view yet reads
     `person_registry` — the tables are registered in `src/db.js` and queryable
@@ -73,43 +82,42 @@ Current contents:
 Method and provenance for all three: `docs/team_scholars_datasets_methods.md`
 (also served on the site under Docs → Team, Scholars & Data).
 
-### The team layer is a real DuckLake
+### Team roster history lives in the main lake
 
-`scripts/build_cod_team_lake.py` writes `db/cod_team.ducklake` plus
-`db/ducklake_data/`, so each run of the roster lands as a snapshot:
+`scripts/build_cod_team_lake.py` writes `cod_wbs` and `cod_team_members` into
+the project's DuckLake (it no longer keeps its own `db/cod_team.ducklake`), in
+one transaction per run, so each roster change lands as one snapshot with a
+`build_cod_team_lake:` commit message:
 
-```sql
-ATTACH 'ducklake:db/cod_team.ducklake' AS teamlake;
-SELECT * FROM teamlake.snapshots();
-SELECT * FROM teamlake.cod_team_members AT (VERSION => 1);
+```python
+import sys; sys.path.insert(0, "scripts")
+import cod_db
+con = cod_db.connect(read_only=True)
+con.sql("""SELECT snapshot_id, snapshot_time, commit_message FROM lake.snapshots()
+            WHERE commit_message LIKE 'build_cod_team_lake:%' ORDER BY 1 DESC""").show()
+con.sql("SELECT * FROM cod_team_members AT (VERSION => 12)").show()
 ```
 
-Both paths are gitignored, for the same reason `db/cod_kmap.duckdb` is: the
-DuckDB on-disk format is not portable across versions, and the whole thing
-regenerates from two CSVs. **Committed parquet is the shared artifact**, and is
-what DuckDB-Wasm reads in the browser.
-
-The extension is optional — `pip install duckdb-extensions
-duckdb-extension-ducklake` (the wheel bundles the binary, so it works without
-reaching `extensions.duckdb.org`). Without it the script says so and writes
-plain tables; the parquet output is identical, you just lose the snapshot log.
+`python scripts/build_cod_team_lake.py --history` prints the same log. The
+lake is gitignored and rebuilt from `db/parquet/`; snapshot ids are local.
+**Committed parquet is the shared artifact**, and is what DuckDB-Wasm reads in
+the browser.
 
 ---
 
 ## 2. Setup
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-pip install duckdb-extensions duckdb-extension-ducklake   # optional, for the lake
-python scripts/rebuild_db_from_parquet.py                 # committed parquet -> local DB
-python scripts/qa.py                                      # must exit 0 before you start
+python -m venv .venv && source .venv/bin/activate   # Python >= 3.11
+pip install -r requirements.txt                      # pins duckdb==2.0.0
+python scripts/rebuild_lake_from_parquet.py          # committed db/parquet -> local lake
+python scripts/qa.py                                 # must exit 0 before you start
 ```
 
-Verified working on Python 3.11 with duckdb 1.5.4.
-
-`db/cod_kmap.duckdb` is gitignored and does not exist in a fresh clone — the
-rebuild step is not optional.
+The lake (`db/cod_kmap_catalog.sqlite` + `db/lake/`) is gitignored and does
+not exist in a fresh clone — the rebuild step is not optional; the other
+scripts raise `LakeNotFound` without it. The ducklake and sqlite extensions
+are downloaded from `extensions.duckdb.org` on first use.
 
 ---
 
@@ -155,33 +163,30 @@ python scripts/enrich_people_orcid.py         # strict 3-rule matcher
 python scripts/enrich_people_openalex.py      # publications + topics
 python scripts/enrich_people_gscholar.py      # Scholar ids via OpenAlex/ORCID
 python scripts/backfill_publication_topics.py
+python scripts/compute_collaborations.py      # co-author edges
 python scripts/compute_person_areas.py        # needs publication_topics
-python scripts/compute_collaborations.py --export-parquet
 python scripts/compute_primary_groups.py      # MUST precede area_metrics
 python scripts/compute_area_metrics.py        # h-index, citations, composite_z
-python scripts/init_people_tables.py --export-parquet
-python scripts/build_cod_team_lake.py         # re-snapshots people.parquet
+python scripts/build_mvg_layout.py            # knowledge-map layout
 python scripts/build_community_scholars.py --harvest
 python scripts/qa.py
+python scripts/export_parquet.py              # the only parquet writer
 
 git add -f db/parquet/*.parquet public/parquet/*.parquet
 ```
 
-Three easy mistakes, all of which were present in the docs at some point:
+Two easy mistakes, both of which were present in the docs at some point:
 
-1. **`compute_primary_groups.py` before `compute_area_metrics.py`.** Two of the
-   metric tables join `facility_primary_groups`, which only the groups script
-   produces.
-2. **`compute_collaborations.py` needs `--export-parquet`.** Without it the
-   co-author counts never leave the local database.
-3. **`init_people_tables.py --export-parquet` is not optional.** Nothing else in
-   the chain exports `publications`, `authorship`, `person_areas` or
-   `publication_topics`, so harvested publications would never reach the site.
-   It is `CREATE TABLE IF NOT EXISTS` throughout, so it will not wipe anything.
-
-Also note `enrich_people_openalex.py` writes to the `people` table but exports
-no parquet — that is why `build_cod_team_lake.py` runs near the end, to
-re-snapshot `people.parquet` after all three enrichers have written.
+1. **`compute_primary_groups.py` and `compute_collaborations.py` before
+   `compute_area_metrics.py`.** Two of the metric tables join
+   `facility_primary_groups`, and the per-area co-authorship counts read
+   `collaborations`.
+2. **Nothing reaches the site until `export_parquet.py` runs.** Every script
+   above writes into the lake and none writes parquet. (Earlier versions of
+   this chain needed `--export-parquet` on `compute_collaborations.py` and
+   `init_people_tables.py`, and a closing `build_cod_team_lake.py` to
+   re-snapshot `people.parquet`; the flag is now a no-op and the re-snapshot
+   is unnecessary.)
 
 ### What the harvest does
 
@@ -195,7 +200,7 @@ the polite pool:
 | B | Hydrate authors 50 at a time |
 | C | For the shortlist, count coastal works all-time and over 5 years, find first pub year |
 | D | Assign cohorts locally and deterministically |
-| E | Link to `people`, write the table, refresh parquet |
+| E | Link to `people`, write the table into the lake (`export_parquet.py` publishes) |
 
 `--stage A|B|C` bounds a run and `--resume` reuses the caches.
 
@@ -268,11 +273,12 @@ enriched `people` row.
 `public/parquet/*.parquet` are gitignored but tracked, so a plain `git add`
 silently skips new files — everything works locally and the live site 404s.
 
-**New `qa.py` invariants for these tables must no-op on an empty table.** The
-weekly `refresh-data.yml` runs `ingest.py`, which re-executes `schema.sql` and
-empties them in CI; their data lives in committed parquet that ingest never
-touches. (A *missing* table is now reported, though — absent and empty are no
-longer treated alike.)
+**New `qa.py` invariants for these tables must no-op on an empty table**, so
+QA stays meaningful on a lake that does not carry these layers. (The original
+reason — `refresh-data.yml` running an `ingest.py` that re-executed
+`schema.sql` and emptied them — is gone: the workflow now rebuilds the lake
+from `db/parquet/` first and `ingest.py` upserts. A *missing* table is
+reported, though — absent and empty are not treated alike.)
 
 **`schema/vocab/` and `public/vocab/` must stay in sync**, and SQL views must be
 defined in both `schema/schema.sql` and `src/db.js` `helperViews`, because views
@@ -332,11 +338,13 @@ data/seed/community_scholars_seed.json curated scholar roster
 data/datasets/coastal_datasets.json    dataset catalogue (source of truth)
 data/datasets/coastal_topics.csv       OpenAlex topic set — the reproducibility anchor
 
-scripts/build_cod_team_lake.py         seeds -> DuckLake -> parquet, syncs people
+scripts/cod_db.py                      the one way into the DuckLake store
+scripts/build_cod_team_lake.py         seeds -> lake (cod_wbs, cod_team_members), syncs people
 scripts/build_community_scholars.py    --seed (offline) | --harvest (OpenAlex)
-scripts/load_coastal_datasets.py       JSON -> tables -> parquet
+scripts/load_coastal_datasets.py       JSON -> lake tables
 scripts/qa.py                          the only test gate; add invariants here
-scripts/rebuild_db_from_parquet.py     committed parquet -> local DB
+scripts/export_parquet.py              lake -> db/parquet + public/parquet (only writer)
+scripts/rebuild_lake_from_parquet.py   committed db/parquet -> local lake
 
 src/views/team.js                      /team
 src/views/scholars.js                  /scholars

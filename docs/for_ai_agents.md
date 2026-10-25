@@ -98,8 +98,8 @@ published.
 defines five more views — `v_facility_enriched`,
 `v_facility_funding_by_year_real`, `v_person_validation_latest`,
 `v_person_validation_summary`, `v_coauthor_edges_enriched` — that are **not**
-recreated in the browser. Reproduce them against a local DuckDB built
-from the committed Parquet (`python scripts/rebuild_db_from_parquet.py`), or
+recreated in the browser. Reproduce them against a local DuckLake built
+from the committed Parquet (`python scripts/rebuild_lake_from_parquet.py`), or
 inline their SQL. One of them, `v_facility_funding_by_year_real`, depends on
 `cpi_index_us`, which ships with zero rows, so it cannot yet return
 inflation-adjusted figures at all.
@@ -162,7 +162,7 @@ registry. Signals to read before you rely on a row:
 - **Core-tier publishing.** `person_registry`, `person_identity_source`,
   `registry_collaborations`, `registry_facilities`, `coauthor_edges` and
   `coauthor_candidates` publish only the core tier or the core-to-core subset;
-  the full population stays in the local DuckDB. `person_registry` ships 10,095
+  the full population stays in the repository's `db/parquet/`. `person_registry` ships 10,095
   of roughly 152,000 identities, and `registry_facilities` 263 links against
   about 1,467 locally. Counts from these tables are **floors, not totals**.
 - **Degree zero means unmeasured.** The co-authorship harvest covers a fraction

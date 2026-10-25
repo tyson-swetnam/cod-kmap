@@ -32,8 +32,9 @@ per-table reference.
 Two stacks, one repository:
 
 1. **Python data pipeline** (`scripts/`, `schema/`, `data/`) — ingests JSON
-   from the research subagent specs in `agents/` into DuckDB, then exports
-   Parquet + GeoJSON into `public/`.
+   from the research subagent specs in `agents/` and the CSV/JSON seeds into
+   a DuckLake store of record (DuckDB 2.0, SQLite catalog), then exports
+   Parquet + GeoJSON into `db/parquet/` and `public/`.
 2. **Static MapLibre + DuckDB-Wasm site** (`index.html`, `src/`, `public/`) —
    ES modules and a CDN importmap, deployed to GitHub Pages with **no build
    step**. Do not introduce npm or Vite.
@@ -41,13 +42,13 @@ Two stacks, one repository:
 ## Commands
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+python -m venv .venv && source .venv/bin/activate   # Python >= 3.11
+pip install -r requirements.txt                      # pins duckdb==2.0.0
 
-python scripts/rebuild_db_from_parquet.py   # ALWAYS run this first after a pull
-python scripts/ingest.py                    # data/raw/R*/*.json -> db/cod_kmap.duckdb
-python scripts/qa.py                        # data-quality gate; exits non-zero on failure
-python scripts/export_parquet.py            # -> db/parquet/, public/parquet/, public/facilities.geojson
+python scripts/rebuild_lake_from_parquet.py # ALWAYS run this first after a pull
+python scripts/ingest.py                    # data/raw/R*/*.json -> upsert into the lake
+python scripts/qa.py                        # integrity + data-quality gate; exits non-zero on failure
+python scripts/export_parquet.py            # lake -> db/parquet/, public/parquet/, public/facilities.geojson
 python scripts/build_web_overlays.py        # -> public/overlays/*.geojson + manifest.json
 python scripts/generate_agent_surface.py _site   # llms.txt, llms-full.txt, robots.txt, sitemap.xml, schema.json
 
@@ -59,20 +60,29 @@ new invariants there rather than introducing pytest.
 
 ## Rules for coding agents
 
-1. **Run `rebuild_db_from_parquet.py` before anything that opens the DB.** The
-   DuckDB on-disk format is not portable across versions and `db/*.duckdb` is
-   gitignored. The canonical committed artifact is `db/parquet/*.parquet`.
+1. **Run `rebuild_lake_from_parquet.py` before anything that opens the lake.**
+   The store of record is a DuckLake (`db/cod_kmap_catalog.sqlite` +
+   `db/lake/`), gitignored and opened only through `scripts/cod_db.py`. The
+   canonical committed artifact is `db/parquet/*.parquet`; `public/parquet/`
+   is its filtered publish copy. Both are written only by
+   `scripts/export_parquet.py`, so every change is: mutate the lake →
+   `qa.py` → `export_parquet.py`. Use a scratch lake
+   (`COD_LAKE_CATALOG=/tmp/x/cat.sqlite`) for experiments. Upserts are
+   `cod_db.merge_upsert` (`MERGE`), never `INSERT OR REPLACE` / `ON CONFLICT`,
+   which fail on a lake; constraints are checked by `qa.py`, not at write
+   time. `CLAUDE.md` has the rest.
 2. **New Parquet files need `git add -f`.** `db/parquet/*.parquet` and
    `public/parquet/*.parquet` are gitignored but tracked, so a *new* table is
    silently skipped by a normal `git add` and the live site 404s while
    everything works locally. Non-Parquet files in those directories (such as
    `public/parquet/schema.json`) are not ignored and need no `-f`.
 3. **Helper views live in two places.** `schema/schema.sql` defines 15 views;
-   views do not survive a Parquet export, so the **six** the web app needs are
+   views do not survive a Parquet export, so the **nine** the web app needs are
    re-created in the browser by the `helperViews` array in `src/db.js`. Add a
-   new web-facing view to **both**, or the SQL tab loses it. Eight of the rest
-   work only against a local DuckDB; the ninth, `funding_links`, is
-   materialised by the export and ships as a parquet *table*.
+   new web-facing view to **both**, or the SQL tab loses it. Five of the rest
+   work only against a local lake; the sixth, `funding_links`, is
+   materialised by the export and ships as a parquet *table*. Browser SQL is
+   DuckDB 1.5 (duckdb-wasm `1.33.1-dev65.0`), so view SQL must run there.
    `docs/for_ai_agents.md` publishes that three-way split (HTTP-queryable
    Parquet / browser-only views / repo-only views), so keep it in step.
 4. **Run Arrow results through `arrowToPlain()` / `unwrapRow()`** from
@@ -102,9 +112,8 @@ new invariants there rather than introducing pytest.
     becomes an `<hr>` and the YAML renders as visible paragraphs. OKF-style
     metadata for these pages lives in `DOC_META` instead.
 12. **New `qa.py` invariants for the CSV/JSON-seeded tables must be gated on
-    the table being non-empty.** `refresh-data.yml` runs `ingest.py`, which
-    re-executes `schema.sql` and empties them in the CI database; their data
-    lives in committed Parquet that ingest never touches.
+    the table being non-empty**, so QA stays meaningful on a lake that does not
+    carry a layer (a scratch lake built from a partial parquet folder).
 
 ## Cross-repo: the authoritative robots.txt
 

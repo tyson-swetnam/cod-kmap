@@ -417,8 +417,9 @@ async function renderDatasets(targetId) {
           Catalogue not loaded yet. Run
           <code>python scripts/load_coastal_datasets.py</code> to load
           <code>data/datasets/coastal_datasets.json</code>, then
-          <code>python scripts/link_dataset_facilities.py --export-parquet</code>
-          to derive the dataset → stewarding-site edges.
+          <code>python scripts/link_dataset_facilities.py</code>
+          to derive the dataset → stewarding-site edges, then
+          <code>python scripts/export_parquet.py</code> to publish both.
         </p>
       </div>`;
     return;
