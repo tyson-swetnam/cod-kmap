@@ -3,7 +3,7 @@ coastal_datasets,bco-dmo,Biological and Chemical Oceanography Data Management Of
 coastal_datasets,cdip,Coastal Data Information Program,homepage_url,https://cdip.ucsd.edu/,ok,200,200,https://cdip.ucsd.edu/,,2026-10-25
 coastal_datasets,coastal-carbon-network,Coastal Carbon Network / Coastal Carbon Atlas,homepage_url,https://serc.si.edu/coastalcarbon/data,client-error,403,403,https://serc.si.edu/coastalcarbon/data,,2026-10-25
 coastal_datasets,coastal-lter-edi,Coastal LTER Site Data via EDI Data Portal,homepage_url,https://portal.edirepository.org/nis/home.jsp,ok,200,200,https://portal.edirepository.org/nis/home.jsp,,2026-10-25
-coastal_datasets,codiss,Coastal Observing Data & Information Sharing for Security (CODISS),homepage_url,https://www.dhs.gov/science-and-technology/publication/port-coastal-surveillance-project-fact-sheet,client-error,403,403,https://www.dhs.gov/science-and-technology/publication/port-coastal-surveillance-project-fact-sheet,,2026-10-25
+coastal_datasets,codiss,Coastal Observing Data & Information Sharing for Security (CODISS),homepage_url,https://www.dhs.gov/science-and-technology/publication/port-coastal-surveillance-project-fact-sheet,ok,200,200,https://www.dhs.gov/science-and-technology/publication/port-coastal-surveillance-project-fact-sheet,,2026-10-25
 coastal_datasets,copernicus-marine,Copernicus Marine Service,homepage_url,https://marine.copernicus.eu/,ok,200,200,https://marine.copernicus.eu/,,2026-10-25
 coastal_datasets,cznet-coastal,Coastal Critical Zone / Critical Zone Collaborative Network,homepage_url,https://czn.coastal.udel.edu/,ok,200,200,https://czn.coastal.udel.edu/,,2026-10-25
 coastal_datasets,cznet-hydroshare,Critical Zone Collaborative Network (CZNet) Data on HydroShare,homepage_url,https://www.hydroshare.org/community/3/,ok,200,200,https://www.hydroshare.org/community/3/,,2026-10-25
@@ -15,7 +15,7 @@ coastal_datasets,goos,Global Ocean Observing System,homepage_url,https://goosoce
 coastal_datasets,hydroshare,CUAHSI HydroShare,homepage_url,https://www.hydroshare.org/,ok,200,200,https://www.hydroshare.org/,,2026-10-25
 coastal_datasets,ioos-aoos,Alaska Ocean Observing System,homepage_url,https://aoos.org/,ok,200,200,https://aoos.org/,,2026-10-25
 coastal_datasets,ioos-caricoos,Caribbean Coastal Ocean Observing System,homepage_url,https://www.caricoos.org/,ok,200,200,https://www.caricoos.org/,,2026-10-25
-coastal_datasets,ioos-cencoos,Central and Northern California Ocean Observing System,homepage_url,https://www.cencoos.org/,ok,200,200,https://www.cencoos.org/,,2026-10-25
+coastal_datasets,ioos-cencoos,Central and Northern California Ocean Observing System,homepage_url,https://www.cencoos.org/,timeout,,-2,,timeout,2026-10-25
 coastal_datasets,ioos-gcoos,Gulf of Mexico Coastal Ocean Observing System,homepage_url,https://gcoos.org/,ok,200,200,https://gcoos.org/,,2026-10-25
 coastal_datasets,ioos-glider-dac,IOOS National Glider Data Assembly Center,homepage_url,https://gliders.ioos.us/,ok,200,200,https://gliders.ioos.us/,,2026-10-25
 coastal_datasets,ioos-glos,Great Lakes Observing System,homepage_url,https://glos.org/,ok,200,200,https://glos.org/,,2026-10-25
@@ -30,9 +30,9 @@ coastal_datasets,ioos-sensors-erddap,IOOS Environmental Sensor Map ERDDAP,homepa
 coastal_datasets,marinecadastre,MarineCadastre.gov,homepage_url,https://marinecadastre.gov/,ok,200,200,https://hub.marinecadastre.gov,,2026-10-25
 coastal_datasets,marinegeo,Smithsonian MarineGEO (Marine Global Earth Observatory),homepage_url,https://marinegeo.si.edu/,client-error,403,403,https://marinegeo.si.edu/,,2026-10-25
 coastal_datasets,mbon,Marine Biodiversity Observation Network,homepage_url,https://mbon.ioos.us/,ok,200,200,https://mbon.ioos.us/,,2026-10-25
-coastal_datasets,nasa-cmr,NASA Common Metadata Repository,homepage_url,https://www.earthdata.nasa.gov/about/esdis/eosdis/cmr,ok,200,200,https://www.earthdata.nasa.gov/about/esdis/eosdis/cmr,,2026-10-25
+coastal_datasets,nasa-cmr,NASA Common Metadata Repository,homepage_url,https://www.earthdata.nasa.gov/about/esdis/eosdis/cmr,client-error,403,403,https://www.earthdata.nasa.gov/about/esdis/eosdis/cmr,,2026-10-25
 coastal_datasets,nasa-ecco,Estimating the Circulation and Climate of the Ocean (ECCO),homepage_url,https://podaac.jpl.nasa.gov/ECCO,timeout,,-2,,timeout,2026-10-25
-coastal_datasets,nasa-obdaac-oceancolor,NASA Ocean Biology Distributed Active Archive Center (OceanColor Web),homepage_url,https://oceancolor.gsfc.nasa.gov/,ok,200,200,https://www.earthdata.nasa.gov/centers/ob-daac,,2026-10-25
+coastal_datasets,nasa-obdaac-oceancolor,NASA Ocean Biology Distributed Active Archive Center (OceanColor Web),homepage_url,https://oceancolor.gsfc.nasa.gov/,client-error,403,403,https://www.earthdata.nasa.gov/centers/ob-daac,,2026-10-25
 coastal_datasets,nasa-podaac,NASA Physical Oceanography Distributed Active Archive Center,homepage_url,https://podaac.jpl.nasa.gov/,timeout,,-2,,timeout,2026-10-25
 coastal_datasets,nasa-podaac-coastal,NASA PO.DAAC Coastal Altimetry / Sea Surface Height Products,homepage_url,https://podaac.jpl.nasa.gov/Altimetric_Data_Information/CoastalAltimetry,timeout,,-2,,timeout,2026-10-25
 coastal_datasets,nasa-sea-level-change,NASA Sea Level Change Portal,homepage_url,https://sealevel.nasa.gov/,ok,200,200,https://sealevel.nasa.gov/,,2026-10-25
@@ -69,13 +69,13 @@ coastal_datasets,usace-frf-duck,"USACE Field Research Facility (Duck, NC) Coasta
 coastal_datasets,usfws-nwi,USFWS National Wetlands Inventory,homepage_url,https://www.fws.gov/program/national-wetlands-inventory,ok,200,200,https://www.fws.gov/program/national-wetlands-inventory,,2026-10-25
 coastal_datasets,usgs-cmhrp,USGS Coastal and Marine Hazards and Resources Program,homepage_url,https://www.usgs.gov/programs/cmhrp,ok,200,200,https://www.usgs.gov/programs/cmhrp,,2026-10-25
 coastal_datasets,usgs-coastal-change-hazards-portal,USGS Coastal Change Hazards Portal,homepage_url,https://marine.usgs.gov/coastalchangehazardsportal/,ok,200,200,https://marine.usgs.gov/coastalchangehazardsportal/,,2026-10-25
-coastal_datasets,usgs-cosmos,Coastal Storm Modeling System,homepage_url,https://www.usgs.gov/centers/pcmsc/science/coastal-storm-modeling-system-cosmos,timeout,,-2,,timeout,2026-10-25
+coastal_datasets,usgs-cosmos,Coastal Storm Modeling System,homepage_url,https://www.usgs.gov/centers/pcmsc/science/coastal-storm-modeling-system-cosmos,ok,200,200,https://www.usgs.gov/centers/pcmsc/science/coastal-storm-modeling-system-cosmos,,2026-10-25
 coastal_datasets,usgs-sciencebase,USGS ScienceBase,homepage_url,https://www.sciencebase.gov/catalog/,ok,200,200,https://www.sciencebase.gov/catalog/,,2026-10-25
 coastal_datasets,bco-dmo,Biological and Chemical Oceanography Data Management Office,source_url,https://www.bco-dmo.org/data,ok,200,200,https://www.bco-dmo.org/how-to/access-and-reuse,,2026-10-25
 coastal_datasets,cdip,Coastal Data Information Program,source_url,https://cdip.ucsd.edu/m/documents/data_access.html,ok,200,200,https://cdip.ucsd.edu/m/documents/data_access.html,,2026-10-25
 coastal_datasets,coastal-carbon-network,Coastal Carbon Network / Coastal Carbon Atlas,source_url,https://serc.si.edu/coastalcarbon/data,client-error,403,403,https://serc.si.edu/coastalcarbon/data,,2026-10-25
 coastal_datasets,coastal-lter-edi,Coastal LTER Site Data via EDI Data Portal,source_url,https://portal.edirepository.org/nis/browse.jsp,ok,200,200,https://portal.edirepository.org/nis/browse.jsp,,2026-10-25
-coastal_datasets,codiss,Coastal Observing Data & Information Sharing for Security (CODISS),source_url,https://www.dhs.gov/science-and-technology/publication/port-coastal-surveillance-project-fact-sheet,client-error,403,403,https://www.dhs.gov/science-and-technology/publication/port-coastal-surveillance-project-fact-sheet,,2026-10-25
+coastal_datasets,codiss,Coastal Observing Data & Information Sharing for Security (CODISS),source_url,https://www.dhs.gov/science-and-technology/publication/port-coastal-surveillance-project-fact-sheet,ok,200,200,https://www.dhs.gov/science-and-technology/publication/port-coastal-surveillance-project-fact-sheet,,2026-10-25
 coastal_datasets,copernicus-marine,Copernicus Marine Service,source_url,https://help.marine.copernicus.eu/en/articles/8283072-copernicus-marine-toolbox-api-subset,ok,200,200,https://help.marine.copernicus.eu/en/articles/8283072-copernicus-marine-toolbox-api-subset,,2026-10-25
 coastal_datasets,cznet-coastal,Coastal Critical Zone / Critical Zone Collaborative Network,source_url,https://www.hydroshare.org/group/196,ok,200,200,https://www.hydroshare.org/group/196,,2026-10-25
 coastal_datasets,cznet-hydroshare,Critical Zone Collaborative Network (CZNet) Data on HydroShare,source_url,https://www.hydroshare.org/community/3/,ok,200,200,https://www.hydroshare.org/community/3/,,2026-10-25
@@ -104,7 +104,7 @@ coastal_datasets,marinegeo,Smithsonian MarineGEO (Marine Global Earth Observator
 coastal_datasets,mbon,Marine Biodiversity Observation Network,source_url,https://ioos.noaa.gov/project/mbon/,ok,200,200,https://ioos.noaa.gov/project/mbon/,,2026-10-25
 coastal_datasets,nasa-cmr,NASA Common Metadata Repository,source_url,https://cmr.earthdata.nasa.gov/search/,ok,200,200,https://cmr.earthdata.nasa.gov/search/,,2026-10-25
 coastal_datasets,nasa-ecco,Estimating the Circulation and Climate of the Ocean (ECCO),source_url,https://podaac.jpl.nasa.gov/ECCO,timeout,,-2,,timeout,2026-10-25
-coastal_datasets,nasa-obdaac-oceancolor,NASA Ocean Biology Distributed Active Archive Center (OceanColor Web),source_url,https://oceancolor.gsfc.nasa.gov/,ok,200,200,https://www.earthdata.nasa.gov/centers/ob-daac,,2026-10-25
+coastal_datasets,nasa-obdaac-oceancolor,NASA Ocean Biology Distributed Active Archive Center (OceanColor Web),source_url,https://oceancolor.gsfc.nasa.gov/,client-error,403,403,https://www.earthdata.nasa.gov/centers/ob-daac,,2026-10-25
 coastal_datasets,nasa-podaac,NASA Physical Oceanography Distributed Active Archive Center,source_url,https://podaac.jpl.nasa.gov/cloud-datasets/about,timeout,,-2,,timeout,2026-10-25
 coastal_datasets,nasa-podaac-coastal,NASA PO.DAAC Coastal Altimetry / Sea Surface Height Products,source_url,https://podaac.jpl.nasa.gov/Altimetric_Data_Information/CoastalAltimetry,timeout,,-2,,timeout,2026-10-25
 coastal_datasets,nasa-sea-level-change,NASA Sea Level Change Portal,source_url,https://sealevel.nasa.gov/data,client-error,404,404,https://sealevel.nasa.gov/data,,2026-10-25
@@ -141,26 +141,26 @@ coastal_datasets,usace-frf-duck,"USACE Field Research Facility (Duck, NC) Coasta
 coastal_datasets,usfws-nwi,USFWS National Wetlands Inventory,source_url,https://www.fws.gov/program/national-wetlands-inventory,ok,200,200,https://www.fws.gov/program/national-wetlands-inventory,,2026-10-25
 coastal_datasets,usgs-cmhrp,USGS Coastal and Marine Hazards and Resources Program,source_url,https://marine.usgs.gov/coastalchangehazardsportal/,ok,200,200,https://marine.usgs.gov/coastalchangehazardsportal/,,2026-10-25
 coastal_datasets,usgs-coastal-change-hazards-portal,USGS Coastal Change Hazards Portal,source_url,https://marine.usgs.gov/coastalchangehazardsportal/,ok,200,200,https://marine.usgs.gov/coastalchangehazardsportal/,,2026-10-25
-coastal_datasets,usgs-cosmos,Coastal Storm Modeling System,source_url,https://www.usgs.gov/centers/pcmsc/science/coastal-storm-modeling-system-cosmos,timeout,,-2,,timeout,2026-10-25
-coastal_datasets,usgs-sciencebase,USGS ScienceBase,source_url,https://www.sciencebase.gov/catalog/items,ok,200,200,https://www.sciencebase.gov/auth/realms/ScienceBase/protocol/openid-connect/auth?response_type=code&client_id=catalog&redirect_uri=https%3A%2F%2Fwww.sciencebase.gov%2Fcatalog%2Fsso%2Flogin&state=012dcdb9-624a-4ff0-9a90-245dce31339a&login=true&scope=openid,,2026-10-25
+coastal_datasets,usgs-cosmos,Coastal Storm Modeling System,source_url,https://www.usgs.gov/centers/pcmsc/science/coastal-storm-modeling-system-cosmos,ok,200,200,https://www.usgs.gov/centers/pcmsc/science/coastal-storm-modeling-system-cosmos,,2026-10-25
+coastal_datasets,usgs-sciencebase,USGS ScienceBase,source_url,https://www.sciencebase.gov/catalog/items,ok,200,200,https://www.sciencebase.gov/auth/realms/ScienceBase/protocol/openid-connect/auth?response_type=code&client_id=catalog&redirect_uri=https%3A%2F%2Fwww.sciencebase.gov%2Fcatalog%2Fsso%2Flogin&state=a8ba115e-1adc-460f-ad33-8eb9f911d7b5&login=true&scope=openid,,2026-10-25
 dataset_endpoints,bco-dmo,BCO-DMO ERDDAP,url,https://erddap.bco-dmo.org/erddap/,ok,200,200,https://erddap.bco-dmo.org/erddap/index.html,,2026-10-25
 dataset_endpoints,bco-dmo,BCO-DMO ERDDAP,url,https://erddap.bco-dmo.org/erddap/index.html,ok,200,200,https://erddap.bco-dmo.org/erddap/index.html,,2026-10-25
 dataset_endpoints,bco-dmo,BCO-DMO repository,url,https://www.bco-dmo.org/,ok,200,200,https://www.bco-dmo.org/,,2026-10-25
 dataset_endpoints,cdip,CDIP home,url,https://cdip.ucsd.edu/,ok,200,200,https://cdip.ucsd.edu/,,2026-10-25
-dataset_endpoints,cdip,CDIP station products/map (human entry),url,https://cdip.ucsd.edu/m/products/,timeout,,-2,,timeout,2026-10-25
+dataset_endpoints,cdip,CDIP station products/map (human entry),url,https://cdip.ucsd.edu/m/products/,ok,200,200,https://cdip.ucsd.edu/m/products/,,2026-10-25
 dataset_endpoints,cdip,CDIP ERDDAP,url,https://erddap.cdip.ucsd.edu/erddap/,ok,200,200,https://erddap.cdip.ucsd.edu/erddap/index.html,,2026-10-25
 dataset_endpoints,cdip,CDIP THREDDS archive catalog,url,https://thredds.cdip.ucsd.edu/thredds/catalog/cdip/archive/catalog.html,ok,200,200,https://thredds.cdip.ucsd.edu/thredds/catalog/cdip/archive/catalog.html,,2026-10-25
 dataset_endpoints,cdip,CDIP THREDDS (realtime/archive/model NetCDF),url,https://thredds.cdip.ucsd.edu/thredds/catalog/cdip/catalog.html,client-error,404,404,https://thredds.cdip.ucsd.edu/thredds/catalog/cdip/catalog.html,,2026-10-25
 dataset_endpoints,coastal-carbon-network,CCN Data Library GitHub API,url,https://api.github.com/repos/Smithsonian/CCN-Data-Library,ok,200,200,https://api.github.com/repos/Smithsonian/CCN-Data-Library,,2026-10-25
 dataset_endpoints,coastal-carbon-network,Coastal Carbon Atlas (interactive app),url,https://ccrcn.shinyapps.io/CoastalCarbonAtlas/,ok,202,202,https://ccrcn.shinyapps.io/CoastalCarbonAtlas/,,2026-10-25
-dataset_endpoints,coastal-carbon-network,Coastal Carbon Library (Figshare DOI),url,https://doi.org/10.25573/serc.21565671,ok,202,202,https://smithsonian.figshare.com/articles/dataset/Database_Coastal_Carbon_Library_Version_1_0_0_/21565671,,2026-10-25
+dataset_endpoints,coastal-carbon-network,Coastal Carbon Library (Figshare DOI),url,https://doi.org/10.25573/serc.21565671,ok,200,200,https://smithsonian.figshare.com/articles/dataset/Database_Coastal_Carbon_Library_Version_1_0_0_/21565671,,2026-10-25
 dataset_endpoints,coastal-carbon-network,CCN Data Library (GitHub),url,https://github.com/Smithsonian/CCN-Data-Library,ok,200,200,https://github.com/Smithsonian/CCN-Data-Library,,2026-10-25
 dataset_endpoints,coastal-carbon-network,Coastal Carbon Data Library and Atlas,url,https://serc.si.edu/coastalcarbon/data,client-error,403,403,https://serc.si.edu/coastalcarbon/data,,2026-10-25
 dataset_endpoints,coastal-carbon-network,Coastal Carbon Atlas (interactive map),url,https://shiny.si.edu/coastal_carbon_atlas/,ok,200,200,https://shiny.si.edu/coastal_carbon_atlas/,,2026-10-25
 dataset_endpoints,coastal-lter-edi,EDI PASTA+ REST API,url,https://pasta.lternet.edu/package/,ok,200,200,https://pasta.lternet.edu/package/,,2026-10-25
 dataset_endpoints,coastal-lter-edi,Browse VCR LTER packages,url,https://portal.edirepository.org/nis/browseServlet?searchValue=VCR,ok,200,200,https://portal.edirepository.org/nis/browseServlet?searchValue=VCR,,2026-10-25
 dataset_endpoints,coastal-lter-edi,EDI Data Portal,url,https://portal.edirepository.org/nis/home.jsp,ok,200,200,https://portal.edirepository.org/nis/home.jsp,,2026-10-25
-dataset_endpoints,codiss,DHS S&T Port & Coastal Surveillance fact sheet,url,https://www.dhs.gov/science-and-technology/publication/port-coastal-surveillance-project-fact-sheet,client-error,403,403,https://www.dhs.gov/science-and-technology/publication/port-coastal-surveillance-project-fact-sheet,,2026-10-25
+dataset_endpoints,codiss,DHS S&T Port & Coastal Surveillance fact sheet,url,https://www.dhs.gov/science-and-technology/publication/port-coastal-surveillance-project-fact-sheet,ok,200,200,https://www.dhs.gov/science-and-technology/publication/port-coastal-surveillance-project-fact-sheet,,2026-10-25
 dataset_endpoints,copernicus-marine,Copernicus Marine Data Store,url,https://data.marine.copernicus.eu/,ok,200,200,https://data.marine.copernicus.eu/products,,2026-10-25
 dataset_endpoints,copernicus-marine,Copernicus Marine Service,url,https://marine.copernicus.eu/,ok,200,200,https://marine.copernicus.eu/,,2026-10-25
 dataset_endpoints,copernicus-marine,Copernicus Marine STAC catalog,url,https://stac.marine.copernicus.eu/,ok,200,200,https://stac.marine.copernicus.eu/,,2026-10-25
@@ -290,7 +290,7 @@ dataset_endpoints,noaa-co-ops,CO-OPS Derived Product API (DPAPI),url,https://api
 dataset_endpoints,noaa-co-ops,CO-OPS Metadata API (MDAPI) v1.0,url,https://api.tidesandcurrents.noaa.gov/mdapi/prod/,ok,200,200,https://api.tidesandcurrents.noaa.gov/mdapi/prod/,,2026-10-25
 dataset_endpoints,noaa-co-ops,NOAA Tides & Currents,url,https://tidesandcurrents.noaa.gov/,ok,200,200,https://tidesandcurrents.noaa.gov/,,2026-10-25
 dataset_endpoints,noaa-coastwatch,NOAA CoastWatch program portal,url,https://coastwatch.noaa.gov/,ok,200,200,https://coastwatch.noaa.gov/,,2026-10-25
-dataset_endpoints,noaa-coastwatch,NOAA CoastWatch Central ERDDAP,url,https://coastwatch.noaa.gov/erddap/index.html,ok,200,200,https://coastwatch.noaa.gov/erddap/index.html,,2026-10-25
+dataset_endpoints,noaa-coastwatch,NOAA CoastWatch Central ERDDAP,url,https://coastwatch.noaa.gov/erddap/index.html,timeout,,-2,,timeout,2026-10-25
 dataset_endpoints,noaa-coastwatch-erddap,NOAA CoastWatch program portal,url,https://coastwatch.noaa.gov/,ok,200,200,https://coastwatch.noaa.gov/,,2026-10-25
 dataset_endpoints,noaa-coastwatch-erddap,CoastWatch West Coast Node,url,https://coastwatch.pfeg.noaa.gov/,ok,200,200,https://coastwatch.pfeg.noaa.gov/,,2026-10-25
 dataset_endpoints,noaa-coastwatch-erddap,CoastWatch ERD central ERDDAP,url,https://coastwatch.pfeg.noaa.gov/erddap/,ok,200,200,https://coastwatch.pfeg.noaa.gov/erddap/index.html,,2026-10-25
@@ -359,8 +359,8 @@ dataset_endpoints,psmsl,PSMSL data obtaining page (RLR/metric monthly and annual
 dataset_endpoints,uhslc-sea-level,UHSLC data access,url,https://uhslc.soest.hawaii.edu/data/,ok,200,200,https://uhslc.soest.hawaii.edu/data/,,2026-10-25
 dataset_endpoints,uhslc-sea-level,UHSLC ERDDAP,url,https://uhslc.soest.hawaii.edu/erddap/,ok,200,200,https://uhslc.soest.hawaii.edu/erddap/index.html,,2026-10-25
 dataset_endpoints,uhslc-sea-level,UHSLC THREDDS,url,https://uhslc.soest.hawaii.edu/thredds/catalog.html,client-error,404,404,https://uhslc.soest.hawaii.edu/thredds/catalog.html,,2026-10-25
-dataset_endpoints,us-ioos,IOOS Data Catalog (CKAN),url,https://data.ioos.us/,ok,200,200,https://data.ioos.us/,,2026-10-25
-dataset_endpoints,us-ioos,IOOS Data Catalog (human entry),url,https://data.ioos.us/,ok,200,200,https://data.ioos.us/,,2026-10-25
+dataset_endpoints,us-ioos,IOOS Data Catalog (human entry),url,https://data.ioos.us/,timeout,,-2,,timeout,2026-10-25
+dataset_endpoints,us-ioos,IOOS Data Catalog (CKAN),url,https://data.ioos.us/,timeout,,-2,,timeout,2026-10-25
 dataset_endpoints,us-ioos,IOOS Data Catalog CKAN API,url,https://data.ioos.us/api/3,ok,200,200,https://data.ioos.us/api/3,,2026-10-25
 dataset_endpoints,us-ioos,IOOS Sensors ERDDAP (national aggregation),url,https://erddap.sensors.ioos.us/erddap/,ok,200,200,https://erddap.sensors.ioos.us/erddap/index.html,,2026-10-25
 dataset_endpoints,us-ioos,U.S. IOOS home,url,https://ioos.noaa.gov/,ok,200,200,https://ioos.noaa.gov/,,2026-10-25
@@ -374,17 +374,17 @@ dataset_endpoints,usfws-nwi,Wetlands Mapper (human entry point),url,https://www.
 dataset_endpoints,usgs-cmhrp,Coastal and Marine Geoscience Data System (CMGDS) catalog,url,https://cmgds.marine.usgs.gov/,ok,200,200,https://cmgds.marine.usgs.gov/,,2026-10-25
 dataset_endpoints,usgs-cmhrp,USGS Coastal Change Hazards Portal,url,https://marine.usgs.gov/coastalchangehazardsportal/,ok,200,200,https://marine.usgs.gov/coastalchangehazardsportal/,,2026-10-25
 dataset_endpoints,usgs-cmhrp,USGS ScienceBase catalog REST API,url,https://www.sciencebase.gov/catalog/,ok,200,200,https://www.sciencebase.gov/catalog/,,2026-10-25
-dataset_endpoints,usgs-cmhrp,CMHRP data releases via ScienceBase API,url,https://www.sciencebase.gov/catalog/items?q=coastal+change+hazards&format=json,ok,200,200,https://www.sciencebase.gov/auth/realms/ScienceBase/protocol/openid-connect/auth?response_type=code&client_id=catalog&redirect_uri=https%3A%2F%2Fwww.sciencebase.gov%2Fcatalog%2Fsso%2Flogin&state=2a9330ad-a7b0-4af0-989a-50bdfd994c29&login=true&scope=openid,,2026-10-25
+dataset_endpoints,usgs-cmhrp,CMHRP data releases via ScienceBase API,url,https://www.sciencebase.gov/catalog/items?q=coastal+change+hazards&format=json,ok,200,200,https://www.sciencebase.gov/auth/realms/ScienceBase/protocol/openid-connect/auth?response_type=code&client_id=catalog&redirect_uri=https%3A%2F%2Fwww.sciencebase.gov%2Fcatalog%2Fsso%2Flogin&state=d03511ef-b9fe-405c-9ddb-53d433aa5756&login=true&scope=openid,,2026-10-25
 dataset_endpoints,usgs-cmhrp,CMHRP program homepage,url,https://www.usgs.gov/programs/cmhrp,ok,200,200,https://www.usgs.gov/programs/cmhrp,,2026-10-25
-dataset_endpoints,usgs-cmhrp,CMHRP Data & Tools,url,https://www.usgs.gov/programs/cmhrp/data,ok,200,200,https://www.usgs.gov/programs/cmhrp/data,,2026-10-25
+dataset_endpoints,usgs-cmhrp,CMHRP Data & Tools,url,https://www.usgs.gov/programs/cmhrp/data,timeout,,-2,,timeout,2026-10-25
 dataset_endpoints,usgs-coastal-change-hazards-portal,Coastal Change Hazards Portal (human entry point),url,https://marine.usgs.gov/coastalchangehazardsportal/,ok,200,200,https://marine.usgs.gov/coastalchangehazardsportal/,,2026-10-25
 dataset_endpoints,usgs-coastal-change-hazards-portal,ScienceBase items backing the portal layers,url,https://www.sciencebase.gov/catalog/,ok,200,200,https://www.sciencebase.gov/catalog/,,2026-10-25
 dataset_endpoints,usgs-cosmos,Our Coast Our Future (OCOF) visualization/download tool,url,https://ourcoastourfuture.org/,ok,200,200,https://ourcoastourfuture.org/,,2026-10-25
 dataset_endpoints,usgs-cosmos,CoSMoS model output archive on ScienceBase,url,https://www.sciencebase.gov/catalog/,ok,200,200,https://www.sciencebase.gov/catalog/,,2026-10-25
-dataset_endpoints,usgs-cosmos,CoSMoS project page,url,https://www.usgs.gov/centers/pcmsc/science/coastal-storm-modeling-system-cosmos,timeout,,-2,,timeout,2026-10-25
-dataset_endpoints,usgs-sciencebase,ScienceBase Catalog,url,https://www.sciencebase.gov/catalog/,ok,200,200,https://www.sciencebase.gov/catalog/,,2026-10-25
+dataset_endpoints,usgs-cosmos,CoSMoS project page,url,https://www.usgs.gov/centers/pcmsc/science/coastal-storm-modeling-system-cosmos,ok,200,200,https://www.usgs.gov/centers/pcmsc/science/coastal-storm-modeling-system-cosmos,,2026-10-25
 dataset_endpoints,usgs-sciencebase,ScienceBase geospatial (WMS/WFS) services,url,https://www.sciencebase.gov/catalog/,ok,200,200,https://www.sciencebase.gov/catalog/,,2026-10-25
-dataset_endpoints,usgs-sciencebase,ScienceBase Catalog Item REST Services,url,https://www.sciencebase.gov/catalog/items,ok,200,200,https://www.sciencebase.gov/auth/realms/ScienceBase/protocol/openid-connect/auth?response_type=code&client_id=catalog&redirect_uri=https%3A%2F%2Fwww.sciencebase.gov%2Fcatalog%2Fsso%2Flogin&state=012dcdb9-624a-4ff0-9a90-245dce31339a&login=true&scope=openid,,2026-10-25
+dataset_endpoints,usgs-sciencebase,ScienceBase Catalog,url,https://www.sciencebase.gov/catalog/,ok,200,200,https://www.sciencebase.gov/catalog/,,2026-10-25
+dataset_endpoints,usgs-sciencebase,ScienceBase Catalog Item REST Services,url,https://www.sciencebase.gov/catalog/items,ok,200,200,https://www.sciencebase.gov/auth/realms/ScienceBase/protocol/openid-connect/auth?response_type=code&client_id=catalog&redirect_uri=https%3A%2F%2Fwww.sciencebase.gov%2Fcatalog%2Fsso%2Flogin&state=a8ba115e-1adc-460f-ad33-8eb9f911d7b5&login=true&scope=openid,,2026-10-25
 facilities,010c4cc4cef5efaa,Harriet Tubman Underground Railroad National Historical Park,url,https://www.nps.gov/hatu/index.htm,ok,200,200,https://www.nps.gov/hatu/index.htm,,2026-10-25
 facilities,0278c83fca4ab17d,Golden Gate National Recreation Area,url,https://www.nps.gov/goga/index.htm,ok,200,200,https://www.nps.gov/goga/index.htm,,2026-10-25
 facilities,04b9d5f2afb8eff8,Bolinas Lagoon (Ramsar),url,https://www.ramsar.org/wetland/united-states-of-america,client-error,403,403,https://www.ramsar.org/wetland/united-states-of-america,,2026-10-25
@@ -515,7 +515,7 @@ facilities,671f281c1247efaf,War in the Pacific National Historical Park,url,http
 facilities,6740ab346f77400d,Statue of Liberty National Monument,url,https://www.nps.gov/stli/index.htm,ok,200,200,https://www.nps.gov/stli/index.htm,,2026-10-25
 facilities,6765862cc5fcbbe6,Fort Point National Historic Site,url,https://www.nps.gov/fopo/index.htm,ok,200,200,https://www.nps.gov/fopo/index.htm,,2026-10-25
 facilities,68a6153f87c004c8,Atlantic Oceanographic and Meteorological Laboratory,url,https://www.aoml.noaa.gov/,timeout,,-3,,conn:SSLError,2026-10-25
-facilities,68f6abc93d4b435e,Central and Northern California Ocean Observing System,url,https://cencoos.org/,ok,200,200,https://www.cencoos.org/,,2026-10-25
+facilities,68f6abc93d4b435e,Central and Northern California Ocean Observing System,url,https://cencoos.org/,timeout,,-2,,timeout,2026-10-25
 facilities,6920205c02284653,Gulf Islands National Seashore,url,https://www.nps.gov/guis/index.htm,ok,200,200,https://www.nps.gov/guis/index.htm,,2026-10-25
 facilities,69e6ac35f9c8b1eb,Canaveral National Seashore,url,https://www.nps.gov/cana/index.htm,ok,200,200,https://www.nps.gov/cana/index.htm,,2026-10-25
 facilities,6ad02ae32697c15e,Marine Biological Laboratory,url,https://www.mbl.edu/,ok,200,200,https://www.mbl.edu/,,2026-10-25
@@ -546,7 +546,7 @@ facilities,7df25b0304d189e5,U.S. Integrated Ocean Observing System Program Offic
 facilities,7e66987440e23048,Maggie L. Walker National Historic Site,url,https://www.nps.gov/mawa/index.htm,ok,200,200,https://www.nps.gov/mawa/index.htm,,2026-10-25
 facilities,7eb5c346f97b512e,Connecticut River Estuary and Tidal Wetlands Complex (Ramsar),url,https://www.ramsar.org/wetland/united-states-of-america,client-error,403,403,https://www.ramsar.org/wetland/united-states-of-america,,2026-10-25
 facilities,7f24c3a6d83affea,Delaware Bay Estuary (Ramsar),url,https://www.ramsar.org/wetland/united-states-of-america,client-error,403,403,https://www.ramsar.org/wetland/united-states-of-america,,2026-10-25
-facilities,7fd58ccc7effab1d,NASA Goddard Space Flight Center — Ocean Biology Processing Group,url,https://oceancolor.gsfc.nasa.gov/,ok,200,200,https://www.earthdata.nasa.gov/centers/ob-daac,,2026-10-25
+facilities,7fd58ccc7effab1d,NASA Goddard Space Flight Center — Ocean Biology Processing Group,url,https://oceancolor.gsfc.nasa.gov/,client-error,403,403,https://www.earthdata.nasa.gov/centers/ob-daac,,2026-10-25
 facilities,7ffaad0b0c5a6cdc,New England Aquarium,url,https://www.neaq.org/,ok,200,200,https://www.neaq.org/,,2026-10-25
 facilities,845506db1a6b5eb1,Petersburg National Battlefield,url,https://www.nps.gov/pete/index.htm,ok,200,200,https://www.nps.gov/pete/index.htm,,2026-10-25
 facilities,84d0739f9114da35,Bigelow Laboratory for Ocean Sciences,url,https://www.bigelow.org/,ok,200,200,https://www.bigelow.org/,,2026-10-25
@@ -608,11 +608,11 @@ facilities,a96f84521fb6e77a,Instituto Nacional de Oceanografía y del Clima,url,
 facilities,a9c0b9f25cbf1b1a,Fondation pour la Protection de la Biodiversité Marine,url,https://www.foprobim.org/,ok,200,200,https://www.foprobim.org/,,2026-10-25
 facilities,aa44467581cd90f6,Big Cypress National Preserve,url,https://www.nps.gov/bicy/index.htm,ok,200,200,https://www.nps.gov/bicy/index.htm,,2026-10-25
 facilities,abb8b9a91bddfb11,U.S. EPA Region 9 — Pacific Southwest,url,https://www.epa.gov/aboutepa/about-epa-region-9-pacific-southwest,client-error,404,404,https://www.epa.gov/aboutepa/about-epa-region-9-pacific-southwest,,2026-10-25
-facilities,abddeb6fcf070b8d,Catalina Island Conservancy,url,https://www.catalinaconservancy.org/,ok,200,200,https://catalinaconservancy.org/,,2026-10-25
+facilities,abddeb6fcf070b8d,Catalina Island Conservancy,url,https://www.catalinaconservancy.org/,client-error,403,403,https://www.catalinaconservancy.org/,,2026-10-25
 facilities,aca6068a4a665744,Instituto de Ciencias del Mar y Limnología — UNAM,url,https://www.icmyl.unam.mx/,ok,200,200,https://www.icmyl.unam.mx/,,2026-10-25
 facilities,ad7f0cc6808f60da,Moores Creek National Battlefield,url,https://www.nps.gov/mocr/index.htm,ok,200,200,https://www.nps.gov/mocr/index.htm,,2026-10-25
 facilities,af3bb00254c972aa,Northwest Atlantic Fisheries Centre,url,https://www.nfl.dfo-mpo.gc.ca/NL/Science/NAFC,timeout,,-3,,conn:ConnectionError,2026-10-25
-facilities,afb21dfd91a94e19,Woods Hole Coastal and Marine Science Center,url,https://www.usgs.gov/centers/whcmsc,timeout,,-2,,timeout,2026-10-25
+facilities,afb21dfd91a94e19,Woods Hole Coastal and Marine Science Center,url,https://www.usgs.gov/centers/whcmsc,ok,200,200,https://www.usgs.gov/centers/whcmsc,,2026-10-25
 facilities,b0c2ceff9c205405,Chesapeake Bay Estuarine Complex (Ramsar),url,https://www.ramsar.org/wetland/united-states-of-america,client-error,403,403,https://www.ramsar.org/wetland/united-states-of-america,,2026-10-25
 facilities,b186ccd53158c323,Northeastern Regional Association of Coastal Ocean Observing Systems,url,https://neracoos.org/,ok,200,200,https://neracoos.org/,,2026-10-25
 facilities,b2bbec07db047adb,Captain John Smith Chesapeake National Historic Trail,url,https://www.nps.gov/cajo/index.htm,ok,200,200,https://www.nps.gov/cajo/index.htm,,2026-10-25
@@ -627,7 +627,7 @@ facilities,b87917e01870f6b8,Ebey's Landing National Historical Reserve,url,https
 facilities,b9318478d5ec9674,Golden Gate National Parks Conservancy,url,https://www.parksconservancy.org/,ok,200,200,https://www.parksconservancy.org/,,2026-10-25
 facilities,b9e90284b7b9bb05,Glacier Bay National Park,url,https://www.nps.gov/glba/index.htm,ok,200,200,https://www.nps.gov/glba/index.htm,,2026-10-25
 facilities,bacb5a6c919a6159,Governors Island National Monument,url,https://www.nps.gov/gois/index.htm,ok,200,200,https://www.nps.gov/gois/index.htm,,2026-10-25
-facilities,bb6dd560f85bea63,Institute of Ocean Sciences,url,https://www.pac.dfo-mpo.gc.ca/science/facilities-installations/index-eng.html,timeout,,-3,,conn:ConnectionError,2026-10-25
+facilities,bb6dd560f85bea63,Institute of Ocean Sciences,url,https://www.pac.dfo-mpo.gc.ca/science/facilities-installations/index-eng.html,ok,200,200,https://www.pac.dfo-mpo.gc.ca/index-eng.html,,2026-10-25
 facilities,bbaef0c5e4fc4003,Fort Matanzas National Monument,url,https://www.nps.gov/foma/index.htm,ok,200,200,https://www.nps.gov/foma/index.htm,,2026-10-25
 facilities,bcd79811a22be0e1,"Arlington House, The Robert E. Lee Memorial",url,https://www.nps.gov/arho/index.htm,ok,200,200,https://www.nps.gov/arho/index.htm,,2026-10-25
 facilities,bce6bbc358cc68e2,El Colegio de la Frontera Sur,url,https://www.ecosur.mx/,ok,200,200,https://www.ecosur.mx/,,2026-10-25
@@ -660,7 +660,7 @@ facilities,d0c73a05032034a7,NOAA Center for Operational Oceanographic Products a
 facilities,d176124c595abf19,Cape Krusenstern National Monument,url,https://www.nps.gov/cakr/index.htm,ok,200,200,https://www.nps.gov/cakr/index.htm,,2026-10-25
 facilities,d1f3bc5d2ac35942,Pacific Coastal and Marine Science Center,url,https://www.usgs.gov/centers/pcmsc,ok,200,200,https://www.usgs.gov/centers/pcmsc,,2026-10-25
 facilities,d3efb5587342cec5,San Juan National Historic Site,url,https://www.nps.gov/saju/index.htm,ok,200,200,https://www.nps.gov/saju/index.htm,,2026-10-25
-facilities,d5b5e15fb487ebbf,MarViva Foundation,url,https://www.marviva.net/,client-error,403,403,https://www.marviva.net/,,2026-10-25
+facilities,d5b5e15fb487ebbf,MarViva Foundation,url,https://www.marviva.net/,ok,200,200,https://marviva.net/,,2026-10-25
 facilities,d5e0fb230bef702a,Sea Turtle Conservancy,url,https://conserveturtles.org/,ok,200,200,https://conserveturtles.org/,,2026-10-25
 facilities,d6bc9bce6ec078d7,Okefenokee National Wildlife Refuge (Ramsar),url,https://www.ramsar.org/wetland/united-states-of-america,client-error,403,403,https://www.ramsar.org/wetland/united-states-of-america,,2026-10-25
 facilities,d76e205784bb15c1,Fort Caroline National Memorial,url,https://www.nps.gov/foca/index.htm,ok,200,200,https://www.nps.gov/timu/index.htm,,2026-10-25
@@ -693,7 +693,7 @@ facilities,f1c0d2ed6d83eaae,Gerace Research Centre,url,https://geraceresearchcen
 facilities,f2305f9313f76e04,Centro de Investigación Científica de Yucatán — Unidad Ciencias del Agua,url,https://www.cicy.mx/,ok,200,200,https://www.cicy.mx/,,2026-10-25
 facilities,f2740cfda05ba96d,Ocean Networks Canada,url,https://www.oceannetworks.ca/,ok,200,200,https://www.oceannetworks.ca/,,2026-10-25
 facilities,f2d3fb18be6fc619,Texas General Land Office — Coastal Management Program,url,https://www.glo.texas.gov/coast/,ok,200,200,https://www.glo.texas.gov/coastal,,2026-10-25
-facilities,f30201ec47817d0c,Pacific Biological Station,url,https://www.pac.dfo-mpo.gc.ca/science/facilities-installations/pbs-sbp/index-eng.html,timeout,,-3,,conn:ConnectionError,2026-10-25
+facilities,f30201ec47817d0c,Pacific Biological Station,url,https://www.pac.dfo-mpo.gc.ca/science/facilities-installations/pbs-sbp/index-eng.html,ok,200,200,https://www.pac.dfo-mpo.gc.ca/index-eng.html,,2026-10-25
 facilities,f3b529d1eda8e073,Long-Term Ecological Research Network,url,https://lternet.edu/,ok,200,200,https://lternet.edu/,,2026-10-25
 facilities,f3f940ab8a1a752c,Ocean Conservancy,url,https://oceanconservancy.org/,ok,200,200,https://oceanconservancy.org/,,2026-10-25
 facilities,f4ec2b186232be63,Laguna de Santa Rosa Wetland Complex (Ramsar),url,https://www.ramsar.org/wetland/united-states-of-america,client-error,403,403,https://www.ramsar.org/wetland/united-states-of-america,,2026-10-25
@@ -703,14 +703,13 @@ facilities,faa2a29548ed07df,San Francisco Bay and Estuary (Ramsar),url,https://w
 facilities,fab411b2258d63a5,USGS Great Lakes Science Center,url,https://www.usgs.gov/centers/great-lakes-science-center,ok,200,200,https://www.usgs.gov/centers/great-lakes-science-center,,2026-10-25
 facilities,fac3e7e642a674a3,Alagnak Wild River,url,https://www.nps.gov/alag/index.htm,ok,200,200,https://www.nps.gov/alag/index.htm,,2026-10-25
 facilities,fb567e6412cdc8e3,Frances Perkins National Monument,url,https://www.nps.gov/frpe/index.htm,ok,200,200,https://www.nps.gov/frpe/index.htm,,2026-10-25
-facilities,fbb4cc6a846a59fc,California Ocean Protection Council,url,https://opc.ca.gov/,client-error,403,403,https://opc.ca.gov/,,2026-10-25
+facilities,fbb4cc6a846a59fc,California Ocean Protection Council,url,https://opc.ca.gov/,ok,200,200,https://opc.ca.gov/,,2026-10-25
 facilities,fd56b16e8b81fd5b,Richmond National Battlefield Park,url,https://www.nps.gov/rich/index.htm,ok,200,200,https://www.nps.gov/rich/index.htm,,2026-10-25
 facilities,fe678f45b43083ff,Smithsonian Marine Station at Fort Pierce,url,https://www.sms.si.edu/,client-error,403,403,https://naturalhistory.si.edu/research/smithsonian-marine-station,,2026-10-25
 facilities,fff4a6af9c47940f,Pinnacles National Park,url,https://www.nps.gov/pinn/index.htm,ok,200,200,https://www.nps.gov/pinn/index.htm,,2026-10-25
 people,02faaf0b04ad8764,Deke Arndt,homepage_url,https://www.ncei.noaa.gov/about-us,timeout,,-3,,conn:ConnectionError,2026-10-25
 people,0433ba6616b2808a,Tyler Smith,homepage_url,https://www.uvi.edu/research/center-for-marine-environmental-studies/,ok,200,200,https://www.uvi.edu/research/center-for-marine-environmental-studies/,,2026-10-25
 people,057a229162351e1e,Julie Packard,homepage_url,https://www.montereybayaquarium.org/newsroom/staff-bios/julie-packard,client-error,405,405,https://www.montereybayaquarium.org/newsroom/staff-bios/julie-packard,,2026-10-25
-people,065ae200269c6713,David Burke,homepage_url,https://floridakeys.noaa.gov/about/staff.html,ok,200,200,https://floridakeys.noaa.gov/about/staff.html,,2026-10-25
 people,078b7d168e2f87e6,Mona Webber,homepage_url,https://www.mona.uwi.edu/cms/mwebber.html,client-error,404,404,https://www.mona.uwi.edu/cms/mwebber.html,,2026-10-25
 people,087ef7b834156578,Atef A.H. Mansour,homepage_url,https://www.dfo-mpo.gc.ca/contact/regions/newfoundland-terreneuve-eng.html,ok,200,200,https://www.dfo-mpo.gc.ca/contact/regions/newfoundland-terreneuve-eng.html,,2026-10-25
 people,0aaca7133e58ae3b,Kyle Derby,homepage_url,https://dnr.maryland.gov/waters/cbnerr/Pages/default.aspx,ok,200,200,https://dnr.maryland.gov/waters/cbnerr/Pages/default.aspx,,2026-10-25
@@ -720,11 +719,9 @@ people,0cb9a516d7e2e402,Jeffrey P. Waters,homepage_url,https://www.erdc.usace.ar
 people,0d562c70db923246,Russ Hopcroft,homepage_url,https://nga.lternet.edu/about-us/personnel/,timeout,,-2,,timeout,2026-10-25
 people,0db40abeb316411d,Dawn Buckingham,homepage_url,https://www.glo.texas.gov/about-glo/about-the-commissioner,ok,200,200,https://www.glo.texas.gov/about-glo/about-the-commissioner,,2026-10-25
 people,0ef98bc081d25b9a,Megan Donahue,homepage_url,https://www.himb.hawaii.edu/who-we-are/about/,ok,200,200,https://www.himb.hawaii.edu/who-we-are/about/,,2026-10-25
-people,117ba4e1ceca27df,Márcia Caruso Bícego,homepage_url,https://www.io.usp.br/,ok,200,200,https://www.io.usp.br/,,2026-10-25
-people,1252478f7bf2a9b3,Jeremy Goldbogen,homepage_url,https://hopkinsmarinestation.stanford.edu/people,ok,200,200,https://hopkinsmarinestation.stanford.edu/people/,,2026-10-25
 people,136f58805a3aa1d0,Carlos Del Castillo,homepage_url,https://science.gsfc.nasa.gov/earth/oceanecology/bio/carlos.e.delcastillo,ok,200,200,https://science.gsfc.nasa.gov/earth/oceanecology/bio/carlos.e.delcastillo,,2026-10-25
 people,177b84617c4a1abf,Natalie Snider,homepage_url,https://dnr.maryland.gov/ccs/pages/aboutus.aspx,ok,200,200,https://dnr.maryland.gov/ccs/pages/aboutus.aspx,,2026-10-25
-people,194b3ba16292cb1e,Ryan Gandy,homepage_url,https://sarasotabay.org/about-sbep/staff/,ok,200,200,https://sarasotabay.org/about-sbep/staff/,,2026-10-25
+people,194b3ba16292cb1e,Ryan Gandy,homepage_url,https://sarasotabay.org/about-sbep/staff/,timeout,,-2,,timeout,2026-10-25
 people,1d50ea29f58a9367,Augusto César Crespi Abril,homepage_url,https://cenpat.conicet.gov.ar/cesimar/,ok,206,206,https://cenpat.conicet.gov.ar/cesimar/,,2026-10-25
 people,1db0d47fb7a14798,Fred Hay,homepage_url,https://sapelonerr.org/about-us/reserve-staff/,client-error,404,404,https://sapelonerr.org/about-us/reserve-staff/,,2026-10-25
 people,1debaf119dd6bdf0,Meenakshi Wadhwa,homepage_url,https://scripps.ucsd.edu/about/leadership,ok,200,200,https://scripps.ucsd.edu/about/leadership,,2026-10-25
@@ -732,17 +729,14 @@ people,1dfbebd4b288c3b5,Merryl Alber,homepage_url,https://gce-lter.marsci.uga.ed
 people,1e5fa3078af5827b,Nipam Patel,homepage_url,https://www.mbl.edu/about/leadership/nipam-patel-director,ok,200,200,https://www.mbl.edu/about/leadership/nipam-patel-director,,2026-10-25
 people,1e6e370beaffdf3e,Patricia Fox,homepage_url,https://www.oregon.gov/dsl/ss/pages/staff.aspx,ok,200,200,https://www.oregon.gov/dsl/ss/pages/staff.aspx,,2026-10-25
 people,1e7381f2cdfe433c,Cyrus M. Western,homepage_url,https://www.epa.gov/aboutepa/about-administrator-epas-mountains-and-plains-region-region-8,ok,200,200,https://www.epa.gov/aboutepa/about-administrator-epas-mountains-and-plains-region-region-8,,2026-10-25
-people,21eefc825ce2a6c2,Lisa Marshall,homepage_url,https://gbep.texas.gov/,ok,200,200,https://gbep.texas.gov/,,2026-10-25
 people,235faeb56074fe7a,Alison Brizius,homepage_url,https://www.mass.gov/info-details/czm-staff-directory,ok,200,200,https://www.mass.gov/info-details/czm-staff-directory,,2026-10-25
 people,26fc6973efa5b2c2,Megan Dethier,homepage_url,https://fhl.uw.edu/about/people/,ok,200,200,https://fhl.uw.edu/about/people/,,2026-10-25
 people,275d7e7beb3f0116,Bob Miller,homepage_url,https://sbclter.msi.ucsb.edu/about/people/,ok,200,200,https://sbclter.msi.ucsb.edu/about/people/,,2026-10-25
-people,28f6b6e379a7f46f,Katherine Schake,homepage_url,https://kachemakbayreserve.org/about/kachemak-bay-reserve/,ok,202,202,https://kachemakbayreserve.org/about/kachemak-bay-reserve/,,2026-10-25
+people,28f6b6e379a7f46f,Katherine Schake,homepage_url,https://kachemakbayreserve.org/about/kachemak-bay-reserve/,ok,200,200,https://kachemakbayreserve.org/about/kachemak-bay-reserve/,,2026-10-25
 people,2af735db114098a6,Robert W. Howarth,homepage_url,https://www.research.howarthlab.org/WFH.php,ok,200,200,https://www.research.howarthlab.org/WFH.php,,2026-10-25
-people,2b778c1f4a97fd82,Francisco Armando Arias Isaza,homepage_url,https://www.invemar.org.co/,ok,200,200,https://www.invemar.org.co/,,2026-10-25
 people,2d1a6f25312701cb,Joe Costa,homepage_url,https://buzzardsbay.org/our-program/staff-profiles/,ok,200,200,https://buzzardsbay.org/our-program/contact-us/staff-profiles/,,2026-10-25
 people,2d5b33672ad73028,Jonathan Adam Langley,homepage_url,https://www.villanova.edu/university/experts/expert-detail.html?expert=jadam.langley,ok,200,200,https://www.villanova.edu/university/experts/expert-detail.html?expert=jadam.langley,,2026-10-25
 people,2dc860bdd941cbf8,Alain Vézina,homepage_url,https://www.bio-iob.gc.ca/general-generales/about-sujet-en.php,client-error,404,404,https://www.bio-iob.gc.ca/general-generales/about-sujet-en.php,,2026-10-25
-people,306c614e961b8c15,Aileen S. Lee,homepage_url,https://www.moore.org/people,ok,200,200,https://www.moore.org/people,,2026-10-25
 people,35c72178f3d305b3,Wayne Munns,homepage_url,https://www.epa.gov/aboutepa/about-atlantic-coastal-environmental-sciences-division,client-error,404,404,https://www.epa.gov/aboutepa/about-atlantic-coastal-environmental-sciences-division,,2026-10-25
 people,361753d9e8b4a881,Manuel Luis Robert Díaz,homepage_url,https://www.cicy.mx/quienes-somos,ok,200,200,https://www.cicy.mx/quienes-somos,,2026-10-25
 people,3632fce83b016d2a,Kerstin Wasson,homepage_url,https://wasson.eeb.ucsc.edu/people/kerstin-wasson/,ok,200,200,https://wasson.eeb.ucsc.edu/people/kerstin-wasson/,,2026-10-25
@@ -753,66 +747,47 @@ people,38f3f017e1f83560,Camilo Trench,homepage_url,https://www.mona.uwi.edu/cms/
 people,3b07eb00881df742,Dave Hallac,homepage_url,https://www.nps.gov/caha/learn/management/staff.htm,client-error,404,404,https://www.nps.gov/caha/learn/management/staff.htm,,2026-10-25
 people,3b2ab78f43494bc5,Krisa Arzayus,homepage_url,https://ioos.noaa.gov/about/meet-the-ioos-program-office/,ok,200,200,https://ioos.noaa.gov/about/meet-the-ioos-program-office/,,2026-10-25
 people,3ef416c55fbc8805,Jonathan Pennock,homepage_url,https://seagrant.noaa.gov/jonathan-pennock/,client-error,403,403,https://seagrant.noaa.gov/jonathan-pennock/,,2026-10-25
-people,40b549987809b0f8,Sheyna Wisdom,homepage_url,https://aoos.org/,ok,200,200,https://aoos.org/,,2026-10-25
 people,412d241d0a92c33a,Kalle Matso,homepage_url,https://prepestuaries.org/who-we-are/staff-contacts/,ok,200,200,https://prepestuaries.org/who-we-are/staff-contacts/,,2026-10-25
 people,44e2b86131ea403a,Michelle McClure,homepage_url,https://www.pmel.noaa.gov/about-pmel/organization,ok,200,200,https://www.pmel.noaa.gov/about-us/organization,,2026-10-25
 people,464fef7395780998,Aitza Pabón Valentin,homepage_url,https://www.drna.pr.gov/jbnerr/,ok,200,200,https://www.drna.pr.gov/jbnerr/,,2026-10-25
-people,495ac472743b98ba,Andrew Thomson,homepage_url,https://www.pac.dfo-mpo.gc.ca/science/facilities-installations/ios-ism/peopleios-gensism-eng.html,timeout,,-3,,conn:ConnectionError,2026-10-25
-people,4a96dc22215f09f3,Debra Hernandez,homepage_url,https://secoora.org/,ok,200,200,https://secoora.org/,,2026-10-25
+people,495ac472743b98ba,Andrew Thomson,homepage_url,https://www.pac.dfo-mpo.gc.ca/science/facilities-installations/ios-ism/peopleios-gensism-eng.html,ok,200,200,https://www.pac.dfo-mpo.gc.ca/index-eng.html,,2026-10-25
 people,4ac7d551052f7632,Antonio Saldívar Moreno,homepage_url,https://www.ecosur.mx/organigrama/,client-error,404,404,https://www.ecosur.mx/organigrama/,,2026-10-25
 people,4b0863d579e83c7a,Michael Martucci,homepage_url,https://www.epa.gov/aboutepa/about-administrator-epas-region-2-office-new-york,client-error,404,404,https://www.epa.gov/aboutepa/about-administrator-epas-region-2-office-new-york,,2026-10-25
 people,4c0ca62fb1ded187,Andrea Habeck,homepage_url,https://jcnerr.org/who-we-are/our-team/,ok,200,200,https://jcnerr.org/who-we-are/our-team/,,2026-10-25
 people,4d38140592198cfc,Nancy Lindborg,homepage_url,https://www.packard.org/about/our-people/,ok,200,200,https://www.packard.org/about/our-people/,,2026-10-25
 people,4d4ac12186deae2c,Fred Reppun,homepage_url,https://heeianerr.org/about-us/,ok,200,200,https://heeianerr.org/about-us/,,2026-10-25
-people,4d81d77463af7bfe,Tonna-Marie Rogers,homepage_url,https://waquoitbayreserve.org/about/staff,ok,200,200,https://waquoitbayreserve.org/about/staff,,2026-10-25
 people,4eec2f2c7eee9f13,Frank Parrish,homepage_url,https://origin-apps-pifsc.fisheries.noaa.gov/organization_chart.php,timeout,,-3,,conn:SSLError,2026-10-25
-people,4f74aec8dce447ae,Jason Kudulis,homepage_url,https://www.mobilebaynep.com/,ok,200,200,https://www.mobilebaynep.com/,,2026-10-25
 people,4fca6713d4b3ba94,Trika Gerard,homepage_url,https://www.fisheries.noaa.gov/contact/trika-gerard-phd,ok,200,200,https://www.fisheries.noaa.gov/contact/trika-gerard-phd,,2026-10-25
-people,502ebb0372498d8c,Eduardo Siegle,homepage_url,https://www.io.usp.br/,ok,200,200,https://www.io.usp.br/,,2026-10-25
 people,51bd0564be322dfb,Anne M. Vogel,homepage_url,https://www.epa.gov/aboutepa/about-administrator-epa-region-5-office-chicago,ok,200,200,https://www.epa.gov/aboutepa/about-administrator-epa-region-5-office-chicago,,2026-10-25
 people,52a599a3f1287668,Alex Parker,homepage_url,https://sfbaynerr.sfsu.edu/who-we-are/people,ok,200,200,https://sfbaynerr.sfsu.edu/who-we-are/people,,2026-10-25
 people,52b0511cd8692bed,Chad Nelsen,homepage_url,https://www.surfrider.org/our-team/staff/chad-nelsen,ok,200,200,https://www.surfrider.org/our-team/staff/chad-nelsen,,2026-10-25
-people,545adb9a98f59b9f,Katherine Arroyo-Arce,homepage_url,https://marviva.net/en/team/,client-error,403,403,https://marviva.net/en/team/,,2026-10-25
+people,545adb9a98f59b9f,Katherine Arroyo-Arce,homepage_url,https://marviva.net/en/team/,ok,200,200,https://marviva.net/en/team/,,2026-10-25
 people,54f2fc84cf8d98e7,Michael H. Hare,homepage_url,https://coastal.la.gov/executive-leadership-team/,ok,200,200,https://coastal.la.gov/executive-leadership-team/,,2026-10-25
 people,5639a992d91e194d,Mindy Roberts,homepage_url,https://psp.wa.gov/staff.php,ok,200,200,https://psp.wa.gov/staff.php,,2026-10-25
 people,596d8556863d0a13,Amy Van Blarcom-Lackey,homepage_url,https://www.epa.gov/aboutepa/epa-region-3-mid-atlantic,ok,200,200,https://www.epa.gov/aboutepa/epa-region-3-mid-atlantic,,2026-10-25
-people,5a40a871746aa17c,Clark Alexander,homepage_url,https://www.skio.uga.edu/,ok,200,200,https://www.skio.uga.edu/,,2026-10-25
 people,5b26c521e63107fb,Kawika Winter,homepage_url,https://heeianerr.org/about-us/,ok,200,200,https://heeianerr.org/about-us/,,2026-10-25
 people,5b2dda04d0cf52b2,Kathy Klein,homepage_url,https://delawareestuary.org/about-pde/,ok,200,200,https://www.delawareestuary.org/about-the-estuary/,,2026-10-25
 people,5b719947c145e31b,Dave Feliz,homepage_url,https://coast.noaa.gov/nerrs/reserves/elkhorn-slough.html,ok,200,200,https://coast.noaa.gov/nerrs/reserves/elkhorn-slough.html,,2026-10-25
-people,5c3007aae50af614,Taryn Sudol,homepage_url,https://chesapeakebayssc.org/contact-us/,ok,200,200,https://chesapeakebayssc.org/contact-us/,,2026-10-25
 people,5df97c3113302e64,William Reay,homepage_url,https://www.vims.edu/cbnerr/about/people/reay_w.php,ok,200,200,https://www.vims.edu/cbnerr/about/people/reay_w.php,,2026-10-25
 people,5e28d64a9988c19a,Kevin J. McOmber,homepage_url,https://www.epa.gov/aboutepa/about-administrator-epas-southeast-region-region-4,ok,200,200,https://www.epa.gov/aboutepa/about-administrator-epas-southeast-region-region-4,,2026-10-25
 people,5e43a12a1f02e13e,Deborah Bronk,homepage_url,https://www.bigelow.org/about/people/,ok,200,200,https://www.bigelow.org/about/people/,,2026-10-25
-people,5ed6f748858dc381,Jorge Brenner,homepage_url,https://gcoos.org/team-showcase/jorge-brenner/,ok,200,200,https://gcoos.org/team-showcase/jorge-brenner/,,2026-10-25
-people,621508ca8d0282a1,Kevin Smith,homepage_url,https://mdcoastalbays.org/,ok,200,200,https://mdcoastalbays.org/,,2026-10-25
-people,6758e8afd668a3ba,Jean Wiener,homepage_url,https://www.foprobim.org/,ok,200,200,https://www.foprobim.org/,,2026-10-25
+people,5ed6f748858dc381,Jorge Brenner,homepage_url,https://gcoos.org/team-showcase/jorge-brenner/,timeout,,-2,,timeout,2026-10-25
 people,67b967142a53ce4a,Jeffrey L. Payne,homepage_url,https://coast.noaa.gov/about/director/,ok,200,200,https://coast.noaa.gov/about/director/,,2026-10-25
-people,67bc0d980bf618fc,Curtis Bohlen,homepage_url,https://www.cascobayestuary.org/about-us/staff/,ok,200,200,https://www.cascobayestuary.org/about-us/staff/,,2026-10-25
 people,6845ac7f43deed46,Jake Kritzer,homepage_url,https://neracoos.org/team/,client-error,404,404,https://neracoos.org/team/,,2026-10-25
 people,6ccc176e3db55c5e,Josh F.W. Cook,homepage_url,https://www.epa.gov/aboutepa/epa-region-9-pacific-southwest,ok,200,200,https://www.epa.gov/aboutepa/epa-region-9-pacific-southwest,,2026-10-25
 people,6d90f82d85ef16e7,Rachael Phillos,homepage_url,https://dnrec.delaware.gov/coastal-programs/research-reserve/,ok,200,200,https://dnrec.delaware.gov/coastal-programs/research-reserve/,,2026-10-25
-people,6f64a8c2116cd3a2,Alex Harper,homepage_url,https://cencoos.org/,ok,200,200,https://www.cencoos.org/,,2026-10-25
-people,6fc271ba2c2d9fff,Eric Peterson,homepage_url,https://tula.org/about,ok,200,200,https://tula.org/about,,2026-10-25
 people,71bbf28ec2419cf2,Brita J. Jessen,homepage_url,https://www.usgs.gov/centers/whcmsc/about,ok,200,200,https://www.usgs.gov/centers/whcmsc/about,,2026-10-25
 people,72493a0707c9311a,Seth Danielson,homepage_url,https://nga.lternet.edu/about-us/personnel/,timeout,,-2,,timeout,2026-10-25
-people,72bf2df40aab5e9a,William Monty Graham,homepage_url,https://serc.si.edu/about-us/staff,client-error,403,403,https://serc.si.edu/about-us/staff,,2026-10-25
 people,7369705e8f5e5bd7,William Burnett,homepage_url,https://www.ndbc.noaa.gov/director.shtml,client-error,404,404,https://www.ndbc.noaa.gov/director.shtml,,2026-10-25
 people,73c93dcbf0823fac,Kristi Foster,homepage_url,https://www.tbnep.org/contacts-3/,ok,200,200,https://www.tbnep.org/contacts-3/,,2026-10-25
 people,7518454db0af29ec,Anne Giblin,homepage_url,https://pie-lter.mbl.edu/people/anne-giblin/,ok,200,200,https://pie-lter.mbl.edu/people/anne-giblin/,,2026-10-25
 people,759d83a39a8046c6,Sean Bailey,homepage_url,https://science.gsfc.nasa.gov/sci/bio/sean.w.bailey,ok,200,200,https://science.gsfc.nasa.gov/sci/bio/sean.w.bailey,,2026-10-25
 people,77b887731b3aeef5,Jeremy Rusin,homepage_url,https://www.nwfsc.noaa.gov/about/director.cfm,ok,200,200,https://www.fisheries.noaa.gov/about/northwest-fisheries-science-center,,2026-10-25
-people,77bbdb30534582e4,Katie Swanson,homepage_url,https://www.missionaransas.org/our-team/,ok,200,200,https://www.missionaransas.org/our-team/,,2026-10-25
-people,78c14f4c0045ff7e,Mike Crowley,homepage_url,https://maracoos.org/,ok,200,200,https://maracoos.org/,,2026-10-25
 people,790b5cb0ef4999f6,Justin Ridge,homepage_url,https://www.deq.nc.gov/about/divisions/coastal-management/nc-coastal-reserve,ok,200,200,https://www.deq.nc.gov/about/divisions/coastal-management/nc-coastal-reserve,,2026-10-25
 people,7af8d3870a1edb43,Jyotika Virmani,homepage_url,https://schmidtocean.org/person/jyotika-virmani/,ok,200,200,https://schmidtocean.org/,,2026-10-25
-people,7ba62d22e9dd7f0e,Jenn Eckerle,homepage_url,https://opc.ca.gov/leadership-and-staff/,client-error,403,403,https://opc.ca.gov/leadership-and-staff/,,2026-10-25
-people,7c2712756cecb842,Gerhard F. Kuska,homepage_url,https://maracoos.org/,ok,200,200,https://maracoos.org/,,2026-10-25
-people,7c78646e193e72e9,Robert Foy,homepage_url,https://www.fisheries.noaa.gov/about/alaska-fisheries-science-center,ok,200,200,https://www.fisheries.noaa.gov/about/alaska-fisheries-science-center,,2026-10-25
-people,7c81f3dcfbd28993,Gerardo Irimia Arosemena,homepage_url,https://arap.gob.pa/,ok,200,200,https://arap.gob.pa/,,2026-10-25
+people,7ba62d22e9dd7f0e,Jenn Eckerle,homepage_url,https://opc.ca.gov/leadership-and-staff/,ok,200,200,https://opc.ca.gov/leadership-and-staff/,,2026-10-25
 people,7fc8610ce7422658,Matt Ferner,homepage_url,https://sfbaynerr.sfsu.edu/who-we-are/people,ok,200,200,https://sfbaynerr.sfsu.edu/who-we-are/people,,2026-10-25
 people,8174234678f59196,John Valentine,homepage_url,https://www.disl.edu/who-we-are/,ok,200,200,https://www.disl.edu/who-we-are/,,2026-10-25
-people,82730c88785b1381,Roni Avissar,homepage_url,https://www.earth.miami.edu/,ok,200,200,https://www.earth.miami.edu/,,2026-10-25
 people,835e393fe3e55efd,Ben Halpern,homepage_url,https://www.bren.ucsb.edu/people/ben-halpern,ok,200,200,https://bren.ucsb.edu/people/ben-halpern,,2026-10-25
 people,837911c885c1a2d6,Julie Binz,homepage_url,https://www.dnr.sc.gov/marine/NERR/staff.html,ok,200,200,https://www.dnr.sc.gov/marine/NERR/staff.html,,2026-10-25
 people,83b2e0e7ab0d73d9,Vikki N. Spruill,homepage_url,https://www.neaq.org/about-us/leadership/,ok,200,200,https://www.neaq.org/about-us/leadership/,,2026-10-25
@@ -820,71 +795,43 @@ people,850275cf8f283033,Alex Reed,homepage_url,https://floridadep.gov/rcp,ok,200
 people,85cbbd6cfb236334,Tancred Miller,homepage_url,https://www.deq.nc.gov/about/leadership/tancred-miller,ok,200,200,https://www.deq.nc.gov/about/leadership/tancred-miller,,2026-10-25
 people,8a7043ba5f9e0280,Ty V. Wamsley,homepage_url,https://www.erdc.usace.army.mil/Locations/CHL/Leadership/,client-error,403,403,https://www.erdc.usace.army.mil/Locations/CHL/Leadership/,,2026-10-25
 people,8c073c3bd385a278,Scott Mason IV,homepage_url,https://www.epa.gov/aboutepa/regional-administrator-epas-south-central-region-region-6,ok,200,200,https://www.epa.gov/aboutepa/regional-administrator-epas-south-central-region-region-6,,2026-10-25
-people,8c218de18239a239,Steve Canty,homepage_url,https://marinegeo.si.edu/,client-error,403,403,https://marinegeo.si.edu/,,2026-10-25
 people,8ec83ad0568e35a8,Valerie Paul,homepage_url,https://naturalhistory.si.edu/research/smithsonian-marine-station/staff,client-error,403,403,https://naturalhistory.si.edu/research/smithsonian-marine-station/staff,,2026-10-25
 people,8ecea07573485a48,Derek Aday,homepage_url,https://www.vims.edu/about/leadership_admin/dean/,ok,200,200,https://www.vims.edu/about/leadership_admin/dean/,,2026-10-25
-people,8f8b1bb8bacac538,Heidi M. Sosik,homepage_url,https://nes-lter.whoi.edu/about/,ok,200,200,https://nes-lter.whoi.edu/about/,,2026-10-25
 people,9181a33010fad584,Mike De Luca,homepage_url,https://jcnerr.org/who-we-are/our-team/,ok,200,200,https://jcnerr.org/who-we-are/our-team/,,2026-10-25
 people,91fdd60bedf6ac49,Jan Newton,homepage_url,https://www.nanoos.org/about_nanoos/people.php,ok,200,200,https://www.nanoos.org/about_nanoos/people.php,,2026-10-25
-people,92435a9fea794186,Kurt Newman,homepage_url,https://www.usgs.gov/centers/great-lakes-science-center,ok,200,200,https://www.usgs.gov/centers/great-lakes-science-center,,2026-10-25
 people,95a5011d7e49f493,Rakan A. Zahawi,homepage_url,https://www.darwinfoundation.org/en/about/our-people/management-team/,ok,200,200,https://www.darwinfoundation.org/en/about/our-people/management-team/,,2026-10-25
-people,9766065cdd1458df,Clarissa Anderson,homepage_url,https://sccoos.org/,ok,200,200,https://sccoos.org/,,2026-10-25
 people,97738d34b02da339,Erin Bertrand,homepage_url,https://www.ofi.ca/about/team,ok,200,200,https://www.ofi.ca/team,,2026-10-25
 people,9a33365777a82ab8,David Oscar Yawson,homepage_url,https://www.cavehill.uwi.edu/cermes/staff-profile/prof-david-oscar-yawson/,ok,200,200,https://www.cavehill.uwi.edu/cermes/staff-profile/prof-david-oscar-yawson/,,2026-10-25
-people,9b738567dbc65f91,Caitlin Sweeney,homepage_url,https://www.sfestuary.org/staff/,ok,200,200,https://www.sfestuary.org/staff/,,2026-10-25
 people,9bb2966b8154ec72,Keith Laakkonen,homepage_url,https://rookerybay.org/who-we-are/staff-directory/,ok,200,200,https://rookerybay.org/who-we-are/staff-directory/,,2026-10-25
-people,9cd3a412f030b098,Ann Kitajima,homepage_url,https://www.mbnep.org/our-team/,ok,200,200,https://www.mbnep.org/our-team/,,2026-10-25
-people,9d0c1da64e27d162,Megan Medina,homepage_url,https://sccoos.org/,ok,200,200,https://sccoos.org/,,2026-10-25
 people,9e3ad4aec3f23498,Paula S. Bontempi,homepage_url,https://web.uri.edu/gso/meet/paula-s-bontempi/,ok,200,200,https://web.uri.edu/gso/meet/paula-s-bontempi/,,2026-10-25
 people,9e74c6e3b9566f69,Denise Sanger,homepage_url,https://www.dnr.sc.gov/marine/NERR/staff.html,ok,200,200,https://www.dnr.sc.gov/marine/NERR/staff.html,,2026-10-25
-people,9eb8854506590fc6,Emily Stanley,homepage_url,https://lter.limnology.wisc.edu/people,client-error,404,404,https://lter.limnology.wisc.edu/people,,2026-10-25
 people,9eb9e24219c8fe28,Gonzalo Pereira Puchy,homepage_url,https://www.ifop.cl/en/quienes-somos/nuestra-organizacion/,ok,200,200,https://www.ifop.cl/en/quienes-somos/nuestra-organizacion/,,2026-10-25
-people,9edcb400387ce56b,Deb Kelley,homepage_url,https://oceanobservatories.org/,ok,200,200,https://oceanobservatories.org/,,2026-10-25
 people,a28b71f0523c7272,Emma Pokon,homepage_url,https://www.epa.gov/aboutepa/about-administrator-epas-region-10,ok,200,200,https://www.epa.gov/aboutepa/about-administrator-epas-region-10,,2026-10-25
 people,a393b12d808529ce,Nathaniel Plant,homepage_url,https://www.usgs.gov/staff-profiles/nathaniel-plant,ok,200,200,https://www.usgs.gov/staff-profiles/nathaniel-plant,,2026-10-25
 people,a6c84e638433f036,Chris Peregrin,homepage_url,https://tijuanaestuary.org/about/our-team/,ok,200,200,https://tijuanaestuary.org/about/our-team/,,2026-10-25
-people,a723c05cc9a755e4,Fiorenza Micheli,homepage_url,https://hopkinsmarinestation.stanford.edu/people,ok,200,200,https://hopkinsmarinestation.stanford.edu/people/,,2026-10-25
-people,a8acdff1a877962f,Katherine Barbeau,homepage_url,https://ccelter.ucsd.edu/,ok,200,200,https://ccelter.ucsd.edu/,,2026-10-25
 people,a8c4b7e06246d23b,Peter de Menocal,homepage_url,https://www.whoi.edu/know-your-ocean/explorers/peter-de-menocal/,client-error,404,404,https://www.whoi.edu/ocean-learning-hub/explorers/peter-de-menocal/,,2026-10-25
 people,a941a66dda1648e2,Skip Van Bloem,homepage_url,https://www.clemson.edu/cafls/faculty_staff/profiles/SKIPVB,ok,200,200,https://www.clemson.edu/cafls/faculty_staff/profiles/SKIPVB,,2026-10-25
-people,ab6f93d07690909f,Michelle Felterman,homepage_url,https://btnep.org/,ok,200,200,https://btnep.org/,,2026-10-25
 people,ac16f1112b403331,Dolan Eversole,homepage_url,https://seagrant.soest.hawaii.edu/directory-detail/?smid=33452,ok,200,200,https://seagrant.soest.hawaii.edu/directory-detail/?smid=33452,,2026-10-25
 people,acc5daaf743dfc71,Kim Miller,homepage_url,https://floridadep.gov/rcp/nerr-apalachicola,ok,200,200,https://floridaaquaticpreserves.org/managed-areas/national-estuarine-research-reserves-nerrs/apalachicola-national-estuarine-research,,2026-10-25
 people,ad801d68677a4269,James McClelland,homepage_url,https://ble.lternet.edu/people.html,ok,200,200,https://ble.lternet.edu/people.html,,2026-10-25
 people,adc2be4059e9dcb5,Paul Orlando,homepage_url,https://monitor.noaa.gov/about/contact.html,ok,200,200,https://monitor.noaa.gov/about/contact.html,,2026-10-25
-people,af99b3688c5a95f0,Jorge Manuel Paz Acosta,homepage_url,https://www.gob.pe/imarpe,ok,200,200,https://www.gob.pe/imarpe,,2026-10-25
 people,afbfac2c3d4abc2d,Erica Hardy,homepage_url,https://www.dnr.sc.gov/marine/NERR/staff.html,ok,200,200,https://www.dnr.sc.gov/marine/NERR/staff.html,,2026-10-25
-people,b0310e7bdaa70df8,Andrew McGowan,homepage_url,https://barnegatbaypartnership.org/,ok,200,200,https://barnegatbaypartnership.org/,,2026-10-25
 people,b1671f3e3269e53a,Sean Rogers,homepage_url,https://bamfieldmsc.com/bmsc-overview/staff-directory/,ok,200,200,https://bamfieldmsc.com/bmsc-overview/staff-directory/,,2026-10-25
 people,b22c5135ce35b205,John Kominoski,homepage_url,https://fcelter.fiu.edu/about/people/index.html,ok,200,200,https://fcelter.fiu.edu/about/people/index.html,,2026-10-25
-people,b517c254a31c6ad0,Mary Ford,homepage_url,https://maracoos.org/,ok,200,200,https://maracoos.org/,,2026-10-25
-people,b5994d5883864070,Carmel Lowe,homepage_url,https://www.pac.dfo-mpo.gc.ca/science/facilities-installations/index-eng.html,timeout,,-3,,conn:ConnectionError,2026-10-25
-people,b5e0dd18110c888a,Peter DeCola,homepage_url,https://stellwagen.noaa.gov/about/staff.html,ok,200,200,https://stellwagen.noaa.gov/about/staff.html,,2026-10-25
 people,b816e10d3c965252,Mark Sanborn,homepage_url,https://www.epa.gov/aboutepa/about-administrator-epa-new-england-region-1,ok,200,200,https://www.epa.gov/aboutepa/about-administrator-epa-new-england-region-1,,2026-10-25
-people,b8c32d3f789903dc,Joyce Novak,homepage_url,https://www.peconicestuary.org/,ok,200,200,https://www.peconicestuary.org/,,2026-10-25
 people,baef2a943af11007,Nicole Cabana,homepage_url,https://www.fisheries.noaa.gov/contact/contact-information-northeast-fisheries-science-center,ok,200,200,https://www.fisheries.noaa.gov/contact/contact-northeast-fisheries-science-center,,2026-10-25
-people,baf59f3a15faf2e6,Osmar Olinto Möller Jr.,homepage_url,https://www.furg.br/,ok,200,200,https://www.furg.br/,,2026-10-25
-people,bb88fde15914534c,Duane De Freese,homepage_url,https://onelagoon.org/,ok,202,202,https://onelagoon.org/,,2026-10-25
-people,bb8bbfd4b455762c,David Pierce,homepage_url,https://www.nasa.gov/wallops,ok,200,200,https://www.nasa.gov/wallops/,,2026-10-25
 people,bbdccc43f66c9d35,Angela Underwood,homepage_url,https://www.outdooralabama.com/lands/weeks-bay-reserve,ok,200,200,https://www.outdooralabama.com/lands/weeks-bay-reserve,,2026-10-25
-people,bc0975ce8ffdcfd1,Julia Azanza Ricardo,homepage_url,http://www.cim.uh.cu/,timeout,,-3,,conn:ConnectionError,2026-10-25
-people,bd6ab6546c9d6fe0,John Crofts,homepage_url,https://www.fisheries.noaa.gov/about/southwest-fisheries-science-center,ok,200,200,https://www.fisheries.noaa.gov/about/southwest-fisheries-science-center,,2026-10-25
 people,bdfeefc521d67f45,Jennifer Flynn,homepage_url,https://www.nps.gov/caco/learn/management/staffandoffices.htm,ok,200,200,https://www.nps.gov/caco/learn/management/staffandoffices.htm,,2026-10-25
 people,be5986ba8ad349ed,Shimi Rii,homepage_url,https://heeianerr.org/about-us/,ok,200,200,https://heeianerr.org/about-us/,,2026-10-25
-people,bf45e655d9307d6d,Erica Seiden,homepage_url,https://coast.noaa.gov/about/staff/,client-error,404,404,https://coast.noaa.gov/about/staff/,,2026-10-25
 people,c068a767ed157f38,Ernesto Otero,homepage_url,https://www.uprm.edu/cima/faculty/,ok,200,200,https://www.uprm.edu/cima/faculty/,,2026-10-25
 people,c0ebbb3b72ffb785,Jesse Feyen,homepage_url,https://www.glerl.noaa.gov/about/pers/profiles/feyen.html,ok,200,200,https://www.glerl.noaa.gov/about/pers/profiles/feyen.html,,2026-10-25
-people,c15f16afa2789b8a,Bob Cowen,homepage_url,https://hmsc.oregonstate.edu/,ok,200,200,https://hmsc.oregonstate.edu/,,2026-10-25
 people,c16c5ae3ad1d51c7,Molly Baringer,homepage_url,https://www.aoml.noaa.gov/about-aoml/,timeout,,-3,,conn:SSLError,2026-10-25
-people,c2aa8ab34f859c3d,Gladys Rosado Jiménez,homepage_url,https://uasd.edu.do/facultad-ciencias/institutos/investigacion-de-biologia-marina-cibima/,client-error,403,403,https://uasd.edu.do/facultad-ciencias/institutos/investigacion-de-biologia-marina-cibima/,,2026-10-25
-people,c3b93845ce50b80a,Caitlin Chaffee,homepage_url,http://nbnerr.org/about/,ok,200,200,http://nbnerr.org/about/,,2026-10-25
-people,c4578832400f873c,Cory Riley,homepage_url,https://greatbay.org/,ok,202,202,https://greatbay.org/,,2026-10-25
+people,c2aa8ab34f859c3d,Gladys Rosado Jiménez,homepage_url,https://uasd.edu.do/facultad-ciencias/institutos/investigacion-de-biologia-marina-cibima/,ok,200,200,https://uasd.edu.do/facultad-ciencias/institutos/investigacion-de-biologia-marina-cibima/,,2026-10-25
 people,c68512cd9aaf1f09,Jenny Gray,homepage_url,https://www.montereybayaquarium.org/about-us/our-mission-and-leadership,client-error,405,405,https://www.montereybayaquarium.org/about-us/our-mission-and-leadership,,2026-10-25
 people,c92a42d4092b94da,Jake Snaddon,homepage_url,https://www.uberibz.org/about-us,ok,200,200,https://www.uberibz.org/about-us,,2026-10-25
 people,cb9cda94845ee30c,Christophe Tulou,homepage_url,https://inlandbays.org/staff/christophe-tulou-executive-director/,ok,200,200,https://inlandbays.org/staff/christophe-tulou-executive-director/,,2026-10-25
 people,cc64ddde7aba6063,Anne Altman,homepage_url,https://www.nps.gov/pore/learn/management/staffandoffices.htm,ok,200,200,https://www.nps.gov/pore/learn/management/staffandoffices.htm,,2026-10-25
-people,cceb4eaf1b8eb686,Troy A. Dexter,homepage_url,https://geraceresearchcentre.com/,ok,200,200,https://geraceresearchcentre.com/,,2026-10-25
-people,ce200873908a74a3,Robert Pirani,homepage_url,https://hudsonriver.org/estuary-program/,ok,202,202,https://hudsonriver.org/estuary-program/,,2026-10-25
+people,ce200873908a74a3,Robert Pirani,homepage_url,https://hudsonriver.org/estuary-program/,ok,200,200,https://hudsonriver.org/estuary-program/,,2026-10-25
 people,ced7196c685a1ada,Eddy H. Gómez Ramírez,homepage_url,https://cimar.ucr.ac.cr/personal/eddy-gomez-ramirez/,ok,200,200,https://cimar.ucr.ac.cr/personal/eddy-gomez-ramirez/,,2026-10-25
 people,d33dc6b2e90fadf5,Jude Apple,homepage_url,https://ecology.wa.gov/water-shorelines/shoreline-coastal-management/padilla-bay-reserve,ok,200,200,https://ecology.wa.gov/water-shorelines/shoreline-coastal-management/padilla-bay-reserve,,2026-10-25
 people,d6170b24822e7a87,Antje Boetius,homepage_url,https://www.mbari.org/about/leadership-staff/,ok,200,200,https://www.mbari.org/our-people/leadership-staff/,,2026-10-25
@@ -892,41 +839,29 @@ people,d66ecab20f2ff0f3,Guy Gelfenbaum,homepage_url,https://www.usgs.gov/centers
 people,d75285106a4dc54e,Jean-Yves Savaria,homepage_url,https://www.qc.dfo-mpo.gc.ca/en/maurice-lamontagne-institute,timeout,,-3,,conn:ConnectionError,2026-10-25
 people,d7863809155bf28a,Dale Webber,homepage_url,https://www.mona.uwi.edu/cms/dbml.htm,client-error,404,404,https://www.mona.uwi.edu/cms/dbml.htm,,2026-10-25
 people,d80936157119f924,Neetha Selliah,homepage_url,https://www.cavehill.uwi.edu/cermes/staff-profile/ms-neetha-selliah/,ok,200,200,https://www.cavehill.uwi.edu/cermes/staff-profile/ms-neetha-selliah/,,2026-10-25
-people,d8c601099de23ef4,Jennifer Dorton,homepage_url,https://secoora.org/,ok,200,200,https://secoora.org/,,2026-10-25
 people,d90c6a55bc89a44c,Janice Kerns,homepage_url,https://coast.noaa.gov/nerrs/reserves/old-woman-creek.html,ok,200,200,https://coast.noaa.gov/nerrs/reserves/old-woman-creek.html,,2026-10-25
 people,dac1a994e80c5471,Tom Ford,homepage_url,https://www.smbnep.org/who-we-are/,ok,200,200,https://www.smbnep.org/who-we-are/,,2026-10-25
-people,dc047dd3d3d003d8,Stan Rogers,homepage_url,https://graysreef.noaa.gov/about/staff.html,ok,200,200,https://graysreef.noaa.gov/about/staff.html,,2026-10-25
-people,dc6a10816fc6d1f5,Karen McGlathery,homepage_url,https://www.vcrlter.virginia.edu/home2/?page_id=324,timeout,,-2,,timeout,2026-10-25
+people,dc6a10816fc6d1f5,Karen McGlathery,homepage_url,https://www.vcrlter.virginia.edu/home2/?page_id=324,ok,200,200,https://www.vcrlter.virginia.edu/home2/?page_id=324,,2026-10-25
 people,dcda55181668fee0,Marian Westley,homepage_url,https://tidesandcurrents.noaa.gov/director-coops.html,ok,200,200,https://tidesandcurrents.noaa.gov/director-coops.html,,2026-10-25
 people,dce86cb0be724f8a,Mark Tedesco,homepage_url,https://longislandsoundstudy.net/about/contact-us/core-program-staff-2/,ok,200,200,https://lispartnership.org/about/contact-us/core-program-staff-2/,,2026-10-25
-people,ddabd2edb9101305,Michael Seki,homepage_url,https://www.fisheries.noaa.gov/about/pacific-islands-fisheries-science-center,ok,200,200,https://www.fisheries.noaa.gov/about/pacific-islands-fisheries-science-center,,2026-10-25
 people,dde1dbe623025aa0,Andrea C. Alfaro,homepage_url,https://marinescience.ucdavis.edu/bml/about,client-error,403,403,https://marinescience.ucdavis.edu/bml/about,,2026-10-25
 people,dde5802e4e435f8b,Lizzie McLeod,homepage_url,https://www.nature.org/en-us/about-us/who-we-are/our-people/lizzie-mcleod/,ok,200,200,https://www.nature.org/en-us/about-us/who-we-are/our-people/lizzie-mcleod/,,2026-10-25
 people,ddeaa632f945fdc7,Jeffrey Payne,homepage_url,https://coast.noaa.gov/about/director/,ok,200,200,https://coast.noaa.gov/about/director/,,2026-10-25
-people,e02aed9e576cd9c3,Ralph Garono,homepage_url,https://lakesuperiornerr.org/,ok,200,200,https://lakesuperiornerr.org/,,2026-10-25
 people,e2105df56d062d8f,Chris Bridger,homepage_url,https://www.huntsmanmarine.ca/huntsmanoverview,ok,200,200,https://www.huntsmanmarine.ca/huntsmanoverview,,2026-10-25
 people,e28ef32a2bcb35fb,James T. Morris,homepage_url,https://jtmorris.uofsccreate.org/,ok,200,200,https://jtmorris.uofsccreate.org/,,2026-10-25
 people,e3e68a0ad17bfcd7,Michael P. Crosby,homepage_url,https://mote.org/about/leadership/,ok,200,200,https://mote.org/about/leadership/,,2026-10-25
 people,e3ef038d0f4cce32,Joshua Tewksbury,homepage_url,https://stri.si.edu/about-us,client-error,403,403,https://stri.si.edu/about-us,,2026-10-25
 people,e4ddd3bc28ac5e4f,Clay Porch,homepage_url,https://www.fisheries.noaa.gov/contact/clay-porch-phd,ok,200,200,https://www.fisheries.noaa.gov/contact/clay-porch-phd,,2026-10-25
 people,e5d3e47376a67746,Paul Dest,homepage_url,https://wellsreserve.org/about-us/people/paul-dest,ok,200,200,https://wellsreserve.org/about-us/people/paul-dest,,2026-10-25
-people,e6f7a86fd90b5242,Ayesha Gray,homepage_url,https://grandbaynerr.org/,ok,200,200,https://grandbaynerr.org/,,2026-10-25
-people,e7df60c20401f19c,Victoria Congdon,homepage_url,https://www.missionaransas.org/our-team/,ok,200,200,https://www.missionaransas.org/our-team/,,2026-10-25
 people,e83fd667ba8b53e7,Craig Dahlgren,homepage_url,https://www.perryinstitute.org/about-us/,ok,200,200,https://www.perryinstitute.org/about-us/,,2026-10-25
 people,e8ccca8fdd98071e,Nikki Dix,homepage_url,https://gtmnerr.org/about-us/,ok,200,200,https://gtmnerr.org/about-us/,,2026-10-25
 people,e9de79ed7f010d2d,James Patrick Megonigal,homepage_url,https://serc.si.edu/labs/biogeochemistry,client-error,403,403,https://serc.si.edu/labs/biogeochemistry,,2026-10-25
 people,ea8341d95d9b11d4,Ken Dunton,homepage_url,https://ble.lternet.edu/people.html,ok,200,200,https://ble.lternet.edu/people.html,,2026-10-25
-people,ebf6b29af8901951,Julio M. Morell,homepage_url,https://caricoos.org/,ok,200,200,https://www.caricoos.org/,,2026-10-25
 people,eec2bdfd29799ef2,Elaine Placido,homepage_url,https://www.estuarypartnership.org/who-we-are/our-staff-board,ok,200,200,https://www.estuarypartnership.org/who-we-are/our-staff-board,,2026-10-25
-people,ef7eb34bf790b160,Carlos Zúñiga,homepage_url,https://www.shoa.cl/,client-error,405,405,https://www.shoa.cl/,,2026-10-25
-people,f2ec194405d50b28,Melissa Iwamoto,homepage_url,https://www.pacioos.hawaii.edu/about/,ok,200,200,https://www.pacioos.hawaii.edu/about/,,2026-10-25
 people,f50539f23831b79c,Jenna Wanat,homepage_url,https://floridadep.gov/rcp/nerr-apalachicola,ok,200,200,https://floridaaquaticpreserves.org/managed-areas/national-estuarine-research-reserves-nerrs/apalachicola-national-estuarine-research,,2026-10-25
-people,f778e750190e040d,Ed Sherwood,homepage_url,https://tbep.org/about-tbep/our-team/,ok,200,200,https://tbep.org/about-tbep/our-team/,,2026-10-25
+people,f778e750190e040d,Ed Sherwood,homepage_url,https://tbep.org/about-tbep/our-team/,client-error,403,403,https://tbep.org/about-tbep/our-team/,,2026-10-25
 people,f7c6a5010baff0de,Christofer Boggs,homepage_url,https://origin-apps-pifsc.fisheries.noaa.gov/organization_chart.php,timeout,,-3,,conn:SSLError,2026-10-25
 people,f8acfd6f63ece584,Roger Young,homepage_url,https://myfwc.com/contact/fwc-office/senior-staff/executive-director/,ok,200,200,https://myfwc.com/contact/fwc-office/senior-staff/executive-director/,,2026-10-25
-people,fba4e46d4139e884,Patricia Chardón-Maldonado,homepage_url,https://caricoos.org/,ok,200,200,https://www.caricoos.org/,,2026-10-25
 people,fd1a07d3b4b419fe,Erik Smith,homepage_url,https://northinlet.sc.edu/about-us/,ok,200,200,https://northinlet.sc.edu/about-us/,,2026-10-25
-people,fdcd3331a0b3191d,Sarah Fernald,homepage_url,https://hrnerr.org/our-staff/,ok,202,202,https://hrnerr.org/our-staff/,,2026-10-25
-people,fdfb57cad627fe26,Paul Brett,homepage_url,https://www.mi.mun.ca/,ok,200,200,https://www.mi.mun.ca/,,2026-10-25
 people,fe37f9877474c92b,Eric Schwaab,homepage_url,https://www.edf.org/people/sustainable-fishing-experts,ok,200,200,https://www.edf.org/people/sustainable-fishing-experts,,2026-10-25
 people,ffd46ff594243b9d,Jim Macy,homepage_url,https://www.epa.gov/aboutepa/about-regional-administrator-epas-region-7-office-kansas-city,ok,200,200,https://www.epa.gov/aboutepa/about-regional-administrator-epas-region-7-office-kansas-city,,2026-10-25
