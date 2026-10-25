@@ -1,0 +1,131 @@
+table,id,name,field,old,new,decision,checked_at
+people,065ae200269c6713,David Burke,homepage_url,https://floridakeys.noaa.gov/about/staff.html,,null:pattern:^https?://[^/]+/about/staff\.(?:html|php|aspx)/?$,2026-10-25
+people,117ba4e1ceca27df,Márcia Caruso Bícego,homepage_url,https://www.io.usp.br/,,null:facility-url:3645a75945a26b7f,2026-10-25
+people,1252478f7bf2a9b3,Jeremy Goldbogen,homepage_url,https://hopkinsmarinestation.stanford.edu/people,,null:pattern:^https?://[^/]+/people/?$,2026-10-25
+people,21eefc825ce2a6c2,Lisa Marshall,homepage_url,https://gbep.texas.gov/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+people,2b778c1f4a97fd82,Francisco Armando Arias Isaza,homepage_url,https://www.invemar.org.co/,,null:facility-url:c0dace9d084af814,2026-10-25
+people,306c614e961b8c15,Aileen S. Lee,homepage_url,https://www.moore.org/people,,null:pattern:^https?://[^/]+/people/?$,2026-10-25
+people,40b549987809b0f8,Sheyna Wisdom,homepage_url,https://aoos.org/,,null:facility-url:debbe06b574422c2,2026-10-25
+people,4a96dc22215f09f3,Debra Hernandez,homepage_url,https://secoora.org/,,null:facility-url:451bf9392571f9f4,2026-10-25
+people,4d81d77463af7bfe,Tonna-Marie Rogers,homepage_url,https://waquoitbayreserve.org/about/staff,,null:pattern:^https?://[^/]+/about/staff/?$,2026-10-25
+people,4f74aec8dce447ae,Jason Kudulis,homepage_url,https://www.mobilebaynep.com/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+people,502ebb0372498d8c,Eduardo Siegle,homepage_url,https://www.io.usp.br/,,null:facility-url:3645a75945a26b7f,2026-10-25
+people,5a40a871746aa17c,Clark Alexander,homepage_url,https://www.skio.uga.edu/,,null:facility-url:cf175bec84439fdb,2026-10-25
+people,5c3007aae50af614,Taryn Sudol,homepage_url,https://chesapeakebayssc.org/contact-us/,,null:pattern:^https?://[^/]+/contact-us/?$,2026-10-25
+people,621508ca8d0282a1,Kevin Smith,homepage_url,https://mdcoastalbays.org/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+people,6758e8afd668a3ba,Jean Wiener,homepage_url,https://www.foprobim.org/,,null:facility-url:a9c0b9f25cbf1b1a,2026-10-25
+people,67bc0d980bf618fc,Curtis Bohlen,homepage_url,https://www.cascobayestuary.org/about-us/staff/,,null:pattern:^https?://[^/]+/about-us/staff/?$,2026-10-25
+people,6f64a8c2116cd3a2,Alex Harper,homepage_url,https://cencoos.org/,,null:facility-url:68f6abc93d4b435e,2026-10-25
+people,6fc271ba2c2d9fff,Eric Peterson,homepage_url,https://tula.org/about,,null:pattern:^https?://[^/]+/about/?$,2026-10-25
+people,72bf2df40aab5e9a,William Monty Graham,homepage_url,https://serc.si.edu/about-us/staff,,null:pattern:^https?://[^/]+/about-us/staff/?$,2026-10-25
+people,77bbdb30534582e4,Katie Swanson,homepage_url,https://www.missionaransas.org/our-team/,,null:pattern:^https?://[^/]+/our-team/?$,2026-10-25
+people,78c14f4c0045ff7e,Mike Crowley,homepage_url,https://maracoos.org/,,null:facility-url:423b19ae442d5ee2,2026-10-25
+people,7c2712756cecb842,Gerhard F. Kuska,homepage_url,https://maracoos.org/,,null:facility-url:423b19ae442d5ee2,2026-10-25
+people,7c78646e193e72e9,Robert Foy,homepage_url,https://www.fisheries.noaa.gov/about/alaska-fisheries-science-center,,null:facility-url:133669bb0f48f72a,2026-10-25
+people,7c81f3dcfbd28993,Gerardo Irimia Arosemena,homepage_url,https://arap.gob.pa/,,null:facility-url:72f3bc827d967bde,2026-10-25
+people,82730c88785b1381,Roni Avissar,homepage_url,https://www.earth.miami.edu/,,null:facility-url:7ccb227e00b48eb6,2026-10-25
+people,8c218de18239a239,Steve Canty,homepage_url,https://marinegeo.si.edu/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+people,8f8b1bb8bacac538,Heidi M. Sosik,homepage_url,https://nes-lter.whoi.edu/about/,,null:pattern:^https?://[^/]+/about/?$,2026-10-25
+people,92435a9fea794186,Kurt Newman,homepage_url,https://www.usgs.gov/centers/great-lakes-science-center,,null:facility-url:fab411b2258d63a5,2026-10-25
+people,9766065cdd1458df,Clarissa Anderson,homepage_url,https://sccoos.org/,,null:facility-url:a544d4c9afd35a9e,2026-10-25
+people,9b738567dbc65f91,Caitlin Sweeney,homepage_url,https://www.sfestuary.org/staff/,,null:pattern:^https?://[^/]+/staff/?$,2026-10-25
+people,9cd3a412f030b098,Ann Kitajima,homepage_url,https://www.mbnep.org/our-team/,,null:pattern:^https?://[^/]+/our-team/?$,2026-10-25
+people,9d0c1da64e27d162,Megan Medina,homepage_url,https://sccoos.org/,,null:facility-url:a544d4c9afd35a9e,2026-10-25
+people,9eb8854506590fc6,Emily Stanley,homepage_url,https://lter.limnology.wisc.edu/people,,null:pattern:^https?://[^/]+/people/?$,2026-10-25
+people,9edcb400387ce56b,Deb Kelley,homepage_url,https://oceanobservatories.org/,,null:facility-url:6c1c08ecf5c58f40,2026-10-25
+people,a723c05cc9a755e4,Fiorenza Micheli,homepage_url,https://hopkinsmarinestation.stanford.edu/people,,null:pattern:^https?://[^/]+/people/?$,2026-10-25
+people,a8acdff1a877962f,Katherine Barbeau,homepage_url,https://ccelter.ucsd.edu/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+people,ab6f93d07690909f,Michelle Felterman,homepage_url,https://btnep.org/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+people,af99b3688c5a95f0,Jorge Manuel Paz Acosta,homepage_url,https://www.gob.pe/imarpe,,null:facility-url:92b08ded60b5ffdc,2026-10-25
+people,b0310e7bdaa70df8,Andrew McGowan,homepage_url,https://barnegatbaypartnership.org/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+people,b517c254a31c6ad0,Mary Ford,homepage_url,https://maracoos.org/,,null:facility-url:423b19ae442d5ee2,2026-10-25
+people,b5994d5883864070,Carmel Lowe,homepage_url,https://www.pac.dfo-mpo.gc.ca/science/facilities-installations/index-eng.html,,null:facility-url:bb6dd560f85bea63,2026-10-25
+people,b5e0dd18110c888a,Peter DeCola,homepage_url,https://stellwagen.noaa.gov/about/staff.html,,null:pattern:^https?://[^/]+/about/staff\.(?:html|php|aspx)/?$,2026-10-25
+people,b8c32d3f789903dc,Joyce Novak,homepage_url,https://www.peconicestuary.org/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+people,baf59f3a15faf2e6,Osmar Olinto Möller Jr.,homepage_url,https://www.furg.br/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+people,bb88fde15914534c,Duane De Freese,homepage_url,https://onelagoon.org/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+people,bb8bbfd4b455762c,David Pierce,homepage_url,https://www.nasa.gov/wallops,,null:facility-url:631d1b1f92e90f44,2026-10-25
+people,bc0975ce8ffdcfd1,Julia Azanza Ricardo,homepage_url,http://www.cim.uh.cu/,,null:facility-url:e8745f0fbf24d064,2026-10-25
+people,bd6ab6546c9d6fe0,John Crofts,homepage_url,https://www.fisheries.noaa.gov/about/southwest-fisheries-science-center,,null:facility-url:857ab02255cf1f50,2026-10-25
+people,bf45e655d9307d6d,Erica Seiden,homepage_url,https://coast.noaa.gov/about/staff/,,null:pattern:^https?://[^/]+/about/staff/?$,2026-10-25
+people,c15f16afa2789b8a,Bob Cowen,homepage_url,https://hmsc.oregonstate.edu/,,null:facility-url:5b42961d12b531c3,2026-10-25
+people,c3b93845ce50b80a,Caitlin Chaffee,homepage_url,http://nbnerr.org/about/,,null:pattern:^https?://[^/]+/about/?$,2026-10-25
+people,c4578832400f873c,Cory Riley,homepage_url,https://greatbay.org/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+people,cceb4eaf1b8eb686,Troy A. Dexter,homepage_url,https://geraceresearchcentre.com/,,null:facility-url:f1c0d2ed6d83eaae,2026-10-25
+people,d8c601099de23ef4,Jennifer Dorton,homepage_url,https://secoora.org/,,null:facility-url:451bf9392571f9f4,2026-10-25
+people,dc047dd3d3d003d8,Stan Rogers,homepage_url,https://graysreef.noaa.gov/about/staff.html,,null:pattern:^https?://[^/]+/about/staff\.(?:html|php|aspx)/?$,2026-10-25
+people,ddabd2edb9101305,Michael Seki,homepage_url,https://www.fisheries.noaa.gov/about/pacific-islands-fisheries-science-center,,null:facility-url:dd3095175b685662,2026-10-25
+people,e02aed9e576cd9c3,Ralph Garono,homepage_url,https://lakesuperiornerr.org/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+people,e6f7a86fd90b5242,Ayesha Gray,homepage_url,https://grandbaynerr.org/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+people,e7df60c20401f19c,Victoria Congdon,homepage_url,https://www.missionaransas.org/our-team/,,null:pattern:^https?://[^/]+/our-team/?$,2026-10-25
+people,ebf6b29af8901951,Julio M. Morell,homepage_url,https://caricoos.org/,,null:facility-url:c9e8bbd26f35616d,2026-10-25
+people,ef7eb34bf790b160,Carlos Zúñiga,homepage_url,https://www.shoa.cl/,,null:facility-url:6dcd1846c872ec23,2026-10-25
+people,f2ec194405d50b28,Melissa Iwamoto,homepage_url,https://www.pacioos.hawaii.edu/about/,,null:pattern:^https?://[^/]+/about/?$,2026-10-25
+people,fba4e46d4139e884,Patricia Chardón-Maldonado,homepage_url,https://caricoos.org/,,null:facility-url:c9e8bbd26f35616d,2026-10-25
+people,fdcd3331a0b3191d,Sarah Fernald,homepage_url,https://hrnerr.org/our-staff/,,null:pattern:^https?://[^/]+/our-staff/?$,2026-10-25
+people,fdfb57cad627fe26,Paul Brett,homepage_url,https://www.mi.mun.ca/,,null:facility-url:3fa5ade5fba5bc5d,2026-10-25
+person_registry,codp:065ae200269c6713,David Burke,homepage_url,https://floridakeys.noaa.gov/about/staff.html,,null:pattern:^https?://[^/]+/about/staff\.(?:html|php|aspx)/?$,2026-10-25
+person_registry,codp:21eefc825ce2a6c2,Lisa Marshall,homepage_url,https://gbep.texas.gov/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+person_registry,codp:306c614e961b8c15,Aileen S. Lee,homepage_url,https://www.moore.org/people,,null:pattern:^https?://[^/]+/people/?$,2026-10-25
+person_registry,codp:4f74aec8dce447ae,Jason Kudulis,homepage_url,https://www.mobilebaynep.com/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+person_registry,codp:6758e8afd668a3ba,Jean Wiener,homepage_url,https://www.foprobim.org/,,null:facility-url:a9c0b9f25cbf1b1a,2026-10-25
+person_registry,codp:6f64a8c2116cd3a2,Alex Harper,homepage_url,https://cencoos.org/,,null:facility-url:68f6abc93d4b435e,2026-10-25
+person_registry,codp:6fc271ba2c2d9fff,Eric Peterson,homepage_url,https://tula.org/about,,null:pattern:^https?://[^/]+/about/?$,2026-10-25
+person_registry,codp:77bbdb30534582e4,Katie Swanson,homepage_url,https://www.missionaransas.org/our-team/,,null:pattern:^https?://[^/]+/our-team/?$,2026-10-25
+person_registry,codp:7c81f3dcfbd28993,Gerardo Irimia Arosemena,homepage_url,https://arap.gob.pa/,,null:facility-url:72f3bc827d967bde,2026-10-25
+person_registry,codp:9b738567dbc65f91,Caitlin Sweeney,homepage_url,https://www.sfestuary.org/staff/,,null:pattern:^https?://[^/]+/staff/?$,2026-10-25
+person_registry,codp:9edcb400387ce56b,Deb Kelley,homepage_url,https://oceanobservatories.org/,,null:facility-url:6c1c08ecf5c58f40,2026-10-25
+person_registry,codp:ab6f93d07690909f,Michelle Felterman,homepage_url,https://btnep.org/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+person_registry,codp:b8c32d3f789903dc,Joyce Novak,homepage_url,https://www.peconicestuary.org/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+person_registry,codp:bb8bbfd4b455762c,David Pierce,homepage_url,https://www.nasa.gov/wallops,,null:facility-url:631d1b1f92e90f44,2026-10-25
+person_registry,codp:bf45e655d9307d6d,Erica Seiden,homepage_url,https://coast.noaa.gov/about/staff/,,null:pattern:^https?://[^/]+/about/staff/?$,2026-10-25
+person_registry,codp:dc047dd3d3d003d8,Stan Rogers,homepage_url,https://graysreef.noaa.gov/about/staff.html,,null:pattern:^https?://[^/]+/about/staff\.(?:html|php|aspx)/?$,2026-10-25
+person_registry,codp:ef7eb34bf790b160,Carlos Zúñiga,homepage_url,https://www.shoa.cl/,,null:facility-url:6dcd1846c872ec23,2026-10-25
+person_registry,codp:fdfb57cad627fe26,Paul Brett,homepage_url,https://www.mi.mun.ca/,,null:facility-url:3fa5ade5fba5bc5d,2026-10-25
+person_registry,openalex:A5002607063,Troy A. Dexter,homepage_url,https://geraceresearchcentre.com/,,null:facility-url:f1c0d2ed6d83eaae,2026-10-25
+person_registry,openalex:A5004102560,Steve Canty,homepage_url,https://marinegeo.si.edu/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+person_registry,openalex:A5014983734,Melissa Iwamoto,homepage_url,https://www.pacioos.hawaii.edu/about/,,null:pattern:^https?://[^/]+/about/?$,2026-10-25
+person_registry,openalex:A5021209608,Taryn Sudol,homepage_url,https://chesapeakebayssc.org/contact-us/,,null:pattern:^https?://[^/]+/contact-us/?$,2026-10-25
+person_registry,openalex:A5021450256,Mike Crowley,homepage_url,https://maracoos.org/,,null:facility-url:423b19ae442d5ee2,2026-10-25
+person_registry,openalex:A5023827219,Ayesha Gray,homepage_url,https://grandbaynerr.org/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+person_registry,openalex:A5025142420,Heidi M. Sosik,homepage_url,https://nes-lter.whoi.edu/about/,,null:pattern:^https?://[^/]+/about/?$,2026-10-25
+person_registry,openalex:A5025955440,Cory Riley,homepage_url,https://greatbay.org/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+person_registry,openalex:A5026533083,Clarissa Anderson,homepage_url,https://sccoos.org/,,null:facility-url:a544d4c9afd35a9e,2026-10-25
+person_registry,openalex:A5026933430,Andrew McGowan,homepage_url,https://barnegatbaypartnership.org/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+person_registry,openalex:A5027369197,Jorge Manuel Paz Acosta,homepage_url,https://www.gob.pe/imarpe,,null:facility-url:92b08ded60b5ffdc,2026-10-25
+person_registry,openalex:A5028148471,Curtis Bohlen,homepage_url,https://www.cascobayestuary.org/about-us/staff/,,null:pattern:^https?://[^/]+/about-us/staff/?$,2026-10-25
+person_registry,openalex:A5042459204,Debra Hernandez,homepage_url,https://secoora.org/,,null:facility-url:451bf9392571f9f4,2026-10-25
+person_registry,openalex:A5050862618,Bob Cowen,homepage_url,https://hmsc.oregonstate.edu/,,null:facility-url:5b42961d12b531c3,2026-10-25
+person_registry,openalex:A5051110795,John Crofts,homepage_url,https://www.fisheries.noaa.gov/about/southwest-fisheries-science-center,,null:facility-url:857ab02255cf1f50,2026-10-25
+person_registry,openalex:A5051304431,Victoria Congdon,homepage_url,https://www.missionaransas.org/our-team/,,null:pattern:^https?://[^/]+/our-team/?$,2026-10-25
+person_registry,openalex:A5052278410,Márcia Caruso Bícego,homepage_url,https://www.io.usp.br/,,null:facility-url:3645a75945a26b7f,2026-10-25
+person_registry,openalex:A5053790901,Patricia Chardón-Maldonado,homepage_url,https://caricoos.org/,,null:facility-url:c9e8bbd26f35616d,2026-10-25
+person_registry,openalex:A5055945190,Osmar Olinto Möller Jr.,homepage_url,https://www.furg.br/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+person_registry,openalex:A5058275246,Duane De Freese,homepage_url,https://onelagoon.org/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+person_registry,openalex:A5064393056,Tonna-Marie Rogers,homepage_url,https://waquoitbayreserve.org/about/staff,,null:pattern:^https?://[^/]+/about/staff/?$,2026-10-25
+person_registry,openalex:A5067083303,Ralph Garono,homepage_url,https://lakesuperiornerr.org/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+person_registry,openalex:A5068883257,Caitlin Chaffee,homepage_url,http://nbnerr.org/about/,,null:pattern:^https?://[^/]+/about/?$,2026-10-25
+person_registry,openalex:A5072303095,Francisco Armando Arias Isaza,homepage_url,https://www.invemar.org.co/,,null:facility-url:c0dace9d084af814,2026-10-25
+person_registry,openalex:A5074350262,Robert Foy,homepage_url,https://www.fisheries.noaa.gov/about/alaska-fisheries-science-center,,null:facility-url:133669bb0f48f72a,2026-10-25
+person_registry,openalex:A5075146689,Kevin Smith,homepage_url,https://mdcoastalbays.org/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+person_registry,openalex:A5080816056,Mary Ford,homepage_url,https://maracoos.org/,,null:facility-url:423b19ae442d5ee2,2026-10-25
+person_registry,openalex:A5080951776,Emily Stanley,homepage_url,https://lter.limnology.wisc.edu/people,,null:pattern:^https?://[^/]+/people/?$,2026-10-25
+person_registry,openalex:A5082495958,Julio M. Morell,homepage_url,https://caricoos.org/,,null:facility-url:c9e8bbd26f35616d,2026-10-25
+person_registry,openalex:A5089643713,Ann Kitajima,homepage_url,https://www.mbnep.org/our-team/,,null:pattern:^https?://[^/]+/our-team/?$,2026-10-25
+person_registry,openalex:A5091269238,Peter DeCola,homepage_url,https://stellwagen.noaa.gov/about/staff.html,,null:pattern:^https?://[^/]+/about/staff\.(?:html|php|aspx)/?$,2026-10-25
+person_registry,openalex:A5111929951,Carmel Lowe,homepage_url,https://www.pac.dfo-mpo.gc.ca/science/facilities-installations/index-eng.html,,null:facility-url:bb6dd560f85bea63,2026-10-25
+person_registry,openalex:A5112196896,Michael Seki,homepage_url,https://www.fisheries.noaa.gov/about/pacific-islands-fisheries-science-center,,null:facility-url:dd3095175b685662,2026-10-25
+person_registry,openalex:A5112633043,William Monty Graham,homepage_url,https://serc.si.edu/about-us/staff,,null:pattern:^https?://[^/]+/about-us/staff/?$,2026-10-25
+person_registry,orcid:0000-0001-5865-3504,Megan Medina,homepage_url,https://sccoos.org/,,null:facility-url:a544d4c9afd35a9e,2026-10-25
+person_registry,orcid:0000-0001-8314-0102,Sarah Fernald,homepage_url,https://hrnerr.org/our-staff/,,null:pattern:^https?://[^/]+/our-staff/?$,2026-10-25
+person_registry,orcid:0000-0002-1718-469X,Sheyna Wisdom,homepage_url,https://aoos.org/,,null:facility-url:debbe06b574422c2,2026-10-25
+person_registry,orcid:0000-0002-2132-7219,Katherine Barbeau,homepage_url,https://ccelter.ucsd.edu/,,null:pattern:^https?://[^/]+/?$,2026-10-25
+person_registry,orcid:0000-0002-3904-1091,Clark Alexander,homepage_url,https://www.skio.uga.edu/,,null:facility-url:cf175bec84439fdb,2026-10-25
+person_registry,orcid:0000-0002-4170-7294,Jeremy Goldbogen,homepage_url,https://hopkinsmarinestation.stanford.edu/people,,null:pattern:^https?://[^/]+/people/?$,2026-10-25
+person_registry,orcid:0000-0002-6865-1438,Fiorenza Micheli,homepage_url,https://hopkinsmarinestation.stanford.edu/people,,null:pattern:^https?://[^/]+/people/?$,2026-10-25
+person_registry,orcid:0000-0003-0059-6046,Kurt Newman,homepage_url,https://www.usgs.gov/centers/great-lakes-science-center,,null:facility-url:fab411b2258d63a5,2026-10-25
+person_registry,orcid:0000-0003-3926-1710,Eduardo Siegle,homepage_url,https://www.io.usp.br/,,null:facility-url:3645a75945a26b7f,2026-10-25
+person_registry,orcid:0009-0001-2786-7582,Jennifer Dorton,homepage_url,https://secoora.org/,,null:facility-url:451bf9392571f9f4,2026-10-25
+person_registry,orcid:0009-0002-8724-0287,Roni Avissar,homepage_url,https://www.earth.miami.edu/,,null:facility-url:7ccb227e00b48eb6,2026-10-25
+person_registry,orcid:0009-0004-3874-9620,Gerhard F. Kuska,homepage_url,https://maracoos.org/,,null:facility-url:423b19ae442d5ee2,2026-10-25
+person_registry,orcid:0009-0004-7818-8696,Julia Azanza Ricardo,homepage_url,http://www.cim.uh.cu/,,null:facility-url:e8745f0fbf24d064,2026-10-25
