@@ -120,6 +120,10 @@ TABLES = [
     "coastal_datasets",
     "dataset_endpoints",
     "dataset_facilities",
+    # Link health: one verdict per distinct URL in facilities.url,
+    # people.homepage_url and the dataset catalogue, written by
+    # check_url_health.py (url-health.yml). Empty until the first sweep.
+    "url_health",
     # Unified person registry and co-authorship.
     "person_registry",
     "person_identity_source",

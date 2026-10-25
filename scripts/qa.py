@@ -838,22 +838,89 @@ def check_mvg_node_layout(conn, failures: list[str]) -> None:
                 failures)
 
 
-def check_facility_ror(conn, failures: list[str], warnings: list[str]) -> None:
+def check_facility_ror(conn, failures: list[str]) -> None:
     """facilities.ror must be the bare 9-character ROR id, not a URL.
 
     link_registry_facilities.py joins it by equality to
     person_registry.affiliation_ror, which is stored bare, so a facility
     whose ror reads 'https://ror.org/0…' silently links to nobody.
+
+    A hard failure. It depends on ingest.py and ingest_supplement.py
+    normalising ROR ids to the bare form on load (WP1a), and on the
+    7 URL-form rows in the committed db/parquet being rewritten by the
+    regenerate step (WP8, "ROR normalisation" commit). A lake rebuilt from
+    db/parquet before that commit fails here, by design.
     """
     bad = conn.execute(
         r"""SELECT facility_id, ror FROM facilities
             WHERE ror IS NOT NULL AND NOT regexp_matches(ror, '^0[a-z0-9]{8}$')
             ORDER BY 1""").fetchall()
-    # TODO(WP4): promote to a failure once ingest.py / ingest_supplement.py
-    # normalise ROR ids and the 7 URL-form rows are rewritten.
-    if bad:
-        warnings.append(f"{len(bad)} facilities.ror value(s) are not a bare ROR id "
-                        f"(^0[a-z0-9]{{8}}$): {bad[:3]}")
+    assert_true(not bad,
+                f"{len(bad)} facilities.ror value(s) are not a bare ROR id "
+                f"(^0[a-z0-9]{{8}}$): {bad[:3]}", failures)
+
+
+# Verdicts scripts/check_url_health.py writes (status_label there). Duplicated
+# on purpose, like the vocabularies above.
+URL_HEALTH_STATUSES = {
+    "ok", "redirect", "client-error", "server-error", "timeout",
+    "template-skipped", "unchecked",
+}
+# The HTTP class each status with a real response must fall in.
+URL_HEALTH_CODE_RANGE = {
+    "ok": (200, 299), "redirect": (300, 399),
+    "client-error": (400, 499), "server-error": (500, 599),
+}
+
+
+def check_url_health(conn, failures: list[str]) -> None:
+    """url_health: status vocabulary, http_code range and class, sweep date.
+
+    Gated on the table being non-empty: it is empty in a lake rebuilt from
+    parquet until the first url-health.yml sweep, and ingest.py empties it.
+    url uniqueness (its schema.sql primary key) is check_integrity's job.
+    """
+    if table_rows(conn, "url_health") <= 0:
+        return
+
+    statuses = {r[0] for r in conn.execute(
+        "SELECT DISTINCT status FROM url_health").fetchall()}
+    unknown = sorted(statuses - URL_HEALTH_STATUSES, key=str)
+    assert_true(not unknown, f"url_health status not in vocab: {unknown}", failures)
+
+    out_of_range = conn.execute(
+        "SELECT count(*) FROM url_health "
+        "WHERE http_code IS NOT NULL AND http_code NOT BETWEEN 100 AND 599").fetchone()[0]
+    assert_true(out_of_range == 0,
+                f"{out_of_range} url_health row(s) with http_code outside 100-599",
+                failures)
+
+    # A status that names an HTTP class needs a code in that class; ok /
+    # redirect / client-error always come from a real response. server-error
+    # may have no code (an SSL or redirect-loop failure is recorded that way).
+    for status, (lo, hi) in URL_HEALTH_CODE_RANGE.items():
+        need_code = "" if status == "server-error" else " OR http_code IS NULL"
+        n = conn.execute(
+            f"SELECT count(*) FROM url_health WHERE status = ? "
+            f"AND ((http_code IS NOT NULL AND http_code NOT BETWEEN ? AND ?){need_code})",
+            [status, lo, hi]).fetchone()[0]
+        assert_true(n == 0, f"{n} url_health row(s) with status '{status}' but no "
+                            f"http_code in {lo}-{hi}", failures)
+
+    no_code = conn.execute(
+        "SELECT count(*) FROM url_health WHERE http_code IS NOT NULL "
+        "AND status IN ('timeout', 'template-skipped', 'unchecked')").fetchone()[0]
+    assert_true(no_code == 0,
+                f"{no_code} url_health row(s) marked timeout/template-skipped/unchecked "
+                f"that carry an http_code", failures)
+
+    bad_date = conn.execute(
+        r"SELECT count(*) FROM url_health WHERE checked_at IS NULL "
+        r"OR NOT regexp_matches(checked_at, '^\d{4}-\d{2}-\d{2}$') "
+        r"OR TRY_CAST(checked_at AS DATE) IS NULL").fetchone()[0]
+    assert_true(bad_date == 0,
+                f"{bad_date} url_health row(s) without an ISO-8601 checked_at date",
+                failures)
 
 
 def check_published_redaction(catalog, failures: list[str]) -> None:
@@ -1120,7 +1187,7 @@ def main(argv: list[str] | None = None) -> int:
         # a failure, not a traceback.
         checks = [
             (check_facilities, ()),
-            (check_facility_ror, (warnings,)),
+            (check_facility_ror, ()),
             (check_tables_present, ()),
             (check_columns, ()),
             (check_cod_team, ()),
@@ -1135,6 +1202,7 @@ def main(argv: list[str] | None = None) -> int:
             # --- WP2 crosswalk checks ---
             # --- WP3 identity hygiene checks ---
             # --- WP4 url health checks ---
+            (check_url_health, ()),
         ]
         for check, extra in checks:
             try:
