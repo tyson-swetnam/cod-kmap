@@ -2217,3 +2217,13 @@ footer a:hover { color: var(--c-primary); }
 }
 .reg-notice code { background: #fef3c7; padding: 1px 4px; border-radius: 3px; }
 .reg-notice a { color: #b45309; }
+
+/* ── Filter-aware overlays (see syncOverlaysToFilters in overlays.js) ──
+ * A network or facility-type facet can auto-hide context overlays whose
+ * content it excludes; the row stays in the panel, muted, and a click
+ * overrides the auto-hide until the facets clear. */
+.overlay-row-filtered { opacity: .45; }
+.overlay-row-filtered .overlay-label::after {
+  content: ' · hidden by filter';
+  font-size: .68rem; font-style: italic; color: var(--c-muted);
+}
