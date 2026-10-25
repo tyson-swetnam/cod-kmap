@@ -74,6 +74,14 @@ body {
   scrollbar-width: none;
 }
 .tabs::-webkit-scrollbar { display: none; }
+/* Set by router.js when the strip overflows: fade the side with more tabs. */
+.tabs.tabs-more-right { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+                                mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
+.tabs.tabs-more-left { -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent);
+                               mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent); }
+.tabs.tabs-more-left.tabs-more-right {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+          mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent); }
 .tabs a {
   color: rgba(255,255,255,.78);
   text-decoration: none;
@@ -1621,6 +1629,7 @@ footer a:hover { color: var(--c-primary); }
   z-index: 1;
 }
 .sql-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.sql-table td.sql-null { color: var(--c-muted, #888); font-style: italic; font-size: 0.85em; }
 .sql-table tbody tr:hover { background: var(--c-chip-bg); }
 .sql-empty,
 .sql-trunc {

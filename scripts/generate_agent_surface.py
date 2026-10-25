@@ -371,15 +371,19 @@ def registered_tables(path: str = DB_JS) -> set[str]:
     except OSError:
         return set()
     names: set[str] = set()
-    for decl in (r"const tables = \[(.*?)\n  \];", r"const lazyTables = \[(.*?)\n  \];"):
-        m = re.search(decl, src, re.S)
+    # Indentation-agnostic: the closing `];` must sit at the same indent as
+    # its `const` line, whatever that indent is (initDB's body moved inside a
+    # try block, which re-indented both arrays).
+    for decl in (r"^([ \t]*)const tables = \[(.*?)\n\1\];",
+                 r"^([ \t]*)const lazyTables = \[(.*?)\n\1\];"):
+        m = re.search(decl, src, re.S | re.M)
         if not m:
             _parse_failures.append(f"{path}: could not find /{decl}/")
             continue
         # Strip // comments first: the arrays carry long explanatory comments
         # that quote table names and other words (e.g. "the 'core' tier"),
         # which would otherwise be counted as registered entries.
-        body = re.sub(r"//[^\n]*", "", m.group(1))
+        body = re.sub(r"//[^\n]*", "", m.group(2))
         names |= set(re.findall(r"'([a-z0-9_]+)'", body))
     return names
 
@@ -395,11 +399,11 @@ def browser_views(path: str = DB_JS) -> list[str]:
         src = open(path, encoding="utf-8").read()
     except OSError:
         return []
-    m = re.search(r"const helperViews = \[(.*?)\n  \];", src, re.S)
+    m = re.search(r"^([ \t]*)const helperViews = \[(.*?)\n\1\];", src, re.S | re.M)
     if not m:
         _parse_failures.append(f"{path}: could not find the helperViews array")
         return []
-    return re.findall(r"CREATE OR REPLACE VIEW\s+(\w+)", m.group(1))
+    return re.findall(r"CREATE OR REPLACE VIEW\s+(\w+)", m.group(2))
 
 
 def schema_views(path: str = "schema/schema.sql") -> list[str]:

@@ -168,6 +168,10 @@ async function fetchDatasets() {
   });
 }
 
+// Copy-button icon. Inline SVG rather than a glyph: U+29C9 has no glyph in
+// many system fonts and rendered as an empty box.
+const COPY_ICON = '<svg class="ds-icon" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><rect x="5" y="5" width="9" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3 11V3.5A1.5 1.5 0 0 1 4.5 2H11" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+
 function endpointBadges(row) {
   const eps = row.endpoints || [];
   if (!eps.length) {
@@ -196,7 +200,7 @@ function endpointBadges(row) {
         <a class="ds-ep-link" href="${esc(ep.url)}" target="_blank" rel="noopener"
            title="${esc(title)}">${esc(ep.kind)}${ep.auth ? ' 🔒' : ''}</a>
         <button class="ds-ep-copy" data-url="${esc(ep.url)}"
-                title="Copy ${esc(ep.url)}" aria-label="Copy endpoint URL">⧉</button>
+                title="Copy ${esc(ep.url)}" aria-label="Copy endpoint URL">${COPY_ICON}</button>
       </span>`;
   }).join('');
 
@@ -248,6 +252,23 @@ function producerBlock(row) {
 // Where the record itself came from. Every dataset row carries a
 // source_url and a confidence by repo convention; showing them turns the
 // card from an assertion into a citable one.
+//
+// DuckDB-Wasm returns a DATE column as epoch milliseconds (a plain number,
+// or a BigInt before unwrapRow), never a Date object, so the old
+// `instanceof Date` test fell through to String() and printed
+// "retrieved 1747008000000". Accept a number, BigInt, Date or string.
+function fmtDate(v) {
+  if (v == null || v === '') return '';
+  if (typeof v === 'bigint') v = Number(v);
+  if (typeof v === 'number') {
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+  }
+  if (v instanceof Date) return Number.isNaN(v.getTime()) ? '' : v.toISOString().slice(0, 10);
+  const str = String(v);
+  return /^\d{4}-\d{2}-\d{2}/.test(str) ? str.slice(0, 10) : str;
+}
+
 function provenanceLine(row) {
   const bits = [];
   if (row.confidence) {
@@ -255,11 +276,8 @@ function provenanceLine(row) {
       title="Curator confidence in this catalogue record">${esc(row.confidence)} confidence</span>`);
   }
   if (row.source) bits.push(`<span>${esc(row.source)}</span>`);
-  if (row.retrieved_at) {
-    const d = row.retrieved_at instanceof Date
-      ? row.retrieved_at.toISOString().slice(0, 10) : String(row.retrieved_at);
-    bits.push(`<span>retrieved ${esc(d)}</span>`);
-  }
+  const retrieved = fmtDate(row.retrieved_at);
+  if (retrieved) bits.push(`<span>retrieved ${esc(retrieved)}</span>`);
   if (!bits.length) return '';
   return `<p class="ds-prov">${bits.join(' · ')}</p>`;
 }
@@ -449,7 +467,7 @@ async function renderDatasets(targetId) {
             so their steward is <em>unresolved</em>, not absent.</li>
         </ul>
         <p class="ds-summary">
-          Click an endpoint badge to open it, or ⧉ to copy the URL. Hover a
+          Click an endpoint badge to open it, or ${COPY_ICON} to copy the URL. Hover a
           steward chip for the match method and the text it matched on.
         </p>
         <div class="ds-controls">
@@ -525,9 +543,11 @@ async function renderDatasets(targetId) {
         try { document.execCommand('copy'); } catch { /* nothing left to try */ }
         document.body.removeChild(ta);
       }
-      const prev = btn.textContent;
+      // innerHTML, not textContent: the icon is an SVG element, and
+      // restoring textContent would leave the button empty.
+      const prev = btn.innerHTML;
       btn.textContent = '✓';
-      setTimeout(() => { btn.textContent = prev; }, 1200);
+      setTimeout(() => { btn.innerHTML = prev; }, 1200);
     });
   }
 
