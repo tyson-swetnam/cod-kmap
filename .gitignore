@@ -51,6 +51,14 @@ db/*.duckdb.wal
 db/*.duckdb.tmp
 db/*.duckdb.bak
 
+# DuckLake store of record (scripts/cod_db.py): SQLite catalog, its
+# sidecars and writer lock, and the lake's data files. Local working state,
+# rebuilt from the committed db/parquet/ by rebuild_lake_from_parquet.py.
+db/cod_kmap_catalog.sqlite
+db/*.sqlite-*
+*.sqlite.lock
+db/lake/
+
 # DuckLake catalogue + managed data files for the COD team layer. Same
 # rationale as the .duckdb above: not version-portable, and fully
 # regenerable from data/seed/cod_*.csv via scripts/build_cod_team_lake.py.
