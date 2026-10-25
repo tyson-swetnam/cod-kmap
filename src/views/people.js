@@ -108,6 +108,35 @@ async function fetchRoster() {
       FROM registry_facilities rf
       JOIN facilities f ON f.facility_id = rf.facility_id
       GROUP BY rf.canonical_id
+    ),
+    -- One facility URL per person, shown as a "Site" link when they have
+    -- no homepage of their own (scripts/url_hygiene.py nulls homepages
+    -- that were really facility landing pages, so without this those
+    -- people would lose their only web link). Two routes to a facility:
+    -- facility_personnel on person_id (the researched affiliation, and
+    -- where nearly all of the nulled homepages came from) is preferred
+    -- over the ROR-matched registry_facilities. The sort key ends in
+    -- facility_id, so it is unique and both min_by calls pick one row.
+    site_link AS (
+      SELECT canonical_id,
+             min_by(url, k)   AS site_url,
+             min_by(label, k) AS site_url_label
+      FROM (
+        SELECT r.canonical_id, f.url,
+               COALESCE(f.acronym, f.canonical_name) AS label,
+               '0|' || COALESCE(f.acronym, f.canonical_name, '') || '|' || f.facility_id AS k
+        FROM person_registry r
+        JOIN facility_personnel fp ON fp.person_id = r.person_id
+        JOIN facilities f ON f.facility_id = fp.facility_id
+        UNION ALL
+        SELECT rf.canonical_id, f.url,
+               COALESCE(f.acronym, f.canonical_name),
+               '1|' || COALESCE(f.acronym, f.canonical_name, '') || '|' || f.facility_id
+        FROM registry_facilities rf
+        JOIN facilities f ON f.facility_id = rf.facility_id
+      ) u
+      WHERE url IS NOT NULL AND url <> ''
+      GROUP BY canonical_id
     )
     SELECT r.canonical_id,
            r.display_name,
@@ -142,10 +171,13 @@ async function fetchRoster() {
            rc.to_site,
            rc.to_scholars,
            s.n_sites,
-           s.site_names
+           s.site_names,
+           sl.site_url,
+           sl.site_url_label
     FROM person_registry r
     LEFT JOIN reach rc ON rc.canonical_id = r.canonical_id
     LEFT JOIN sites s  ON s.canonical_id  = r.canonical_id
+    LEFT JOIN site_link sl ON sl.canonical_id = r.canonical_id
     ORDER BY r.tier_rank
   `;
   const res = await conn.query(sql);
@@ -171,10 +203,20 @@ function cohortChips(r) {
   return out.join('');
 }
 
+// Fallback for a person with no homepage: their facility's own page,
+// labelled as the site so it is never mistaken for a personal profile.
+function siteLink(url, label) {
+  const name = label ? `Site: ${label}` : 'Site';
+  return `<a href="${esc(url)}" target="_blank" rel="noopener" class="reg-site-link"
+    title="Facility website${label ? ` (${esc(label)})` : ''} — not a personal page">${esc(name)}</a>`;
+}
+
 function idLinks(r) {
   const links = [];
   if (r.homepage_url) {
     links.push(`<a href="${esc(r.homepage_url)}" target="_blank" rel="noopener">Homepage</a>`);
+  } else if (r.site_url) {
+    links.push(siteLink(r.site_url, r.site_url_label));
   }
   if (r.orcid) {
     links.push(`<a href="https://orcid.org/${esc(r.orcid)}" target="_blank" rel="noopener">ORCID</a>`);

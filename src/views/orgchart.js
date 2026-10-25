@@ -138,6 +138,33 @@ async function fetchTeam() {
       ) e
       JOIN person_registry o ON o.canonical_id = e.other_id
       GROUP BY e.self_id
+    ),
+    -- A facility URL for the "Site" fallback link when a member has no
+    -- homepage (url_hygiene.py nulls homepages that were really facility
+    -- landing pages). Same rule as the People tab: facility_personnel is
+    -- preferred over the ROR-matched registry_facilities, and the sort key
+    -- ends in facility_id so both min_by calls pick the same row.
+    site_link AS (
+      SELECT person_id,
+             min_by(url, k)   AS site_url,
+             min_by(label, k) AS site_url_label
+      FROM (
+        SELECT fp.person_id, f.url,
+               COALESCE(f.acronym, f.canonical_name) AS label,
+               '0|' || COALESCE(f.acronym, f.canonical_name, '') || '|' || f.facility_id AS k
+        FROM facility_personnel fp
+        JOIN facilities f ON f.facility_id = fp.facility_id
+        UNION ALL
+        SELECT pr.person_id, f.url,
+               COALESCE(f.acronym, f.canonical_name),
+               '1|' || COALESCE(f.acronym, f.canonical_name, '') || '|' || f.facility_id
+        FROM person_registry pr
+        JOIN registry_facilities rf ON rf.canonical_id = pr.canonical_id
+        JOIN facilities f ON f.facility_id = rf.facility_id
+        WHERE pr.person_id IS NOT NULL
+      ) u
+      WHERE url IS NOT NULL AND url <> ''
+      GROUP BY person_id
     )
     SELECT tm.member_id,
            tm.person_id,
@@ -160,6 +187,8 @@ async function fetchTeam() {
            COALESCE(r.openalex_id, p.openalex_id)             AS openalex_id,
            COALESCE(r.google_scholar_id, p.google_scholar_id) AS google_scholar_id,
            COALESCE(r.homepage_url, p.homepage_url)           AS homepage_url,
+           sl.site_url,
+           sl.site_url_label,
            p.research_interests,
            m.n_pubs,
            m.citations,
@@ -185,6 +214,7 @@ async function fetchTeam() {
     LEFT JOIN metrics m ON m.person_id = tm.person_id
     LEFT JOIN reg     r ON r.person_id = tm.person_id
     LEFT JOIN reach   rc ON rc.canonical_id = r.canonical_id
+    LEFT JOIN site_link sl ON sl.person_id = tm.person_id
     ORDER BY w.sort_order, tm.sort_order, tm.display_name`;
 
   const res = await conn.query(sql);
@@ -200,7 +230,15 @@ function instChip(row) {
 
 function profileLinks(row) {
   const links = [];
-  if (row.homepage_url) links.push(`<a href="${esc(row.homepage_url)}" target="_blank" rel="noopener">Homepage</a>`);
+  if (row.homepage_url) {
+    links.push(`<a href="${esc(row.homepage_url)}" target="_blank" rel="noopener">Homepage</a>`);
+  } else if (row.site_url) {
+    // The member's facility, labelled as the site so it is never read as
+    // a personal page. Same wording as the People tab.
+    const lbl = row.site_url_label;
+    links.push(`<a href="${esc(row.site_url)}" target="_blank" rel="noopener" class="reg-site-link"
+      title="Facility website${lbl ? ` (${esc(lbl)})` : ''} — not a personal page">${esc(lbl ? `Site: ${lbl}` : 'Site')}</a>`);
+  }
   if (row.orcid) links.push(`<a href="https://orcid.org/${esc(row.orcid)}" target="_blank" rel="noopener">ORCID</a>`);
   if (row.openalex_id) links.push(`<a href="https://openalex.org/${esc(row.openalex_id)}" target="_blank" rel="noopener">OpenAlex</a>`);
   if (row.google_scholar_id) {
