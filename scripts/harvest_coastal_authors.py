@@ -31,6 +31,10 @@ Usage::
 
     python scripts/harvest_coastal_authors.py --min-works 20 --max-authors 20000
     python scripts/harvest_coastal_authors.py --resume
+    python scripts/harvest_coastal_authors.py --load-only   # cache -> lake, offline
+
+The load is one lake snapshot (scripts/cod_db.py); scripts/export_parquet.py
+publishes it.
 """
 from __future__ import annotations
 
@@ -42,13 +46,11 @@ import time
 from datetime import date
 from pathlib import Path
 
-import duckdb
-
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cod_db  # noqa: E402
 import openalex_auth  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DB = ROOT / "db" / "cod_kmap.duckdb"
 TOPICS_CSV = ROOT / "data" / "datasets" / "coastal_topics.csv"
 CACHE = ROOT / "data" / "raw" / "coastal_authors"
 API = "https://api.openalex.org"
@@ -125,7 +127,9 @@ def flatten(a: dict, coastal: set[str]) -> dict | None:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--db", type=Path, default=DEFAULT_DB)
+    cod_db.add_argparse_catalog(ap)
+    ap.add_argument("--db", dest="catalog", type=Path,
+                    help="deprecated alias of --catalog")
     ap.add_argument("--min-works", type=int, default=10)
     ap.add_argument("--min-coastal-works", type=int, default=3,
                     help="drop authors whose coastal output is below this; "
@@ -134,12 +138,26 @@ def main() -> int:
     ap.add_argument("--max-authors", type=int, default=0, help="0 = no cap")
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--load-only", action="store_true",
+                    help="skip the harvest (no OpenAlex requests, no API key) "
+                         "and load the existing author cache into the lake")
+    ap.add_argument("--cache", type=Path, default=CACHE,
+                    help=f"cache directory (default: {CACHE.relative_to(ROOT)})")
     args = ap.parse_args()
+
+    topics = coastal_topic_ids()
+    coastal = set(topics)
+    out_file = args.cache / "authors.ndjson"
+    if args.load_only:
+        if not out_file.exists():
+            print(f"[error] --load-only: no cache at {out_file}", file=sys.stderr)
+            return 2
+        if args.dry_run:
+            return 0
+        return load_cache(args, out_file, topics)
 
     openalex_auth.require_api_key()
     sess = openalex_auth.openalex_session()
-    topics = coastal_topic_ids()
-    coastal = set(topics)
     flt = f"topics.id:{'|'.join(topics)},works_count:>{args.min_works - 1}"
 
     r = sess.get(f"{API}/authors", params={"filter": flt, "per_page": 1}, timeout=60)
@@ -147,9 +165,8 @@ def main() -> int:
     print(f"[harvest] {total:,} authors match {len(topics)} coastal topics "
           f"with >= {args.min_works} works")
 
-    CACHE.mkdir(parents=True, exist_ok=True)
-    out_file = CACHE / "authors.ndjson"
-    cursor_file = CACHE / "cursor.txt"
+    args.cache.mkdir(parents=True, exist_ok=True)
+    cursor_file = args.cache / "cursor.txt"
     seen: set[str] = set()
     if args.resume and out_file.exists():
         for line in out_file.read_text().splitlines():
@@ -192,25 +209,99 @@ def main() -> int:
             time.sleep(SLEEP)
 
     print(f"[harvest] {kept:,} author(s) with >= {args.min_coastal_works} "
-          f"coastal works cached to {out_file.relative_to(ROOT)}")
+          f"coastal works cached to {out_file}")
     if args.dry_run:
         return 0
 
-    # ── load into person_registry as tier='archive' ────────────────────
-    conn = duckdb.connect(str(args.db))
-    existing = {r[0] for r in conn.execute(
-        "SELECT openalex_id FROM person_registry "
-        "WHERE openalex_id IS NOT NULL").fetchall()}
-    existing_orcid = {r[0] for r in conn.execute(
-        "SELECT orcid FROM person_registry WHERE orcid IS NOT NULL").fetchall()}
+    return load_cache(args, out_file, topics)
 
-    cols = ["canonical_id", "display_name", "orcid", "openalex_id",
+
+REG_COLS = ["canonical_id", "display_name", "orcid", "openalex_id",
             "google_scholar_id", "homepage_url", "affiliation",
             "affiliation_ror", "affiliation_country", "works_count",
             "cited_by_count", "h_index", "i10_index", "two_yr_mean_citedness",
             "coastal_works_count", "coastal_share", "first_pub_year",
             "is_scholar", "tier", "source", "source_url", "confidence",
             "retrieved_at"]
+SRC_COLS = ["canonical_id", "field", "value", "method", "evidence",
+            "source_url", "confidence", "retrieved_at"]
+# person_identity_source's row key (cod_db.DERIVED_CONSTRAINTS).
+SRC_KEY = ["canonical_id", "field", "value", "method", "source_url"]
+
+
+def stage_rows(conn, stage: str, like: str, cols: list[str], rows: list[list]) -> None:
+    """Bulk-load ``rows`` into TEMP table ``stage`` typed like ``like``'s columns.
+
+    Goes through an Arrow table rather than executemany: at harvest scale
+    (150k rows x 23 columns) a per-row executemany, even into a TEMP table,
+    is the slow part of the run. The INSERT casts to the lake's types.
+
+    The stage is created with explicit column DDL, NOT ``CREATE TEMP TABLE
+    s AS SELECT ... LIMIT 0``: in DuckDB 2.0.0 a TEMP table created by an
+    empty CTAS and then filled from a registered Arrow/pandas object with
+    >= 122,880 rows (one row group) inside a transaction reports the right
+    count(*), but every later scan of it (merge_upsert's copy, DISTINCT
+    ON) sees zero rows — this load silently inserted nothing.
+    """
+    import pyarrow as pa
+    types = dict(cod_db.rows(
+        conn, "SELECT column_name, data_type FROM duckdb_columns() "
+              "WHERE database_name = ? AND schema_name = 'main' AND table_name = ?",
+        [cod_db.LAKE, like]))
+    conn.execute(f"CREATE OR REPLACE TEMP TABLE {stage} ("
+                 + ", ".join(f"{cod_db.qident(c)} {types[c]}" for c in cols) + ")")
+    if not rows:
+        return
+    tbl = pa.table({c: [r[i] for r in rows] for i, c in enumerate(cols)})
+    conn.register("_arrow_in", tbl)
+    try:
+        conn.execute(f"INSERT INTO {stage} ({', '.join(cols)}) "
+                     f"SELECT {', '.join(cols)} FROM _arrow_in")
+    finally:
+        conn.unregister("_arrow_in")
+
+
+def assert_written(conn, written: list[str]) -> None:
+    """cod_db.assert_integrity, raising only for the tables this run wrote.
+
+    A violation in a written table rolls the run back. A violation in a
+    table that merely points at one of them (an edge or verdict whose
+    registry row an earlier rebuild dropped) is printed, not raised: this
+    run did not cause it and cannot repair it, the script that owns that
+    table recomputes it, and qa.py fails on it until then, so nothing stale
+    is exported unnoticed.
+    """
+    v = cod_db.integrity_violations(conn, written)
+    own = [x for x in v if x["table"] in written]
+    if own:
+        raise cod_db.IntegrityError(own)
+    dep = [x for x in v if x["table"] not in written]
+    if dep:
+        print("[warn] rows in other tables point at rows that no longer exist "
+              "(qa.py fails until their scripts are re-run):\n"
+              + "\n".join("       " + line for line in
+                          cod_db.format_violations(dep).splitlines()),
+              file=sys.stderr)
+
+
+def load_cache(args, out_file: Path, topics: list[str]) -> int:
+    """Load the author cache into person_registry as tier='archive'.
+
+    One transaction (one lake snapshot): both tables are staged in TEMP
+    tables and merged insert-only, so a key already in the lake is never
+    overwritten and a re-run of the same cache adds nothing.
+    """
+    try:
+        conn = cod_db.connect(catalog=args.catalog, data=args.lake_data)
+    except cod_db.LakeNotFound as e:
+        print(f"[error] {e}", file=sys.stderr)
+        return 2
+    existing = {r[0] for r in conn.execute(
+        "SELECT openalex_id FROM person_registry "
+        "WHERE openalex_id IS NOT NULL").fetchall()}
+    existing_orcid = {r[0] for r in conn.execute(
+        "SELECT orcid FROM person_registry WHERE orcid IS NOT NULL").fetchall()}
+
     today = date.today().isoformat()
     new_rows, prov, skipped = [], [], 0
     for line in out_file.read_text().splitlines():
@@ -219,7 +310,8 @@ def main() -> int:
         d = json.loads(line)
         # Never duplicate a human already in the registry. Both identifier
         # spaces are checked: the existing row may have been keyed on ORCID
-        # while the harvest keyed on OpenAlex id, or the reverse.
+        # while the harvest keyed on OpenAlex id, or the reverse. Merges
+        # happen ONLY on ORCID or openalex_id equality — never on a name.
         if d["openalex_id"] in existing or (d["orcid"] and d["orcid"] in existing_orcid):
             skipped += 1
             continue
@@ -241,16 +333,22 @@ def main() -> int:
                      f"{d['coastal_works_count']} coastal works",
                      f"{API}/authors/{d['openalex_id']}", "high", today])
 
+    st = {"inserted": 0}
     if new_rows:
-        conn.executemany(
-            f"INSERT INTO person_registry ({','.join(cols)}) "
-            f"VALUES ({','.join('?' * len(cols))})", new_rows)
-        conn.executemany(
-            "INSERT INTO person_identity_source (canonical_id, field, value, "
-            "method, evidence, source_url, confidence, retrieved_at) "
-            "VALUES (?,?,?,?,?,?,?,?)", prov)
-    n = conn.execute("SELECT COUNT(*) FROM person_registry").fetchone()[0]
-    print(f"[db] +{len(new_rows):,} new archive-tier rows "
+        with cod_db.transaction(
+                conn, f"harvest_coastal_authors: +{len(new_rows):,} archive-tier "
+                      f"registry rows from {len(topics)} coastal topics"):
+            stage_rows(conn, "_harvest", "person_registry", REG_COLS, new_rows)
+            stage_rows(conn, "_harvest_src", "person_identity_source", SRC_COLS, prov)
+            # insert_only: the old plain INSERT relied on the PRIMARY KEY to
+            # refuse a clash; the lake has none, so merge on the key instead.
+            st = cod_db.merge_upsert(conn, "person_registry", ["canonical_id"],
+                                     "_harvest", insert_only=True)
+            cod_db.merge_upsert(conn, "person_identity_source", SRC_KEY,
+                                "_harvest_src", insert_only=True)
+            assert_written(conn, ["person_registry", "person_identity_source"])
+    n = cod_db.scalar(conn, "SELECT COUNT(*) FROM person_registry")
+    print(f"[lake] +{st['inserted']:,} new archive-tier rows "
           f"({skipped:,} already in the registry); person_registry now {n:,}")
     conn.close()
     return 0

@@ -9,8 +9,16 @@ scripts/harvest_coastal_authors.py are NOT reconstructed by any script in
 the documented chain (docs/team_scholars_datasets_methods.md runs
 build_person_registry -> compute_registry_collaborations ->
 link_registry_facilities -> rank_person_registry -> qa; harvest is not in
-it). Re-run harvest_coastal_authors.py explicitly, or restore
-db/parquet/person_registry.parquet, if you need the archive tier back.
+it). Re-run harvest_coastal_authors.py explicitly, or restore the lake to
+the snapshot before this run (``SELECT * FROM person_registry AT (VERSION
+=> n)``; every run is one snapshot, see ``lake.snapshots()``), or rebuild
+the lake from the committed db/parquet, if you need the archive tier back.
+
+The rows that point at a dropped registry row (person_validation,
+coauthor_edges, coauthor_candidates, registry_collaborations,
+registry_facilities, scholar_area_assignments) are not touched here. The
+run still commits — the downstream scripts in the chain recompute them —
+but it prints what it orphaned, and qa.py fails until they are rebuilt.
 
 
 The three human-facing layers grew independently. An audit on 2026-07-26
@@ -41,7 +49,10 @@ one. qa.py asserts the id and the ORCID agree.
 Usage::
 
     python scripts/build_person_registry.py --dry-run
-    python scripts/build_person_registry.py --export-parquet
+    python scripts/build_person_registry.py
+
+The rebuild is one lake snapshot (scripts/cod_db.py); scripts/export_parquet.py
+publishes it. --export-parquet is accepted for old callers and does nothing.
 """
 from __future__ import annotations
 
@@ -51,11 +62,11 @@ import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-import duckdb
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cod_db  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DB = ROOT / "db" / "cod_kmap.duckdb"
-PARQUET_OUT = [ROOT / "db" / "parquet", ROOT / "public" / "parquet"]
 REGISTRY_TABLES = ("person_registry", "person_identity_source",
                    "registry_collaborations")
 
@@ -91,20 +102,46 @@ def split_name(full: str) -> tuple[str, str]:
 
 
 def ensure_tables(conn) -> None:
-    """Create the registry tables if this DB predates them."""
-    ddl = (ROOT / "schema" / "schema.sql").read_text()
-    marker = "CREATE OR REPLACE TABLE person_registry"
-    if marker not in ddl:
+    """Create the registry tables if this lake predates them.
+
+    schema.sql cannot be executed against the lake (DuckLake rejects its
+    PRIMARY KEYs), so each missing table is created column-only from the
+    schema.sql spec; cod_db.assert_integrity enforces the keys. Only absent
+    tables are created — an existing populated table is never replaced.
+    Call inside a transaction.
+    """
+    spec_tables = set(cod_db.spec()["tables"])
+    if not all(t in spec_tables for t in REGISTRY_TABLES):
         print("[error] schema.sql has no person_registry DDL", file=sys.stderr)
         raise SystemExit(2)
-    have = {r[0] for r in conn.execute(
-        "SELECT table_name FROM information_schema.tables").fetchall()}
-    if all(t in have for t in REGISTRY_TABLES):
-        return
-    # CREATE OR REPLACE would wipe an existing populated table, so only run
-    # the DDL when at least one of the three is genuinely absent.
-    conn.execute(ddl[ddl.index(marker):])
-    print("[schema] created registry tables from schema/schema.sql")
+    have = set(cod_db.lake_tables(conn))
+    for t in REGISTRY_TABLES:
+        if t not in have:
+            conn.execute(cod_db.column_only_ddl(t))
+            print(f"[schema] created {t} from schema/schema.sql")
+
+
+def assert_written(conn, written: list[str]) -> None:
+    """cod_db.assert_integrity, raising only for the tables this run wrote.
+
+    A violation in a written table rolls the run back. A violation in a
+    table that merely points at one of them (an edge or verdict whose
+    registry row an earlier rebuild dropped) is printed, not raised: this
+    run did not cause it and cannot repair it, the script that owns that
+    table recomputes it, and qa.py fails on it until then, so nothing stale
+    is exported unnoticed.
+    """
+    v = cod_db.integrity_violations(conn, written)
+    own = [x for x in v if x["table"] in written]
+    if own:
+        raise cod_db.IntegrityError(own)
+    dep = [x for x in v if x["table"] not in written]
+    if dep:
+        print("[warn] rows in other tables point at rows that no longer exist "
+              "(qa.py fails until their scripts are re-run):\n"
+              + "\n".join("       " + line for line in
+                          cod_db.format_violations(dep).splitlines()),
+              file=sys.stderr)
 
 
 class Registry:
@@ -232,27 +269,31 @@ class Registry:
 
 
 def load(conn, table: str, cols: str) -> list[dict]:
-    try:
-        cur = conn.execute(f"SELECT {cols} FROM {table}")
-    except duckdb.Error:
+    if not cod_db.table_exists(conn, table):
         return []
+    cur = conn.execute(f"SELECT {cols} FROM {table}")
     names = [d[0] for d in cur.description]
     return [dict(zip(names, r)) for r in cur.fetchall()]
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--db", type=Path, default=DEFAULT_DB)
+    cod_db.add_argparse_catalog(ap)
+    ap.add_argument("--db", dest="catalog", type=Path,
+                    help="deprecated alias of --catalog")
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--export-parquet", action="store_true")
+    ap.add_argument("--export-parquet", action="store_true",
+                    help="deprecated no-op: run scripts/export_parquet.py")
     args = ap.parse_args()
 
-    if not args.db.exists():
-        print(f"[error] db not found: {args.db}", file=sys.stderr)
+    # A dry run reads only; the registry tables are created (if absent)
+    # inside the write transaction below, so it never writes a snapshot.
+    try:
+        conn = cod_db.connect(read_only=args.dry_run,
+                              catalog=args.catalog, data=args.lake_data)
+    except cod_db.LakeNotFound as e:
+        print(f"[error] {e}", file=sys.stderr)
         return 2
-
-    conn = duckdb.connect(str(args.db))
-    ensure_tables(conn)
     reg = Registry()
 
     # ── people (facility staff / directory) ────────────────────────────
@@ -356,32 +397,45 @@ def main() -> int:
         conn.close()
         return 0
 
-    conn.execute("DELETE FROM person_registry")
-    conn.execute("DELETE FROM person_identity_source")
     cols = list(reg.rows[0].keys()) if reg.rows else []
-    if reg.rows:
-        conn.executemany(
-            f"INSERT INTO person_registry ({','.join(cols)}) "
-            f"VALUES ({','.join('?' * len(cols))})",
-            [[r[c] for c in cols] for r in reg.rows])
-    if reg.prov:
-        pcols = ["canonical_id", "field", "value", "method", "evidence",
-                 "source_url", "confidence", "retrieved_at"]
-        conn.executemany(
-            f"INSERT INTO person_identity_source ({','.join(pcols)}) "
-            f"VALUES ({','.join('?' * len(pcols))})",
-            [[p[c] for c in pcols] for p in reg.prov])
-    print(f"[db] person_registry {n} rows, "
+    pcols = ["canonical_id", "field", "value", "method", "evidence",
+             "source_url", "confidence", "retrieved_at"]
+    with cod_db.transaction(conn, f"build_person_registry: rebuild from people, "
+                                  f"cod_team_members, community_scholars "
+                                  f"({n} identities, {len(reg.prov)} sources)"):
+        ensure_tables(conn)
+        # Stage in temp tables typed like the targets, then one INSERT each:
+        # row-by-row INSERTs into the lake are slow, and each would be its
+        # own snapshot outside a transaction.
+        conn.execute("CREATE OR REPLACE TEMP TABLE _reg_stage AS "
+                     "SELECT * FROM person_registry LIMIT 0")
+        conn.execute("CREATE OR REPLACE TEMP TABLE _src_stage AS "
+                     "SELECT * FROM person_identity_source LIMIT 0")
+        if reg.rows:
+            conn.executemany(
+                f"INSERT INTO _reg_stage ({','.join(cols)}) "
+                f"VALUES ({','.join('?' * len(cols))})",
+                [[r[c] for c in cols] for r in reg.rows])
+        if reg.prov:
+            conn.executemany(
+                f"INSERT INTO _src_stage ({','.join(pcols)}) "
+                f"VALUES ({','.join('?' * len(pcols))})",
+                [[p[c] for c in pcols] for p in reg.prov])
+        conn.execute("DELETE FROM person_registry")
+        conn.execute("DELETE FROM person_identity_source")
+        if reg.rows:
+            conn.execute(f"INSERT INTO person_registry ({','.join(cols)}) "
+                         f"SELECT {','.join(cols)} FROM _reg_stage")
+        if reg.prov:
+            conn.execute(f"INSERT INTO person_identity_source ({','.join(pcols)}) "
+                         f"SELECT {','.join(pcols)} FROM _src_stage")
+        assert_written(conn, ["person_registry", "person_identity_source"])
+    print(f"[lake] person_registry {n} rows, "
           f"person_identity_source {len(reg.prov)} rows")
 
     if args.export_parquet:
-        for base in PARQUET_OUT:
-            base.mkdir(parents=True, exist_ok=True)
-            for t in REGISTRY_TABLES:
-                out = base / f"{t}.parquet"
-                conn.execute(f"COPY {t} TO '{out}' (FORMAT PARQUET)")
-            print(f"[parquet] wrote {base}/person_registry.parquet (+2)")
-        print("[note] parquet is gitignored; stage with `git add -f`")
+        print("[note] --export-parquet is a no-op now; run "
+              "scripts/export_parquet.py to publish the lake")
     conn.close()
     return 0
 

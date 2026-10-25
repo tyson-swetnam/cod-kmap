@@ -26,7 +26,7 @@ Harvest stages (each checkpoints, so --resume is cheap):
                  the topic set (all-time and last 5 years) and find their
                  first publication year.
   D  select      local, deterministic cohort assignment (see COHORTS).
-  E  write       upsert into community_scholars + refresh parquet.
+  E  write       replace community_scholars in the lake (one snapshot);
 
 Identity rules, learned the hard way (see
 scripts/wipe_bad_openalex_attributions.py):
@@ -66,14 +66,13 @@ import unicodedata
 from datetime import date, datetime
 from pathlib import Path
 
-import duckdb
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cod_db  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DB = ROOT / "db" / "cod_kmap.duckdb"
 SEED_JSON = ROOT / "data" / "seed" / "community_scholars_seed.json"
 TOPICS_CSV = ROOT / "data" / "datasets" / "coastal_topics.csv"
 CACHE = ROOT / "data" / "raw" / "community_scholars"   # gitignored
-PARQUET_OUT = [ROOT / "db" / "parquet", ROOT / "public" / "parquet"]
 
 OPENALEX = "https://api.openalex.org"
 SENTINEL = "RESOLVE"
@@ -684,29 +683,58 @@ def link_people(conn, rows: list[dict]) -> int:
     return n
 
 
-def write_table(conn, rows: list[dict], export: bool) -> None:
-    conn.execute("DELETE FROM community_scholars;")
-    conn.executemany(
-        f"INSERT INTO community_scholars ({', '.join(COLS)}) "
-        f"VALUES ({', '.join('?' * len(COLS))})",
-        [[r.get(c) for c in COLS] for r in rows],
-    )
-    print(f"[db] community_scholars: {len(rows)} rows")
-    if not export:
-        return
-    for base in PARQUET_OUT:
-        base.mkdir(parents=True, exist_ok=True)
-        out = base / "community_scholars.parquet"
-        conn.execute(f"COPY (SELECT * FROM community_scholars) TO '{out}' (FORMAT PARQUET)")
-    print("[parquet] community_scholars -> " + ", ".join(
-        str((b / 'community_scholars.parquet').relative_to(ROOT)) for b in PARQUET_OUT))
-    print("[note] parquet files are gitignored; stage them with `git add -f`")
+def assert_written(conn, written: list[str]) -> None:
+    """cod_db.assert_integrity, raising only for the tables this run wrote.
+
+    A violation in a written table rolls the run back. A violation in a
+    table that merely points at one of them (an edge or verdict whose
+    registry row an earlier rebuild dropped) is printed, not raised: this
+    run did not cause it and cannot repair it, the script that owns that
+    table recomputes it, and qa.py fails on it until then, so nothing stale
+    is exported unnoticed.
+    """
+    v = cod_db.integrity_violations(conn, written)
+    own = [x for x in v if x["table"] in written]
+    if own:
+        raise cod_db.IntegrityError(own)
+    dep = [x for x in v if x["table"] not in written]
+    if dep:
+        print("[warn] rows in other tables point at rows that no longer exist "
+              "(qa.py fails until their scripts are re-run):\n"
+              + "\n".join("       " + line for line in
+                          cod_db.format_violations(dep).splitlines()),
+              file=sys.stderr)
+
+
+def write_table(conn, rows: list[dict], message: str) -> None:
+    """Replace community_scholars with ``rows`` in one lake snapshot.
+
+    Staged in a TEMP table typed like the target, then one DELETE + INSERT
+    inside one transaction. The parquet copies are export_parquet.py's job.
+    """
+    conn.execute("CREATE OR REPLACE TEMP TABLE _scholar_stage AS "
+                 f"SELECT {', '.join(COLS)} FROM community_scholars LIMIT 0")
+    if rows:
+        conn.executemany(
+            f"INSERT INTO _scholar_stage ({', '.join(COLS)}) "
+            f"VALUES ({', '.join('?' * len(COLS))})",
+            [[r.get(c) for c in COLS] for r in rows],
+        )
+    with cod_db.transaction(conn, message):
+        conn.execute("DELETE FROM community_scholars")
+        conn.execute(f"INSERT INTO community_scholars ({', '.join(COLS)}) "
+                     f"SELECT {', '.join(COLS)} FROM _scholar_stage")
+        assert_written(conn, ["community_scholars"])
+    print(f"[lake] community_scholars: {len(rows)} rows "
+          f"(run scripts/export_parquet.py to publish)")
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--db", type=Path, default=DEFAULT_DB)
+    cod_db.add_argparse_catalog(ap)
+    ap.add_argument("--db", dest="catalog", type=Path,
+                    help="deprecated alias of --catalog")
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--seed", action="store_true",
                       help="load the curated roster (no network)")
@@ -720,9 +748,13 @@ def main() -> int:
                     help="harvest even if coastal_topics.csv still holds RESOLVE "
                          "sentinels (resolves at run time; not reproducible)")
     ap.add_argument("--dry-run", action="store_true", help="compute but don't write")
-    ap.add_argument("--skip-export", action="store_true", help="don't refresh parquet")
+    ap.add_argument("--skip-export", action="store_true",
+                    help="deprecated no-op: this script no longer writes parquet "
+                         "(scripts/export_parquet.py does)")
     ap.add_argument("--emit-empty-parquet", action="store_true",
-                    help="write a zero-row parquet so the browser can register the view")
+                    help="deprecated no-op: export_parquet.py always exports "
+                         "community_scholars, empty or not, so the browser can "
+                         "register the view")
     args = ap.parse_args()
 
     if args.resolve_topics:
@@ -736,27 +768,20 @@ def main() -> int:
             print(f"[warn] still unresolved: {unresolved}")
         return 0
 
-    if not args.db.exists():
-        print(f"[error] {args.db} not found — run scripts/rebuild_db_from_parquet.py first",
-              file=sys.stderr)
-        return 2
-    conn = duckdb.connect(str(args.db))
-    conn.execute("SET search_path = main;")
-
     if args.emit_empty_parquet:
-        if args.dry_run or args.skip_export:
-            print("[dry-run] --emit-empty-parquet suppressed by "
-                  "--dry-run/--skip-export")
-            conn.close()
-            return 0
-        for base in PARQUET_OUT:
-            base.mkdir(parents=True, exist_ok=True)
-            out = base / "community_scholars.parquet"
-            conn.execute(
-                f"COPY (SELECT * FROM community_scholars LIMIT 0) TO '{out}' (FORMAT PARQUET)")
-        print("[parquet] wrote zero-row community_scholars.parquet to both dirs")
-        conn.close()
+        print("[note] --emit-empty-parquet is a no-op now: scripts/export_parquet.py "
+              "exports community_scholars whether or not it has rows")
         return 0
+    if args.skip_export:
+        print("[note] --skip-export is a no-op now: this script writes only the "
+              "lake; run scripts/export_parquet.py to publish")
+
+    try:
+        conn = cod_db.connect(read_only=args.dry_run,
+                              catalog=args.catalog, data=args.lake_data)
+    except cod_db.LakeNotFound as e:
+        print(f"[error] {e}", file=sys.stderr)
+        return 2
 
     if args.harvest:
         session = make_session()
@@ -818,16 +843,18 @@ def main() -> int:
         conn.close()
         return 0
 
-    write_table(conn, rows, export=not args.skip_export)
+    mode_name = "harvested + curated" if args.harvest else "curated seed"
+    write_table(conn, rows, f"build_community_scholars: {mode_name} roster, "
+                            f"{len(rows)} scholars")
     for label, col in (("pre-eminent", "is_preeminent"),
                        ("most active", "is_most_active"),
                        ("rising", "is_rising")):
-        n = conn.execute(f"SELECT COUNT(*) FROM community_scholars WHERE {col}").fetchone()[0]
+        n = cod_db.scalar(conn, f"SELECT COUNT(*) FROM community_scholars WHERE {col}")
         print(f"  {label:12s} {n}")
-    n_orcid = conn.execute(
-        "SELECT COUNT(*) FROM community_scholars WHERE orcid IS NOT NULL").fetchone()[0]
-    n_metrics = conn.execute(
-        "SELECT COUNT(*) FROM community_scholars WHERE h_index IS NOT NULL").fetchone()[0]
+    n_orcid = cod_db.scalar(
+        conn, "SELECT COUNT(*) FROM community_scholars WHERE orcid IS NOT NULL")
+    n_metrics = cod_db.scalar(
+        conn, "SELECT COUNT(*) FROM community_scholars WHERE h_index IS NOT NULL")
     print(f"  with ORCID   {n_orcid}")
     print(f"  with metrics {n_metrics}")
     if n_metrics == 0:

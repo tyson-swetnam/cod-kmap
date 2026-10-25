@@ -8,11 +8,16 @@ Pipeline stages (each independently runnable via --stage):
              name, and resolve its affiliation ROR against api.ror.org. Writes
              person_validation, long form, one row per (canonical_id, check_id,
              run_id) so re-validation appends and runs can be diffed.
+             (It used to write db/parquet/person_validation.parquet only,
+             which export_parquet.py then overwrote from the lake table.)
   harvest    Page each researcher's coastal-topic works and emit co-author pairs.
   match      Resolve harvested co-authors against the registry BY IDENTIFIER
              ONLY, then rank the non-matching remainder as expansion candidates.
+             Replaces coauthor_edges / coauthor_candidates and the db-only
+             coauthor_unmatched_population table.
   rdf        Serialize the registry + candidates to Turtle, run OWL-RL sameAs
-             closure, and report split identities the relational join misses.
+             closure, and report split identities the relational join misses
+             (db-only table split_identity_findings).
   shacl      Validate the RDF against schema/shapes/cod-shapes.ttl.
 
 MEASURED CONSTRAINTS -- these drove the design; do not "optimise" past them.
@@ -50,13 +55,20 @@ Usage:
     python scripts/validate_registry.py --stage harvest --request-budget 2000
     python scripts/validate_registry.py --stage match
     python scripts/validate_registry.py --stage rdf --stage shacl
+
+Every stage that writes does so into the DuckLake (scripts/cod_db.py), one
+snapshot per stage; scripts/export_parquet.py publishes the tables (the
+db-only ones to db/parquet only). The match and rdf stages read the
+harvested co-author pairs from PAIRS_DIR (scripts/harvest_runner.py) when it
+holds any parquet, else from the lake's db-only coauthor_pairs_raw table, so
+both run offline on a lake rebuilt from the committed db/parquet.
 """
 from __future__ import annotations
 
 import argparse
+import glob
 import hashlib
 import json
-import math
 import os
 import sys
 import time
@@ -64,13 +76,13 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import date
+from pathlib import Path
 
-import duckdb
 import pandas as pd
 
-DB = "db/cod_kmap.duckdb"
-PARQUET_DIR = "db/parquet"
-PUBLIC_DIR = "public/parquet"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cod_db  # noqa: E402
+
 TOPIC_SET = "db/derived/coastal_topic_set.parquet"
 STATE = "db/derived/harvest_state.json"
 WORKS_DIR = "db/derived/harvest_works.parquet.d"
@@ -82,6 +94,68 @@ OA = "https://api.openalex.org/"
 ROR = "https://api.ror.org/organizations/"
 UA = "cod-kmap-registry-validation"
 CONF = ("high", "medium", "low")
+
+
+# --------------------------------------------------------------------------- #
+# lake helpers
+# --------------------------------------------------------------------------- #
+
+def _table_columns(con, table: str) -> list[str]:
+    """Column names of a lake table, in order. Drains the result (DuckDB 2.0
+    refuses .register() while an execute() result is half-read)."""
+    cur = con.execute(f"SELECT * FROM {cod_db.qident(table)} LIMIT 0")
+    names = [d[0] for d in cur.description]
+    cur.fetchall()
+    return names
+
+
+def _stage_df(con, df: pd.DataFrame, table: str, stage: str) -> int:
+    """Copy ``df`` into TEMP table ``stage``, typed like lake table ``table``.
+
+    Column order and membership come from the lake, so a schema change
+    surfaces here as a KeyError rather than as a silently mis-ordered
+    INSERT, and the INSERT casts pandas dtypes (object, float-with-NaN) to
+    the lake's types instead of letting them leak into it. Every earlier
+    result on ``con`` is drained, so the register() below is safe.
+
+    The stage gets explicit column DDL, not ``CREATE TEMP TABLE s AS SELECT
+    * FROM t LIMIT 0``: in DuckDB 2.0.0 an empty-CTAS TEMP table filled from
+    a registered frame of >= 122,880 rows inside a transaction reports the
+    right count(*), but later scans of it (merge_upsert's copy) see none.
+    """
+    cols = _table_columns(con, table)
+    missing = [c for c in cols if c not in df.columns]
+    if missing:
+        raise KeyError(f"{table}: pipeline produced no value for {missing}")
+    types = dict(cod_db.rows(
+        con, "SELECT column_name, data_type FROM duckdb_columns() "
+             "WHERE database_name = ? AND schema_name = 'main' AND table_name = ?",
+        [cod_db.LAKE, table]))
+    con.execute(f"CREATE OR REPLACE TEMP TABLE {stage} ("
+                + ", ".join(f"{cod_db.qident(c)} {types[c]}" for c in cols) + ")")
+    if len(df):
+        con.register("_df_in", df[cols])
+        try:
+            con.execute(f"INSERT INTO {stage} SELECT * FROM _df_in")
+        finally:
+            con.unregister("_df_in")
+    return len(df)
+
+
+def pairs_source(con) -> str:
+    """The harvested co-author pairs: the harvest_runner.py checkpoint
+    parquet when present, else the lake's db-only coauthor_pairs_raw table
+    (the committed copy of the same pairs, loaded from db/parquet)."""
+    if glob.glob(f"{PAIRS_DIR}/*.parquet"):
+        print(f"[pairs] reading {PAIRS_DIR}/*.parquet", flush=True)
+        return f"read_parquet('{PAIRS_DIR}/*.parquet')"
+    if cod_db.table_exists(con, "coauthor_pairs_raw"):
+        print(f"[pairs] {PAIRS_DIR} is empty; reading the lake's "
+              f"coauthor_pairs_raw table", flush=True)
+        return f"{cod_db.LAKE}.main.coauthor_pairs_raw"
+    sys.exit(f"no harvested co-author pairs: {PAIRS_DIR} holds no parquet and "
+             "the lake has no coauthor_pairs_raw table (run "
+             "scripts/harvest_runner.py, or rebuild the lake from db/parquet)")
 
 
 # --------------------------------------------------------------------------- #
@@ -349,9 +423,16 @@ def stage_validate(con, run_id: str, batch_size: int = 50) -> pd.DataFrame:
     assert out.validation_id.is_unique, "validation_id must be unique (PK)"
     assert out.source_url.notna().all(), "every verdict needs a citable source"
     assert set(out.confidence) <= set(CONF), f"confidence must be in {CONF}"
-    os.makedirs(PARQUET_DIR, exist_ok=True)
-    out.to_parquet(f"{PARQUET_DIR}/person_validation.parquet", index=False)
-    print(f"[validate] wrote {len(out):,} verdicts", flush=True)
+    # Append this run (validation_id is per run_id); re-running the same
+    # run_id updates its rows in place rather than duplicating them.
+    with cod_db.transaction(con, f"validate_registry: validate {run_id} "
+                                 f"({len(out):,} verdicts)"):
+        _stage_df(con, out, "person_validation", "_validation_stage")
+        st = cod_db.merge_upsert(con, "person_validation", ["validation_id"],
+                                 "_validation_stage")
+        cod_db.assert_integrity(con, ["person_validation"])
+    print(f"[validate] wrote {len(out):,} verdicts "
+          f"({st['inserted']:,} new, {st['matched']:,} replaced)", flush=True)
     print(out.groupby(["check_id", "verdict"]).size().to_string(), flush=True)
     return out
 
@@ -365,29 +446,60 @@ def stage_match(con, run_id: str) -> None:
 
     The unmatched population is materialised FIRST, with no registry linkage
     asserted, so the candidate queue is auditable independently of the matching.
+
+    Everything is set-based SQL over TEMP tables, written to the lake in one
+    transaction. (The previous version pulled each step into pandas and
+    re-registered the frame on the connection; DuckDB 2.0 refuses a
+    register() while any execute() result is half-read, and at 3.4M pair
+    rows the round trip was the slow part anyway.)
     """
     today = date.today().isoformat()
-    con.execute(f"CREATE OR REPLACE VIEW _pairs AS "
-                f"SELECT * FROM '{PAIRS_DIR}/*.parquet'")
+    # TEMP: a plain CREATE VIEW would land in the lake (the connection USEs
+    # it) as a persistent view over a local checkpoint path.
+    con.execute(f"CREATE OR REPLACE TEMP VIEW _pairs AS "
+                f"SELECT * FROM {pairs_source(con)}")
 
-    ca = con.execute("""
-        SELECT coauthor_openalex_id,
-               any_value(coauthor_display_name) AS display_name,
-               max(coauthor_orcid)              AS orcid,
-               mode(coauthor_ror)               AS affiliation_ror,
-               count(DISTINCT focal_openalex_id) AS n_registry_coauthors,
-               count(DISTINCT work_id)          AS n_shared_works,
-               min(publication_year)            AS first_year,
-               max(publication_year)            AS last_year,
-               min(focal_openalex_id)           AS seen_with_openalex_id,
-               min(work_id)                     AS seen_on_work_id
-        FROM _pairs WHERE coauthor_openalex_id IS NOT NULL
-        GROUP BY coauthor_openalex_id""").fetchdf()
-    print(f"[match] {len(ca):,} distinct co-authors (no matching applied)",
+    # Typed like db/parquet's coauthor_unmatched_population: counts BIGINT,
+    # years DOUBLE (the pair files carry publication_year as DOUBLE).
+    #
+    # affiliation_ror is the co-author's most frequent ROR across the pairs,
+    # ties to the smallest id. It was mode(coauthor_ror), which returns an
+    # arbitrary member of a tie: 11,408 co-authors have one, and no tie-break
+    # rule reproduces the committed picks, so a re-run reshuffled ~5,800
+    # RORs (and, through ror_matches_facility, some candidate confidences).
+    con.execute("""
+        CREATE OR REPLACE TEMP TABLE _ca AS
+        WITH ror_n AS (
+          SELECT coauthor_openalex_id, coauthor_ror, count(*) AS n
+          FROM _pairs
+          WHERE coauthor_openalex_id IS NOT NULL AND coauthor_ror IS NOT NULL
+          GROUP BY ALL),
+        top_ror AS (
+          SELECT coauthor_openalex_id,
+                 first(coauthor_ror ORDER BY n DESC, coauthor_ror) AS affiliation_ror
+          FROM ror_n GROUP BY coauthor_openalex_id),
+        agg AS (
+          SELECT coauthor_openalex_id,
+                 any_value(coauthor_display_name) AS display_name,
+                 max(coauthor_orcid)              AS orcid,
+                 count(DISTINCT focal_openalex_id) AS n_registry_coauthors,
+                 count(DISTINCT work_id)          AS n_shared_works,
+                 CAST(min(publication_year) AS DOUBLE) AS first_year,
+                 CAST(max(publication_year) AS DOUBLE) AS last_year,
+                 min(focal_openalex_id)           AS seen_with_openalex_id,
+                 min(work_id)                     AS seen_on_work_id
+          FROM _pairs WHERE coauthor_openalex_id IS NOT NULL
+          GROUP BY coauthor_openalex_id)
+        SELECT a.coauthor_openalex_id, a.display_name, a.orcid, t.affiliation_ror,
+               a.n_registry_coauthors, a.n_shared_works, a.first_year, a.last_year,
+               a.seen_with_openalex_id, a.seen_on_work_id
+        FROM agg a LEFT JOIN top_ror t USING (coauthor_openalex_id)""")
+    n_ca = cod_db.scalar(con, "SELECT count(*) FROM _ca")
+    print(f"[match] {n_ca:,} distinct co-authors (no matching applied)",
           flush=True)
 
-    con.register("_ca", ca)
-    resolved = con.execute("""
+    con.execute("""
+        CREATE OR REPLACE TEMP TABLE _resolved AS
         WITH r AS (
           SELECT canonical_id, tier,
                  replace(coalesce(openalex_id,''),'https://openalex.org/','') AS oa,
@@ -404,12 +516,14 @@ def stage_match(con, run_id: str) -> None:
         LEFT JOIN r a ON a.oa = c.coauthor_openalex_id AND a.oa <> ''
         LEFT JOIN r b ON b.orc = lower(c.orcid) AND b.orc <> ''
         LEFT JOIN r f ON f.oa = c.seen_with_openalex_id AND f.oa <> ''
-    """).fetchdf()
-
-    n_in = int(resolved.matched_canonical_id.notna().sum())
+    """)
+    n_res, n_in = cod_db.rows(con, "SELECT count(*), count(matched_canonical_id) "
+                                   "FROM _resolved")[0]
     print(f"[match] in_registry={n_in:,} "
-          f"out_of_registry={len(resolved) - n_in:,}", flush=True)
-    print(resolved.match_method.value_counts(dropna=False).to_string(), flush=True)
+          f"out_of_registry={n_res - n_in:,}", flush=True)
+    for method, n in cod_db.rows(con, "SELECT match_method, count(*) FROM _resolved "
+                                      "GROUP BY 1 ORDER BY 2 DESC"):
+        print(f"  {method or 'NaN':<30} {n:>9,}", flush=True)
 
     # Edges: registry-to-registry only, each proved by a work.
     # Materialise the registry key map and PRE-FILTER the pair rows to those
@@ -432,85 +546,129 @@ def stage_match(con, run_id: str) -> None:
         FROM _pairs p
         WHERE p.focal_openalex_id    IN (SELECT oa FROM _regkey)
           AND p.coauthor_openalex_id IN (SELECT oa FROM _regkey)""")
-    n_rp = con.execute("SELECT count(*) FROM _regpairs").fetchone()[0]
+    n_rp = cod_db.scalar(con, "SELECT count(*) FROM _regpairs")
     print(f"[match] {n_rp:,} pair rows have both endpoints in the registry",
           flush=True)
-    edges = con.execute("""
-        SELECT least(ra.canonical_id, rb.canonical_id)    AS canonical_id_a,
-               greatest(ra.canonical_id, rb.canonical_id) AS canonical_id_b,
-               count(DISTINCT p.work_id) AS co_pub_count,
-               min(p.publication_year)   AS first_year,
-               max(p.publication_year)   AS last_year,
-               min(p.work_id)            AS exemplar_work_id
-        FROM _regpairs p
-        JOIN _regkey ra ON ra.oa = p.focal_openalex_id
-        JOIN _regkey rb ON rb.oa = p.coauthor_openalex_id
-        WHERE ra.canonical_id <> rb.canonical_id
-        GROUP BY 1, 2""").fetchdf()
-    edges["edge_id"] = [
-        hashlib.sha1(f"{a}|{b}".encode()).hexdigest()[:24]
-        for a, b in zip(edges.canonical_id_a, edges.canonical_id_b)]
-    edges["weight"] = edges.co_pub_count.astype(float)
-    edges["match_method"] = "openalex-author-id-equality"
-    edges["evidence_work_ids"] = None
-    edges["evidence_truncated"] = edges.co_pub_count > 1
-    edges["exemplar_work_doi"] = None
-    edges["exemplar_work_year"] = None
-    edges["shared_areas"] = None
-    edges["shared_facilities"] = None
-    edges["same_institution"] = None
-    edges["source"] = "openalex"
-    edges["source_url"] = OA + "works/" + edges.exemplar_work_id
-    edges["retrieved_at"] = today
-    edges["confidence"] = "high"
-    edges["run_id"] = run_id
-    assert edges.exemplar_work_id.notna().all(), "every edge needs a proving work"
+    # edge_id = sha1(a|b)[:24] and the provenance columns, as the pandas
+    # version computed them; DuckDB's sha1() is hashlib's lowercase hex.
+    con.execute("""
+        CREATE OR REPLACE TEMP TABLE _edges AS
+        WITH e AS (
+          SELECT least(ra.canonical_id, rb.canonical_id)    AS canonical_id_a,
+                 greatest(ra.canonical_id, rb.canonical_id) AS canonical_id_b,
+                 count(DISTINCT p.work_id) AS co_pub_count,
+                 min(p.publication_year)   AS first_year,
+                 max(p.publication_year)   AS last_year,
+                 min(p.work_id)            AS exemplar_work_id
+          FROM _regpairs p
+          JOIN _regkey ra ON ra.oa = p.focal_openalex_id
+          JOIN _regkey rb ON rb.oa = p.coauthor_openalex_id
+          WHERE ra.canonical_id <> rb.canonical_id
+          GROUP BY 1, 2)
+        SELECT substr(sha1(canonical_id_a || '|' || canonical_id_b), 1, 24) AS edge_id,
+               canonical_id_a, canonical_id_b, co_pub_count, first_year, last_year,
+               CAST(co_pub_count AS DOUBLE)       AS weight,
+               exemplar_work_id,
+               CAST(NULL AS VARCHAR)              AS exemplar_work_doi,
+               CAST(NULL AS INTEGER)              AS exemplar_work_year,
+               CAST(NULL AS VARCHAR)              AS evidence_work_ids,
+               co_pub_count > 1                   AS evidence_truncated,
+               'openalex-author-id-equality'      AS match_method,
+               CAST(NULL AS VARCHAR)              AS shared_areas,
+               CAST(NULL AS VARCHAR)              AS shared_facilities,
+               CAST(NULL AS BOOLEAN)              AS same_institution,
+               'openalex'                         AS source,
+               'https://api.openalex.org/works/' || exemplar_work_id AS source_url,
+               CAST(? AS VARCHAR)                 AS retrieved_at,
+               'high'                             AS confidence,
+               CAST(? AS VARCHAR)                 AS run_id
+        FROM e""", [today, run_id])
+    if cod_db.scalar(con, "SELECT count(*) FROM _edges WHERE exemplar_work_id IS NULL"):
+        raise AssertionError("every edge needs a proving work")
 
-    cand = resolved[resolved.matched_canonical_id.isna()].copy()
-    cand = cand[cand.seen_with_canonical_id.notna()]   # provenance is mandatory
-    fac = set(con.execute(
-        "SELECT replace(coalesce(ror,''),'https://ror.org/','') FROM facilities "
-        "WHERE ror IS NOT NULL AND ror <> ''").fetchdf().iloc[:, 0])
-    cand["ror_matches_facility"] = cand.affiliation_ror.isin(fac)
-    cand["score"] = (cand.n_registry_coauthors * 3.0
-                     + cand.n_shared_works * 0.5
-                     + cand.ror_matches_facility.astype(int) * 10
-                     + cand.orcid.notna().astype(int) * 2)
-    cand["confidence"] = pd.cut(cand.score, [-1, 10, 40, 1e12],
-                                labels=["low", "medium", "high"]).astype(str)
-    cand["candidate_id"] = [
-        hashlib.sha1(f"{o}|{run_id}".encode()).hexdigest()[:24]
-        for o in cand.coauthor_openalex_id]
-    cand = cand.rename(columns={"coauthor_openalex_id": "openalex_id"})
-    for c in ("affiliation", "affiliation_country", "works_count",
-              "coastal_works_count", "coastal_share", "h_index",
-              "decided_by", "decided_at", "ambiguity_note", "notes"):
-        cand[c] = None
-    cand["decision"] = "pending"
-    cand["source"] = "openalex"
-    cand["source_url"] = OA + "authors/" + cand.openalex_id
-    cand["retrieved_at"] = today
-    cand["run_id"] = run_id
+    # Candidates: out-of-registry co-authors with a registry member to cite
+    # (provenance is mandatory). The score and the confidence bands are the
+    # pandas version's: pd.cut(score, [-1, 10, 40, 1e12]) is right-closed.
+    con.execute("""
+        CREATE OR REPLACE TEMP TABLE _cand AS
+        WITH fac AS (
+          SELECT DISTINCT replace(coalesce(ror,''),'https://ror.org/','') AS ror
+          FROM facilities WHERE ror IS NOT NULL AND ror <> ''),
+        c AS (
+          SELECT r.*,
+                 coalesce(r.affiliation_ror IN (SELECT ror FROM fac), false)
+                   AS ror_matches_facility
+          FROM _resolved r
+          WHERE r.matched_canonical_id IS NULL
+            AND r.seen_with_canonical_id IS NOT NULL),
+        s AS (
+          SELECT *, n_registry_coauthors * 3.0
+                  + n_shared_works * 0.5
+                  + CAST(ror_matches_facility AS INTEGER) * 10
+                  + CAST(orcid IS NOT NULL AS INTEGER) * 2 AS score
+          FROM c)
+        SELECT substr(sha1(coauthor_openalex_id || '|' || ?), 1, 24) AS candidate_id,
+               display_name, orcid, coauthor_openalex_id AS openalex_id,
+               CAST(NULL AS VARCHAR) AS affiliation, affiliation_ror,
+               CAST(NULL AS VARCHAR) AS affiliation_country,
+               seen_with_canonical_id, seen_on_work_id,
+               n_registry_coauthors, n_shared_works,
+               CAST(NULL AS INTEGER) AS works_count,
+               CAST(NULL AS INTEGER) AS coastal_works_count,
+               CAST(NULL AS DOUBLE)  AS coastal_share,
+               CAST(NULL AS INTEGER) AS h_index,
+               'pending' AS decision,
+               CAST(NULL AS VARCHAR) AS decided_by,
+               CAST(NULL AS VARCHAR) AS decided_at,
+               CAST(NULL AS VARCHAR) AS ambiguity_note,
+               'openalex' AS source,
+               'https://api.openalex.org/authors/' || coauthor_openalex_id AS source_url,
+               CAST(? AS VARCHAR) AS retrieved_at,
+               CASE WHEN score <= 10 THEN 'low'
+                    WHEN score <= 40 THEN 'medium'
+                    ELSE 'high' END AS confidence,
+               CAST(? AS VARCHAR) AS run_id,
+               CAST(NULL AS VARCHAR) AS notes
+        FROM s""", [run_id, today, run_id])
 
-    os.makedirs(PARQUET_DIR, exist_ok=True)
-    ca.to_parquet(f"{PARQUET_DIR}/coauthor_unmatched_population.parquet",
-                  index=False)
-    _write_conforming(con, edges, "coauthor_edges")
-    _write_conforming(con, cand, "coauthor_candidates")
-    print(f"[match] {len(edges):,} edges, {len(cand):,} candidates", flush=True)
+    n_e = cod_db.scalar(con, "SELECT count(*) FROM _edges")
+    n_c = cod_db.scalar(con, "SELECT count(*) FROM _cand")
+    with cod_db.transaction(con, f"validate_registry: match {run_id} "
+                                 f"({n_e:,} edges, {n_c:,} candidates, "
+                                 f"{n_ca:,} co-authors)"):
+        n_pop = cod_db.replace_table(con, "coauthor_unmatched_population",
+                                     "SELECT * FROM _ca")
+        print(f"[match] coauthor_unmatched_population: {n_pop:,} row(s) (db-only)",
+              flush=True)
+        _write_conforming(con, "_edges", "coauthor_edges")
+        _write_conforming(con, "_cand", "coauthor_candidates")
+        cod_db.assert_integrity(con, ["coauthor_edges", "coauthor_candidates",
+                                      "coauthor_unmatched_population"])
+    print(f"[match] {n_e:,} edges, {n_c:,} candidates", flush=True)
 
 
-def _write_conforming(con, df: pd.DataFrame, table: str) -> None:
-    """Project df onto the committed table schema, then write parquet.
+def _write_conforming(con, stage: str, table: str) -> None:
+    """Replace lake table ``table`` with the rows of TEMP table ``stage``.
 
-    Column order and membership come from the DB, so a schema change surfaces
-    here as a KeyError rather than as a silently mis-ordered INSERT.
+    Column order and membership come from the lake table, so a schema change
+    surfaces here as a KeyError rather than as a silently mis-ordered INSERT.
+
+    This used to write db/parquet/<table>.parquet and stop, leaving the DB
+    table as it was; export_parquet.py owns that file now and rewrites it
+    from the lake, so the lake is where the rows have to land. A schema.sql
+    table, so DELETE + INSERT (not replace_table) keeps its NOT NULL and
+    DEFAULT definitions. Call inside cod_db.transaction().
     """
-    cols = [r[0] for r in con.execute(f"DESCRIBE {table}").fetchall()]
-    missing = [c for c in cols if c not in df.columns]
+    cols = _table_columns(con, table)
+    have = set(_table_columns(con, stage))
+    missing = [c for c in cols if c not in have]
     if missing:
         raise KeyError(f"{table}: pipeline produced no value for {missing}")
-    df[cols].to_parquet(f"{PARQUET_DIR}/{table}.parquet", index=False)
+    sel = ", ".join(cod_db.qident(c) for c in cols)
+    con.execute(f"DELETE FROM {cod_db.qident(table)}")
+    con.execute(f"INSERT INTO {cod_db.qident(table)} ({sel}) SELECT {sel} FROM {stage}")
+    n = cod_db.scalar(con, f"SELECT count(*) FROM {cod_db.qident(table)}")
+    print(f"[match] {table}: {n:,} row(s) loaded", flush=True)
 
 
 # --------------------------------------------------------------------------- #
@@ -621,8 +779,24 @@ def stage_rdf(con, run_id: str, out_ttl: str = "db/derived/cod-registry.ttl"):
     print(f"[rdf] closure {time.time() - t0:.1f}s, "
           f"{len(bridges):,} person<->coauthor bridges", flush=True)
 
-    # Split identities: shared ORCID, different OpenAlex author id.
-    split = con.execute("""
+    n = split_identities(con, run_id, today)
+    print(f"[rdf] {n:,} split identities "
+          f"(shared ORCID, different OpenAlex id)", flush=True)
+    return out_ttl
+
+
+def split_identities(con, run_id: str, today: str) -> int:
+    """Split identities: shared ORCID, different OpenAlex author id.
+
+    Replaces the db-only split_identity_findings table in one snapshot, in
+    the column shape db/parquet holds (and cod_db.DERIVED_CONSTRAINTS keys
+    on: canonical_id, coauthor_oa). The old code wrote a parquet file with
+    different column names (registry_openalex_id / duplicate_openalex_id)
+    that matched neither the committed file nor its key; the committed
+    176 rows came from the same ORCID-equality join with this wording.
+    """
+    con.execute(f"""
+        CREATE OR REPLACE TEMP TABLE _split AS
         WITH r AS (
           SELECT canonical_id, display_name,
                  replace(coalesce(openalex_id,''),'https://openalex.org/','') AS oa,
@@ -630,24 +804,31 @@ def stage_rdf(con, run_id: str, out_ttl: str = "db/derived/cod-registry.ttl"):
           FROM person_registry WHERE tier='core'),
         c AS (
           SELECT coauthor_openalex_id AS oa2, lower(coauthor_orcid) AS orc2
-          FROM (SELECT * FROM '""" + PAIRS_DIR + """/*.parquet')
+          FROM {pairs_source(con)}
           WHERE coauthor_orcid IS NOT NULL GROUP BY 1,2)
-        SELECT r.canonical_id, r.display_name, r.oa AS registry_openalex_id,
-               c.oa2 AS duplicate_openalex_id, r.orc AS shared_orcid
+        SELECT r.canonical_id, r.display_name, r.oa AS reg_oa,
+               r.orc AS shared_orcid, c.oa2 AS coauthor_oa,
+               'duplicate-openalex-author-record' AS finding,
+               'registry person and co-author node share ORCID ' || r.orc
+                 || ' but carry different OpenAlex author ids (' || r.oa
+                 || ' vs ' || c.oa2 || ')' AS evidence,
+               'owl:sameAs closure over cod:orcidId (InverseFunctionalProperty) '
+                 || '— unifies the two differing OpenAlex author ids into one '
+                 || 'identity' AS resolved_by,
+               'openalex-author-id-equality join (resolves 0 of these by '
+                 || 'construction: the two OpenAlex ids differ)' AS would_be_missed_by,
+               '{OA}authors/' || c.oa2 AS source_url,
+               'high' AS confidence,
+               CAST(? AS VARCHAR) AS retrieved_at,
+               'SQL ORCID-equality join over harvested co-author pairs' AS enumerated_by
         FROM r JOIN c ON c.orc2 = r.orc
-        WHERE r.orc <> '' AND r.oa <> '' AND c.oa2 <> r.oa""").fetchdf()
-    if len(split):
-        split["finding"] = "duplicate-openalex-author-record"
-        split["resolved_by"] = "owl:sameAs closure over cod:orcidId"
-        split["would_be_missed_by"] = "openalex-author-id-equality join"
-        split["source_url"] = OA + "authors/" + split.duplicate_openalex_id
-        split["confidence"] = "high"
-        split["retrieved_at"] = today
-        split.to_parquet(f"{PARQUET_DIR}/split_identity_findings.parquet",
-                         index=False)
-    print(f"[rdf] {len(split):,} split identities "
-          f"(shared ORCID, different OpenAlex id)", flush=True)
-    return out_ttl
+        WHERE r.orc <> '' AND r.oa <> '' AND c.oa2 <> r.oa""", [today])
+    n = cod_db.scalar(con, "SELECT count(*) FROM _split")
+    with cod_db.transaction(con, f"validate_registry: rdf {run_id} "
+                                 f"({n:,} split identities)"):
+        cod_db.replace_table(con, "split_identity_findings", "SELECT * FROM _split")
+        cod_db.assert_integrity(con, ["split_identity_findings"])
+    return n
 
 
 def stage_shacl(ttl: str = "db/derived/cod-registry.ttl") -> bool:
@@ -681,7 +862,9 @@ def main() -> int:
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--stage", action="append", required=True,
                     choices=["validate", "harvest", "match", "rdf", "shacl"])
-    ap.add_argument("--db", default=DB)
+    cod_db.add_argparse_catalog(ap)
+    ap.add_argument("--db", dest="catalog", type=Path,
+                    help="deprecated alias of --catalog")
     ap.add_argument("--request-budget", type=int, default=2000,
                     help="hard cap on OpenAlex requests this run (quota is "
                          "10,000/day, one credit per request, shared)")
@@ -691,8 +874,15 @@ def main() -> int:
     a = ap.parse_args()
 
     run_id = a.run_id or "val-" + time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
-    con = duckdb.connect(a.db)
-    print(f"[run] {run_id} db={a.db} stages={a.stage}", flush=True)
+    writes = bool({"validate", "match", "rdf"} & set(a.stage))
+    try:
+        con = cod_db.connect(read_only=not writes,
+                             catalog=a.catalog, data=a.lake_data)
+    except cod_db.LakeNotFound as e:
+        print(f"[error] {e}", file=sys.stderr)
+        return 2
+    print(f"[run] {run_id} lake={cod_db.catalog_path(a.catalog)} "
+          f"stages={a.stage}", flush=True)
 
     if {"validate", "harvest"} & set(a.stage):
         q = quota_remaining()
