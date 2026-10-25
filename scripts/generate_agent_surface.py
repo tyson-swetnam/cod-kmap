@@ -269,6 +269,11 @@ TABLE_GROUPS: list[tuple[str, str, list[str]]] = [
      "Curated catalogue of external coastal datasets and their machine-readable "
      "access endpoints.",
      ["coastal_datasets", "dataset_endpoints", "dataset_facilities"]),
+    ("Link health",
+     "Result of the weekly HTTP HEAD sweep (GET fallback) over every link URL "
+     "in facilities, people and the dataset catalogue: one verdict per distinct "
+     "URL, keyed on url.",
+     ["url_health"]),
     ("Knowledge-map layout",
      "Precomputed groupings and coordinates that drive the Network tab's MVG "
      "cartogram. Derived artifacts, not source data.",
