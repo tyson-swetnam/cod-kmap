@@ -24,7 +24,9 @@ person_areas mapping at all — then:
   * Leaves publications themselves untouched (they may have legitimate
     co-authors among other people in the dataset).
 
-Re-runs are idempotent: a fresh run finds nothing left to wipe.
+Re-runs are idempotent: a fresh run finds nothing left to wipe. The wipe
+is one lake snapshot (scripts/cod_db.py), rolled back if it would orphan
+a row; run scripts/export_parquet.py to publish it.
 
 Usage:
     python scripts/wipe_bad_openalex_attributions.py
@@ -37,11 +39,10 @@ import argparse
 import sys
 from pathlib import Path
 
-import duckdb
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cod_db  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DB = ROOT / "db" / "cod_kmap.duckdb"
-PARQUET_OUT = [ROOT / "db" / "parquet", ROOT / "public" / "parquet"]
 
 # Marine / coastal / oceanographic keywords. A person's research_interests
 # string is split on ', ' and lowercased; if NO token contains any of
@@ -66,11 +67,12 @@ def has_marine_signal(text: str) -> bool:
 
 
 def find_suspects(conn, strict: bool):
-    rows = conn.execute("""
+    rows = cod_db.rows(conn, """
         SELECT person_id, name, research_interests, openalex_id
         FROM   people
         WHERE  openalex_id IS NOT NULL AND length(openalex_id) > 0
-    """).fetchall()
+        ORDER  BY name, person_id
+    """)
     suspects = []
     for pid, name, ri, oaid in rows:
         if not has_marine_signal(ri):
@@ -80,67 +82,65 @@ def find_suspects(conn, strict: bool):
         # person_areas rows. The OpenAlex topic crosswalk only covers
         # marine concepts, so if a person has 0 person_areas they
         # never published anything that maps to a cod-kmap area.
-        zeros = {r[0] for r in conn.execute("""
-            SELECT p.person_id
+        zeros = cod_db.rows(conn, """
+            SELECT p.person_id, p.name, p.research_interests, p.openalex_id
             FROM   people p
             LEFT JOIN person_areas pa ON pa.person_id = p.person_id
             WHERE  p.openalex_id IS NOT NULL AND length(p.openalex_id) > 0
-            GROUP  BY p.person_id
+            GROUP  BY p.person_id, p.name, p.research_interests, p.openalex_id
             HAVING COUNT(pa.area_id) = 0
-        """).fetchall()}
+            ORDER  BY p.name, p.person_id
+        """)
         already = {s[0] for s in suspects}
-        for pid in zeros:
+        for pid, name, ri, oaid in zeros:
             if pid in already:
                 continue
-            row = conn.execute(
-                "SELECT name, research_interests, openalex_id "
-                "FROM people WHERE person_id = ?", [pid]
-            ).fetchone()
-            suspects.append((pid, row[0], row[1], row[2], 'no-person-areas'))
+            suspects.append((pid, name, ri, oaid, 'no-person-areas'))
     return suspects
 
 
 def wipe(conn, suspects):
+    """Run inside cod_db.transaction(): three statements, one snapshot."""
     pids = [s[0] for s in suspects]
     if not pids:
-        return {'people': 0, 'authorship': 0, 'person_areas': 0}
+        return {'people': 0, 'authorship_deleted': 0, 'person_areas_deleted': 0}
     placeholder = ','.join(['?'] * len(pids))
-    n_aut = conn.execute(
-        f"DELETE FROM authorship   WHERE person_id IN ({placeholder})",
-        pids,
-    ).fetchone()
-    n_pa  = conn.execute(
-        f"DELETE FROM person_areas WHERE person_id IN ({placeholder})",
-        pids,
-    ).fetchone()
-    n_pp = conn.execute(
+    # DELETE/UPDATE return a one-row (count) result.
+    n_aut = cod_db.scalar(
+        conn, f"DELETE FROM authorship   WHERE person_id IN ({placeholder})", pids)
+    n_pa = cod_db.scalar(
+        conn, f"DELETE FROM person_areas WHERE person_id IN ({placeholder})", pids)
+    cod_db.scalar(
+        conn,
         f"""UPDATE people SET openalex_id = NULL,
                               research_interests = NULL,
                               updated_at = now()
             WHERE person_id IN ({placeholder})""",
-        pids,
-    ).fetchone()
-    # DuckDB DELETE/UPDATE return rowcount tuples in some versions; fall
-    # back to selecting the change indirectly if needed.
+        pids)
     return {
         'people': len(pids),
-        'authorship_deleted': n_aut[0] if n_aut else None,
-        'person_areas_deleted': n_pa[0] if n_pa else None,
+        'authorship_deleted': n_aut,
+        'person_areas_deleted': n_pa,
     }
 
 
-def export_parquet(conn):
-    for base in PARQUET_OUT:
-        base.mkdir(parents=True, exist_ok=True)
-        for t in ('people', 'authorship', 'person_areas'):
-            out = base / f"{t}.parquet"
-            conn.execute(f"COPY {t} TO '{out}' (FORMAT PARQUET)")
-            print(f"[parquet] wrote {out}")
+def catalog_arg(args) -> Path | None:
+    """--db is the pre-lake flag, kept as an alias of --catalog. The retired
+    db/cod_kmap.duckdb file itself is not a catalog, so it is ignored."""
+    if args.db is None or args.catalog is not None:
+        return args.catalog
+    if args.db.suffix == ".duckdb":
+        print(f"[deprecated] --db {args.db} ignored (db/cod_kmap.duckdb is retired); "
+              f"use --catalog", file=sys.stderr)
+        return None
+    return args.db
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--db", type=Path, default=DEFAULT_DB)
+    cod_db.add_argparse_catalog(ap)
+    ap.add_argument("--db", type=Path, default=None,
+                    help="deprecated alias of --catalog (a .duckdb path is ignored)")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--strict", action="store_true",
                     help="Also wipe people who have an openalex_id but "
@@ -149,10 +149,12 @@ def main() -> int:
                          "contain a marine keyword by coincidence).")
     args = ap.parse_args()
 
-    if not args.db.exists():
-        print(f"[error] db not found: {args.db}", file=sys.stderr)
+    try:
+        conn = cod_db.connect(read_only=args.dry_run, catalog=catalog_arg(args),
+                              data=args.lake_data)
+    except cod_db.LakeNotFound as e:
+        print(f"[error] {e}", file=sys.stderr)
         return 2
-    conn = duckdb.connect(str(args.db))
 
     suspects = find_suspects(conn, args.strict)
     print(f"[suspects] {len(suspects)} candidates for wipe:")
@@ -163,14 +165,26 @@ def main() -> int:
 
     if args.dry_run:
         print("\n[dry-run] would wipe; skipping writes.")
+        conn.close()
         return 0
 
-    res = wipe(conn, suspects)
+    if not suspects:
+        print("\n[wiped] nothing to wipe")
+        conn.close()
+        print("[done]")
+        return 0
+
+    with cod_db.transaction(conn, f"wipe_bad_openalex_attributions: "
+                                  f"{len(suspects)} people"
+                                  + (" (--strict)" if args.strict else "")):
+        res = wipe(conn, suspects)
+        cod_db.assert_integrity(conn, ["people", "authorship", "person_areas"])
     print(f"\n[wiped] people: {res['people']}  "
           f"authorship_deleted: {res['authorship_deleted']}  "
           f"person_areas_deleted: {res['person_areas_deleted']}")
 
-    export_parquet(conn)
+    # parquet is export_parquet.py's to write.
+    print("[next] run scripts/export_parquet.py to publish")
     conn.close()
     print("[done]")
     return 0

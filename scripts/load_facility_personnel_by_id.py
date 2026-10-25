@@ -5,7 +5,7 @@ Adapter for round-2 personnel CSVs whose subagents emit `facility_id`
 (stronger key) instead of `facility_acronym` / `facility_name_like`
 (the legacy loader's fields). Same upsert semantics as
 `load_facility_personnel.py` — idempotent on (person_id, facility_id,
-role).
+role), and it shares that script's staging + MERGE helpers.
 
 CSV header (in order, exactly):
 
@@ -16,20 +16,30 @@ Usage::
 
     python scripts/load_facility_personnel_by_id.py --csv path.csv
     python scripts/load_facility_personnel_by_id.py --csv-glob 'data/seed/*.csv'
+
+Writes the DuckLake store of record (scripts/cod_db.py): every CSV of the
+run is staged in TEMP tables and merged in one snapshot, rolled back whole
+if a row breaks a schema.sql constraint. Rows the CSVs would not change
+are not written, so a re-run commits nothing. The `email` column feeds the
+person_id hash only; it is not stored. Publish with export_parquet.py.
 """
 from __future__ import annotations
 
 import argparse
 import csv
-import hashlib
 import sys
 from glob import glob
 from pathlib import Path
 
 import duckdb
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cod_db  # noqa: E402
+from load_facility_personnel import (PEOPLE_STAGE, ROLE_STAGE, add_db_alias,  # noqa: E402
+                                     catalog_arg, is_key_flag, merge_people,
+                                     merge_roles, person_id, split_name, stage_rows)
+
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DB = ROOT / "db" / "cod_kmap.duckdb"
 
 KEY_ROLE_DEFAULTS = {
     "Director", "Executive Director", "Deputy Director", "Associate Director",
@@ -41,63 +51,10 @@ KEY_ROLE_DEFAULTS = {
 }
 
 
-def person_id(name: str, orcid: str = "", email: str = "") -> str:
-    key = f"{name.strip().lower()}|{(orcid or '').strip()}|{(email or '').strip().lower()}"
-    return hashlib.sha1(key.encode("utf-8")).hexdigest()[:16]
-
-
-def split_name(full: str) -> tuple[str, str]:
-    parts = full.strip().split()
-    if len(parts) < 2:
-        return "", full.strip()
-    return " ".join(parts[:-1]), parts[-1]
-
-
-def upsert_person(conn, name, orcid, email, openalex_id, homepage_url) -> str:
-    pid = person_id(name, orcid, email)
-    given, family = split_name(name)
-    conn.execute("""
-        INSERT INTO people (
-            person_id, name, name_family, name_given, email, orcid,
-            openalex_id, homepage_url, updated_at
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, now())
-        ON CONFLICT (person_id) DO UPDATE SET
-            name         = excluded.name,
-            name_family  = excluded.name_family,
-            name_given   = excluded.name_given,
-            email        = COALESCE(excluded.email, people.email),
-            orcid        = COALESCE(excluded.orcid, people.orcid),
-            openalex_id  = COALESCE(excluded.openalex_id, people.openalex_id),
-            homepage_url = COALESCE(excluded.homepage_url, people.homepage_url),
-            updated_at   = now()
-    """, [pid, name, family, given, email or None, orcid or None,
-          openalex_id or None, homepage_url or None])
-    return pid
-
-
-def upsert_role(conn, pid, fid, role, title, is_key, source, source_url,
-                confidence, notes) -> None:
-    conn.execute("""
-        INSERT INTO facility_personnel (
-            person_id, facility_id, role, title, is_key_personnel,
-            source, source_url, retrieved_at, confidence, notes
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, current_date, ?, ?)
-        ON CONFLICT (person_id, facility_id, role) DO UPDATE SET
-            title            = excluded.title,
-            is_key_personnel = excluded.is_key_personnel,
-            source           = excluded.source,
-            source_url       = excluded.source_url,
-            retrieved_at     = excluded.retrieved_at,
-            confidence       = excluded.confidence,
-            notes            = excluded.notes
-    """, [pid, fid, role, title or None, is_key,
-          (source or "facility-webpage"), source_url or None,
-          (confidence or "medium"), notes or None])
-
-
-def load_one(conn, path: Path) -> dict:
+def load_one(path: Path, facility_ids: set[str], seq0: int,
+             people_rows: list, role_rows: list) -> dict:
+    """Parse one CSV into the staging lists. No database access: facility
+    ids are checked against ``facility_ids`` (read once per run)."""
     stats = {"path": str(path), "ok": 0, "skipped": 0, "errors": 0}
     if not path.exists():
         print(f"[error] {path} not found")
@@ -106,6 +63,14 @@ def load_one(conn, path: Path) -> dict:
     with path.open(newline="", encoding="utf-8") as fh:
         for ln, row in enumerate(csv.DictReader(fh), 2):
             try:
+                if None in row:
+                    # An unquoted comma shifts every later column: the
+                    # notes text of two round-2 rows landed in `orcid` (and
+                    # so in their person_id hash). Refuse the row.
+                    print(f"[skip] {path.name}:{ln} more fields than the header; "
+                          f"quote fields that contain commas")
+                    stats["skipped"] += 1
+                    continue
                 fid = (row.get("facility_id") or "").strip()
                 name = (row.get("name") or "").strip()
                 role = (row.get("role") or "").strip()
@@ -113,38 +78,27 @@ def load_one(conn, path: Path) -> dict:
                     stats["skipped"] += 1
                     continue
                 # Validate facility exists.
-                hit = conn.execute(
-                    "SELECT 1 FROM facilities WHERE facility_id = ?", [fid]
-                ).fetchone()
-                if not hit:
+                if fid not in facility_ids:
                     print(f"[skip] {path.name}:{ln} unknown facility_id={fid}")
                     stats["skipped"] += 1
                     continue
-                raw_key = (row.get("is_key_personnel") or "").strip().lower()
-                if raw_key in ("true", "1", "yes", "y"):
-                    is_key = True
-                elif raw_key in ("false", "0", "no", "n"):
-                    is_key = False
-                else:
-                    is_key = role in KEY_ROLE_DEFAULTS
-                pid = upsert_person(
-                    conn, name,
-                    (row.get("orcid") or "").strip(),
-                    (row.get("email") or "").strip(),
-                    (row.get("openalex_id") or "").strip(),
-                    (row.get("homepage_url") or "").strip(),
-                )
-                upsert_role(
-                    conn, pid, fid, role,
-                    (row.get("title") or "").strip(),
-                    is_key,
-                    (row.get("source") or "").strip(),
-                    (row.get("source_url") or "").strip(),
-                    (row.get("confidence") or "").strip(),
-                    (row.get("notes") or "").strip(),
-                )
+                orcid = (row.get("orcid") or "").strip()
+                pid = person_id(name, orcid, (row.get("email") or "").strip())
+                given, family = split_name(name)
+                seq = seq0 + ln
+                people_rows.append((seq, pid, name, family, given, orcid or None,
+                                    (row.get("openalex_id") or "").strip() or None,
+                                    (row.get("homepage_url") or "").strip() or None))
+                role_rows.append((seq, pid, fid, role,
+                                  (row.get("title") or "").strip() or None,
+                                  is_key_flag(row.get("is_key_personnel"), role,
+                                              KEY_ROLE_DEFAULTS),
+                                  (row.get("source") or "").strip() or "facility-webpage",
+                                  (row.get("source_url") or "").strip() or None,
+                                  (row.get("confidence") or "").strip() or "medium",
+                                  (row.get("notes") or "").strip() or None))
                 stats["ok"] += 1
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 — a bad row skips, the run goes on
                 print(f"[error] {path.name}:{ln} {e}")
                 stats["errors"] += 1
     return stats
@@ -152,31 +106,52 @@ def load_one(conn, path: Path) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--db", type=Path, default=DEFAULT_DB)
+    add_db_alias(ap)
     ap.add_argument("--csv", type=Path, action="append")
     ap.add_argument("--csv-glob", type=str, default=None)
     args = ap.parse_args()
 
-    if not args.db.exists():
-        print(f"[error] db not found: {args.db}")
-        return 2
     paths: list[Path] = []
     if args.csv:
         paths.extend(args.csv)
     if args.csv_glob:
-        paths.extend(Path(p) for p in glob(args.csv_glob))
+        paths.extend(Path(p) for p in sorted(glob(args.csv_glob)))
     if not paths:
         print("[error] need --csv or --csv-glob")
         return 2
 
-    conn = duckdb.connect(str(args.db))
+    try:
+        conn = cod_db.connect(catalog=catalog_arg(args), data=args.lake_data)
+    except cod_db.LakeNotFound as e:
+        print(f"[error] {e}")
+        return 2
     grand = {"ok": 0, "skipped": 0, "errors": 0}
-    for p in paths:
-        s = load_one(conn, p)
-        for k in grand:
-            grand[k] += s[k]
-        print(f"  {p.name}: ok={s['ok']} skipped={s['skipped']} errors={s['errors']}")
+    people_rows: list[tuple] = []
+    role_rows: list[tuple] = []
+    names = ", ".join(p.name for p in paths[:3]) + (f" +{len(paths) - 3}" if len(paths) > 3 else "")
+    try:
+        with cod_db.transaction(conn, f"load_facility_personnel_by_id: {names}"):
+            facility_ids = {r[0] for r in cod_db.rows(conn, "SELECT facility_id FROM facilities")}
+            for i, p in enumerate(paths):
+                # seq orders rows across files: a later file's row wins, as
+                # it did when each row was upserted in turn.
+                s = load_one(p, facility_ids, i * 1_000_000, people_rows, role_rows)
+                for k in grand:
+                    grand[k] += s[k]
+                print(f"  {p.name}: ok={s['ok']} skipped={s['skipped']} errors={s['errors']}")
+            stage_rows(conn, "stage_people", PEOPLE_STAGE, people_rows)
+            stage_rows(conn, "stage_roles", ROLE_STAGE, role_rows)
+            rp = merge_people(conn, "stage_people")
+            rr = merge_roles(conn, "stage_roles")
+            cod_db.assert_integrity(conn, ["people", "facility_personnel"])
+    except (duckdb.Error, cod_db.IntegrityError) as e:
+        print(f"[error] rolled back, nothing written: {e}", file=sys.stderr)
+        conn.close()
+        return 1
     print(f"[done] ok={grand['ok']} skipped={grand['skipped']} errors={grand['errors']}")
+    print(f"[merge] people: {rp['staged_people']} staged, {rp['inserted']} new, "
+          f"{rp['matched']} updated; facility_personnel: {rr['staged_roles']} staged, "
+          f"{rr['inserted']} new, {rr['matched']} updated")
     conn.close()
     return 0
 
